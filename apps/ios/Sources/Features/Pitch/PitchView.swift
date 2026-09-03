@@ -25,6 +25,8 @@ struct PitchView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.gameCopyResolver) private var copyResolver
+    @AppStorage(CopyDensity.storageKey) private var densityRaw = CopyDensity.automatic.rawValue
+    @State private var pitchChromeExpanded = false
     /// 승부 장면 높이. 고정 320은 접근성 글자 크기에서 판정 텍스트가 잘린다(3차 패널 P1).
     @ScaledMetric(relativeTo: .body) private var dramaHeight: CGFloat = 320
     @State private var replayProgress: Double = 1
@@ -288,6 +290,15 @@ struct PitchView: View {
         )
     }
 
+    private var usesCompactPitchChrome: Bool {
+        session.pitches >= 3 || (CopyDensity(rawValue: densityRaw) ?? .automatic) == .compact
+    }
+
+    private var adaptationPercent: Int {
+        guard let level = session.preparation?.rivalAdaptation.level else { return 0 }
+        return Int((Double(level) / 900) * 100)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
@@ -335,6 +346,10 @@ struct PitchView: View {
             .padding(.bottom, 2)
             .background(BaseballTheme.surface)
             ScoreboardBar(session: session)
+            if usesCompactPitchChrome, session.stage == .ready {
+                compactMatchupHeader
+                    .padding(.horizontal, BaseballMetrics.gutter)
+            }
             // 코치 스트립은 스크롤 밖 고정이다. 스크롤 콘텐츠에 넣었더니 투구 직후
             // 자동 스크롤이 화면 밖으로 밀어내 3구 스크립트가 1행짜리가 됐다(3차 패널 P0).
             if isPractice, session.stage == .ready, showsCoachTip {
@@ -348,7 +363,13 @@ struct PitchView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-                        matchupCard
+                        if usesCompactPitchChrome {
+                            if pitchChromeExpanded {
+                                matchupCard
+                            }
+                        } else {
+                            matchupCard
+                        }
                         stage
                     }
                     .padding(BaseballMetrics.gutter)
@@ -494,6 +515,31 @@ struct PitchView: View {
         .onChange(of: tip) { _, next in SeenContentStore.markSeen("pitch.coach.\(next.rawValue)") }
     }
 
+    private var compactMatchupHeader: some View {
+        Button { pitchChromeExpanded.toggle() } label: {
+            HStack(spacing: 8) {
+                Text(verbatim: copyResolver.resolve(
+                    .compactHeader,
+                    arguments: [
+                        .userText(PitchPresentation.batterName(session.batter, resolver: copyResolver)),
+                        .userText(PitchCopy.localized(session.batter.batSide, resolver: copyResolver)),
+                        .integer(adaptationPercent),
+                    ]
+                ))
+                .font(BaseballType.detail.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .lineLimit(1)
+                Spacer(minLength: 0)
+                Text(verbatim: copyResolver.resolve(pitchChromeExpanded ? .compactCollapse : .compactDetail))
+                    .font(BaseballType.annotation.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.action)
+            }
+            .frame(minHeight: BaseballMetrics.minimumTapTarget)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("pitch.matchup")
+    }
+
     private var matchupCard: some View {
         BaseballCard(title: copyResolver.resolve(.matchupTitle), tone: .raised) {
             VStack(alignment: .leading, spacing: 6) {
@@ -541,9 +587,11 @@ struct PitchView: View {
         case .ready:
             if let preparation = session.preparation {
                 lastPitchPanel
-                AdaptationBar(adaptation: preparation.rivalAdaptation, batSide: session.batter.batSide)
-                    .id(Self.controlsAnchor)
+                if !usesCompactPitchChrome || pitchChromeExpanded {
+                    AdaptationBar(adaptation: preparation.rivalAdaptation, batSide: session.batter.batSide)
+                }
                 CatcherCard(preparation: preparation, session: session)
+                    .id(Self.controlsAnchor)
                 controls(preparation: preparation)
             } else {
                 // 준비가 계산되는 아주 짧은 순간만 보여야 한다. 어두운 캔버스 위의 무표정

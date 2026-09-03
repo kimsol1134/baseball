@@ -293,4 +293,13 @@ extension CareerDisplayRules.FatigueDisplayBand {
         case .exhausted: .fatigueStatusExhausted
         }
     }
+
+    var wordCopyKey: MetaUICopyKey {
+        switch self {
+        case .normal: .fatigueStatusWordNormal
+        case .tired: .fatigueStatusWordTired
+        case .overwork: .fatigueStatusWordOverwork
+        case .exhausted: .fatigueStatusWordExhausted
+        }
+    }
 }

@@ -83,6 +83,8 @@ public extension AppCopyKey {
     static let draftReasonAdviceSeason = GameCopyKey.localizable("draft.reason.advice.season")
     static let draftReasonAdviceFan = GameCopyKey.localizable("draft.reason.advice.fan")
     static let draftReasonAdviceKarma = GameCopyKey.localizable("draft.reason.advice.karma")
+    static let draftResultPrepareNext = GameCopyKey.localizable("draft.result.prepare-next")
+    static let draftResultBack = GameCopyKey.localizable("draft.result.back")
     static let conclusionBestEvaluationRecordTitle = GameCopyKey.localizable("conclusion.best-evaluation.record-title")
     static let conclusionBestEvaluationNextTitle = GameCopyKey.localizable("conclusion.best-evaluation.next-title")
     static let conclusionBestEvaluationRecordBody = GameCopyKey.localizable("conclusion.best-evaluation.record-body")
@@ -211,6 +213,7 @@ public extension AppCopyKey {
         draftReasonAdviceRating, draftReasonAdvicePerformance, draftReasonAdviceAwakening,
         draftReasonAdviceRelationship, draftReasonAdviceOveruse, draftReasonAdviceSeason,
         draftReasonAdviceFan, draftReasonAdviceKarma,
+        draftResultPrepareNext, draftResultBack,
         conclusionBestEvaluationRecordTitle, conclusionBestEvaluationNextTitle,
         conclusionBestEvaluationRecordBody, conclusionBestEvaluationNextBody, conclusionRebirthAction,
         conclusionRebirthSummaryWithEul, conclusionRebirthSummaryWithReul, conclusionFoldTitle,

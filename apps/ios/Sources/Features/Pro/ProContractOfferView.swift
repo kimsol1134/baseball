@@ -402,8 +402,14 @@ struct ProContractOfferView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(verbatim: copyResolver.resolve(.contractOfferGoalTitle))
                 .font(.headline)
-            Text(copyResolver.resolve(.contractOfferGoalInstruction))
-                .detailStyle()
+            ProgressiveDisclosure(
+                contentID: "pro.contract.goal.instruction.v1",
+                title: copyResolver.resolve(.contractOfferGoalTitle),
+                summary: copyResolver.resolve(.contractOfferGoalInstruction)
+            ) {
+                Text(copyResolver.resolve(.contractOfferGoalInstruction))
+                    .detailStyle()
+            }
 
             if market.kind != .rookie && allAmbitionsCompleted {
                 Text(copyResolver.resolve(.contractOfferAllAmbitionsComplete))

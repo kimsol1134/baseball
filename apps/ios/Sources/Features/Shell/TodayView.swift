@@ -320,3 +320,185 @@ private struct TodayDashboard: View {
         return resolver.resolve(key, arguments: arguments)
     }
 }
+
+/// 프로 커리어 탭 상단 상태 헤더. 오늘/이번 주 세그먼트 대신 주차·상태 3칸·진행바만 둔다.
+struct ProCareerStatusHeader: View {
+    let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            KeyArtHeader(
+                art: Self.art(for: state),
+                eyebrow: copyResolver.resolve(
+                    AppCopyKey.proSeasonHeader,
+                    arguments: [
+                        .integer(state.season),
+                        .integer(state.week),
+                        .userText(Self.segmentText(state.seasonSegment, resolver: copyResolver)),
+                    ]
+                ),
+                title: copyResolver.resolve(
+                    AppCopyKey.proDashboardTitle,
+                    arguments: [
+                        .userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver)),
+                        .userText(copyResolver.resolve(state.level.displayCopyToken)),
+                        .userText(copyResolver.resolve(state.role.displayCopyToken)),
+                    ]
+                ),
+                accent: BaseballTheme.teamDecoration(state.team.id),
+                height: state.phase == .completed || state.phase == .contractOffer
+                    ? BaseballMetrics.keyArtHeight
+                    : BaseballMetrics.keyArtHeightCompact
+            )
+
+            SeasonArcBar(segment: state.seasonSegment, week: state.week)
+
+            HStack(spacing: 10) {
+                PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46, playerStage: .pro)
+                Metric(
+                    title: copyResolver.resolve(AppCopyKey.proFatigueLabel),
+                    value: "\(state.fatigue)",
+                    tone: CareerDisplayRules.proFatigueBand(fatigue: state.fatigue) == .normal
+                        ? .standard : .warning,
+                    caption: copyResolver.resolve(
+                        CareerDisplayRules.proFatigueBand(fatigue: state.fatigue).wordCopyKey
+                    )
+                )
+                Metric(
+                    title: copyResolver.resolve(AppCopyKey.proManagerTrustLabel),
+                    value: "\(state.managerTrust)",
+                    tone: state.managerTrust >= 60 ? .positive : .standard
+                )
+                Metric(
+                    title: copyResolver.resolve(AppCopyKey.proInjuryLabel),
+                    value: state.injuryWeeks > 0
+                        ? copyResolver.resolve(AppCopyKey.proInjuryWeeks, arguments: [.integer(state.injuryWeeks)])
+                        : copyResolver.resolve(AppCopyKey.proInjuryNormal),
+                    tone: state.injuryWeeks > 0 ? .negative : .standard
+                )
+            }
+        }
+    }
+
+    static func art(for state: ProCareerSnapshot) -> KeyArt {
+        if state.phase == .completed { return .retirement }
+        if state.phase == .contractOffer { return .majorDebut }
+        return .proStadiumTunnel
+    }
+
+    private static func segmentText(
+        _ segment: ProSeasonSegment?,
+        resolver: GameCopyResolver
+    ) -> String {
+        guard let segment else {
+            return resolver.resolve(AppCopyKey.proSegmentPreparation)
+        }
+        return resolver.resolve(segment.displayCopyToken)
+    }
+}
+
+/// 오늘 화면에 있던 긴장·소식·최근 기록. 커리어 흐름 맨 아래 접기로 옮긴다.
+struct ProCareerNewsSection: View {
+    let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        ProgressiveDisclosure(
+            contentID: "pro.weekly.news.v1",
+            title: copyResolver.resolve(AppCopyKey.newsSectionTitle),
+            summary: copyResolver.resolve(AppCopyKey.newsSectionSummary)
+        ) {
+            VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                if let tensions = state.seasonTensions, !tensions.isEmpty {
+                    BaseballCard(title: copyResolver.resolve(AppCopyKey.proTensionsTitle)) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(Array(tensions.enumerated()), id: \.offset) { _, tension in
+                                let tensionCopy = ProCareerPresentation.tension(
+                                    tension,
+                                    state: state,
+                                    resolver: copyResolver
+                                )
+                                VStack(alignment: .leading, spacing: 2) {
+                                    // localization-safe: resolved-copy
+                                    Text(tensionCopy.title).font(BaseballType.detail.weight(.semibold))
+                                    // localization-safe: resolved-copy
+                                    Text(tensionCopy.detail).detailStyle()
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .accessibilityElement(children: .combine)
+                            }
+                        }
+                    }
+                }
+
+                if let rival = state.currentRival {
+                    let rivalCopy = ProCareerPresentation.rival(rival, resolver: copyResolver)
+                    BaseballCard(title: copyResolver.resolve(AppCopyKey.proRivalTitle), tone: .warning) {
+                        HStack(spacing: 10) {
+                            PortraitView(seed: rival.name, role: .rival, size: 46)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("\(rivalCopy.name) · \(rivalCopy.teamName)").font(.headline)
+                                // localization-safe: resolved-copy
+                                Text(rivalCopy.archetype)
+                                    .font(.subheadline)
+                                    .foregroundStyle(BaseballTheme.textSecondary)
+                                // localization-safe: resolved-copy
+                                Text(rivalCopy.record)
+                                    .font(BaseballType.annotation.monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.textSecondary)
+                            }
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+
+                if let milestone = state.milestones.last {
+                    BaseballCard(title: copyResolver.resolve(AppCopyKey.proMilestoneTitle), tone: .milestone) {
+                        Label {
+                            Text(ProCareerPresentation.milestone(milestone, resolver: copyResolver))
+                        } icon: {
+                            Image(systemName: "star.fill")
+                        }
+                        .foregroundStyle(BaseballTheme.milestone)
+                    }
+                }
+
+                if let line = state.gameLines?.last {
+                    BaseballCard(title: copyResolver.resolve(AppCopyKey.proLatestOutingTitle)) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if line.played {
+                                GameCopyText(AppCopyKey.proDirectOuting).eyebrowStyle(BaseballTheme.action)
+                            }
+                            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                                // localization-safe: numeric
+                                Text(GameLineFormat.score(line))
+                                    .font(BaseballType.scoreboard)
+                                    .foregroundStyle(BaseballTheme.textPrimary)
+                                Spacer()
+                                GameCopyText(
+                                    AppCopyKey.proOutingWeek,
+                                    arguments: [.integer(line.week)]
+                                )
+                                    .font(BaseballType.annotation.monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.textTertiary)
+                            }
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityIdentifier("today.lastOuting")
+                    }
+                }
+
+                BaseballCard(title: copyResolver.resolve(AppCopyKey.proLatestNewsTitle)) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(state.news.prefix(3).enumerated()), id: \.offset) { _, item in
+                            Text(ProCareerPresentation.news(item, state: state, resolver: copyResolver))
+                                .detailStyle(BaseballTheme.textPrimary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

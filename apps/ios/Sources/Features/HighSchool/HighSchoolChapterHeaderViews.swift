@@ -12,20 +12,44 @@ struct ChapterHeader: View {
     /// 국면 화면이 자기 키아트를 그릴 때(각성) 머리말은 눈썹+제목 한 덩어리로 줄인다 —
     /// 그림 두 장이 겹쳐 서면 어느 쪽도 무대가 아니다.
     var compact = false
+    /// 드래프트 결과 1화면은 키아트만 남긴다. 점수·칩은 결과 카드가 맡는다.
+    var peakResult = false
     var onForecastTap: (() -> Void)? = nil
+    var onSkillTreeTap: (() -> Void)? = nil
     @State private var windExpanded = false
     @Environment(\.gameCopyResolver) private var copyResolver
 
-    /// 되돌릴 수 없는 순간에만 전용 그림을 준다. 나머지는 야간 구장 한 장으로 통일한다 —
-    /// 모든 화면에 다른 그림이 있으면 어느 것도 특별하지 않다(DOC-19 §7.5).
+    /// 장·국면이 바뀌면 그림도 바뀐다. 훈련 루프만 같은 그림을 반복한다.
+    static func art(for state: HighSchoolCareerSnapshot) -> KeyArt {
+        switch state.phase {
+        case .prologue: .careerIntro
+        case .schoolSelection: .schoolCrossroads
+        case .awakening: .awakening
+        case .draft: .draftDay
+        case .legacy, .completed: .reincarnation
+        default:
+            state.chapter.number == 1 ? .careerIntro : .stadiumNight
+        }
+    }
+
     static func art(for phase: HighSchoolCareerPhase) -> KeyArt {
         switch phase {
         case .prologue: .careerIntro
         case .schoolSelection: .schoolCrossroads
         case .awakening: .awakening
         case .draft: .draftDay
-        case .legacy: .reincarnation
+        case .legacy, .completed: .reincarnation
         default: .stadiumNight
+        }
+    }
+
+    static func artHeight(for phase: HighSchoolCareerPhase) -> CGFloat {
+        switch phase {
+        case .training: BaseballMetrics.keyArtHeightCompact
+        case .prologue, .schoolSelection, .awakening, .draft, .legacy, .completed,
+             .chapterReview, .relationship, .importantGame:
+            BaseballMetrics.keyArtHeight
+        default: BaseballMetrics.keyArtHeightCompact
         }
     }
 
@@ -65,15 +89,15 @@ struct ChapterHeader: View {
                 .accessibilityIdentifier("hs.chapter.header.compact")
             } else {
             KeyArtHeader(
-                art: Self.art(for: state.phase),
+                art: Self.art(for: state),
                 // 1회차에는 회차 표시를 하지 않는다. 처음 하는 사람에게 "1회차"는 아무 뜻이 없고,
                 // 반복하는 게임이라는 사실은 한 번 죽어 봐야 의미가 생긴다.
                 eyebrow: eyebrow,
-                title: title
+                title: title,
+                height: Self.artHeight(for: state.phase)
             )
+            if !peakResult {
             HStack(alignment: .top, spacing: 10) {
-                // 주인공의 얼굴. 게임에서 가장 자주 보는 화면인데 정작 주인공이 없었다.
-                // 1학년(챕터 1~3)은 앳된 얼굴, 2학년부터는 에이스 얼굴 — 성장이 눈에 보인다.
                 PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46,
                              playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
                 Metric(
@@ -82,28 +106,26 @@ struct ChapterHeader: View {
                     tone: CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue) == .normal
                         ? .standard : .warning,
                     caption: copyResolver.resolve(
-                        CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue).copyKey
+                        CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue).wordCopyKey
                     )
                 )
                 Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricTeamTrust), value: "\(state.relationshipTrust)")
-                Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricTraining), value: "\(state.totalTrainingsCompleted)")
-            }
-            // 드래프트 거리는 1학년 봄부터 보인다. 3년을 닫고 나서야 "당락선 66"을
-            // 처음 보면 지명 실패가 허무하다(페르소나 보고서 §2-3, §4-2).
-            if state.phase != .prologue, let forecast {
-                Button(action: { onForecastTap?() }) {
-                    EffectChip(
-                        text: copyResolver.resolve(
-                            AppCopyKey.chapterHeaderDraftForecast,
-                            arguments: [.integer(forecast.score), .integer(forecast.threshold)]
-                        ),
-                        tone: Self.forecastTone(score: forecast.score, threshold: forecast.threshold),
-                        systemImage: "flag.checkered"
-                    )
+                if state.phase != .prologue, let forecast {
+                    Button(action: { onForecastTap?() }) {
+                        Metric(
+                            title: copyResolver.resolve(AppCopyKey.chapterMetricDraftOutlook),
+                            value: "\(forecast.score)",
+                            tone: Self.forecastCardTone(score: forecast.score, threshold: forecast.threshold),
+                            caption: copyResolver.resolve(
+                                AppCopyKey.chapterMetricDraftCutoff,
+                                arguments: [.integer(forecast.threshold)]
+                            )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(onForecastTap == nil)
+                    .accessibilityIdentifier("hs.chapter.draftForecast")
                 }
-                .buttonStyle(.plain)
-                .disabled(onForecastTap == nil)
-                .accessibilityIdentifier("hs.chapter.draftForecast")
             }
             if state.phase != .prologue {
                 let wind = CareerWindPresentationCatalog.descriptor(for: state.careerWind)
@@ -113,34 +135,49 @@ struct ChapterHeader: View {
                 let windAction = copyResolver.resolve(
                     windExpanded ? AppCopyKey.chapterWindCollapse : AppCopyKey.chapterWindExpand
                 )
-                Button { windExpanded.toggle() } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "wind")
-                        // localization-safe: resolved-copy
-                        Text(windTitle)
-                            .font(.caption.weight(.bold))
-                        Spacer(minLength: 0)
-                        Image(systemName: windExpanded ? "chevron.up" : "chevron.down")
-                            .font(.caption2)
+                HStack(spacing: 8) {
+                    Button { windExpanded = true } label: {
+                        Text(verbatim: copyResolver.resolve(
+                            AppCopyKey.chapterChipWind,
+                            arguments: [.userText(windTitle)]
+                        ))
+                            .font(BaseballType.annotation.weight(.bold))
+                            .foregroundStyle(BaseballTheme.information)
+                            .padding(.horizontal, 10)
+                            .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                            .background(BaseballTheme.surfaceRaised, in: Capsule())
                     }
-                    .foregroundStyle(BaseballTheme.information)
-                    .padding(.horizontal, 10)
-                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
-                    .background(BaseballTheme.surfaceRaised, in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("hs.wind.chip")
-                .accessibilityLabel(
-                    copyResolver.resolve(
-                        AppCopyKey.chapterWindAccessibility,
-                        arguments: [.userText(windTitle), .userText(windAction)]
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hs.wind.chip")
+                    .accessibilityLabel(
+                        copyResolver.resolve(
+                            AppCopyKey.chapterWindAccessibility,
+                            arguments: [.userText(windTitle), .userText(windAction)]
+                        )
                     )
-                )
-
-                if windExpanded {
-                    VStack(alignment: .leading, spacing: 3) {
-                        // localization-safe: resolved-copy
-                        Text(windDetail)
+                    Button(action: { onSkillTreeTap?() }) {
+                        Text(verbatim: copyResolver.resolve(
+                            AppCopyKey.chapterChipSkill,
+                            arguments: [
+                                .integer(state.selectedAwakenings.count),
+                                .integer(AwakeningCard.totalAwakenings),
+                            ]
+                        ))
+                            .font(BaseballType.annotation.weight(.bold))
+                            .foregroundStyle(BaseballTheme.milestone)
+                            .padding(.horizontal, 10)
+                            .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                            .background(BaseballTheme.surfaceRaised, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(onSkillTreeTap == nil)
+                    .accessibilityIdentifier("hs.skillTree.open")
+                    Spacer(minLength: 0)
+                }
+                .sheet(isPresented: $windExpanded) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(verbatim: windTitle).font(.headline)
+                        Text(verbatim: windDetail)
                         ForEach(Array(effects.enumerated()), id: \.offset) { _, effect in
                             Text(copyResolver.resolve(
                                 AppCopyKey.chapterWindEffect,
@@ -152,8 +189,10 @@ struct ChapterHeader: View {
                         }
                     }
                     .detailStyle()
-                    .accessibilityElement(children: .combine)
+                    .padding(BaseballMetrics.gutter)
+                    .presentationDetents([.medium])
                 }
+            }
             }
             }
         }
@@ -164,6 +203,15 @@ struct ChapterHeader: View {
         if score >= threshold { return .gain }
         if score >= threshold - 10 { return .cost }
         return .risk
+    }
+
+    static func forecastCardTone(score: Int, threshold: Int) -> BaseballCardTone {
+        switch forecastTone(score: score, threshold: threshold) {
+        case .gain: .positive
+        case .cost: .warning
+        case .risk: .negative
+        default: .standard
+        }
     }
 }
 

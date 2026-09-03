@@ -55,23 +55,46 @@ extension View {
 
 struct SeenContentStore {
     static let storageKey = "baseball.seenContent.v1"
+    static let timestampsKey = "baseball.seenContent.v2"
+    static let freshnessInterval: TimeInterval = 14 * 24 * 60 * 60
 
-    static func seenIDs(defaults: UserDefaults = .standard) -> Set<String> {
-        Set(defaults.stringArray(forKey: storageKey) ?? [])
+    static func migrateIfNeeded(defaults: UserDefaults = .standard) {
+        guard defaults.object(forKey: timestampsKey) == nil else { return }
+        let legacy = defaults.stringArray(forKey: storageKey) ?? []
+        guard !legacy.isEmpty else { return }
+        let now = Date().timeIntervalSince1970
+        var stamps: [String: Double] = [:]
+        for id in legacy { stamps[id] = now }
+        defaults.set(stamps, forKey: timestampsKey)
     }
 
-    static func contains(_ id: String, defaults: UserDefaults = .standard) -> Bool {
-        seenIDs(defaults: defaults).contains(id)
+    static func timestamps(defaults: UserDefaults = .standard) -> [String: Double] {
+        migrateIfNeeded(defaults: defaults)
+        return defaults.dictionary(forKey: timestampsKey) as? [String: Double] ?? [:]
     }
 
-    static func markSeen(_ id: String, defaults: UserDefaults = .standard) {
-        var ids = seenIDs(defaults: defaults)
-        ids.insert(id)
-        defaults.set(Array(ids).sorted(), forKey: storageKey)
+    static func seenIDs(defaults: UserDefaults = .standard, now: Date = Date()) -> Set<String> {
+        Set(timestamps(defaults: defaults).compactMap { id, stamp in
+            now.timeIntervalSince1970 - stamp < freshnessInterval ? id : nil
+        })
+    }
+
+    static func contains(_ id: String, defaults: UserDefaults = .standard, now: Date = Date()) -> Bool {
+        guard let stamp = timestamps(defaults: defaults)[id] else { return false }
+        return now.timeIntervalSince1970 - stamp < freshnessInterval
+    }
+
+    static func markSeen(_ id: String, defaults: UserDefaults = .standard, at date: Date = Date()) {
+        migrateIfNeeded(defaults: defaults)
+        var stamps = timestamps(defaults: defaults)
+        stamps[id] = date.timeIntervalSince1970
+        defaults.set(stamps, forKey: timestampsKey)
+        defaults.set(Array(stamps.keys).sorted(), forKey: storageKey)
     }
 
     static func reset(defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: storageKey)
+        defaults.removeObject(forKey: timestampsKey)
         defaults.removeObject(forKey: CopyDensity.storageKey)
     }
 }
@@ -143,7 +166,10 @@ struct ProgressiveDisclosure<Detail: View>: View {
             case .compact: expanded = important
             case .automatic: expanded = important || !SeenContentStore.contains(contentID)
             }
-            SeenContentStore.markSeen(contentID)
+            if expanded { SeenContentStore.markSeen(contentID) }
+        }
+        .onChange(of: expanded) { _, isExpanded in
+            if isExpanded { SeenContentStore.markSeen(contentID) }
         }
         .onChange(of: densityRaw) { _, newValue in
             guard let next = CopyDensity(rawValue: newValue) else { return }

@@ -5,6 +5,8 @@ import BaseballIOSDomain
 struct ResultBanner: View {
     let summary: String
     let cue: FeedbackCue
+    var onDismiss: (() -> Void)? = nil
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     private var tone: BaseballCardTone {
         switch cue {
@@ -32,7 +34,16 @@ struct ResultBanner: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .fixedSize(horizontal: false, vertical: true)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: onDismiss == nil ? .combine : .contain)
+        .overlay(alignment: .topTrailing) {
+            if let onDismiss {
+                Button(action: onDismiss) {
+                    Text(verbatim: copyResolver.resolve(AppCopyKey.noticeDismiss))
+                        .font(BaseballType.annotation.weight(.semibold))
+                }
+                .accessibilityIdentifier("pro.notice.banner.dismiss")
+            }
+        }
     }
 }
 

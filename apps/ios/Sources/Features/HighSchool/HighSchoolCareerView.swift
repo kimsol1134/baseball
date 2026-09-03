@@ -271,6 +271,10 @@ struct HighSchoolCareerView: View {
     /// 훈련 화면의 선택. 카드가 고르고 스크롤 밖 고정 바가 커밋한다. 훈련 국면에
     /// 들어올 때 직전 훈련에서 다시 시작한다(`TrainingCard.onAppear`).
     @State private var trainingSelection = TrainingSelection.placeholder
+    /// 드래프트 결과 1화면 → 유산 2화면. 저장하지 않는다 — 앱을 다시 열면 1화면부터.
+    @State private var draftLegacyStep = 0
+    @State private var dismissedArmHealth = false
+    @State private var dismissedSummary: String?
 
     /// 관계 국면에서는 선택지가 뉴스·버즈보다 먼저다(페르소나 보고서 §2-2). 다른
     /// 국면에서는 예전대로 주 행동 위에 둔다.
@@ -285,6 +289,13 @@ struct HighSchoolCareerView: View {
         case .draft, .legacy, .completed: true
         default: false
         }
+    }
+
+    private func showingPeakResult(_ state: HighSchoolCareerSnapshot) -> Bool {
+        Self.climaxPhase(state.phase)
+            && state.draftResult != nil
+            && draftLegacyStep == 0
+            && !career.isChallengeRun
     }
 
     private func commitTraining(focus: TrainingFocus, intensity: TrainingIntensity, targetPitch: PitchType?) {
@@ -345,18 +356,19 @@ struct HighSchoolCareerView: View {
                             forecast: career.draftForecast,
                             // 각성은 자기 키아트를 그린다. 머리말 그림까지 서면 두 장이 겹친다.
                             compact: state.phase == .awakening,
-                            onForecastTap: onOpenDraftForecast
-                        )
-
-                        if state.phase != .awakening {
-                            SkillTreeSummaryRow(selected: state.selectedAwakenings) {
+                            peakResult: Self.climaxPhase(state.phase)
+                                && state.draftResult != nil
+                                && draftLegacyStep == 0
+                                && !career.isChallengeRun,
+                            onForecastTap: onOpenDraftForecast,
+                            onSkillTreeTap: state.phase == .awakening ? nil : {
                                 skillTreePreview = SkillTreePreview(
                                     selected: state.selectedAwakenings,
                                     sparks: state.awakeningSparks,
                                     beforeFirstGame: state.performance.importantGamesCompleted == 0
                                 )
                             }
-                        }
+                        )
 
                         if Self.climaxPhase(state.phase) {
                             phaseBody(state: state)
@@ -370,42 +382,9 @@ struct HighSchoolCareerView: View {
                             .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                         }
 
-                        // 만개는 성장 축하보다 앞에 온다. 같은 훈련에서 둘 다 나면
-                        // 먼저 읽어야 하는 것은 "벽이 열렸다"는 쪽이다.
                         Color.clear.frame(height: 0).id(Self.celebrationAnchor)
-                        if let armHealth = career.result?.armHealthReceipt {
-                            HighSchoolArmHealthResultCard(receipt: armHealth)
-                                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
-                        }
-                        // 훈련 결과는 주 행동 바로 위의 전용 패널이 맡는다(`TrainingResultPanel`).
-                        // 같은 성장·만개를 이 위쪽에도 중복 표시하면 결과가 두 군데로 갈라지므로,
-                        // 훈련 영수증이 없는 관계·경기 성장만 이 흐름에 남긴다.
-                        if career.trainingReceipt == nil {
-                            if let bloom = career.pendingBloom {
-                                BloomCelebrationView(ability: bloom.ability, grade: bloom.grade) {
-                                    career.acknowledgeBloom()
-                                }
-                                .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
-                            }
-                            if !career.pendingGains.isEmpty {
-                                GrowthCelebrationView(gains: career.pendingGains,
-                                                      jackpot: career.result?.snapshot.lastTraining?.jackpot ?? false,
-                                                      onDismiss: career.acknowledgeGains)
-                                    .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
-                            } else if let summary = career.lastSummary {
-                                SummaryLine(
-                                    summary: HighSchoolPresentation.localizedStoreSummary(
-                                        summary,
-                                        inheritance: career.inheritance,
-                                        pendingRecap: career.pendingRecap,
-                                        pledge: career.pledge,
-                                        trainingReceipt: career.trainingReceipt,
-                                        state: state,
-                                        resolver: copyResolver
-                                    ),
-                                    cue: career.feedbackCue
-                                )
-                            }
+                        if !showingPeakResult(state) {
+                            highSchoolNotice(state: state)
                         }
                         // 3년에 세 번뿐인 각성 앞에서는 주변 소음을 접는다(QA P2-2) —
                         // 되돌릴 수 없는 선택이 목록 한 줄로 보이면 무게가 사라진다.
@@ -504,27 +483,18 @@ struct HighSchoolCareerView: View {
                         // 이 목록의 맨 아래가 "훈련하기"다. 결과를 주 행동 바로 위에 두고
                         // 명시적 앵커로 이동하면, 국면이 바뀌어 카드 높이가 줄어도 결과와
                         // 다음 행동이 같은 흐름에 이어진다.
-                        if let receipt = career.trainingReceipt {
-                            TrainingResultPanel(
-                                receipt: receipt,
-                                compact: Self.trainingResultIsCompact(phase: state.phase),
-                                onDismiss: career.acknowledgeTrainingReceipt
-                            )
-                                .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
-                                .id(Self.trainingResultAnchor)
-                        }
-
                         if !Self.climaxPhase(state.phase) {
                             phaseBody(state: state)
                                 .id(Self.phaseAnchor)
                         }
                         // 관계 선택지 아래로 내려온 소식. 대사와 선택지가 먼저 읽힌다.
-                        if Self.newsSitsBelowPhaseBody(phase: state.phase) {
+                        if Self.newsSitsBelowPhaseBody(phase: state.phase), !showingPeakResult(state) {
                             newsCards(state: state)
                         }
                         // 선수의 말은 첫 경기 이후 실제 갈림길·건강 신호에서만 보이고,
                         // 그 국면의 주 행동보다 아래에 둔다. 상시 상단 카드가 진행을 밀어내지 않는다.
-                        if let presentation = PlayerBondStory.heartlinePresentation(
+                        if !showingPeakResult(state),
+                           let presentation = PlayerBondStory.heartlinePresentation(
                             for: state,
                             personality: career.personality
                         ) {
@@ -554,12 +524,19 @@ struct HighSchoolCareerView: View {
                         TrainingCommitBar(
                             selection: trainingSelection,
                             recommendedFocus: HighSchoolCareerStore.recommendedTraining(state: state),
+                            pendingNotice: currentHighSchoolNotice() != nil,
+                            onAcknowledgeNotice: acknowledgeHighSchoolNotice,
                             onCommit: commitTraining,
                             onCommitBlock: commitTrainingBlock
                         )
                     }
                 }
                 .background(BaseballTheme.canvas)
+                .onChange(of: state.careerID) { _, _ in
+                    draftLegacyStep = 0
+                    dismissedArmHealth = false
+                    dismissedSummary = nil
+                }
                 // 스크롤 콘텐츠가 상태바 밑을 그대로 지나면 시계와 제목이 겹친다(QA P2-3).
                 .topStatusScrim()
                 // 국면 전환은 즉시 갱신한다. 화면 전체를 덮는 커튼은 종료 애니메이션이
@@ -610,6 +587,91 @@ struct HighSchoolCareerView: View {
                 }
                 }
             }
+        }
+    }
+
+    private enum HighSchoolNotice {
+        case armHealth
+        case trainingResult
+        case bloom
+        case growth
+        case summary
+    }
+
+    private func currentHighSchoolNotice() -> HighSchoolNotice? {
+        if career.result?.armHealthReceipt != nil, !dismissedArmHealth { return .armHealth }
+        if career.trainingReceipt != nil { return .trainingResult }
+        if career.pendingBloom != nil { return .bloom }
+        if !career.pendingGains.isEmpty { return .growth }
+        if let summary = career.lastSummary, dismissedSummary != summary { return .summary }
+        return nil
+    }
+
+    private func acknowledgeHighSchoolNotice() {
+        switch currentHighSchoolNotice() {
+        case .armHealth:
+            dismissedArmHealth = true
+        case .trainingResult:
+            career.acknowledgeTrainingReceipt()
+        case .bloom:
+            career.acknowledgeBloom()
+        case .growth:
+            career.acknowledgeGains()
+        case .summary:
+            dismissedSummary = career.lastSummary
+        case nil:
+            break
+        }
+    }
+
+    @ViewBuilder private func highSchoolNotice(state: HighSchoolCareerSnapshot) -> some View {
+        switch currentHighSchoolNotice() {
+        case .armHealth:
+            if let armHealth = career.result?.armHealthReceipt {
+                HighSchoolArmHealthResultCard(receipt: armHealth)
+                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+            }
+        case .trainingResult:
+            if let receipt = career.trainingReceipt {
+                TrainingResultPanel(
+                    receipt: receipt,
+                    compact: Self.trainingResultIsCompact(phase: state.phase),
+                    onDismiss: career.acknowledgeTrainingReceipt
+                )
+                .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+                .id(Self.trainingResultAnchor)
+            }
+        case .bloom:
+            if let bloom = career.pendingBloom {
+                BloomCelebrationView(ability: bloom.ability, grade: bloom.grade) {
+                    career.acknowledgeBloom()
+                }
+                .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+            }
+        case .growth:
+            GrowthCelebrationView(
+                gains: career.pendingGains,
+                jackpot: career.result?.snapshot.lastTraining?.jackpot ?? false,
+                onDismiss: career.acknowledgeGains
+            )
+            .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+        case .summary:
+            if let summary = career.lastSummary {
+                SummaryBanner(
+                    summary: HighSchoolPresentation.localizedStoreSummary(
+                        summary,
+                        inheritance: career.inheritance,
+                        pendingRecap: career.pendingRecap,
+                        pledge: career.pledge,
+                        trainingReceipt: career.trainingReceipt,
+                        state: state,
+                        resolver: copyResolver
+                    ),
+                    cue: career.feedbackCue
+                )
+            }
+        case nil:
+            EmptyView()
         }
     }
 
@@ -716,23 +778,48 @@ struct HighSchoolCareerView: View {
         case .draft:
             DraftCard(state: state, chronicle: career.chronicle, career: career, onResolve: career.resolveDraft)
         case .legacy:
-            // challenge 모드는 대부분 미지명으로 끝나 여기로 온다 — 기억 확정(실계승 덮어쓰기)
-            // 대신 도전 마감으로 보낸다(5차 패널 P0).
             if career.isChallengeRun {
                 ChallengeEndCard(state: state) { career.endChallengeRun() }
+            } else if draftLegacyStep == 0, state.draftResult != nil {
+                DraftPeakResultView(
+                    state: state,
+                    drafted: false,
+                    onContinue: { draftLegacyStep = 1 }
+                )
             } else {
-                LegacyCard(career: career, state: state)
+                if draftLegacyStep == 1 {
+                    Button { draftLegacyStep = 0 } label: {
+                        Text(verbatim: copyResolver.resolve(AppCopyKey.draftResultBack))
+                            .font(BaseballType.detail.weight(.semibold))
+                    }
+                    .accessibilityIdentifier("hs.draft.result.back")
+                }
+                LegacyCard(career: career, state: state, includeReason: false)
             }
         case .completed:
             if career.isChallengeRun {
                 ChallengeEndCard(state: state) { career.endChallengeRun() }
+            } else if draftLegacyStep == 0, state.draftResult != nil {
+                DraftPeakResultView(
+                    state: state,
+                    drafted: state.draftResult?.outcome == .drafted && !hasEnteredPro,
+                    onContinue: { draftLegacyStep = 1 }
+                )
             } else {
+                if draftLegacyStep == 1 {
+                    Button { draftLegacyStep = 0 } label: {
+                        Text(verbatim: copyResolver.resolve(AppCopyKey.draftResultBack))
+                            .font(BaseballType.detail.weight(.semibold))
+                    }
+                    .accessibilityIdentifier("hs.draft.result.back")
+                }
                 CompletionCard(
                     career: career,
                     state: state,
                     hasEnteredPro: hasEnteredPro,
                     onEnterPro: onEnterPro,
-                    onSkipToPro: onSkipToPro
+                    onSkipToPro: onSkipToPro,
+                    includeReason: false
                 ) {
                     rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
                 }

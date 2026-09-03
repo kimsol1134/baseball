@@ -1,0 +1,89 @@
+{
+  "Localizable": {
+    "notice.confirm-and-continue": {
+      "ko": "확인하고 계속",
+      "en": "Confirm and continue",
+      "ja": "確認して続ける"
+    },
+    "fatigue.status.word.normal": {
+      "ko": "정상",
+      "en": "OK",
+      "ja": "正常"
+    },
+    "fatigue.status.word.tired": {
+      "ko": "지침",
+      "en": "Tired",
+      "ja": "疲労"
+    },
+    "fatigue.status.word.overwork": {
+      "ko": "과로",
+      "en": "Overworked",
+      "ja": "過労"
+    },
+    "fatigue.status.word.exhausted": {
+      "ko": "탈진",
+      "en": "Exhausted",
+      "ja": "消耗"
+    },
+    "chapter.metric.draft-outlook": {
+      "ko": "전망",
+      "en": "Outlook",
+      "ja": "見通し"
+    },
+    "chapter.metric.draft-cutoff": {
+      "ko": "당락선 %lld",
+      "en": "Cutoff %lld",
+      "ja": "当落線 %lld"
+    },
+    "chapter.chip.wind": {
+      "ko": "바람 · %@ ▸",
+      "en": "Wind · %@ ▸",
+      "ja": "風 · %@ ▸"
+    },
+    "chapter.chip.skill": {
+      "ko": "스킬 %lld/%lld ▸",
+      "en": "Skills %lld/%lld ▸",
+      "ja": "スキル %lld/%lld ▸"
+    },
+    "news.section.title": {
+      "ko": "소식",
+      "en": "News",
+      "ja": "ニュース"
+    },
+    "news.section.summary": {
+      "ko": "긴장·최근 등판·구단 소식",
+      "en": "Tensions, latest outing, club news",
+      "ja": "緊張・最近の登板・球団ニュース"
+    },
+    "draft.result.prepare-next": {
+      "ko": "다음 선수 준비",
+      "en": "Prepare the next pitcher",
+      "ja": "次の選手を準備"
+    },
+    "draft.result.back": {
+      "ko": "결과로",
+      "en": "Back to the result",
+      "ja": "結果に戻る"
+    },
+    "pitch.compact.header": {
+      "ko": "%@ · %@ · 읽힘 %lld%",
+      "en": "%@ · %@ · Read %lld%",
+      "ja": "%@ · %@ · 読まれ %lld%"
+    },
+    "pitch.compact.detail": {
+      "ko": "상세 ▾",
+      "en": "Details ▾",
+      "ja": "詳細 ▾"
+    },
+    "pitch.compact.collapse": {
+      "ko": "접기 ▴",
+      "en": "Collapse ▴",
+      "ja": "閉じる ▴"
+    },
+    "notice.dismiss": {
+      "ko": "닫기",
+      "en": "Close",
+      "ja": "閉じる"
+    }
+  }
+}

@@ -18,6 +18,9 @@ struct WeeklyPlanView: View {
     let state: ProCareerSnapshot
     /// 직전 주의 변화. 요약 줄 대신 상태 타일 캡션으로 보여 준다(1.2.9 가독성 교정).
     var weekProgress: ProCareerPresentation.WeekProgressSummary? = nil
+    var hidesFollowUps = false
+    var pendingNotice = false
+    var onAcknowledgeNotice: (() -> Void)? = nil
     @Environment(\.gameCopyResolver) private var copyResolver
     @Environment(\.appTabSelection) private var appTabSelection
     @AppStorage(CopyDensity.storageKey) private var densityRaw = CopyDensity.automatic.rawValue
@@ -260,7 +263,7 @@ struct WeeklyPlanView: View {
                 .accessibilityIdentifier("pro.weekly.recordShare")
             }
 
-            ForEach(state.resolvedFollowUps ?? []) { followUp in
+            ForEach(hidesFollowUps ? [] : (state.resolvedFollowUps ?? [])) { followUp in
                 let seenID = "pro.decision.followup.\(followUp.type.rawValue).v1"
                 BaseballCard(
                     title: copyResolver.resolve(.decisionFollowUpCardTitle),
@@ -301,29 +304,6 @@ struct WeeklyPlanView: View {
                         ]
                     )
                 }
-            }
-
-            // 직전 주의 변화는 요약 줄 대신 타일 캡션으로 한 번만 보여 준다.
-            HStack(alignment: .top, spacing: 10) {
-                StatTile(
-                    label: copyResolver.resolve(.weeklyFatigue),
-                    value: "\(state.fatigue)",
-                    caption: copyResolver.resolve(
-                        CareerDisplayRules.proFatigueBand(fatigue: state.fatigue).copyKey
-                    ),
-                    tone: CareerDisplayRules.proFatigueBand(fatigue: state.fatigue) == .normal
-                        ? BaseballTheme.textPrimary : BaseballTheme.warning
-                )
-                StatTile(
-                    label: copyResolver.resolve(.weeklyManagerTrust),
-                    value: "\(state.managerTrust)",
-                    caption: weekProgress.map { ProWeeklyCopy.deltaCaption($0.managerTrustDelta, resolver: copyResolver) },
-                    tone: state.managerTrust >= 60 ? BaseballTheme.positive : BaseballTheme.textPrimary
-                )
-                StatTile(
-                    label: copyResolver.resolve(.weeklyRole),
-                    value: copyResolver.resolve(state.role.displayCopyToken)
-                )
             }
 
             if let climate = CareerDisplayRules.liveClimate(for: state) {
@@ -485,8 +465,20 @@ struct WeeklyPlanView: View {
                 }
             }
 
-            PrimaryPill(title: copyResolver.resolve(.weeklyAdvance), identifier: "pro.advanceWeek", action: career.advanceWeek)
-                .disabled(career.selectedPlan == nil)
+            PrimaryPill(
+                title: pendingNotice
+                    ? copyResolver.resolve(AppCopyKey.noticeConfirmAndContinue)
+                    : copyResolver.resolve(.weeklyAdvance),
+                identifier: "pro.advanceWeek",
+                action: {
+                    if pendingNotice {
+                        onAcknowledgeNotice?()
+                    } else {
+                        career.advanceWeek()
+                    }
+                }
+            )
+                .disabled(!pendingNotice && career.selectedPlan == nil)
 
             Button(action: career.advanceSegment) {
                 VStack(alignment: .leading, spacing: 2) {

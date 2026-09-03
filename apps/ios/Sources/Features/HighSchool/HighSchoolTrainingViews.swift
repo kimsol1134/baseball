@@ -161,14 +161,26 @@ struct TrainingSelection: Equatable {
 struct TrainingCommitBar: View {
     let selection: TrainingSelection
     var recommendedFocus: TrainingFocus? = nil
+    var pendingNotice = false
+    var onAcknowledgeNotice: (() -> Void)? = nil
     let onCommit: (TrainingFocus, TrainingIntensity, PitchType?) -> Void
     let onCommitBlock: (TrainingFocus, TrainingIntensity, PitchType?) -> Void
     @Environment(\.gameCopyResolver) private var copyResolver
+    @State private var showRepeatExplanation = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            PrimaryButton(title: copyResolver.resolve(AppCopyKey.trainingCommit), identifier: "hs.training.commit") {
-                onCommit(selection.focus, selection.intensity, selection.selectedTarget)
+            PrimaryButton(
+                title: copyResolver.resolve(
+                    pendingNotice ? AppCopyKey.noticeConfirmAndContinue : AppCopyKey.trainingCommit
+                ),
+                identifier: "hs.training.commit"
+            ) {
+                if pendingNotice {
+                    onAcknowledgeNotice?()
+                } else {
+                    onCommit(selection.focus, selection.intensity, selection.selectedTarget)
+                }
             }
             Button {
                 onCommitBlock(selection.focus, selection.intensity, selection.selectedTarget)
@@ -176,6 +188,7 @@ struct TrainingCommitBar: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(copyResolver.resolve(AppCopyKey.trainingRepeatTitle))
                         .font(.subheadline.weight(.semibold))
+                    if showRepeatExplanation {
                     Text(copyResolver.resolve(
                         recommendedFocus == selection.focus
                             ? AppCopyKey.trainingRepeatRecommendedExplanation
@@ -183,6 +196,7 @@ struct TrainingCommitBar: View {
                     ))
                         .detailStyle()
                         .multilineTextAlignment(.leading)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 14)
@@ -205,6 +219,11 @@ struct TrainingCommitBar: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hs.training.commitBar")
+        .onAppear {
+            let id = "hs.training.repeat.explained"
+            showRepeatExplanation = !SeenContentStore.contains(id)
+            if showRepeatExplanation { SeenContentStore.markSeen(id) }
+        }
     }
 }
 
@@ -374,7 +393,8 @@ struct TrainingCard: View {
             isSchoolStrength: state.school?.strength == option,
             isRecommended: HighSchoolCareerStore.recommendedTraining(state: state) == option,
             recommendedBadge: copyResolver.resolve(AppCopyKey.trainingBadgeRecommended),
-            selection: $selection.focus
+            selection: $selection.focus,
+            extras: { expandedExtras }
         )
     }
 
@@ -411,19 +431,6 @@ struct TrainingCard: View {
                 }
             }
 
-            if let opportunity = state.trainingOpportunity {
-                BaseballCard(
-                    title: copyResolver.resolve(
-                        AppCopyKey.trainingOpportunityTitle,
-                        arguments: [.userText(HighSchoolPresentation.localized(opportunity.focus, resolver: copyResolver))]
-                    ),
-                    tone: .milestone
-                ) {
-                    Text(HighSchoolPresentation.localizedOpportunityReason(opportunity, resolver: copyResolver))
-                        .proseStyle()
-                }
-            }
-
             Text(copyResolver.resolve(AppCopyKey.trainingPrompt)).font(.headline)
             // 열거형은 고정 여섯 개다. 명시적 행은 SwiftUICore의 지연 item closure를
             // 만들지 않으면서 CaseIterable 선언 순서와 같은 화면 순서를 보존한다.
@@ -435,61 +442,59 @@ struct TrainingCard: View {
                 .id("hs.training.recovery")
             focusOptionButton(.gamePlanning)
 
-            if focus == .breakingBall, !breakingBalls.isEmpty {
-                let title = copyResolver.resolve(AppCopyKey.trainingPitchPickerTitle)
-                if let project = state.pitchLearningProject {
-                    BaseballCard(
-                        title: copyResolver.resolve(
-                            AppCopyKey.trainingPitchLearningTitle,
-                            arguments: [.userText(PitchCopy.localized(project.pitchType, resolver: copyResolver))]
-                        ),
-                        tone: project.isCompleted ? .positive : .milestone
-                    ) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            GameCopyText(learningStageKey(project.stage))
-                                .font(.subheadline.weight(.bold))
-                            GameCopyText(
-                                AppCopyKey.trainingPitchLearningProgress,
-                                arguments: [
-                                    .integer(project.practiceCredits),
-                                    .integer(CareerDisplayRules.pitchLearningPracticeCap),
-                                    .integer(project.qualityUses),
-                                    .integer(CareerDisplayRules.pitchLearningQualityUses),
-                                ]
-                            )
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                        }
-                        .accessibilityIdentifier("hs.training.pitchLearning.stage")
-                    }
-                    .accessibilityIdentifier("hs.training.pitchLearning")
-                }
-                BaseballCard(title: title) {
-                    targetPitchPicker(title: title)
-                }
-            }
+            // 강도·전망은 펼쳐진 추천 카드 안으로 들어간다.
+        }
+    }
 
-            BaseballCard(title: copyResolver.resolve(AppCopyKey.trainingIntensityTitle)) {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 6) {
-                        intensityOptionButton(.light)
-                        intensityOptionButton(.standard)
-                        intensityOptionButton(.intensive)
+    @ViewBuilder private var expandedExtras: some View {
+        if focus == .breakingBall, !breakingBalls.isEmpty {
+            let title = copyResolver.resolve(AppCopyKey.trainingPitchPickerTitle)
+            if let project = state.pitchLearningProject {
+                BaseballCard(
+                    title: copyResolver.resolve(
+                        AppCopyKey.trainingPitchLearningTitle,
+                        arguments: [.userText(PitchCopy.localized(project.pitchType, resolver: copyResolver))]
+                    ),
+                    tone: project.isCompleted ? .positive : .milestone
+                ) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        GameCopyText(learningStageKey(project.stage))
+                            .font(.subheadline.weight(.bold))
+                        GameCopyText(
+                            AppCopyKey.trainingPitchLearningProgress,
+                            arguments: [
+                                .integer(project.practiceCredits),
+                                .integer(CareerDisplayRules.pitchLearningPracticeCap),
+                                .integer(project.qualityUses),
+                                .integer(CareerDisplayRules.pitchLearningQualityUses),
+                            ]
+                        )
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(BaseballTheme.textSecondary)
                     }
-                    if doubleBonus {
-                        Text(copyResolver.resolve(AppCopyKey.trainingDoubleBonus))
-                            .detailStyle(BaseballTheme.textPrimary)
-                    }
-                    // 성장 전망은 결과 한 줄이다. 문장 전체를 의미색으로 칠하지 않는다 —
-                    // 색 의미는 칩이 맡고, 여기서는 읽히는 크기와 행간이 먼저다.
-                    let outlookPresentation = outlookCopy(resolver: copyResolver)
-                    // localization-safe: resolved-copy
-                    Text(outlookPresentation.text)
-                        .detailStyle(BaseballTheme.textPrimary)
-                        .accessibilityIdentifier("hs.training.outlook")
+                    .accessibilityIdentifier("hs.training.pitchLearning.stage")
                 }
+                .accessibilityIdentifier("hs.training.pitchLearning")
             }
-            // 훈련하기 · 3번 연속은 여기 없다 — 스크롤 밖 `TrainingCommitBar`가 탭 바 위에 고정한다.
+            BaseballCard(title: title) {
+                targetPitchPicker(title: title)
+            }
+        }
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                intensityOptionButton(.light)
+                intensityOptionButton(.standard)
+                intensityOptionButton(.intensive)
+            }
+            if doubleBonus {
+                Text(copyResolver.resolve(AppCopyKey.trainingDoubleBonus))
+                    .detailStyle(BaseballTheme.textPrimary)
+            }
+            let outlookPresentation = outlookCopy(resolver: copyResolver)
+            // localization-safe: resolved-copy
+            Text(outlookPresentation.text)
+                .detailStyle(BaseballTheme.textPrimary)
+                .accessibilityIdentifier("hs.training.outlook")
         }
     }
 }
@@ -502,7 +507,7 @@ struct TrainingEffectChip: Identifiable {
     var id: String { text }
 }
 
-struct TrainingFocusOptionButton: View {
+struct TrainingFocusOptionButton<Extras: View>: View {
     let option: TrainingFocus
     let title: String
     /// 오르는 능력 이름. 칩의 첫 장이자 접근성 효과 라벨의 앵커다.
@@ -520,8 +525,10 @@ struct TrainingFocusOptionButton: View {
     var isRecommended: Bool = false
     let recommendedBadge: String
     @Binding var selection: TrainingFocus
+    @ViewBuilder var extras: () -> Extras
 
     private var isSelected: Bool { selection == option }
+    private var compactChips: [TrainingEffectChip] { Array(chips.prefix(2)) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -550,8 +557,6 @@ struct TrainingFocusOptionButton: View {
                                     .background(BaseballTheme.action.opacity(0.25), in: Capsule())
                                     .foregroundStyle(BaseballTheme.action)
                             }
-                            // 학교 특기는 3년 내내 붙는 상수 보너스다. 기회와 특기가
-                            // 겹치는 턴을 알아보는 것이 훈련의 실제 결정이라 함께 표시한다.
                             if isSchoolStrength {
                                 // localization-safe: resolved-copy
                                 Text(schoolStrengthBadge)
@@ -560,6 +565,14 @@ struct TrainingFocusOptionButton: View {
                                     .background(BaseballTheme.action.opacity(0.25), in: Capsule())
                                 .foregroundStyle(BaseballTheme.action)
                             }
+                        }
+                        if !isSelected {
+                            EffectChipFlow {
+                                ForEach(compactChips) { chip in
+                                    EffectChip(text: chip.text, tone: chip.tone, systemImage: chip.systemImage)
+                                }
+                            }
+                            .accessibilityIdentifier("hs.focus.effect.\(option.rawValue)")
                         }
                     }
                     Spacer()
@@ -572,8 +585,8 @@ struct TrainingFocusOptionButton: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("hs.focus.\(option.rawValue)")
             .accessibilityAddTraits(isSelected ? .isSelected : [])
+            if isSelected {
             VStack(alignment: .leading, spacing: 6) {
-                // 효과 문장 대신 칩. 이득(구위 ▲)·비용(피로 +8)·위험(부상)이 한 줄에 선다.
                 EffectChipFlow {
                     ForEach(chips) { chip in
                         EffectChip(text: chip.text, tone: chip.tone, systemImage: chip.systemImage)
@@ -585,33 +598,31 @@ struct TrainingFocusOptionButton: View {
                 if let windEffect {
                     EffectChip(text: windEffect, tone: .neutral, systemImage: "wind")
                 }
-                // 긴 설명은 고른 카드에서만, 접어서. 여섯 장이 저마다 두 문장을 펼치면
-                // 정작 고를 수 있는 여섯 줄이 그 안에 묻힌다.
-                if isSelected {
-                    ProgressiveDisclosure(
-                        contentID: "hs.training.option.\(option.rawValue)",
-                        title: detailTitle,
-                        summary: detailSummary
-                    ) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            GlossaryText(
-                                text: detail,
-                                font: BaseballType.detail,
-                                color: BaseballTheme.textSecondary
-                            )
-                            GlossaryText(
-                                text: tradeoff,
-                                font: BaseballType.detail,
-                                color: BaseballTheme.textSecondary
-                            )
-                        }
+                ProgressiveDisclosure(
+                    contentID: "hs.training.option.\(option.rawValue)",
+                    title: detailTitle,
+                    summary: detailSummary
+                ) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        GlossaryText(
+                            text: detail,
+                            font: BaseballType.detail,
+                            color: BaseballTheme.textSecondary
+                        )
+                        GlossaryText(
+                            text: tradeoff,
+                            font: BaseballType.detail,
+                            color: BaseballTheme.textSecondary
+                        )
                     }
                 }
+                extras()
             }
             .padding(.leading, 40)
+            }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+        .padding(isSelected ? 12 : 8)
+        .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget, alignment: .leading)
         .background(
             isSelected ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surface,
             in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)

@@ -945,13 +945,11 @@ private struct ProLockedView: View {
     }
 }
 
-/// 프로 커리어 안의 오늘/이번 주 두 화면.
+/// 프로 커리어. `-uiTestOpenProWeek`는 UI 테스트가 넘기므로 인자만 읽고 무동작이다.
 private struct ProCareerTabs: View {
     let career: MobileCareerStore
     let retiresIntoSignatureLegacy: Bool
     let onStartNewPlayer: () -> Void
-    @State private var showsToday: Bool
-    @Environment(\.gameCopyResolver) private var copyResolver
 
     init(
         career: MobileCareerStore,
@@ -962,44 +960,19 @@ private struct ProCareerTabs: View {
         self.retiresIntoSignatureLegacy = retiresIntoSignatureLegacy
         self.onStartNewPlayer = onStartNewPlayer
 #if DEBUG
-        let env = ProcessInfo.processInfo.environment
-        let openWeek = ProcessInfo.processInfo.arguments.contains("-uiTestOpenProWeek")
-            || env["BASEBALL_UI_RECORD_SHARE"] == "1"
-            || env["BASEBALL_UI_NATIONAL_SHARE"] == "1"
-            || env["BASEBALL_UI_RETIRED_SHARE"] == "1"
-        _showsToday = State(initialValue: !openWeek)
-#else
-        _showsToday = State(initialValue: true)
+        _ = ProcessInfo.processInfo.arguments.contains("-uiTestOpenProWeek")
 #endif
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker(copyResolver.resolve(AppCopyKey.proViewPicker), selection: $showsToday) {
-                GameCopyText(AppCopyKey.proToday).tag(true)
-                GameCopyText(AppCopyKey.proThisWeek).tag(false)
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, BaseballMetrics.gutter)
-            .padding(.vertical, 8)
-
-            if showsToday {
-                TodayView(career: career, onOpenWeek: { showsToday = false })
-            } else {
-                CareerFlowView(
-                    career: career,
-                    onStartNewPlayer: onStartNewPlayer,
-                    retiresIntoSignatureLegacy: retiresIntoSignatureLegacy
-                )
-            }
-        }
+        CareerFlowView(
+            career: career,
+            onStartNewPlayer: onStartNewPlayer,
+            retiresIntoSignatureLegacy: retiresIntoSignatureLegacy
+        )
         .background(BaseballTheme.canvas)
-        .onChange(of: career.state?.phase) { _, phase in
-            if phase == .importantGame || phase == .completed { showsToday = false }
-        }
-        .onAppear {
-            if career.state?.phase == .completed { showsToday = false }
-        }
+        // 고교 쪽과 같은 자리에서 내비게이션 바를 숨겨야 스크롤뷰가 바 높이만큼 위를 비우지 않는다.
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 

@@ -11,6 +11,8 @@ struct CareerFlowView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.gameCopyResolver) private var copyResolver
+    @State private var dismissedFollowUpIDs: Set<String> = []
+    @State private var dismissedBanner = false
 
     var body: some View {
         Group {
@@ -20,8 +22,7 @@ struct CareerFlowView: View {
                 decision
             }
         }
-        .navigationTitle(copyResolver.resolve(.navigationThisWeek))
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .sensoryFeedback(trigger: career.feedbackTrigger) { _, _ in
             switch career.feedbackCue {
             case .growth: .impact(weight: .heavy)
@@ -45,7 +46,20 @@ struct CareerFlowView: View {
                     ProContractOfferView(
                         career: career,
                         state: state,
-                        notices: CareerFlowNotices(career: career, state: state)
+                        notices: CareerFlowNotices(
+                            career: career,
+                            state: state,
+                            notice: CareerNoticeQueue.current(
+                                hasInjury: career.pendingInjuryEvent != nil,
+                                hasGrowth: !career.pendingGains.isEmpty
+                                    && !CareerFlowNotices.settlementOwnsGrowth(state),
+                                followUps: [],
+                                hasBanner: false
+                            ),
+                            bannerText: nil,
+                            onDismissFollowUp: { _ in },
+                            onDismissBanner: {}
+                        )
                     )
                     .background(BaseballTheme.canvas)
                     .animation(reduceMotion ? nil : .snappy, value: career.feedbackTrigger)
@@ -59,11 +73,33 @@ struct CareerFlowView: View {
     }
 
     @ViewBuilder private func phaseScroll(_ state: ProCareerSnapshot) -> some View {
+        let weekProgress = career.lastSummary.flatMap(ProCareerPresentation.weekProgress)
+        let bannerText = CareerFlowNotices.bannerText(
+            career.lastSummary,
+            weekProgress: weekProgress,
+            state: state,
+            resolver: copyResolver
+        )
+        let notice = CareerNoticeQueue.current(
+            hasInjury: career.pendingInjuryEvent != nil,
+            hasGrowth: !career.pendingGains.isEmpty && !CareerFlowNotices.settlementOwnsGrowth(state),
+            followUps: (state.resolvedFollowUps ?? []).filter { !dismissedFollowUpIDs.contains($0.id) },
+            hasBanner: bannerText != nil && !dismissedBanner
+        )
         ScrollView {
             VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-                CareerFlowNotices(career: career, state: state)
+                if state.phase == .weeklyPlan {
+                    ProCareerStatusHeader(state: state)
+                }
+                CareerFlowNotices(
+                    career: career,
+                    state: state,
+                    notice: notice,
+                    bannerText: bannerText,
+                    onDismissFollowUp: { dismissedFollowUpIDs.insert($0) },
+                    onDismissBanner: { dismissedBanner = true }
+                )
                 let settlementOwnsGrowth = CareerFlowNotices.settlementOwnsGrowth(state)
-                let weekProgress = career.lastSummary.flatMap(ProCareerPresentation.weekProgress)
 
                 // 국면 화면은 하나만 그린다. `.animation(value: feedbackTrigger)`가 걸린 컨테이너 안에서
                 // 국면이 바뀌면 SwiftUI가 옛 화면과 새 화면을 같은 자리에 겹쳐 크로스페이드했고,
@@ -90,14 +126,24 @@ struct CareerFlowView: View {
                             WeeklyPlanView(
                                 career: career,
                                 state: state,
-                                weekProgress: weekProgress
+                                weekProgress: weekProgress,
+                                hidesFollowUps: true,
+                                pendingNotice: notice != nil,
+                                onAcknowledgeNotice: {
+                                    acknowledge(notice, state: state)
+                                }
                             )
                         }
 #else
                         WeeklyPlanView(
                             career: career,
                             state: state,
-                            weekProgress: weekProgress
+                            weekProgress: weekProgress,
+                            hidesFollowUps: true,
+                            pendingNotice: notice != nil,
+                            onAcknowledgeNotice: {
+                                acknowledge(notice, state: state)
+                            }
                         )
 #endif
                     case .seasonDecision:
@@ -172,6 +218,9 @@ struct CareerFlowView: View {
                 .id(state.phase)
                 .transition(.identity)
                 .background(BaseballTheme.canvas)
+                if state.phase == .weeklyPlan {
+                    ProCareerNewsSection(state: state)
+                }
             }
             .padding(BaseballMetrics.gutter)
             // 고교 화면과 같은 이유 — 떠 있는 탭 바가 마지막 행동을 덮는다.
@@ -179,6 +228,22 @@ struct CareerFlowView: View {
         }
         .background(BaseballTheme.canvas)
         .animation(reduceMotion ? nil : .snappy, value: career.feedbackTrigger)
+        .onChange(of: career.lastSummary) { _, _ in dismissedBanner = false }
+    }
+
+    private func acknowledge(_ notice: CareerNoticeQueue.Item?, state: ProCareerSnapshot) {
+        switch notice {
+        case .injury:
+            career.acknowledgeInjuryEvent()
+        case .growth:
+            career.acknowledgeGains()
+        case .followUp(let followUp):
+            dismissedFollowUpIDs.insert(followUp.id)
+        case .banner:
+            dismissedBanner = true
+        case nil:
+            break
+        }
     }
 
 #if DEBUG
@@ -217,12 +282,36 @@ struct CareerFlowView: View {
 #endif
 }
 
-/// 국면 화면 위에 얹는 알림 — 부상 카드, 성장 카드, 주간 배너.
-/// 부상 카드와 성장 카드는 한 번에 하나만 그린다. 부상은 확인이 필요하니 먼저, 성장은
-/// 부상을 확인한 다음에 온다(두 카드가 겹쳐 확인/닫기가 헷갈렸다 — 페르소나 §2-5).
+enum CareerNoticeQueue {
+    enum Item: Equatable {
+        case injury
+        case growth
+        case followUp(ProDecisionFollowUp)
+        case banner
+    }
+
+    static func current(
+        hasInjury: Bool,
+        hasGrowth: Bool,
+        followUps: [ProDecisionFollowUp],
+        hasBanner: Bool
+    ) -> Item? {
+        if hasInjury { return .injury }
+        if hasGrowth { return .growth }
+        if let followUp = followUps.first { return .followUp(followUp) }
+        if hasBanner { return .banner }
+        return nil
+    }
+}
+
+/// 국면 화면 위에 얹는 알림 — 부상 → 성장 → 결정 후속 → 주간 배너. 한 번에 한 장.
 struct CareerFlowNotices: View {
     let career: MobileCareerStore
     let state: ProCareerSnapshot
+    var notice: CareerNoticeQueue.Item?
+    var bannerText: String?
+    var onDismissFollowUp: (String) -> Void = { _ in }
+    var onDismissBanner: () -> Void = {}
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -233,44 +322,61 @@ struct CareerFlowNotices: View {
     }
 
     var body: some View {
-        if let injury = career.pendingInjuryEvent {
-            ProInjuryResultCard(event: injury, onAcknowledge: career.acknowledgeInjuryEvent)
-                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
-        } else if !career.pendingGains.isEmpty, !Self.settlementOwnsGrowth(state) {
-            GrowthCelebrationView(
-                gains: career.pendingGains,
-                stageContext: .pro,
-                onDismiss: career.acknowledgeGains
-            )
+        switch notice {
+        case .injury:
+            if let injury = career.pendingInjuryEvent {
+                ProInjuryResultCard(event: injury, onAcknowledge: career.acknowledgeInjuryEvent)
+                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+            }
+        case .growth:
+            if !career.pendingGains.isEmpty, !Self.settlementOwnsGrowth(state) {
+                GrowthCelebrationView(
+                    gains: career.pendingGains,
+                    stageContext: .pro,
+                    onDismiss: career.acknowledgeGains
+                )
                 .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
-        }
-        // 주간 진행 요약("N주차 · 감독의 믿음 -1 · 피로 +0")은 아래 상태 타일과 같은 값이라
-        // 배너로 다시 찍지 않는다 — 타일 캡션으로 한 번만 보여 준다. 승격·역할 변경·
-        // 주요 기록처럼 타일에 없는 항목만 배너에 남긴다. 결정 국면에서는 키아트 눈썹이
-        // 같은 주차를 이미 말하므로 배너를 숨긴다.
-        let weekProgress = career.lastSummary.flatMap(ProCareerPresentation.weekProgress)
-        if let summary = career.lastSummary,
-           career.pendingGains.isEmpty,
-           state.phase != .seasonDecision,
-           let bannerText = Self.bannerText(
-               summary,
-               weekProgress: weekProgress,
-               state: state,
-               resolver: copyResolver
-           ) {
-            ResultBanner(summary: bannerText, cue: career.feedbackCue)
+            }
+        case .followUp(let followUp):
+            followUpCard(followUp)
                 .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+        case .banner:
+            if let bannerText {
+                ResultBanner(summary: bannerText, cue: career.feedbackCue, onDismiss: onDismissBanner)
+                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+            }
+        case nil:
+            EmptyView()
         }
     }
 
+    @ViewBuilder private func followUpCard(_ followUp: ProDecisionFollowUp) -> some View {
+        BaseballCard(
+            title: copyResolver.resolve(.decisionFollowUpCardTitle),
+            tone: .milestone
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(verbatim: ProCareerPresentation.followUpSummary(followUp, resolver: copyResolver))
+                    .detailStyle()
+                Button(copyResolver.resolve(AppCopyKey.noticeDismiss)) {
+                    onDismissFollowUp(followUp.id)
+                }
+                .font(BaseballType.detail.weight(.semibold))
+                .frame(minHeight: BaseballMetrics.minimumTapTarget)
+            }
+        }
+        .accessibilityIdentifier("pro.weekly.decisionFollowUp.\(followUp.type.rawValue)")
+    }
+
     /// 배너에 실을 문장. 주간 진행 요약이면 타일에 없는 나머지 항목만 남기고, 없으면 nil.
-    /// 한국어 저장본의 나머지 항목은 한국어 문장이라 다른 언어에서는 기존 번역 경로를 탄다.
-    private static func bannerText(
-        _ summary: String,
+    static func bannerText(
+        _ summary: String?,
         weekProgress: ProCareerPresentation.WeekProgressSummary?,
         state: ProCareerSnapshot,
         resolver: GameCopyResolver
     ) -> String? {
+        guard let summary else { return nil }
+        guard state.phase != .seasonDecision else { return nil }
         guard let weekProgress else {
             return ProCareerPresentation.storeSummary(summary, state: state, resolver: resolver)
         }

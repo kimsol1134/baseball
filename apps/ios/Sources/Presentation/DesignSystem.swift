@@ -291,6 +291,8 @@ enum BaseballMetrics {
     static let minimumTapTarget: CGFloat = 44
     /// 화면당 하나뿐인 큰 키아트의 높이.
     static let keyArtHeight: CGFloat = 190
+    /// 훈련 루프처럼 같은 그림이 반복될 때의 낮은 키아트.
+    static let keyArtHeightCompact: CGFloat = 140
     /// 떠 있는 탭 바 아래로 스크롤 콘텐츠가 숨지 않게 비워 두는 높이.
     ///
     /// iOS 26의 탭 바는 화면 위에 떠 있고, 이 앱은 국면에 따라 탭 바를 숨겼다 보였다 하므로
@@ -636,13 +638,29 @@ struct KeyArtHeader: View {
     @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
+        // 글이 크기를 정하고 그림은 그 뒤를 채운다. 그림을 ZStack의 형제로 두면 스크롤뷰 안에서
+        // 무한 높이를 제안받아 화면을 통째로 덮었고(3차 검수), 고정 높이로 두면 긴 제목이
+        // 아래 콘텐츠 위로 겹쳤다. 최소 높이 + 배경 그림이 둘 다 푼다.
         ZStack(alignment: .bottomLeading) {
+            Color.clear.frame(height: height)
+            VStack(alignment: .leading, spacing: 6) {
+                // localization-safe: resolved-copy
+                Text(eyebrow).eyebrowStyle(accent)
+                // localization-safe: resolved-copy
+                Text(title)
+                    .font(BaseballType.display)
+                    .foregroundStyle(BaseballTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 2)
+            .padding(.bottom, 2)
+        }
+        .frame(maxWidth: .infinity)
+        .background {
             if contrast == .standard {
                 Image(art.rawValue)
                     .resizable()
                     .scaledToFill()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
                     .overlay {
                         // 캔버스와 같은 색으로 아래를 덮어 이미지가 화면에 녹아들게 한다.
                         // 밝은 카드 위에 사진을 얹으면 배너처럼 떠 보인다.
@@ -656,24 +674,11 @@ struct KeyArtHeader: View {
                             endPoint: .bottom
                         )
                     }
+                    .clipped()
             } else {
-                Rectangle()
-                    .fill(BaseballTheme.surfaceRaised)
+                Rectangle().fill(BaseballTheme.surfaceRaised)
             }
-            VStack(alignment: .leading, spacing: 6) {
-                // localization-safe: resolved-copy
-                Text(eyebrow).eyebrowStyle(accent)
-                // localization-safe: resolved-copy
-                Text(title)
-                    .font(BaseballType.display)
-                    .foregroundStyle(BaseballTheme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, 2)
-            .padding(.bottom, 2)
         }
-        .frame(height: height)
-        .frame(maxWidth: .infinity)
         .clipped()
         .accessibilityElement(children: .combine)
     }

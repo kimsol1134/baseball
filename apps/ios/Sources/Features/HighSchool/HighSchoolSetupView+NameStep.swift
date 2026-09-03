@@ -275,8 +275,14 @@ extension HighSchoolSetupView {
     private var soulShopCard: some View {
         BaseballCard(title: copyResolver.resolve(AppCopyKey.setupInheritanceShopTitle), tone: .raised) {
             VStack(alignment: .leading, spacing: 8) {
-                GameCopyText(AppCopyKey.setupInheritanceShopDescription)
-                    .detailStyle()
+                ProgressiveDisclosure(
+                    contentID: "hs.setup.inheritance.shop.v1",
+                    title: copyResolver.resolve(AppCopyKey.setupInheritanceShopGuideTitle),
+                    summary: copyResolver.resolve(AppCopyKey.setupInheritanceShopSummary)
+                ) {
+                    GameCopyText(AppCopyKey.setupInheritanceShopDescription)
+                        .detailStyle()
+                }
                 ForEach(SoulBoostID.allCases, id: \.self) { boost in
                     let selected = selectedBoosts.contains(boost)
                     let affordable = selected || boost.cost <= remainingSoul

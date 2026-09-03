@@ -169,12 +169,85 @@ struct DraftReasonCard: View {
     }
 }
 
+/// 드래프트 직후 1화면. 도장·점수·이유 칩 2개·주 행동 하나만.
+struct DraftPeakResultView: View {
+    let state: HighSchoolCareerSnapshot
+    let drafted: Bool
+    let onContinue: () -> Void
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            if let draft = state.draftResult {
+                let breakdown = HighSchoolCareerStore.draftEvaluationBreakdown(state: state)
+                let ranked = breakdown.items.sorted { lhs, rhs in
+                    draft.outcome == .drafted ? lhs.points > rhs.points : lhs.points < rhs.points
+                }
+                let chips = Array(ranked.prefix(2))
+                Text(verbatim: copyResolver.resolve(draft.outcome.displayCopyToken))
+                    .font(BaseballType.display)
+                    .foregroundStyle(draft.outcome == .drafted ? BaseballTheme.positive : BaseballTheme.negative)
+                Text(copyResolver.resolve(
+                    AppCopyKey.conclusionEvaluationScore,
+                    arguments: [.integer(draft.evaluationScore)]
+                ))
+                .font(BaseballType.heroNumeral)
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .accessibilityIdentifier("hs.bestEvaluation")
+                EffectChipFlow {
+                    ForEach(chips) { item in
+                        EffectChip(
+                            text: item.points >= 0
+                                ? copyResolver.resolve(
+                                    AppCopyKey.draftReasonChipGain,
+                                    arguments: [
+                                        .userText(copyResolver.resolve(nameKey(for: item.id))),
+                                        .integer(item.points),
+                                    ]
+                                )
+                                : copyResolver.resolve(
+                                    AppCopyKey.draftReasonChipCost,
+                                    arguments: [
+                                        .userText(copyResolver.resolve(nameKey(for: item.id))),
+                                        .integer(-item.points),
+                                    ]
+                                ),
+                            tone: item.points >= 0 ? .gain : .cost
+                        )
+                    }
+                }
+            }
+            PrimaryButton(
+                title: copyResolver.resolve(
+                    drafted ? AppCopyKey.conclusionEnterPro : AppCopyKey.draftResultPrepareNext
+                ),
+                identifier: "hs.draft.result.continue",
+                action: onContinue
+            )
+        }
+    }
+
+    private func nameKey(for id: String) -> GameCopyKey {
+        switch id {
+        case "rating": AppCopyKey.draftReasonRating
+        case "performance": AppCopyKey.draftReasonPerformance
+        case "awakening": AppCopyKey.draftReasonAwakening
+        case "relationship": AppCopyKey.draftReasonRelationship
+        case "overuse": AppCopyKey.draftReasonOveruse
+        case "season": AppCopyKey.draftReasonSeason
+        case "fan": AppCopyKey.draftReasonFan
+        default: AppCopyKey.draftReasonKarma
+        }
+    }
+}
+
 struct LegacyCard: View {
     @State private var confirmingLegacy = false
     @Environment(\.gameCopyResolver) private var copyResolver
 
     let career: HighSchoolCareerStore
     let state: HighSchoolCareerSnapshot
+    var includeReason = true
 
     var body: some View {
         let signatureCandidates = career.usesSignatureLegacyRules
@@ -184,12 +257,14 @@ struct LegacyCard: View {
             $0.id == career.selectedSignatureLegacyID
         }
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            if includeReason {
             DraftReasonCard(
                 state: state,
                 bestPast: career.archive
                     .filter { $0.lifeNumber != state.lifeNumber }
                     .map(\.evaluationScore).max() ?? 0
             )
+            }
             // 아직 접지 않은 회차의 카드를 미리 만들어 보여 준다. 3년을 함께한
             // 선수의 얼굴·별명·기록이 한 장에 담긴 것을 보고 나서 작별하는 것과,
             // 숫자 목록을 보고 작별하는 것은 다른 경험이다.
@@ -469,6 +544,7 @@ struct CompletionCard: View {
     let hasEnteredPro: Bool
     let onEnterPro: (DraftResultSnapshot, PitcherSnapshot, PlayerIdentitySnapshot) -> Void
     var onSkipToPro: (() -> Void)? = nil
+    var includeReason = true
     /// 환생 스탬프를 띄우고 나서 다음 회차로 넘어간다. 화면이 갈아 끼워지기 전에
     /// 회차 번호를 보여 줘야 회차가 쌓이는 감각이 생긴다.
     let onRebirth: () -> Void
@@ -479,7 +555,9 @@ struct CompletionCard: View {
             let bestPast = career.archive
                 .filter { $0.lifeNumber != state.lifeNumber }
                 .map(\.evaluationScore).max() ?? 0
-            DraftReasonCard(state: state, bestPast: bestPast)
+            if includeReason {
+                DraftReasonCard(state: state, bestPast: bestPast)
+            }
             let completionSummary = state.draftResult.map {
                 HighSchoolConclusionPresentation.localizedDraftSummary($0, resolver: copyResolver)
             } ?? copyResolver.resolve(AppCopyKey.conclusionCompletionEnded)

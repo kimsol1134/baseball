@@ -318,6 +318,14 @@ public enum AppCopyKey {
     public static let chapterMetricFatigue = GameCopyKey.localizable("chapter.metric.fatigue")
     public static let chapterMetricTeamTrust = GameCopyKey.localizable("chapter.metric.team-trust")
     public static let chapterMetricTraining = GameCopyKey.localizable("chapter.metric.training")
+    public static let chapterMetricDraftOutlook = GameCopyKey.localizable("chapter.metric.draft-outlook")
+    public static let chapterMetricDraftCutoff = GameCopyKey.localizable("chapter.metric.draft-cutoff")
+    public static let chapterChipWind = GameCopyKey.localizable("chapter.chip.wind")
+    public static let chapterChipSkill = GameCopyKey.localizable("chapter.chip.skill")
+    public static let noticeConfirmAndContinue = GameCopyKey.localizable("notice.confirm-and-continue")
+    public static let noticeDismiss = GameCopyKey.localizable("notice.dismiss")
+    public static let newsSectionTitle = GameCopyKey.localizable("news.section.title")
+    public static let newsSectionSummary = GameCopyKey.localizable("news.section.summary")
     public static let chapterWindExpand = GameCopyKey.localizable("chapter.wind.expand")
     public static let chapterWindCollapse = GameCopyKey.localizable("chapter.wind.collapse")
     public static let chapterWindAccessibility = GameCopyKey.localizable("chapter.wind.accessibility")
@@ -328,6 +336,8 @@ public enum AppCopyKey {
     public static let chapterHeaderKeys: [GameCopyKey] = [
         chapterHeaderEyebrowFirst, chapterHeaderEyebrowRepeat, chapterHeaderTitle,
         chapterMetricFatigue, chapterMetricTeamTrust, chapterMetricTraining,
+        chapterMetricDraftOutlook, chapterMetricDraftCutoff, chapterChipWind, chapterChipSkill,
+        noticeConfirmAndContinue, noticeDismiss, newsSectionTitle, newsSectionSummary,
         chapterWindExpand, chapterWindCollapse, chapterWindAccessibility, chapterWindEffect,
         chapterHeaderDraftForecast,
     ]
