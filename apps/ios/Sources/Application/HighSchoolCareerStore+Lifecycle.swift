@@ -268,6 +268,66 @@ extension HighSchoolCareerStore {
             return false
         }
     }
+
+    /// Draft-conclusion share preview. Korean name, fictional club, 3-year high-school line.
+    @discardableResult
+    func installDraftShareFixtureForUITesting() -> Bool {
+        guard installDraftedCareerFixtureForUITesting(seed: "20260723") else { return false }
+        guard let current = result else { return false }
+        do {
+            var object = try JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(current)
+            ) as! [String: Any]
+            guard var snapshot = object["snapshot"] as? [String: Any] else { return false }
+            var identity = snapshot["identity"] as? [String: Any] ?? [:]
+            identity["name"] = "박하준"
+            snapshot["identity"] = identity
+            var pitcher = snapshot["pitcher"] as? [String: Any] ?? [:]
+            pitcher["name"] = "박하준"
+            snapshot["pitcher"] = pitcher
+            var performance = snapshot["performance"] as? [String: Any] ?? [:]
+            performance["importantGamesCompleted"] = 18
+            performance["strikeouts"] = 187
+            performance["runsAllowed"] = 41
+            performance["outs"] = 351
+            performance["walks"] = 38
+            performance["hits"] = 92
+            performance["pitches"] = 1840
+            snapshot["performance"] = performance
+            let team = HighSchoolCareerEngine.teams.first { $0.id == "busan_marines" }
+                ?? HighSchoolCareerEngine.teams[1]
+            let draft = DraftResultSnapshot(
+                outcome: .drafted,
+                evaluationScore: 84,
+                projectedRange: "1라운드",
+                team: team,
+                round: 1,
+                overallPick: 4,
+                signingBonus: 180_000_000,
+                firstSeasonGoal: "퓨처스 선발 10경기와 볼넷률 8% 이하",
+                evaluationBreakdown: ["고교 3년 기록", "구위", "제구"],
+                summary: "지명 구단 · \(team.name). 구위와 고교 경기 기록에서 높은 평가를 받았습니다."
+            )
+            snapshot["draftResult"] = try JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(draft)
+            )
+            object["snapshot"] = snapshot
+            let decoded = try JSONDecoder().decode(
+                HighSchoolCareerResult.self,
+                from: JSONSerialization.data(withJSONObject: object)
+            )
+            updatePersisted {
+                $0.result = decoded
+                $0.enteredProCareerID = nil
+            }
+            lastSummary = nil
+            loadState = .ready
+            return save()
+        } catch {
+            loadState = .failed("UI 테스트용 드래프트 공유 픽스처를 만들지 못했습니다: \(error.localizedDescription)")
+            return false
+        }
+    }
 #endif
 
     private func applyRestoreOutcome(_ outcome: RestoreOutcome) {

@@ -87,7 +87,7 @@ targets:
         # 호스트가 비어 있으면 빈 배열이어야 한다. `applinks:`만 넣으면 서명이 깨진다.
         # 도메인을 붙인 뒤 CHALLENGE_LINK_HOST와 아래 한 줄을 함께 채운다:
         # com.apple.developer.associated-domains: [applinks:$(CHALLENGE_LINK_HOST)]
-        com.apple.developer.associated-domains: []
+        com.apple.developer.associated-domains: [applinks:baseball-reincarnation.vercel.app]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.solkim.baseball.ios
@@ -106,7 +106,7 @@ targets:
         # 검증한 만큼만 선언한다.
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: NO
-        CHALLENGE_LINK_HOST: ""
+        CHALLENGE_LINK_HOST: "baseball-reincarnation.vercel.app"
       configs:
         Release:
           # Xcode-managed 개발 키가 무인 codesign 승인을 기다리지 않도록, Release는

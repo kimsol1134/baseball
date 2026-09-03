@@ -370,6 +370,7 @@ struct CareerFlowNotices: View {
                 .font(BaseballType.detail.weight(.semibold))
                 .frame(minHeight: BaseballMetrics.minimumTapTarget)
                 .accessibilityLabel(copyResolver.resolve(AppCopyKey.noticeDismiss))
+                .accessibilityIdentifier("pro.notice.followUp.dismiss")
             }
         }
         .accessibilityIdentifier("pro.weekly.decisionFollowUp.\(followUp.type.rawValue)")

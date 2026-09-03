@@ -28,7 +28,7 @@ final class CareerShareCardTests: XCTestCase {
             XCTAssertEqual(pixelHeight, CareerShareCardLayout.pixelHeight, accuracy: 0)
             let data = try XCTUnwrap(image.pngData())
             XCTAssertFalse(data.isEmpty)
-            let url = directory.appendingPathComponent("\(model.kind.rawValue).png")
+            let url = directory.appendingPathComponent("sample-\(model.kind.rawValue).png")
             try data.write(to: url)
             print("SHARE_CARD \(url.path) px=\(pixelWidth)x\(pixelHeight)")
         }
@@ -69,11 +69,88 @@ final class CareerShareCardTests: XCTestCase {
             XCTAssertEqual(pixelWidth, CareerShareCardLayout.pixelWidth, accuracy: 0)
             XCTAssertEqual(pixelHeight, CareerShareCardLayout.pixelHeight, accuracy: 0)
             let data = try XCTUnwrap(image.pngData())
-            try data.write(to: directory.appendingPathComponent("\(kind.rawValue).png"))
+            try data.write(to: directory.appendingPathComponent("maximal-\(kind.rawValue).png"))
             print(
                 "SHARE_CARD_MAX \(kind.rawValue) unconstrained=\(unconstrained.width)x\(unconstrained.height)"
             )
         }
+    }
+
+    func testShareCardsFromRealisticModelsWritePNGs() throws {
+        let resolver = GameCopyResolver(language: .korean, policy: .releaseSafe)
+        let directory = shareDirectory()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let highSchool = HighSchoolCareerStore(saveWriter: { _ in true })
+        XCTAssertTrue(highSchool.installDraftShareFixtureForUITesting())
+        let draftState = try XCTUnwrap(highSchool.state)
+        let draftResult = try XCTUnwrap(draftState.draftResult)
+        let draft = CareerSharePresentation.draft(
+            result: draftResult,
+            state: draftState,
+            resolver: resolver
+        )
+        XCTAssertEqual(draft.playerName, "박하준")
+        XCTAssertEqual(draft.headline, resolver.resolve(ShareUICopyKey.headlineDraft))
+        XCTAssertNotEqual(draft.headline, CareerShareCardKind.draft.rawValue)
+        XCTAssertEqual(draftResult.round, 1)
+        XCTAssertEqual(draftResult.overallPick, 4)
+        XCTAssertEqual(draftResult.team?.id, "busan_marines")
+        XCTAssertLessThanOrEqual(draft.stats.count, CareerShareCardLayout.maxStats)
+        XCTAssertTrue(draft.badges.contains { $0.contains("84") })
+        XCTAssertFalse(draft.stats.contains { $0.label == "승-패-세이브" })
+        try writeSharePNG(draft, to: directory.appendingPathComponent("draft.png"))
+
+        let recordStore = MobileCareerStore(saveWriter: { _ in true }, configuration: .journeyV1Tests)
+        XCTAssertTrue(recordStore.installRecordShareFixtureForUITesting())
+        XCTAssertEqual(recordStore.state?.phase, .weeklyPlan)
+        let recordState = try XCTUnwrap(recordStore.state)
+        let stamp = CareerDisplayRules.challengeStamp(
+            highSchoolCareerID: "career-20260723-life-1"
+        )
+        let milestone = try XCTUnwrap(
+            CareerSharePresentation.recordMilestone(
+                state: recordState,
+                stamp: stamp,
+                resolver: resolver
+            )
+        )
+        XCTAssertEqual(milestone.playerName, "김도윤")
+        XCTAssertEqual(milestone.headline, resolver.resolve(ShareUICopyKey.headlineRecord))
+        XCTAssertNotEqual(milestone.headline, CareerShareCardKind.record.rawValue)
+        XCTAssertTrue(milestone.detail.contains("200") || milestone.badges.contains { $0.contains("200") })
+        try writeSharePNG(milestone, to: directory.appendingPathComponent("record.png"))
+
+        let followUp = try XCTUnwrap(recordState.resolvedFollowUps?.first)
+        let qs = try XCTUnwrap(
+            CareerSharePresentation.recordQS(
+                followUp: followUp,
+                state: recordState,
+                stamp: stamp,
+                resolver: resolver
+            )
+        )
+        XCTAssertEqual(qs.headline, resolver.resolve(ShareUICopyKey.headlineRecord))
+        XCTAssertEqual(qs.stats.first?.value, "3")
+
+        let nationalStore = MobileCareerStore(saveWriter: { _ in true }, configuration: .journeyV1Tests)
+        XCTAssertTrue(nationalStore.installNationalShareFixtureForUITesting())
+        let nationalState = try XCTUnwrap(nationalStore.state)
+        let tournament = try XCTUnwrap(nationalState.nationalTournament)
+        let national = CareerSharePresentation.national(
+            state: nationalState,
+            tournament: tournament,
+            stamp: stamp,
+            resolver: resolver
+        )
+        XCTAssertEqual(national.playerName, "이시우")
+        XCTAssertEqual(national.headline, resolver.resolve(ShareUICopyKey.headlineNational))
+        XCTAssertNotEqual(national.headline, CareerShareCardKind.national.rawValue)
+        XCTAssertTrue(national.hasMedal)
+        XCTAssertTrue(tournament.exempted)
+        XCTAssertFalse(national.stats.contains { $0.label.contains("처리됐습니다") })
+        XCTAssertTrue(national.stats.contains { $0.label == resolver.resolve(ShareUICopyKey.nationalExempted) })
+        try writeSharePNG(national, to: directory.appendingPathComponent("national.png"))
     }
 
     func testRetirementCardTitleIsPlayerNameNotKindLabel() throws {
@@ -233,6 +310,20 @@ final class CareerShareCardTests: XCTestCase {
             season: 20,
             hasMedal: true
         )
+    }
+
+    private func writeSharePNG(_ model: CareerShareCardModel, to url: URL) throws {
+        let image = try XCTUnwrap(
+            CareerShareCardRenderer.image(for: model),
+            "\(model.kind.rawValue) realistic card did not render"
+        )
+        let pixelWidth = image.size.width * image.scale
+        let pixelHeight = image.size.height * image.scale
+        XCTAssertEqual(pixelWidth, CareerShareCardLayout.pixelWidth, accuracy: 0)
+        XCTAssertEqual(pixelHeight, CareerShareCardLayout.pixelHeight, accuracy: 0)
+        let data = try XCTUnwrap(image.pngData())
+        try data.write(to: url)
+        print("SHARE_CARD_REAL \(url.path) px=\(pixelWidth)x\(pixelHeight) headline=\(model.headline)")
     }
 
     private func shareDirectory() -> URL {

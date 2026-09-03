@@ -156,12 +156,6 @@ enum CareerSharePresentation {
                 value: "\(strikeouts)"
             )
         )
-        stats.append(
-            CareerShareStat(
-                label: resolver.resolve(ShareUICopyKey.draftGrade),
-                value: "\(result.evaluationScore)"
-            )
-        )
         var badges: [String] = []
         if let teamName { badges.append(teamName) }
         badges.append(
@@ -169,6 +163,9 @@ enum CareerSharePresentation {
                 result.projectedRange,
                 resolver: resolver
             )
+        )
+        badges.append(
+            "\(resolver.resolve(ShareUICopyKey.draftGrade)) \(result.evaluationScore)"
         )
         let summary: String
         if drafted {
@@ -324,7 +321,7 @@ enum CareerSharePresentation {
             let exempted = resolver.resolve(ShareUICopyKey.nationalExempted)
             stats.append(
                 CareerShareStat(
-                    label: resolver.resolve(ProUICopyKey.nationalTeamResultExempted),
+                    label: exempted,
                     value: exempted
                 )
             )

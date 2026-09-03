@@ -392,6 +392,227 @@ extension MobileCareerStore {
             return false
         }
     }
+
+    /// Weekly plan with a career-strikeout milestone and a rotation-push QS follow-up.
+    @discardableResult
+    func installRecordShareFixtureForUITesting() -> Bool {
+        do {
+            let preset = PitcherPresetCatalog.all[0]
+            let base = try CareerBootstrap.startCareer(
+                preset: preset,
+                playerName: "김도윤",
+                seed: 202_607_23,
+                startingRepertoire: PitchLearningRules.recommendedSelection(presetID: preset.id),
+                engine: engine
+            )
+            var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(base.snapshot)) as! [String: Any]
+            let prior = [
+                ProSeasonStats(
+                    season: 1,
+                    teamID: base.snapshot.team.id,
+                    games: 28,
+                    starts: 26,
+                    inningsOuts: 468,
+                    strikeouts: 92,
+                    walks: 38,
+                    runsAllowed: 52,
+                    hits: 110,
+                    wins: 9,
+                    losses: 8
+                ),
+                ProSeasonStats(
+                    season: 2,
+                    teamID: base.snapshot.team.id,
+                    games: 30,
+                    starts: 28,
+                    inningsOuts: 504,
+                    strikeouts: 101,
+                    walks: 34,
+                    runsAllowed: 48,
+                    hits: 118,
+                    wins: 11,
+                    losses: 7
+                ),
+            ]
+            let current = ProSeasonStats(
+                season: 3,
+                teamID: base.snapshot.team.id,
+                games: 14,
+                starts: 14,
+                inningsOuts: 252,
+                strikeouts: 47,
+                walks: 16,
+                runsAllowed: 22,
+                hits: 54,
+                wins: 6,
+                losses: 3
+            )
+            let followUp = ProDecisionFollowUp(
+                decisionID: "rotation_push.week3",
+                type: .rotationPush,
+                season: 3,
+                week: 8,
+                summaryKey: "content.pro-decision.followup.rotation_push",
+                qualityStarts: 3,
+                runsAllowed: 7,
+                choiceID: "rotation_push.accept_short_rest"
+            )
+            object["phase"] = ProCareerPhase.weeklyPlan.rawValue
+            object["season"] = 3
+            object["week"] = 8
+            object["age"] = 21
+            object["level"] = ProLevel.major.rawValue
+            object["role"] = ProRole.starter.rawValue
+            object["seasonSegment"] = ProSeasonSegment.firstHalf.rawValue
+            object["careerStats"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(prior))
+            object["currentStats"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(current))
+            object["milestones"] = [
+                "프로 지명",
+                "프로 통산 50경기",
+                "프로 통산 100탈삼진",
+                "프로 통산 200탈삼진",
+            ]
+            object["resolvedFollowUps"] = try JSONSerialization.jsonObject(
+                with: JSONEncoder().encode([followUp])
+            )
+            object.removeValue(forKey: "roleRequest")
+            object.removeValue(forKey: "pendingDecision")
+            object.removeValue(forKey: "journeyState")
+            let decoded = try JSONDecoder().decode(
+                ProCareerSnapshot.self,
+                from: JSONSerialization.data(withJSONObject: object)
+            )
+            return persistShareFixture(
+                decoded,
+                nextSeed: "20260723",
+                events: ["ui_record_share_fixture"]
+            )
+        } catch {
+            loadState = .failed(error.localizedDescription)
+            return false
+        }
+    }
+
+    /// National-team result with gold and a service exemption.
+    @discardableResult
+    func installNationalShareFixtureForUITesting() -> Bool {
+        do {
+            let preset = PitcherPresetCatalog.all[0]
+            let base = try CareerBootstrap.startCareer(
+                preset: preset,
+                playerName: "이시우",
+                seed: 202_607_23,
+                startingRepertoire: PitchLearningRules.recommendedSelection(presetID: preset.id),
+                engine: engine
+            )
+            var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(base.snapshot)) as! [String: Any]
+            let group = [
+                ProNationalTournamentGameLine(
+                    opponentID: "northern-plains",
+                    gameNumber: 1,
+                    teamRuns: 5,
+                    opponentRuns: 2,
+                    directlyPlayed: true,
+                    playerPitches: 28,
+                    playerOuts: 9,
+                    playerRunsAllowed: 1,
+                    playerStrikeouts: 4,
+                    playerWalks: 1,
+                    playerHits: 2
+                ),
+                ProNationalTournamentGameLine(
+                    opponentID: "south-harbor",
+                    gameNumber: 2,
+                    teamRuns: 3,
+                    opponentRuns: 1,
+                    directlyPlayed: false
+                ),
+                ProNationalTournamentGameLine(
+                    opponentID: "southwest-isles",
+                    gameNumber: 3,
+                    teamRuns: 4,
+                    opponentRuns: 3,
+                    directlyPlayed: false
+                ),
+            ]
+            let final = ProNationalTournamentGameLine(
+                opponentID: "east-coast",
+                gameNumber: 4,
+                teamRuns: 4,
+                opponentRuns: 2,
+                directlyPlayed: true,
+                playerPitches: 32,
+                playerOuts: 12,
+                playerRunsAllowed: 2,
+                playerStrikeouts: 6,
+                playerWalks: 1,
+                playerHits: 3
+            )
+            let tournament = ProNationalTournamentState(
+                seed: 202_607_23,
+                resumeSeed: "20260723",
+                startingFatigue: 28,
+                groupGames: group,
+                stage: .result,
+                finalOpponentID: "east-coast",
+                finalLine: final,
+                result: .gold,
+                fatigueCarry: 12,
+                injuryWeeks: 0,
+                fanDelta: 8,
+                exempted: true
+            )
+            object["phase"] = ProCareerPhase.nationalTournament.rawValue
+            object["season"] = 4
+            object["week"] = 24
+            object["age"] = 22
+            object["level"] = ProLevel.major.rawValue
+            object["role"] = ProRole.starter.rawValue
+            object["nationalTournament"] = try JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(tournament)
+            )
+            object["roleRequest"] = NSNull()
+            object["pendingDecision"] = NSNull()
+            let decoded = try JSONDecoder().decode(
+                ProCareerSnapshot.self,
+                from: JSONSerialization.data(withJSONObject: object)
+            )
+            return persistShareFixture(
+                decoded,
+                nextSeed: "20260723",
+                events: ["ui_national_share_fixture"]
+            )
+        } catch {
+            loadState = .failed(error.localizedDescription)
+            return false
+        }
+    }
+
+    private func persistShareFixture(
+        _ snapshot: ProCareerSnapshot,
+        nextSeed: String,
+        events: [String]
+    ) -> Bool {
+        let signed = engine.resignFixtureForTesting(snapshot)
+        let fixture = ProCareerResult(
+            snapshot: signed,
+            nextSeed: nextSeed,
+            events: events
+        )
+        updatePersisted {
+            $0.result = fixture
+            $0.gameResume = nil
+            $0.sourceHighSchoolCareerID = "career-20260723-life-1"
+            $0.careerOrigin = .highSchool
+        }
+        selectedPlan = nil
+        pendingGains = []
+        lastSummary = nil
+        feedbackCue = .neutral
+        feedbackTrigger += 1
+        loadState = .ready
+        return save()
+    }
 #endif
 
     @discardableResult

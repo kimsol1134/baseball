@@ -216,6 +216,13 @@ struct DraftPeakResultView: View {
                         )
                     }
                 }
+                CareerShareButton(
+                    model: CareerSharePresentation.draft(
+                        result: draft,
+                        state: state,
+                        resolver: copyResolver
+                    )
+                )
             }
             PrimaryButton(
                 title: copyResolver.resolve(

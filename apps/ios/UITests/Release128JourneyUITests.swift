@@ -35,19 +35,13 @@ final class Release128JourneyUITests: XCTestCase {
             "은퇴 카드 공유 버튼이 없습니다. \(visibleIdentifiers(app))"
         )
         XCTAssertTrue(bringIntoView(share))
-        share.tap()
-        XCTAssertTrue(
-            identified(app, "share.card.preview").waitForExistence(timeout: timeout),
-            "은퇴 카드 미리보기가 열리지 않았습니다."
+        openSharePreview(app, share: share, expectedName: "민서준")
+        XCTAssertNotEqual(
+            identified(app, "share.card.preview.playerName").label,
+            "은퇴 카드"
         )
-        let playerName = identified(app, "share.card.preview.playerName")
-        XCTAssertTrue(
-            playerName.waitForExistence(timeout: timeout),
-            "은퇴 카드 미리보기에 선수 이름이 없습니다."
-        )
-        XCTAssertEqual(playerName.label, "민서준")
-        XCTAssertNotEqual(playerName.label, "은퇴 카드")
         writeShareScreenshot(name: "retirement-preview.png")
+        dismissSharePreview(app)
     }
 
     func testDraftSharePreviewOpens() throws {
@@ -66,9 +60,14 @@ final class Release128JourneyUITests: XCTestCase {
         if app.tabBars.buttons["커리어"].waitForExistence(timeout: timeout) {
             app.tabBars.buttons["커리어"].tap()
         }
-        if app.buttons["hs.draft.reveal.done"].waitForExistence(timeout: 12) {
+        if !identified(app, "hs.draft.result.continue").waitForExistence(timeout: 4),
+           app.buttons["hs.draft.reveal.done"].waitForExistence(timeout: 12) {
             app.buttons["hs.draft.reveal.done"].tap()
         }
+        XCTAssertTrue(
+            identified(app, "hs.draft.result.continue").waitForExistence(timeout: timeout),
+            "드래프트 결과 화면이 없습니다. \(visibleIdentifiers(app))"
+        )
         let share = identified(app, "share.card.draft")
         XCTAssertTrue(
             share.waitForExistence(timeout: 20),
@@ -76,6 +75,7 @@ final class Release128JourneyUITests: XCTestCase {
         )
         openSharePreview(app, share: share, expectedName: "박하준")
         writeShareScreenshot(name: "draft-preview.png")
+        dismissSharePreview(app)
     }
 
     func testRecordSharePreviewsOpen() throws {
@@ -95,6 +95,7 @@ final class Release128JourneyUITests: XCTestCase {
         _ = identified(app, "app.loading.progress").waitForNonExistence(timeout: 10)
         RunLoop.current.run(until: Date().addingTimeInterval(1.5))
         selectProWeekTab(app, label: "이번 주")
+        dismissCareerNoticeIfPresent(app)
         XCTAssertTrue(
             identified(app, "pro.weekly.recordShare").waitForExistence(timeout: 25),
             "탈삼진 마일스톤 공유 카드가 없습니다. \(visibleIdentifiers(app))"
@@ -115,6 +116,7 @@ final class Release128JourneyUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(recordShares.count, 2, "QS 공유 버튼이 없습니다. \(visibleIdentifiers(app))")
         openSharePreview(app, share: recordShares.element(boundBy: 1), expectedName: "김도윤")
         writeShareScreenshot(name: "record-qs-preview.png")
+        dismissSharePreview(app)
     }
 
     func testNationalSharePreviewOpens() throws {
@@ -142,6 +144,7 @@ final class Release128JourneyUITests: XCTestCase {
         )
         openSharePreview(app, share: share, expectedName: "이시우")
         writeShareScreenshot(name: "national-preview.png")
+        dismissSharePreview(app)
     }
 
     func testNewCareerSetupShowsLeftAndRightHand() {
@@ -993,11 +996,23 @@ final class Release128JourneyUITests: XCTestCase {
         print("QA_SHOT \(url.path)")
     }
 
+    private func dismissCareerNoticeIfPresent(_ app: XCUIApplication) {
+        let banner = identified(app, "pro.notice.banner.dismiss")
+        if banner.exists {
+            banner.tap()
+        }
+        let followUp = identified(app, "pro.notice.followUp.dismiss")
+        if followUp.exists {
+            followUp.tap()
+        }
+    }
+
     private func openSharePreview(
         _ app: XCUIApplication,
         share: XCUIElement,
         expectedName: String
     ) {
+        dismissCareerNoticeIfPresent(app)
         XCTAssertTrue(bringIntoView(share))
         share.tap()
         XCTAssertTrue(
@@ -1010,16 +1025,19 @@ final class Release128JourneyUITests: XCTestCase {
             "카드 미리보기에 선수 이름이 없습니다."
         )
         XCTAssertEqual(playerName.label, expectedName)
+        XCTAssertTrue(
+            identified(app, "share.card.preview.close").waitForExistence(timeout: timeout),
+            "카드 미리보기 닫기 버튼이 없습니다. \(visibleIdentifiers(app))"
+        )
     }
 
     private func dismissSharePreview(_ app: XCUIApplication) {
-        for label in ["닫기", "Close", "閉じる"] {
-            let close = app.buttons[label]
-            if close.exists {
-                close.tap()
-                break
-            }
-        }
+        let close = identified(app, "share.card.preview.close")
+        XCTAssertTrue(
+            close.waitForExistence(timeout: timeout),
+            "카드 미리보기 닫기 버튼이 없습니다. \(visibleIdentifiers(app))"
+        )
+        close.tap()
         XCTAssertTrue(
             identified(app, "share.card.preview").waitForNonExistence(timeout: timeout),
             "카드 미리보기가 닫히지 않았습니다."

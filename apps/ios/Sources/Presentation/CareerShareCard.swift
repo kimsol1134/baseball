@@ -338,6 +338,7 @@ struct CareerSharePreviewSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(copyResolver.resolve(.actionClose)) { dismiss() }
+                        .accessibilityIdentifier("share.card.preview.close")
                 }
             }
         }

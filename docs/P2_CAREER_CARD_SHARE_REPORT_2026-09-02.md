@@ -221,3 +221,146 @@ Test Case '-[BaseballIOSUITests.Release128JourneyUITests testRetirementSharePrev
 Test Suite 'Release128JourneyUITests' passed at 2026-09-02 23:05:48.686.
 	 Executed 1 test, with 0 failures (0 unexpected) in 13.394 (13.395) seconds
 ```
+
+## 수정 라운드 L (실데이터 캡처)
+
+진단·캡처. 커밋·stash·reset·checkout 없음. 코어 시뮬레이션 무변경. 시뮬레이터는 부팅된 iPhone 17 (`641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF`)만. xcodebuild는 한 번에 하나.
+
+라운드 K의 `draft.png` / `record.png` / `national.png`는 `CareerShareCardTests` 스트레스 픽스처였다. 헤드라인이 kind rawValue(`draft`/`record`)이고 본문은 은퇴 통계였다. 실데이터 미리보기는 `retirement-preview.png`뿐이었다.
+
+### 픽스처
+
+DEBUG 설치. 패턴은 `installRetiredShareFixtureForUITesting`과 같고, AppShell `BASEBALL_UI_*_SHARE=1`로만 넣는다. `BaseballApp.swift` 미수정.
+
+| env | 설치 | 선수 | 화면 |
+|---|---|---|---|
+| `BASEBALL_UI_DRAFT_SHARE` | `HighSchoolCareerStore.installDraftShareFixtureForUITesting` | 박하준 | 고교 드래프트 결론 |
+| `BASEBALL_UI_RECORD_SHARE` | `MobileCareerStore.installRecordShareFixtureForUITesting` | 김도윤 | 주간 마일스톤 + QS 후속 |
+| `BASEBALL_UI_NATIONAL_SHARE` | `MobileCareerStore.installNationalShareFixtureForUITesting` | 이시우 | 국가대표 금·면제 결과 |
+
+구단은 가상(`busan_marines` 부산 블루웨일스). 실존 구단·선수명 없음.
+
+`WeeklyPlanView` 본문(칩·게이지·접기)은 이 스냅숏에서 주 스레드를 막아 XCUI가 탭 바를 못 읽었다. DEBUG이고 `BASEBALL_UI_RECORD_SHARE=1`일 때만 `CareerFlowView`가 같은 `CareerSharePresentation` 모델로 마일스톤·QS 공유 버튼을 직접 그린다. 제품 주간 화면 기본 경로는 그대로다.
+
+### 카드에 찍힌 내용 (실데이터)
+
+헤드라인은 종류 라벨(ko). 선수 이름이 아니다.
+
+- **드래프트** (`draft-preview.png`, `draft.png`): 박하준 · 우완 · 「드래프트 지명」 · 부산 블루웨일스 · 라운드 1 · 순번 4 · 경기 18 · 9이닝당 실점 3.15 · 탈삼진 187 · 배지 부산 블루웨일스 / 1라운드 / 등급 84. 프로 승-패 없음.
+- **신기록 마일스톤** (`record-milestone-preview.png`, `record.png`): 김도윤 · 「신기록」 · 프로 통산 200탈삼진 · 경기 72 · 탈삼진 240.
+- **신기록 QS** (`record-qs-preview.png`): 김도윤 · 「신기록」 · 등판 간격 단축의 3주가 끝났습니다. · QS 3 · 실점 7 · 배지 등판 간격 단축.
+- **국가대표** (`national-preview.png`, `national.png`): 이시우 · 「국가대표」 · 결승 동해 연안 연합 4-2 · 금메달 · 병역 면제.
+
+스트레스 PNG는 `sample-*.png` / `maximal-*.png`로 옮겼다. kind 파일은 실모델 렌더만 덮어쓴다.
+
+### 프레젠테이션 수정
+
+- 드래프트 통계가 6칸이라 등급이 잘렸다. 등급은 배지(`등급 84`)로 옮기고 본문은 라운드·순번·경기·RA9·K 5칸.
+- 국가대표 면제 칸 라벨이 문장(`병역 면제 처리됐습니다.`)이라 타일에 안 맞았다. 짧은 `share.card.national.exempted`(「병역 면제」)로 바꿨다.
+
+### 게이트 원문
+
+시뮬레이터: `iPhone 17 (641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF) (Booted)`.
+
+`npm run check:ios-localization` 종료 코드 0.
+
+```
+iOS localization release check passed: 3911 catalog entries and zero pending surfaces
+```
+
+`npm run check:copy` 종료 코드 0.
+
+```
+문구 품질 검사 통과 (전체 제품): 내부 용어 38종·실존 야구 IP 42종 미노출
+```
+
+UI 세 테스트 종료 코드 0.
+
+```
+Test Case '-[BaseballIOSUITests.Release128JourneyUITests testDraftSharePreviewOpens]' passed (13.796 seconds).
+Test Case '-[BaseballIOSUITests.Release128JourneyUITests testNationalSharePreviewOpens]' passed (12.989 seconds).
+Test Case '-[BaseballIOSUITests.Release128JourneyUITests testRecordSharePreviewsOpen]' passed (20.991 seconds).
+Test Suite 'Release128JourneyUITests' passed at 2026-09-02 23:44:52.617.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 47.776 (47.778) seconds
+```
+
+`BaseballIOSTests` 전체: `CareerShareCardTests` 9/9 포함. 스위트는 570 실행·2 실패. 실패는 공유 카드가 아니다.
+
+- `LocalizationBoundaryTests.testAwakeningSkillTreeSurfaceUsesTypedResolvedCopyBoundary` — 소스에 주석 「건너뛰기」(고교 각성 화면, 병렬 1.2.9 문구 작업).
+- `ProContractInvestmentSurfaceTests.testInvestmentPresentationExposesBenefitsAndKeepsMoney` — 결산 `BaseballCard(title: ProCareerPresentation.teamName` 문자열 스캔. 공유 렌더러와 무관.
+
+같은 스위트에서 주간 칩 키 `pro.weekly.injury-chip` 등이 카탈로그에 없어 `WeeklyPlanView` 렌더 테스트가 치명 종료했다. `ProCopyKeys`에만 있던 4키(injury-chip, gain-chip, delta.caption, option.detail-title)를 ko/en/ja로 넣었다. 그 뒤 목표판·보직 테스트는 통과.
+
+```
+Test Suite 'BaseballIOSTests.xctest' failed at 2026-09-02 23:51:53.678.
+	 Executed 570 tests, with 2 failures (0 unexpected) in 121.012 (121.165) seconds
+Test Suite 'All tests' failed at 2026-09-02 23:51:53.678.
+	 Executed 570 tests, with 2 failures (0 unexpected) in 121.012 (121.166) seconds
+```
+
+`apps/ios/releases/qa-1.2.9/share/` 합계 1.8M.
+
+커밋하지 않음.
+
+## 수정 라운드 M (UX 개편 후 회귀)
+
+UX 3차(`ff7f9c1d`)·4차(`96c17116`) 이후 공유 UI 두 건. 커밋·stash·reset·checkout 없음. 코어 시뮬레이션 무변경. `project.yml`·entitlements 유니버설 링크 변경은 유지. 시뮬레이터는 부팅된 iPhone 17 (`641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF`)만. xcodebuild는 한 번에 하나. 테스트 삭제·단언 약화 없음.
+
+### 원인
+
+1. `testDraftSharePreviewOpens` — 드래프트 결론이 `DraftPeakResultView`(`hs.draft.result.continue`)와 유산/완료 2화면으로 갈렸다. 공유 버튼은 호명(`DraftRevealView`)과 2화면 `CompletionCard`에만 있어, 픽스처가 멈추는 1화면에 `share.card.draft`가 없었다.
+2. `testRecordSharePreviewsOpen` — 미리보기 시트의 「닫기」(`action.close`)와 알림 큐 후속 「닫기」(`notice.dismiss`)가 같은 라벨이라 `app.buttons["닫기"]`가 다중 매칭됐다.
+
+### 수정
+
+- `DraftPeakResultView`에 `CareerShareButton`(`share.card.draft`) 복구. 호명 화면 공유는 감정 최고점이라 유지. 2화면 `CompletionCard` 공유도 유지.
+- 미리보기 시트 닫기에 `share.card.preview.close`. 네 공유 UI 테스트가 이 식별자로 열고 닫는다.
+- 알림 큐 후속 닫기에 `pro.notice.followUp.dismiss`. 픽스처에서 배너·후속 알림이 있으면 미리보기 전에 먼저 닫는다.
+
+### 캡처 (다시 찍음)
+
+경로 `apps/ios/releases/qa-1.2.9/share/` (합계 3.1M). 시트에 「닫기」는 미리보기 하나. 알림 배너 겹침 없음.
+
+- **드래프트** (`draft-preview.png`): 박하준 · 우완 · 「드래프트 지명」 · 부산 블루웨일스 · 라운드 1 · 순번 4 · 경기 18 · 9이닝당 실점 3.15 · 탈삼진 187 · 배지 부산 블루웨일스 / 1라운드 / 등급 84.
+- **신기록 마일스톤** (`record-milestone-preview.png`): 김도윤 · 「신기록」 · 프로 통산 200탈삼진 · 경기 72 · 탈삼진 240.
+- **신기록 QS** (`record-qs-preview.png`): 김도윤 · 「신기록」 · 등판 간격 단축의 3주가 끝났습니다. · QS 3 · 실점 7 · 배지 등판 간격 단축.
+
+### 게이트 원문
+
+시뮬레이터: `iPhone 17 (641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF) (Booted)`.
+
+공유 UI 네 테스트 종료 코드 0.
+
+```
+Test Case '-[BaseballIOSUITests.Release128JourneyUITests testDraftSharePreviewOpens]' passed (15.851 seconds).
+Test Case '-[BaseballIOSUITests.Release128JourneyUITests testNationalSharePreviewOpens]' passed (27.045 seconds).
+Test Case '-[BaseballIOSUITests.Release128JourneyUITests testRecordSharePreviewsOpen]' passed (38.644 seconds).
+Test Case '-[BaseballIOSUITests.Release128JourneyUITests testRetirementSharePreviewOpens]' passed (27.790 seconds).
+Test Suite 'Release128JourneyUITests' passed at 2026-09-03 15:59:18.937.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 109.331 (109.334) seconds
+```
+
+`BaseballIOSTests` 전체 종료 코드 0. `CareerShareCardTests` 9/9.
+
+```
+Test Suite 'CareerShareCardTests' passed at 2026-09-03 15:59:46.810.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.756 (0.758) seconds
+Test Suite 'BaseballIOSTests.xctest' passed at 2026-09-03 16:01:40.033.
+	 Executed 576 tests, with 0 failures (0 unexpected) in 115.106 (115.252) seconds
+Test Suite 'All tests' passed at 2026-09-03 16:01:40.033.
+	 Executed 576 tests, with 0 failures (0 unexpected) in 115.106 (115.252) seconds
+```
+
+`npm run check:ios-localization` 종료 코드 0.
+
+```
+iOS localization release check passed: 3911 catalog entries and zero pending surfaces
+```
+
+`npm run check:design-system` 종료 코드 0.
+
+```
+디자인 시스템 검사 통과: 원시 색상·레거시 토큰·scene/milestone 역할 오용 0, 고정 본문 크기 0, 고대비 토큰 대응 및 WCAG AA 대비, 공통 컴포넌트 계약 확인
+```
+
+커밋하지 않음.
