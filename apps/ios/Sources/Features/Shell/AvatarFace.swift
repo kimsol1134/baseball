@@ -434,6 +434,7 @@ struct PortraitView: View {
                     RoundedRectangle(cornerRadius: size * 0.16)
                         .strokeBorder(BaseballTheme.border.opacity(0.5), lineWidth: 1)
                 )
+                .accessibilityHidden(true)
         } else {
             AvatarFace(seed: seed, role: role, size: size)
         }

@@ -41,6 +41,7 @@ struct ResultBanner: View {
                     Text(verbatim: copyResolver.resolve(AppCopyKey.noticeDismiss))
                         .font(BaseballType.annotation.weight(.semibold))
                 }
+                .accessibilityLabel(copyResolver.resolve(AppCopyKey.noticeDismiss))
                 .accessibilityIdentifier("pro.notice.banner.dismiss")
             }
         }

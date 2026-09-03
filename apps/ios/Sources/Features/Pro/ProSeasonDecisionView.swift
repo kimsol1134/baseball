@@ -48,37 +48,25 @@ struct ProSeasonDecisionView: View {
                 accent: BaseballTheme.milestone
             )
 
-            if !(condensesNarrative && !narrativeExpanded) {
-                GlossaryText(
-                    text: ProCareerPresentation.decisionDetail(decision, resolver: copyResolver),
-                    font: BaseballType.prose
-                )
-            }
-            if condensesNarrative {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.15)) { narrativeExpanded.toggle() }
-                } label: {
-                    Label(
-                        copyResolver.resolve(
-                            narrativeExpanded
-                                ? MetaUICopyKey.disclosureHintCollapse
-                                : MetaUICopyKey.disclosureHintExpand
-                        ),
-                        systemImage: narrativeExpanded ? "chevron.up" : "chevron.down"
+            ProgressiveDisclosure(
+                contentID: seenContentID,
+                title: copyResolver.resolve(MetaUICopyKey.disclosureHintExpand),
+                summary: "",
+                important: false,
+                startsCollapsed: true
+            ) {
+                VStack(alignment: .leading, spacing: 6) {
+                    GlossaryText(
+                        text: ProCareerPresentation.decisionDetail(decision, resolver: copyResolver),
+                        font: BaseballType.prose
                     )
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(BaseballTheme.textTertiary)
+                    if !decision.type.isWeeklyBinaryDecision {
+                        Text(ProCareerPresentation.decisionTiming(for: decision, resolver: copyResolver))
+                            .detailStyle(BaseballTheme.textTertiary)
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("pro.seasonDecision.narrativeToggle")
             }
-
-            // 효과가 언제 드러나는지는 선택지마다 같으므로 카드 밖에 한 번만 적는다.
-            // 3주 결정은 선택지별 후속 문장이 달라 카드 안에 남긴다.
-            if !decision.type.isWeeklyBinaryDecision {
-                Text(ProCareerPresentation.decisionTiming(for: decision, resolver: copyResolver))
-                    .detailStyle(BaseballTheme.textTertiary)
-            }
+            .accessibilityIdentifier("pro.seasonDecision.narrativeToggle")
 
             ForEach(decision.choices) { choice in
                 VStack(alignment: .leading, spacing: 8) {
@@ -90,6 +78,7 @@ struct ProSeasonDecisionView: View {
                                 Spacer(minLength: 8)
                                 Image(systemName: "chevron.right.circle.fill")
                                     .foregroundStyle(BaseballTheme.selection)
+                                    .accessibilityHidden(true)
                             }
                             // 이득 칩과 비용 칩을 색으로 가른다. "구위 +1 · 피로 +12" 한 문장에
                             // 섞여 있던 비용이 주황 칩으로 따로 선다.
@@ -135,12 +124,13 @@ struct ProSeasonDecisionView: View {
                     .accessibilityLabel(Self.accessibilityLabel(for: choice, resolver: copyResolver))
                     .accessibilityHint(copyResolver.resolve(.decisionHint))
                     .accessibilityIdentifier("pro.seasonDecision.choice.\(choice.id)")
-                    if !(condensesNarrative && !narrativeExpanded) {
-                        GlossaryText(
-                            text: ProCareerPresentation.choiceDetail(choice, resolver: copyResolver),
-                            font: BaseballType.detail
-                        )
-                    }
+                    .accessibilityElement(children: .combine)
+                    GlossaryText(
+                        text: ProCareerPresentation.choiceDetail(choice, resolver: copyResolver),
+                        font: BaseballType.detail
+                    )
+                    .hidden()
+                    .accessibilityHidden(true)
                 }
                 .padding(14)
                 .frame(maxWidth: .infinity, minHeight: 76, alignment: .leading)
@@ -156,6 +146,7 @@ struct ProSeasonDecisionView: View {
                 Image(systemName: "exclamationmark.circle")
                     .font(BaseballType.detail)
                     .foregroundStyle(BaseballTheme.warning)
+                    .accessibilityHidden(true)
                 Text(copyResolver.resolve(.decisionWarning))
                     .detailStyle()
             }

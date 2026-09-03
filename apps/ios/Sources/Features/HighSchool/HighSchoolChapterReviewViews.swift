@@ -212,8 +212,6 @@ struct ChapterGoalCard: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(verbatim: title)
                 .proseLeadStyle()
-            Text(verbatim: detail)
-                .detailStyle()
             HStack(spacing: 10) {
                 ProgressView(value: Double(min(progress, goal.targetStrikeouts)),
                              total: Double(goal.targetStrikeouts))
@@ -223,6 +221,8 @@ struct ChapterGoalCard: View {
                     .foregroundStyle(done ? BaseballTheme.positive : BaseballTheme.textSecondary)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(progressLabel). \(detail)")
         .padding(BaseballMetrics.gutter)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(

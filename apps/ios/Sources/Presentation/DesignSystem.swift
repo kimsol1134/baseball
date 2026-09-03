@@ -200,6 +200,7 @@ struct EffectChip: View {
             if let systemImage {
                 Image(systemName: systemImage)
                     .font(.caption2.weight(.bold))
+                    .accessibilityHidden(true)
             }
             // localization-safe: resolved-copy
             Text(text)
@@ -661,6 +662,7 @@ struct KeyArtHeader: View {
                 Image(art.rawValue)
                     .resizable()
                     .scaledToFill()
+                    .accessibilityHidden(true)
                     .overlay {
                         // 캔버스와 같은 색으로 아래를 덮어 이미지가 화면에 녹아들게 한다.
                         // 밝은 카드 위에 사진을 얹으면 배너처럼 떠 보인다.

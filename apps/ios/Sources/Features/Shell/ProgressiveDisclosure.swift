@@ -108,6 +108,9 @@ struct ProgressiveDisclosure<Detail: View>: View {
     let important: Bool
     /// 카드 안에서 제목을 결과 한 줄(proseLead)로 세울 때 true. 기본은 섹션 제목(headline).
     let leadStyle: Bool
+    /// true면 자동 밀도에서도 첫 회를 포함해 접힌 채로 시작한다. 중요한 결과(`important`)와
+    /// 펼침 밀도는 이 값을 이긴다.
+    let startsCollapsed: Bool
     let detail: () -> Detail
 
     @AppStorage(CopyDensity.storageKey) private var densityRaw = CopyDensity.automatic.rawValue
@@ -123,6 +126,7 @@ struct ProgressiveDisclosure<Detail: View>: View {
         summary: String,
         important: Bool = false,
         leadStyle: Bool = false,
+        startsCollapsed: Bool = false,
         @ViewBuilder detail: @escaping () -> Detail
     ) {
         self.contentID = contentID
@@ -130,6 +134,7 @@ struct ProgressiveDisclosure<Detail: View>: View {
         self.summary = summary
         self.important = important
         self.leadStyle = leadStyle
+        self.startsCollapsed = startsCollapsed
         self.detail = detail
     }
 
@@ -144,7 +149,7 @@ struct ProgressiveDisclosure<Detail: View>: View {
                 } else {
                     Text(verbatim: title).font(.headline)
                 }
-                if !expanded || density == .compact {
+                if !summary.isEmpty, !expanded || density == .compact {
                     Text(verbatim: summary).detailStyle().multilineTextAlignment(.leading)
                 }
             }
@@ -164,7 +169,8 @@ struct ProgressiveDisclosure<Detail: View>: View {
             switch density {
             case .expanded: expanded = true
             case .compact: expanded = important
-            case .automatic: expanded = important || !SeenContentStore.contains(contentID)
+            case .automatic:
+                expanded = important || (!startsCollapsed && !SeenContentStore.contains(contentID))
             }
             if expanded { SeenContentStore.markSeen(contentID) }
         }
@@ -177,7 +183,9 @@ struct ProgressiveDisclosure<Detail: View>: View {
             case .expanded: expanded = true
             case .compact: expanded = important
             case .automatic:
-                if !important { expanded = !SeenContentStore.contains(contentID) }
+                if !important {
+                    expanded = !startsCollapsed && !SeenContentStore.contains(contentID)
+                }
             }
         }
     }

@@ -140,15 +140,18 @@ struct DeliveryControl: View {
     private var meterCloseness: Double { 1 - min(1, abs(meter - 0.5) * 2) }
 
     var body: some View {
-        if autoRelease {
-            PrimaryPill(title: copyResolver.resolve(.deliveryThrow), identifier: "pitch.throw") {
-                onRelease()
-                onDeliver(.neutral)
-            }
+        Group {
+            if autoRelease {
+                PrimaryPill(title: copyResolver.resolve(.deliveryThrow), identifier: "pitch.throw") {
+                    onRelease()
+                    onDeliver(.neutral)
+                }
                 .accessibilityHint(copyResolver.resolve(.deliveryAutoHint))
-        } else {
-            manual
+            } else {
+                manual
+            }
         }
+        .accessibilitySortPriority(-50)
     }
 
     private var manual: some View {

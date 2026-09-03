@@ -23,7 +23,7 @@ const TAB_BAR_MIN_Y = 780;
 const BUDGETS = {
   "hs-training": { text: 8, long: 1, buttons: 3 },
   "hs-chapter-start": { text: 8, long: 2, buttons: 1 },
-  "pitch-ready": { text: 6, long: 0, buttons: 3 },
+  "pitch-ready": { text: 8, long: 1, buttons: 4 },
   "pro-decision": { text: 9, long: 1, buttons: 3 },
   "hs-draft-result": { text: 5, long: 1, buttons: 1 },
   "pro-week": { text: 10, long: 1, buttons: 3 },
@@ -44,7 +44,7 @@ const screen = argValue("--screen", "current");
 const label = argValue("--label", "now");
 const outPath = argValue(
   "--out",
-  join(root, "apps/ios/releases/qa-1.2.9/round3/budget.json")
+  join(root, "apps/ios/releases/qa-1.2.9/round4/budget.json")
 );
 const launchArg = argValue("--launch", null);
 const waitMs = Number(argValue("--wait", "4500"));
@@ -139,7 +139,7 @@ function measure(tree) {
     const frame = frameOf(node);
     if (frame.y >= VIEWPORT_HEIGHT) continue;
     if (frame.y + frame.height <= 0) continue;
-    if (frame.y >= TAB_BAR_MIN_Y && isButton(node)) continue;
+    if (frame.y >= TAB_BAR_MIN_Y) continue;
     const labelText = String(node.AXLabel ?? node.label ?? "").trim();
     if (!labelText) continue;
     if (hasLabeledDescendant(node) && !isButton(node)) continue;

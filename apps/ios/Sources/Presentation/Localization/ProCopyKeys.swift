@@ -280,6 +280,8 @@ enum ProUICopyKey: String, CaseIterable, Sendable {
     case roleRequestConditionCloserDifficult = "pro.role-request.condition.closer.difficult"
     case roleRequestConditionMiddle = "pro.role-request.condition.middle"
     case roleRequestConditionAssigned = "pro.role-request.condition.assigned"
+    /// 지금 보직은 아니지만 신뢰만으로 바로 받을 수 있는 보직.
+    case roleRequestConditionAvailable = "pro.role-request.condition.available"
 
     case summaryWeekSpanSpringCamp = "pro.summary.week-span.spring-camp"
     case summaryWeekSpanSingle = "pro.summary.week-span.single"

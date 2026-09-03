@@ -47,6 +47,12 @@ struct BaseballApp: App {
     nonisolated static let reviewImprovementFixtureLaunchArgument = "-uiTestReviewImprovementFixture"
     /// 포스트시즌 2승 2패·필승조 연투 선택을 바로 여는 Debug 전용 픽스처.
     nonisolated static let postseasonFixtureLaunchArgument = "-uiTestPostseasonFixture"
+    /// 고교 1장 훈련 국면 첫 주를 바로 여는 Debug 전용 픽스처.
+    nonisolated static let trainingFixtureLaunchArgument = "-uiTestTrainingFixture"
+    /// 프로 1시즌 6주차 결정 대기를 바로 여는 Debug 전용 픽스처.
+    nonisolated static let seasonDecisionFixtureLaunchArgument = "-uiTestSeasonDecisionFixture"
+    /// 은퇴 화면 미리보기 Debug 전용 픽스처.
+    nonisolated static let retiredShareFixtureLaunchArgument = "-uiTestRetiredShareFixture"
 #endif
 
     @Environment(\.scenePhase) private var scenePhase
@@ -358,6 +364,15 @@ struct BaseballApp: App {
                             _ = pro.installReviewImprovementFixtureForUITesting()
                         } else if arguments.contains(Self.postseasonFixtureLaunchArgument) {
                             _ = pro.installPostseasonFixtureForUITesting()
+                        } else if arguments.contains(Self.trainingFixtureLaunchArgument) {
+                            SeenContentStore.reset()
+                            SeenContentStore.markSeen("hs.training.repeat.explained")
+                            _ = highSchool.installTrainingFixtureForUITesting()
+                        } else if arguments.contains(Self.seasonDecisionFixtureLaunchArgument) {
+                            SeenContentStore.reset()
+                            _ = pro.installSeasonDecisionFixtureForUITesting()
+                        } else if arguments.contains(Self.retiredShareFixtureLaunchArgument) {
+                            _ = pro.installRetiredShareFixtureForUITesting()
                         }
 #endif
                     } else if arguments.contains(Self.autoReleaseLaunchArgument) {

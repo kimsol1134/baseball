@@ -622,6 +622,33 @@ final class QACaptureUITests: XCTestCase {
         capture("store-next-life")
     }
 
+    /// 고교 1장 훈련 국면 첫 주 픽스처. 정보 예산 측정용.
+    func testCaptureTrainingFixture() {
+        let app = XCUIApplication()
+        app.launchArguments = launchArguments(additional: ["-uiTestTrainingFixture"])
+        app.launch()
+        XCTAssertTrue(
+            app.buttons["hs.training.commit"].waitForExistence(timeout: timeout)
+                || identified(app, "hs.training.commitBar").waitForExistence(timeout: timeout),
+            "훈련 픽스처가 훈련 화면을 열지 못했습니다. 버튼: \(visibleIdentifiers(app))"
+        )
+        capture("hs-training-fixture")
+        captureScrolled(app, "hs-training-fixture-bottom", swipes: 2)
+    }
+
+    /// 프로 1시즌 6주차 결정 대기 픽스처. 정보 예산 측정용.
+    func testCaptureSeasonDecisionFixture() {
+        let app = XCUIApplication()
+        app.launchArguments = launchArguments(additional: ["-uiTestSeasonDecisionFixture"])
+        app.launch()
+        XCTAssertTrue(
+            identified(app, "pro.seasonDecision").waitForExistence(timeout: timeout),
+            "결정 픽스처가 결정 카드를 열지 못했습니다. 버튼: \(visibleIdentifiers(app))"
+        )
+        capture("pro-season-decision-fixture")
+        captureScrolled(app, "pro-season-decision-fixture-bottom", swipes: 2)
+    }
+
     // MARK: - 구간별 촬영
 
     /// 선수 만들기. 단계마다 한 장씩 남긴다.

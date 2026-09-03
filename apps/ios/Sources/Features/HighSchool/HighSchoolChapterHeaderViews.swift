@@ -18,6 +18,7 @@ struct ChapterHeader: View {
     var onSkillTreeTap: (() -> Void)? = nil
     @State private var windExpanded = false
     @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// 장·국면이 바뀌면 그림도 바뀐다. 훈련 루프만 같은 그림을 반복한다.
     static func art(for state: HighSchoolCareerSnapshot) -> KeyArt {
@@ -94,37 +95,75 @@ struct ChapterHeader: View {
                 // 반복하는 게임이라는 사실은 한 번 죽어 봐야 의미가 생긴다.
                 eyebrow: eyebrow,
                 title: title,
-                height: Self.artHeight(for: state.phase)
+                height: dynamicTypeSize.isAccessibilitySize
+                    ? 72
+                    : Self.artHeight(for: state.phase)
             )
             if !peakResult {
-            HStack(alignment: .top, spacing: 10) {
-                PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46,
-                             playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
-                Metric(
-                    title: copyResolver.resolve(AppCopyKey.chapterMetricFatigue),
-                    value: "\(state.fatigue)",
-                    tone: CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue) == .normal
-                        ? .standard : .warning,
-                    caption: copyResolver.resolve(
-                        CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue).wordCopyKey
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 10) {
+                    PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46,
+                                 playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
+                    Metric(
+                        title: copyResolver.resolve(AppCopyKey.chapterMetricFatigue),
+                        value: "\(state.fatigue)",
+                        tone: CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue) == .normal
+                            ? .standard : .warning,
+                        caption: copyResolver.resolve(
+                            CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue).wordCopyKey
+                        )
                     )
-                )
-                Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricTeamTrust), value: "\(state.relationshipTrust)")
-                if state.phase != .prologue, let forecast {
-                    Button(action: { onForecastTap?() }) {
+                    Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricTeamTrust), value: "\(state.relationshipTrust)")
+                    if state.phase != .prologue, let forecast {
+                        Button(action: { onForecastTap?() }) {
+                            Metric(
+                                title: copyResolver.resolve(AppCopyKey.chapterMetricDraftOutlook),
+                                value: "\(forecast.score)",
+                                tone: Self.forecastCardTone(score: forecast.score, threshold: forecast.threshold),
+                                caption: copyResolver.resolve(
+                                    AppCopyKey.chapterMetricDraftCutoff,
+                                    arguments: [.integer(forecast.threshold)]
+                                )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(onForecastTap == nil)
+                        .accessibilityIdentifier("hs.chapter.draftForecast")
+                    }
+                }
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .top, spacing: 10) {
+                        PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46,
+                                     playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
                         Metric(
-                            title: copyResolver.resolve(AppCopyKey.chapterMetricDraftOutlook),
-                            value: "\(forecast.score)",
-                            tone: Self.forecastCardTone(score: forecast.score, threshold: forecast.threshold),
+                            title: copyResolver.resolve(AppCopyKey.chapterMetricFatigue),
+                            value: "\(state.fatigue)",
+                            tone: CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue) == .normal
+                                ? .standard : .warning,
                             caption: copyResolver.resolve(
-                                AppCopyKey.chapterMetricDraftCutoff,
-                                arguments: [.integer(forecast.threshold)]
+                                CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue).wordCopyKey
                             )
                         )
                     }
-                    .buttonStyle(.plain)
-                    .disabled(onForecastTap == nil)
-                    .accessibilityIdentifier("hs.chapter.draftForecast")
+                    HStack(alignment: .top, spacing: 10) {
+                        Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricTeamTrust), value: "\(state.relationshipTrust)")
+                        if state.phase != .prologue, let forecast {
+                            Button(action: { onForecastTap?() }) {
+                                Metric(
+                                    title: copyResolver.resolve(AppCopyKey.chapterMetricDraftOutlook),
+                                    value: "\(forecast.score)",
+                                    tone: Self.forecastCardTone(score: forecast.score, threshold: forecast.threshold),
+                                    caption: copyResolver.resolve(
+                                        AppCopyKey.chapterMetricDraftCutoff,
+                                        arguments: [.integer(forecast.threshold)]
+                                    )
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(onForecastTap == nil)
+                            .accessibilityIdentifier("hs.chapter.draftForecast")
+                        }
+                    }
                 }
             }
             if state.phase != .prologue {
@@ -135,6 +174,7 @@ struct ChapterHeader: View {
                 let windAction = copyResolver.resolve(
                     windExpanded ? AppCopyKey.chapterWindCollapse : AppCopyKey.chapterWindExpand
                 )
+                ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) {
                     Button { windExpanded = true } label: {
                         Text(verbatim: copyResolver.resolve(
@@ -173,6 +213,39 @@ struct ChapterHeader: View {
                     .disabled(onSkillTreeTap == nil)
                     .accessibilityIdentifier("hs.skillTree.open")
                     Spacer(minLength: 0)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Button { windExpanded = true } label: {
+                        Text(verbatim: copyResolver.resolve(
+                            AppCopyKey.chapterChipWind,
+                            arguments: [.userText(windTitle)]
+                        ))
+                            .font(BaseballType.annotation.weight(.bold))
+                            .foregroundStyle(BaseballTheme.information)
+                            .padding(.horizontal, 10)
+                            .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                            .background(BaseballTheme.surfaceRaised, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hs.wind.chip")
+                    Button(action: { onSkillTreeTap?() }) {
+                        Text(verbatim: copyResolver.resolve(
+                            AppCopyKey.chapterChipSkill,
+                            arguments: [
+                                .integer(state.selectedAwakenings.count),
+                                .integer(AwakeningCard.totalAwakenings),
+                            ]
+                        ))
+                            .font(BaseballType.annotation.weight(.bold))
+                            .foregroundStyle(BaseballTheme.milestone)
+                            .padding(.horizontal, 10)
+                            .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                            .background(BaseballTheme.surfaceRaised, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(onSkillTreeTap == nil)
+                    .accessibilityIdentifier("hs.skillTree.open")
+                }
                 }
                 .sheet(isPresented: $windExpanded) {
                     VStack(alignment: .leading, spacing: 8) {

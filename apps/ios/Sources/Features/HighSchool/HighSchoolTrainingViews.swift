@@ -170,44 +170,52 @@ struct TrainingCommitBar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            PrimaryButton(
-                title: copyResolver.resolve(
-                    pendingNotice ? AppCopyKey.noticeConfirmAndContinue : AppCopyKey.trainingCommit
-                ),
-                identifier: "hs.training.commit"
-            ) {
-                if pendingNotice {
-                    onAcknowledgeNotice?()
-                } else {
-                    onCommit(selection.focus, selection.intensity, selection.selectedTarget)
-                }
-            }
-            Button {
-                onCommitBlock(selection.focus, selection.intensity, selection.selectedTarget)
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(copyResolver.resolve(AppCopyKey.trainingRepeatTitle))
-                        .font(.subheadline.weight(.semibold))
-                    if showRepeatExplanation {
-                    Text(copyResolver.resolve(
-                        recommendedFocus == selection.focus
-                            ? AppCopyKey.trainingRepeatRecommendedExplanation
-                            : AppCopyKey.trainingRepeatStopExplanation
-                    ))
-                        .detailStyle()
-                        .multilineTextAlignment(.leading)
+            // 두 버튼을 한 줄에. 세로로 쌓으면 SE에서 고정 바가 화면의 30%를 먹어
+            // 첫 화면에 훈련 카드가 하나도 안 보였다(4차 D3 캡처).
+            HStack(spacing: 8) {
+                PrimaryButton(
+                    title: copyResolver.resolve(
+                        pendingNotice ? AppCopyKey.noticeConfirmAndContinue : AppCopyKey.trainingCommit
+                    ),
+                    identifier: "hs.training.commit"
+                ) {
+                    if pendingNotice {
+                        onAcknowledgeNotice?()
+                    } else {
+                        onCommit(selection.focus, selection.intensity, selection.selectedTarget)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .frame(minHeight: BaseballMetrics.minimumTapTarget)
-                // 반투명 bordered 스타일은 아래 스크롤 내용이 비쳐 글자가 겹쳐 보였다. 불투명 면으로.
-                .background(BaseballTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
-                .foregroundStyle(BaseballTheme.textPrimary)
+                Button {
+                    onCommitBlock(selection.focus, selection.intensity, selection.selectedTarget)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "repeat")
+                            .font(BaseballType.detail.weight(.semibold))
+                            .accessibilityHidden(true)
+                        // localization-safe: numeric
+                        Text(verbatim: "×3")
+                            .font(BaseballType.detail.weight(.bold))
+                            .monospacedDigit()
+                    }
+                    .padding(.horizontal, 14)
+                    .frame(minWidth: 72, minHeight: 52)
+                    .background(BaseballTheme.surfaceRaised, in: Capsule())
+                    .foregroundStyle(BaseballTheme.textPrimary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hs.training.commitBlock")
+                .accessibilityLabel(copyResolver.resolve(AppCopyKey.trainingRepeatTitle))
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("hs.training.commitBlock")
+            if showRepeatExplanation {
+                Text(copyResolver.resolve(
+                    recommendedFocus == selection.focus
+                        ? AppCopyKey.trainingRepeatRecommendedExplanation
+                        : AppCopyKey.trainingRepeatStopExplanation
+                ))
+                    .detailStyle()
+                    .multilineTextAlignment(.leading)
+                    .padding(.horizontal, 14)
+            }
         }
         .padding(.horizontal, BaseballMetrics.gutter)
         .padding(.top, 10)
@@ -219,6 +227,7 @@ struct TrainingCommitBar: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hs.training.commitBar")
+        .accessibilitySortPriority(-50)
         .onAppear {
             let id = "hs.training.repeat.explained"
             showRepeatExplanation = !SeenContentStore.contains(id)
@@ -538,6 +547,7 @@ struct TrainingFocusOptionButton<Extras: View>: View {
                         .font(.title3)
                         .foregroundStyle(isSelected ? BaseballTheme.selection : BaseballTheme.textSecondary)
                         .frame(width: 28)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             // localization-safe: resolved-copy
@@ -578,6 +588,7 @@ struct TrainingFocusOptionButton<Extras: View>: View {
                     Spacer()
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(isSelected ? BaseballTheme.selection : BaseballTheme.border)
+                        .accessibilityHidden(true)
                 }
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 .contentShape(Rectangle())
@@ -585,6 +596,7 @@ struct TrainingFocusOptionButton<Extras: View>: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("hs.focus.\(option.rawValue)")
             .accessibilityAddTraits(isSelected ? .isSelected : [])
+            .accessibilityElement(children: .combine)
             if isSelected {
             VStack(alignment: .leading, spacing: 6) {
                 EffectChipFlow {
@@ -601,9 +613,11 @@ struct TrainingFocusOptionButton<Extras: View>: View {
                 ProgressiveDisclosure(
                     contentID: "hs.training.option.\(option.rawValue)",
                     title: detailTitle,
-                    summary: detailSummary
+                    summary: detailSummary,
+                    important: false,
+                    startsCollapsed: true
                 ) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 8) {
                         GlossaryText(
                             text: detail,
                             font: BaseballType.detail,
@@ -614,9 +628,9 @@ struct TrainingFocusOptionButton<Extras: View>: View {
                             font: BaseballType.detail,
                             color: BaseballTheme.textSecondary
                         )
+                        extras()
                     }
                 }
-                extras()
             }
             .padding(.leading, 40)
             }

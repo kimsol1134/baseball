@@ -354,29 +354,59 @@ struct ProCareerStatusHeader: View {
 
             SeasonArcBar(segment: state.seasonSegment, week: state.week)
 
-            HStack(spacing: 10) {
-                PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46, playerStage: .pro)
-                Metric(
-                    title: copyResolver.resolve(AppCopyKey.proFatigueLabel),
-                    value: "\(state.fatigue)",
-                    tone: CareerDisplayRules.proFatigueBand(fatigue: state.fatigue) == .normal
-                        ? .standard : .warning,
-                    caption: copyResolver.resolve(
-                        CareerDisplayRules.proFatigueBand(fatigue: state.fatigue).wordCopyKey
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46, playerStage: .pro)
+                    Metric(
+                        title: copyResolver.resolve(AppCopyKey.proFatigueLabel),
+                        value: "\(state.fatigue)",
+                        tone: CareerDisplayRules.proFatigueBand(fatigue: state.fatigue) == .normal
+                            ? .standard : .warning,
+                        caption: copyResolver.resolve(
+                            CareerDisplayRules.proFatigueBand(fatigue: state.fatigue).wordCopyKey
+                        )
                     )
-                )
-                Metric(
-                    title: copyResolver.resolve(AppCopyKey.proManagerTrustLabel),
-                    value: "\(state.managerTrust)",
-                    tone: state.managerTrust >= 60 ? .positive : .standard
-                )
-                Metric(
-                    title: copyResolver.resolve(AppCopyKey.proInjuryLabel),
-                    value: state.injuryWeeks > 0
-                        ? copyResolver.resolve(AppCopyKey.proInjuryWeeks, arguments: [.integer(state.injuryWeeks)])
-                        : copyResolver.resolve(AppCopyKey.proInjuryNormal),
-                    tone: state.injuryWeeks > 0 ? .negative : .standard
-                )
+                    Metric(
+                        title: copyResolver.resolve(AppCopyKey.proManagerTrustLabel),
+                        value: "\(state.managerTrust)",
+                        tone: state.managerTrust >= 60 ? .positive : .standard
+                    )
+                    Metric(
+                        title: copyResolver.resolve(AppCopyKey.proInjuryLabel),
+                        value: state.injuryWeeks > 0
+                            ? copyResolver.resolve(AppCopyKey.proInjuryWeeks, arguments: [.integer(state.injuryWeeks)])
+                            : copyResolver.resolve(AppCopyKey.proInjuryNormal),
+                        tone: state.injuryWeeks > 0 ? .negative : .standard
+                    )
+                }
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 10) {
+                        PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46, playerStage: .pro)
+                        Metric(
+                            title: copyResolver.resolve(AppCopyKey.proFatigueLabel),
+                            value: "\(state.fatigue)",
+                            tone: CareerDisplayRules.proFatigueBand(fatigue: state.fatigue) == .normal
+                                ? .standard : .warning,
+                            caption: copyResolver.resolve(
+                                CareerDisplayRules.proFatigueBand(fatigue: state.fatigue).wordCopyKey
+                            )
+                        )
+                    }
+                    HStack(spacing: 10) {
+                        Metric(
+                            title: copyResolver.resolve(AppCopyKey.proManagerTrustLabel),
+                            value: "\(state.managerTrust)",
+                            tone: state.managerTrust >= 60 ? .positive : .standard
+                        )
+                        Metric(
+                            title: copyResolver.resolve(AppCopyKey.proInjuryLabel),
+                            value: state.injuryWeeks > 0
+                                ? copyResolver.resolve(AppCopyKey.proInjuryWeeks, arguments: [.integer(state.injuryWeeks)])
+                                : copyResolver.resolve(AppCopyKey.proInjuryNormal),
+                            tone: state.injuryWeeks > 0 ? .negative : .standard
+                        )
+                    }
+                }
             }
         }
     }

@@ -322,32 +322,35 @@ struct CareerFlowNotices: View {
     }
 
     var body: some View {
-        switch notice {
-        case .injury:
-            if let injury = career.pendingInjuryEvent {
-                ProInjuryResultCard(event: injury, onAcknowledge: career.acknowledgeInjuryEvent)
+        Group {
+            switch notice {
+            case .injury:
+                if let injury = career.pendingInjuryEvent {
+                    ProInjuryResultCard(event: injury, onAcknowledge: career.acknowledgeInjuryEvent)
+                        .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                }
+            case .growth:
+                if !career.pendingGains.isEmpty, !Self.settlementOwnsGrowth(state) {
+                    GrowthCelebrationView(
+                        gains: career.pendingGains,
+                        stageContext: .pro,
+                        onDismiss: career.acknowledgeGains
+                    )
+                    .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+                }
+            case .followUp(let followUp):
+                followUpCard(followUp)
                     .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+            case .banner:
+                if let bannerText {
+                    ResultBanner(summary: bannerText, cue: career.feedbackCue, onDismiss: onDismissBanner)
+                        .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                }
+            case nil:
+                EmptyView()
             }
-        case .growth:
-            if !career.pendingGains.isEmpty, !Self.settlementOwnsGrowth(state) {
-                GrowthCelebrationView(
-                    gains: career.pendingGains,
-                    stageContext: .pro,
-                    onDismiss: career.acknowledgeGains
-                )
-                .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
-            }
-        case .followUp(let followUp):
-            followUpCard(followUp)
-                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
-        case .banner:
-            if let bannerText {
-                ResultBanner(summary: bannerText, cue: career.feedbackCue, onDismiss: onDismissBanner)
-                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
-            }
-        case nil:
-            EmptyView()
         }
+        .accessibilitySortPriority(8)
     }
 
     @ViewBuilder private func followUpCard(_ followUp: ProDecisionFollowUp) -> some View {
@@ -363,6 +366,7 @@ struct CareerFlowNotices: View {
                 }
                 .font(BaseballType.detail.weight(.semibold))
                 .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                .accessibilityLabel(copyResolver.resolve(AppCopyKey.noticeDismiss))
             }
         }
         .accessibilityIdentifier("pro.weekly.decisionFollowUp.\(followUp.type.rawValue)")

@@ -1,0 +1,19 @@
+{
+  "Localizable": {
+    "pitch.catcher.settings": {
+      "ko": "설정 ▾",
+      "en": "Settings ▾",
+      "ja": "設定 ▾"
+    },
+    "pitch.catcher.option.a": {
+      "ko": "1안",
+      "en": "Plan A",
+      "ja": "A案"
+    },
+    "pitch.catcher.option.b": {
+      "ko": "2안",
+      "en": "Plan B",
+      "ja": "B案"
+    }
+  }
+}

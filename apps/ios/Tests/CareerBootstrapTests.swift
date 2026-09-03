@@ -109,6 +109,27 @@ final class CareerBootstrapTests: XCTestCase {
         XCTAssertFalse(store.hasEnteredPro)
     }
 
+    @MainActor
+    func testTrainingUITestFixtureStartsAtChapterOneTraining() {
+        let store = HighSchoolCareerStore(saveWriter: { _ in true })
+        XCTAssertTrue(store.installTrainingFixtureForUITesting())
+        XCTAssertEqual(store.state?.phase, .training)
+        XCTAssertEqual(store.state?.chapter.number, 1)
+        XCTAssertNotNil(store.state?.school)
+        XCTAssertEqual(store.state?.chapterTrainingCount, 0)
+        XCTAssertEqual(store.state?.totalTrainingsCompleted, 0)
+    }
+
+    @MainActor
+    func testSeasonDecisionUITestFixtureOpensWeekSixDecision() {
+        let store = MobileCareerStore(saveWriter: { _ in true }, configuration: .production)
+        XCTAssertTrue(store.installSeasonDecisionFixtureForUITesting())
+        XCTAssertEqual(store.state?.phase, .seasonDecision)
+        XCTAssertEqual(store.state?.season, 1)
+        XCTAssertEqual(store.state?.week, 6)
+        XCTAssertNotNil(store.state?.pendingDecision)
+    }
+
     /// Wave 0 characterization: store review persists only the existing core review result;
     /// there is no salary, fan-support, or team-legacy settlement object yet.
     @MainActor

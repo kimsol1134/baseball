@@ -55,6 +55,12 @@ struct CatcherCard: View {
         matchesAlternative ? preparation.alternativeRecommendation : preparation.primaryRecommendation
     }
 
+    private var selectedRecommendation: CatcherRecommendationSnapshot? {
+        if matchesRecommendation { return preparation.primaryRecommendation }
+        if matchesAlternative { return preparation.alternativeRecommendation }
+        return nil
+    }
+
     private var selectedConfidence: Int? {
         guard matchesRecommendation || matchesAlternative else { return nil }
         return max(0, min(100, explainedRecommendation.confidence / 10))
@@ -68,38 +74,27 @@ struct CatcherCard: View {
         }
     }
 
-    /// 1안·2안 선택. 고른 안의 사인은 위 리드 줄이 말하므로 여기서는 이름만 남기고,
-    /// 고르지 않은 안만 무엇이 다른지 한 줄 덧붙인다 — 같은 사인을 두 번 적지 않는다.
+    /// 1안·2안 세그먼트. 고른 안의 사인은 아래 한 줄이 맡으므로 여기서는 이름만 남긴다.
     @ViewBuilder
-    private func recommendationButton(
+    private func optionSegment(
         title: PitchUICopyKey,
-        recommendation: CatcherRecommendationSnapshot,
         selected: Bool,
         identifier: String,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(verbatim: copyResolver.resolve(title))
-                    .font(BaseballType.detail.weight(.semibold))
-                    .foregroundStyle(selected ? BaseballTheme.positive : BaseballTheme.textPrimary)
-                if !selected {
-                    Text(verbatim: callSummary(recommendation.call))
-                        .font(BaseballType.annotation)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .lineLimit(2)
+            Text(verbatim: copyResolver.resolve(title))
+                .font(BaseballType.detail.weight(.semibold))
+                .foregroundStyle(selected ? BaseballTheme.positive : BaseballTheme.textPrimary)
+                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                .background(
+                    selected ? BaseballTheme.positive.opacity(0.10) : BaseballTheme.surface,
+                    in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                        .stroke(selected ? BaseballTheme.positive : BaseballTheme.border, lineWidth: selected ? 2 : 1)
                 }
-            }
-            .padding(10)
-            .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget, alignment: .leading)
-            .background(
-                selected ? BaseballTheme.positive.opacity(0.10) : BaseballTheme.surface,
-                in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-                    .stroke(selected ? BaseballTheme.positive : BaseballTheme.border, lineWidth: selected ? 2 : 1)
-            }
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
@@ -107,8 +102,6 @@ struct CatcherCard: View {
     }
 
     var body: some View {
-        // 현재 선택과 포수 제안을 한 면에서 비교한다. 무엇을 던지는지와 누구의 판단인지가
-        // 떨어져 있으면, 플레이어는 기본값으로 던지고도 자기 선택이라고 느끼기 어렵다.
         BaseballCard(title: cardTitle) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(verbatim: selectedCallSummary)
@@ -129,12 +122,12 @@ struct CatcherCard: View {
                     )
                 }
 
-                // 근거 세 줄은 접어 둔다. 사인 한 줄과 칩만 보고도 던질 수 있어야 하고,
-                // 왜 이 공인지는 궁금한 사람이 한 번 편다.
                 ProgressiveDisclosure(
                     contentID: "pitch.sign.rationale",
                     title: copyResolver.resolve(.catcherRationaleTitle),
-                    summary: PitchPresentation.catcherReason(explainedRecommendation, resolver: copyResolver)
+                    summary: "",
+                    important: false,
+                    startsCollapsed: true
                 ) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(verbatim: PitchPresentation.catcherReason(explainedRecommendation, resolver: copyResolver))
@@ -143,99 +136,108 @@ struct CatcherCard: View {
                     }
                 }
 
-                recommendationButton(
-                    title: .catcherPrimary,
-                    recommendation: preparation.primaryRecommendation,
-                    selected: matchesRecommendation,
-                    identifier: "pitch.acceptPrimaryCall",
-                    action: session.acceptCatcherRecommendation
-                )
-                recommendationButton(
-                    title: .catcherAlternative,
-                    recommendation: preparation.alternativeRecommendation,
-                    selected: matchesAlternative,
-                    identifier: "pitch.acceptAlternativeCall",
-                    action: session.acceptCatcherAlternativeRecommendation
-                )
+                HStack(spacing: 8) {
+                    optionSegment(
+                        title: .catcherOptionA,
+                        selected: matchesRecommendation,
+                        identifier: "pitch.acceptPrimaryCall",
+                        action: session.acceptCatcherRecommendation
+                    )
+                    optionSegment(
+                        title: .catcherOptionB,
+                        selected: matchesAlternative,
+                        identifier: "pitch.acceptAlternativeCall",
+                        action: session.acceptCatcherAlternativeRecommendation
+                    )
+                }
+                if let selectedRecommendation {
+                    Text(verbatim: callSummary(selectedRecommendation.call))
+                        .font(BaseballType.annotation)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
 
-                // 사인 고정 — 켜면 포수 추천이 다음 공에서 내 선택을 덮지 않는다.
-                // "이 타자한테는 낮은 슬라이더로 민다"는 의도가 매 투구 2~4탭 없이 살아남는다.
-                Toggle(isOn: Binding(
-                    get: { session.holdCall },
-                    set: { keepsOwnCall in
-                        if keepsOwnCall {
-                            session.holdCall = true
-                        } else {
-                            session.acceptCatcherRecommendation()
+                ProgressiveDisclosure(
+                    contentID: "pitch.sign.settings",
+                    title: copyResolver.resolve(.catcherSettings),
+                    summary: "",
+                    important: false,
+                    startsCollapsed: true
+                ) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle(isOn: Binding(
+                            get: { session.holdCall },
+                            set: { keepsOwnCall in
+                                if keepsOwnCall {
+                                    session.holdCall = true
+                                } else {
+                                    session.acceptCatcherRecommendation()
+                                }
+                            }
+                        )) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(verbatim: copyResolver.resolve(.catcherHold))
+                                    .font(BaseballType.detail.weight(.semibold))
+                                Text(verbatim: copyResolver.resolve(.catcherHoldBody))
+                                    .detailStyle(BaseballTheme.textTertiary)
+                            }
                         }
-                    }
-                )) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(verbatim: copyResolver.resolve(.catcherHold))
+                        .tint(BaseballTheme.action)
+                        .accessibilityIdentifier("pitch.holdCall")
+
+                        if let report = preparation.scoutingReport {
+                            Button {
+                                showsScouting.toggle()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text(verbatim: copyResolver.resolve(
+                                        .catcherScout,
+                                        arguments: [.userText(PitchCopy.localizedScoutBand(report.band, resolver: copyResolver))]
+                                    ))
+                                        .font(BaseballType.detail.weight(.semibold))
+                                        .foregroundStyle(BaseballTheme.textSecondary)
+                                    Image(systemName: showsScouting ? "chevron.up" : "chevron.down")
+                                        .font(BaseballType.annotation)
+                                        .foregroundStyle(BaseballTheme.textTertiary)
+                                }
+                                .frame(minHeight: 28)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("pitch.scouting.toggle")
+                            if showsScouting {
+                                Text(verbatim: copyResolver.resolve(
+                                    report.band == "trusted" ? .catcherScoutTrusted : .catcherScoutEstimate,
+                                    arguments: [
+                                        .userText(PitchCopy.localized(report.estimatedWeakness, resolver: copyResolver)),
+                                        .userText(PitchCopy.localized(
+                                            report.estimatedColdZone,
+                                            batSide: session.batter.batSide,
+                                            resolver: copyResolver
+                                        )),
+                                    ]
+                                ))
+                                    .detailStyle()
+                                if let strength = report.estimatedStrength, let hot = report.estimatedHotZone {
+                                    EffectChip(
+                                        text: copyResolver.resolve(.catcherScoutAvoid, arguments: [
+                                            .userText(PitchCopy.localized(strength, resolver: copyResolver)),
+                                            .userText(PitchCopy.localized(hot, batSide: session.batter.batSide, resolver: copyResolver)),
+                                        ]),
+                                        tone: .cost,
+                                        systemImage: "exclamationmark.triangle.fill"
+                                    )
+                                    .accessibilityIdentifier("pitch.scouting.avoid")
+                                }
+                            }
+                        }
+
+                        if session.holdCall || (!matchesRecommendation && !matchesAlternative) {
+                            Button(copyResolver.resolve(.catcherAccept)) { session.acceptCatcherRecommendation() }
                             .font(BaseballType.detail.weight(.semibold))
-                        Text(verbatim: copyResolver.resolve(.catcherHoldBody))
-                            .detailStyle(BaseballTheme.textTertiary)
-                    }
-                }
-                .tint(BaseballTheme.action)
-                .accessibilityIdentifier("pitch.holdCall")
-
-                // 분석은 접어 둔다 — 결정 한 번에 300자를 읽히면 손맛이 성립하지
-                // 않는다(QA P1-6). 궁금한 사람만 한 탭으로 편다.
-                if let report = preparation.scoutingReport {
-                    Button {
-                        showsScouting.toggle()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(verbatim: copyResolver.resolve(
-                                .catcherScout,
-                                arguments: [.userText(PitchCopy.localizedScoutBand(report.band, resolver: copyResolver))]
-                            ))
-                                .font(BaseballType.detail.weight(.semibold))
-                                .foregroundStyle(BaseballTheme.textSecondary)
-                            Image(systemName: showsScouting ? "chevron.up" : "chevron.down")
-                                .font(.caption2)
-                                .foregroundStyle(BaseballTheme.textTertiary)
-                        }
-                        .frame(minHeight: 28)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("pitch.scouting.toggle")
-                    if showsScouting {
-                        Text(verbatim: copyResolver.resolve(
-                            report.band == "trusted" ? .catcherScoutTrusted : .catcherScoutEstimate,
-                            arguments: [
-                                .userText(PitchCopy.localized(report.estimatedWeakness, resolver: copyResolver)),
-                                .userText(PitchCopy.localized(
-                                    report.estimatedColdZone,
-                                    batSide: session.batter.batSide,
-                                    resolver: copyResolver
-                                )),
-                            ]
-                        ))
-                            .detailStyle()
-                        // 노릴 곳만 말하고 피할 곳을 감추면, 실점을 가장 크게 가르는
-                        // 정보의 절반이 화면 밖에 남는다. 강점 구종과 hot zone을 같이 적는다.
-                        if let strength = report.estimatedStrength, let hot = report.estimatedHotZone {
-                            EffectChip(
-                                text: copyResolver.resolve(.catcherScoutAvoid, arguments: [
-                                    .userText(PitchCopy.localized(strength, resolver: copyResolver)),
-                                    .userText(PitchCopy.localized(hot, batSide: session.batter.batSide, resolver: copyResolver)),
-                                ]),
-                                tone: .cost,
-                                systemImage: "exclamationmark.triangle.fill"
-                            )
-                            .accessibilityIdentifier("pitch.scouting.avoid")
+                            .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                            .accessibilityIdentifier("pitch.acceptCatcherCall")
                         }
                     }
-                }
-
-                if session.holdCall || (!matchesRecommendation && !matchesAlternative) {
-                    Button(copyResolver.resolve(.catcherAccept)) { session.acceptCatcherRecommendation() }
-                    .font(BaseballType.detail.weight(.semibold))
-                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
-                    .accessibilityIdentifier("pitch.acceptCatcherCall")
                 }
             }
         }

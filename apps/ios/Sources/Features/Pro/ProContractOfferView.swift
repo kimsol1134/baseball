@@ -213,6 +213,7 @@ struct ProContractOfferView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("pro.contractOffer.signBar")
+        .accessibilitySortPriority(-50)
     }
 
     private var extraYearAvailability: ProCounterAvailability {

@@ -402,8 +402,13 @@ enum ProRoleRequestCopy {
         state: ProCareerSnapshot,
         resolver: GameCopyResolver
     ) -> String {
-        if CareerDisplayRules.isAlreadyAssignedRole(role, state: state) {
+        // "이미 맡은 보직"은 지금 보직에만. 신뢰로 바로 받을 수 있는 다른 보직까지 같은 말로
+        // 적으면 카드 두 장이 "이미 맡았다"고 나온다(4차 D5 발견).
+        if role == state.role {
             return resolver.resolve(.roleRequestConditionAssigned)
+        }
+        if CareerDisplayRules.isAlreadyAssignedRole(role, state: state) {
+            return resolver.resolve(.roleRequestConditionAvailable)
         }
         switch evaluation.requested {
         case .longRelief, .setup:

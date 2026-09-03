@@ -625,6 +625,7 @@ struct HighSchoolCareerView: View {
     }
 
     @ViewBuilder private func highSchoolNotice(state: HighSchoolCareerSnapshot) -> some View {
+        Group {
         switch currentHighSchoolNotice() {
         case .armHealth:
             if let armHealth = career.result?.armHealthReceipt {
@@ -673,6 +674,8 @@ struct HighSchoolCareerView: View {
         case nil:
             EmptyView()
         }
+        }
+        .accessibilitySortPriority(8)
     }
 
     @ViewBuilder private func phaseBody(state: HighSchoolCareerSnapshot) -> some View {
