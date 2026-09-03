@@ -1402,7 +1402,7 @@ final class LocalizationCoverageTests: XCTestCase {
         let entries = try localizableEntries()
         let expectedKorean: [GameCopyKey: String] = [
             AppCopyKey.reminderNudgeTitle: "내일도 이어 던지기",
-            AppCopyKey.reminderNudgeBody: "매일 저녁 7시 30분, 지금 키우는 선수의 다음 목표나 그날의 이닝 중 이어 할 한 가지를 알려 드립니다. 며칠 안 열면 저절로 멈춥니다.",
+            AppCopyKey.reminderNudgeBody: "매일 저녁 7시 30분, 다음 목표나 이어 할 이닝 하나를 알려 드립니다. 며칠 열지 않으면 알림은 저절로 꺼집니다.",
             AppCopyKey.reminderNudgeEnable: "알림 켜기",
             AppCopyKey.reminderNudgeDecline: "괜찮습니다",
             AppCopyKey.reminderNudgeAccessibility: "%@. %@. %@. %@.",
@@ -2968,7 +2968,7 @@ final class LocalizationCoverageTests: XCTestCase {
             AppCopyKey.setupHandicapTitle: "이번 고교 3년을 얼마나 어렵게 갈까요?",
             AppCopyKey.setupDifficultyTitle: "난이도",
             AppCopyKey.setupChallengeTitle: "같은 조건으로 겨루는 도전",
-            AppCopyKey.setupChallengeDescription: "지난 선수의 기억·대표 유산·계승 포인트·핸디캡은 쓰지 않습니다. 고른 난이도와 직접 투구만 이 판에 반영됩니다.",
+            AppCopyKey.setupChallengeDescription: "지난 선수의 기억·대표 유산·계승 포인트·핸디캡은 쓰지 않습니다. 이 판에는 고른 난이도와 직접 투구만 들어갑니다.",
             AppCopyKey.setupLegacyTitle: "이번 선수에게 이어 줄 대표 유산",
             AppCopyKey.setupLegacyDescription: "지난 선수들이 남긴 강점 중 하나만 직접 이어집니다. 다른 유산은 사라지지 않고 다음에도 다시 고를 수 있습니다.",
             AppCopyKey.setupSoulDomainTitle: "자동 성장 포인트 %lldP를 어디에",

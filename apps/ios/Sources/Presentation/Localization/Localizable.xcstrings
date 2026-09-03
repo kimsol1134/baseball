@@ -20840,19 +20840,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This media choice takes effect immediately. It does not wait for the next direct matchup."
+            "value": "Media choices take effect right away, without waiting for the next game."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このメディア選択の効果はすぐに適用されます。次の直接対決を待ちません。"
+            "value": "メディアの選択はすぐに効果が出ます。次の試合を待ちません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "미디어 선택의 효과는 즉시 적용됩니다. 다음 직접 승부를 기다리지 않습니다."
+            "value": "미디어 선택은 효과가 바로 적용됩니다. 다음 승부를 기다리지 않습니다."
           }
         }
       }
@@ -20906,19 +20906,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Once confirmed, there is no undo. Auto-advance never skips this decision."
+            "value": "This can't be undone once confirmed. Auto-advance still leaves this decision to you."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "確認後は戻せません。自動進行でもこの決定は飛ばしません。"
+            "value": "確定すると取り消せません。自動進行中でもこの決定はあなたが選びます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "확인하면 되돌릴 수 없습니다. 자동 진행도 이 결정은 건너뛰지 않습니다."
+            "value": "확인하면 되돌릴 수 없습니다. 자동 진행 중에도 이 결정은 직접 고릅니다."
           }
         }
       }
@@ -25372,19 +25372,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pause the contract timeline for two seasons. Return to the next market with fan support reduced once."
+            "value": "Your contract pauses for two seasons. Fan support drops once, and you return at the next market."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "契約の時間を2シーズン止めます。ファンサポートを一度だけ下げ、次の市場へ戻ります。"
+            "value": "2シーズンの間、契約が止まります。ファンの支持は一度だけ下がり、戻ったら次の市場から再開します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "두 시즌 동안 계약 시간을 멈춥니다. 팬 지지는 한 번만 줄고 다음 시장으로 돌아옵니다."
+            "value": "두 시즌 동안 계약이 멈춥니다. 팬 지지는 한 번만 줄고, 돌아오면 다음 시장부터 시작합니다."
           }
         }
       }
@@ -30036,19 +30036,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Continue through %@"
+            "value": "Auto-advance through %@"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ を続行します"
+            "value": "%@まで自動進行"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ 끝까지 진행"
+            "value": "%@까지 자동 진행"
           }
         }
       }
@@ -30102,19 +30102,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Auto-advance stops for a key outing, role change, or injury."
+            "value": "Pauses and tells you if a key game, role change, or injury comes up."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "重要な登板、役割の変更、または怪我の場合は、自動前進が停止します。"
+            "value": "重要な試合・役割変更・負傷があれば止まってお知らせします。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "승부처 경기·역할 변화·부상이 생기면 그 자리에서 멈춥니다."
+            "value": "중요한 경기나 역할 변경, 부상이 생기면 멈추고 알려 드립니다."
           }
         }
       }
@@ -33688,19 +33688,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "At 7:30 PM each day, we’ll remind you of the next goal for your current player or one inning to pick up where you left off. Reminders stop automatically if you don’t open the game for a few days."
+            "value": "At 7:30 PM daily, we'll point you to the next goal or one inning to pick up. Reminders switch off on their own if you don't open the game for a few days."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "毎日午後 7 時 30 分に、現在のプレーヤーの次の目標、または中断したところから再開する 1 イニングを通知します。数日間試合を開かないと、リマインダーは自動的に停止します。"
+            "value": "毎日19:30に、次の目標か続きの1イニングをお知らせします。数日開かなければ通知は自動で止まります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "매일 저녁 7시 30분, 지금 키우는 선수의 다음 목표나 그날의 이닝 중 이어 할 한 가지를 알려 드립니다. 며칠 안 열면 저절로 멈춥니다."
+            "value": "매일 저녁 7시 30분, 다음 목표나 이어 할 이닝 하나를 알려 드립니다. 며칠 열지 않으면 알림은 저절로 꺼집니다."
           }
         }
       }
@@ -35184,19 +35184,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A reminder of this player's next goal at 7:30 PM daily. It stops on its own if you don't open the app for a few days."
+            "value": "A daily 7:30 PM reminder of this player's next goal. It switches off on its own if you don't open the app for a few days."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "毎晩7時30分に現在の選手の次の目標をお知らせします。数日開かないと自動で止まります。"
+            "value": "毎日19:30に現在の選手の次の目標をお知らせします。数日開かなければ通知は自動で止まります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "매일 저녁 7시 30분에 현재 선수의 다음 목표를 알립니다. 며칠 열지 않으면 저절로 멈춥니다."
+            "value": "매일 저녁 7시 30분에 현재 선수의 다음 목표를 알립니다. 며칠 열지 않으면 알림은 저절로 꺼집니다."
           }
         }
       }
@@ -35646,19 +35646,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Past memories, Signature Legacies, inheritance points, and handicaps are disabled. Only your chosen difficulty and direct pitching affect this challenge."
+            "value": "Memories, signature legacy, inheritance points, and handicaps from past players are off. Only the difficulty you choose and your own pitching count here."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "過去の記憶、シグネチャーレガシー、継承ポイント、ハンディキャップは無効になります。選択した難易度と直接投球のみがこのチャレンジに影響します。"
+            "value": "過去の選手の記憶・代表遺産・継承ポイント・ハンディは使いません。この回に入るのは選んだ難易度と自分の投球だけです。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "지난 선수의 기억·대표 유산·계승 포인트·핸디캡은 쓰지 않습니다. 고른 난이도와 직접 투구만 이 판에 반영됩니다."
+            "value": "지난 선수의 기억·대표 유산·계승 포인트·핸디캡은 쓰지 않습니다. 이 판에는 고른 난이도와 직접 투구만 들어갑니다."
           }
         }
       }
@@ -39210,19 +39210,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stops on its own before dialogue, awakenings, official games, or high fatigue."
+            "value": "Pauses and tells you if a conversation, game, or awakening comes up, or fatigue gets high."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "会話・覚醒・公式戦・高い疲労の前で自動的に止まります。"
+            "value": "会話・試合・覚醒が来たり疲労が高まったりしたら止まってお知らせします。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "대화·각성·공식 경기·높은 피로 앞에서 자동으로 멈춥니다."
+            "value": "대화나 경기, 각성이 오거나 피로가 높아지면 멈추고 알려 드립니다."
           }
         }
       }
@@ -39232,19 +39232,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Repeat this workout up to 3 times"
+            "value": "Repeat this workout 3 times"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このトレーニングを最大 3 回繰り返します"
+            "value": "同じ練習を3回連続"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "같은 훈련 최대 3회"
+            "value": "같은 훈련 3번 연속"
           }
         }
       }
