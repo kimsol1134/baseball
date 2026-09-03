@@ -14,12 +14,11 @@ extension EnvironmentValues {
 }
 
 enum AppTab: Hashable, CaseIterable, Identifiable {
-    case highSchool, pro, records, settings
+    case career, records, settings
     var id: Self { self }
     var titleKey: GameCopyKey {
         switch self {
-        case .highSchool: AppCopyKey.tabHighSchool
-        case .pro: AppCopyKey.tabPro
+        case .career: AppCopyKey.tabCareer
         case .records: AppCopyKey.tabRecords
         case .settings: AppCopyKey.tabSettings
         }
@@ -30,8 +29,7 @@ enum AppTab: Hashable, CaseIterable, Identifiable {
     }
     var icon: String {
         switch self {
-        case .highSchool: "graduationcap"
-        case .pro: "figure.baseball"
+        case .career: "figure.baseball"
         case .records: "chart.bar"
         case .settings: "gearshape"
         }
@@ -97,7 +95,9 @@ struct AppShell: View {
     var onDismissReturnWelcome: () -> Void = {}
     @Binding var pendingChallenge: ChallengeLink.Pending?
     @Binding var challengeLinkInvalid: Bool
-    @State private var selection: AppTab = .highSchool
+    @State private var selection: AppTab = .career
+    @State private var showsProSkipSetup = false
+    @State private var showsDraftForecastSheet = false
     @State private var returnPlanHighSchoolRevision: UInt64?
     @State private var returnPlanProRevision: UInt64?
     @State private var legacyHandoffIssue: LegacyHandoffIssue?
@@ -109,8 +109,9 @@ struct AppShell: View {
         hasActiveProCareer: Bool,
         showsHighSchool: Bool
     ) -> AppTab {
-        if hasActiveProCareer { return .pro }
-        return showsHighSchool ? .highSchool : .pro
+        _ = hasActiveProCareer
+        _ = showsHighSchool
+        return .career
     }
 
     private func openReminderLink(_ url: URL) {
@@ -122,10 +123,8 @@ struct AppShell: View {
                 hasActiveProCareer: pro.loadState == .ready && pro.state?.phase != .completed,
                 showsHighSchool: showsHighSchool
             )
-        case .highSchool:
-            selection = showsHighSchool ? .highSchool : .pro
-        case .pro:
-            selection = .pro
+        case .highSchool, .pro:
+            selection = .career
         }
     }
 
@@ -237,6 +236,94 @@ struct AppShell: View {
         ) || Self.isChoicePhase(highSchool.state?.phase)
     }
 
+    private var hidesCareerTabBar: Bool {
+        if showsHighSchool { return hidesHighSchoolTabBar }
+        return false
+    }
+
+    @ViewBuilder private var careerTab: some View {
+        if showsHighSchool {
+            HighSchoolCareerView(
+                career: highSchool,
+                pendingChallenge: $pendingChallenge,
+                onEnterPro: enterProFromDraft,
+                onSkipToPro: highSchool.archive.isEmpty ? nil : { showsProSkipSetup = true },
+                onOpenDraftForecast: { showsDraftForecastSheet = true },
+                hasEnteredPro: pro.loadState == .ready || highSchool.hasEnteredPro,
+                weekly: weekly
+            )
+            .toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $showsDraftForecastSheet) {
+                NavigationStack {
+                    DraftForecastSheet(
+                        forecast: highSchool.draftForecast,
+                        remainingChapters: highSchool.state.map { max(0, 8 - $0.chapter.number) }
+                    )
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(copyResolver.resolve(AppCopyKey.actionCancel)) {
+                                showsDraftForecastSheet = false
+                            }
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showsProSkipSetup) {
+                NavigationStack {
+                    CareerSetupView(career: pro)
+                        .navigationTitle(copyResolver.resolve(AppCopyKey.proStartSheetTitle))
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button(copyResolver.resolve(AppCopyKey.actionCancel)) {
+                                    showsProSkipSetup = false
+                                }
+                            }
+                        }
+                }
+            }
+            .onChange(of: pro.loadState) { _, state in
+                if state == .ready { showsProSkipSetup = false }
+            }
+        } else {
+            proTab
+        }
+    }
+
+    private func enterProFromDraft(
+        draft: DraftResultSnapshot,
+        pitcher: PitcherSnapshot,
+        identity: PlayerIdentitySnapshot
+    ) {
+        let previousCareerID = pro.state?.proCareerID
+        guard let sourceHighSchoolCareerID = highSchool.state?.careerID else { return }
+        selection = .career
+        guard pro.startProCareer(
+            draft: draft,
+            pitcher: pitcher,
+            identity: identity,
+            sourceHighSchoolCareerID: sourceHighSchoolCareerID,
+            sourceFanInterest: highSchool.state?.fanInterest,
+            repertoireRulesVersion: highSchool.state?.repertoireRulesVersion,
+            pitchLearningProject: highSchool.state?.pitchLearningProject
+        ) else { return }
+        guard Self.proCareerCreationSucceeded(
+            previousCareerID: previousCareerID,
+            currentCareerID: pro.state?.proCareerID,
+            isReady: pro.loadState == .ready
+        ) else { return }
+        guard highSchool.markEnteredPro() else {
+            _ = pro.deleteCareer()
+            return
+        }
+        CareerTelemetry.log(.proCareerStarted, [
+            "round": draft.round ?? 0,
+            "evaluation": draft.evaluationScore,
+            "life_number": highSchool.state?.lifeNumber ?? 0,
+            "source": "high_school_draft",
+        ])
+    }
+
     /// 학교·관계·각성처럼 카드 하나를 골라야 넘어가는 국면에는 탭 바를 감춘다.
     /// 페르소나 플레이테스트에서 목표 카드 아래쪽을 누르면 떠 있는 탭 바의 '프로' 탭이
     /// 먼저 먹어 프로 허브로 튕겼고, 학교 카드는 탭 바 위로 한 줄만 보였다(2026-09-03 보고서 §2-1).
@@ -330,7 +417,7 @@ struct AppShell: View {
     /// 탭을 고교로 옮기고, 오프닝을 다시 보여 준다.
     private func resetToFirstLaunch() {
         onDismissReturnWelcome()
-        selection = .highSchool
+        selection = .career
         // 고교 뷰의 오프닝 표시 상태는 그 뷰의 @State다. 정체성을 갈아 끼워 새로 만든다.
         firstLaunchToken &+= 1
     }
@@ -341,74 +428,15 @@ struct AppShell: View {
 
     var body: some View {
         TabView(selection: $selection) {
-            if showsHighSchool {
-                NavigationStack {
-                    HighSchoolCareerView(
-                        career: highSchool,
-                        pendingChallenge: $pendingChallenge,
-                        onEnterPro: { draft, pitcher, identity in
-                            let previousCareerID = pro.state?.proCareerID
-                            guard let sourceHighSchoolCareerID = highSchool.state?.careerID else { return }
-                            // 선택된 탭을 먼저 옮긴다. 프로 저장 성공으로 고교 탭이 사라진
-                            // 다음에 selection을 바꾸면 SwiftUI TabView가 선택 대상을 잃어
-                            // 하단 탭만 남은 빈 화면에 머물 수 있다.
-                            selection = .pro
-                            guard pro.startProCareer(
-                                draft: draft,
-                                pitcher: pitcher,
-                                identity: identity,
-                                sourceHighSchoolCareerID: sourceHighSchoolCareerID,
-                                sourceFanInterest: highSchool.state?.fanInterest,
-                                repertoireRulesVersion: highSchool.state?.repertoireRulesVersion,
-                                pitchLearningProject: highSchool.state?.pitchLearningProject
-                            ) else {
-                                selection = .highSchool
-                                return
-                            }
-                            guard Self.proCareerCreationSucceeded(
-                                previousCareerID: previousCareerID,
-                                currentCareerID: pro.state?.proCareerID,
-                                isReady: pro.loadState == .ready
-                            ) else {
-                                selection = .highSchool
-                                return
-                            }
-                            guard highSchool.markEnteredPro() else {
-                                // 양쪽 저장 중 하나만 성공한 반쪽 진입을 남기지 않는다.
-                                _ = pro.deleteCareer()
-                                selection = .highSchool
-                                return
-                            }
-                            // 드래프트 이후의 **정상 분기**다. 이 계측이 없으면 대시보드에서
-                            // "드래프트를 봤는데 환생하지 않은 사람"이 전부 이탈로 잡힌다 —
-                            // 실제로는 프로로 넘어간 사람이 섞여 있다(2026-08 분석의 맹점).
-                            CareerTelemetry.log(.proCareerStarted, [
-                                "round": draft.round ?? 0,
-                                "evaluation": draft.evaluationScore,
-                                "life_number": highSchool.state?.lifeNumber ?? 0,
-                                "source": "high_school_draft",
-                            ])
-                        },
-                        // 프로 저장본이 남아 있으면(은퇴 포함) 이 회차는 이미 프로에 다녀왔다.
-                        hasEnteredPro: pro.loadState == .ready || highSchool.hasEnteredPro,
-                        weekly: weekly
-                    )
-                    // 키아트가 제목을 맡는다. 내비게이션 바를 두면 제목이 두 번 나오고 눈썹 라벨을 가린다.
-                    .toolbar(hidesHighSchoolTabBar ? .hidden : .visible, for: .tabBar)
-                    .toolbar(.hidden, for: .navigationBar)
+            NavigationStack {
+                careerTab
+                    .toolbar(hidesCareerTabBar ? .hidden : .visible, for: .tabBar)
                     .id(firstLaunchToken)
-                }
-                .tabItem {
-                    Label(copyResolver.resolve(AppTab.highSchool.titleKey), systemImage: AppTab.highSchool.icon)
-                }
-                .tag(AppTab.highSchool)
             }
-
-            NavigationStack { proTab }
-                .tabItem {
-                    Label(copyResolver.resolve(AppTab.pro.titleKey), systemImage: AppTab.pro.icon)
-                }
-                .tag(AppTab.pro)
+            .tabItem {
+                Label(copyResolver.resolve(AppTab.career.titleKey), systemImage: AppTab.career.icon)
+            }
+            .tag(AppTab.career)
 
             NavigationStack {
                 RecordView(
@@ -453,16 +481,16 @@ struct AppShell: View {
             try? await Task.sleep(nanoseconds: 800_000_000)
             if draftShare {
                 _ = highSchool.installDraftShareFixtureForUITesting()
-                selection = .highSchool
+                selection = .career
             } else if recordShare {
                 _ = pro.installRecordShareFixtureForUITesting()
-                selection = .pro
+                selection = .career
             } else if nationalShare {
                 _ = pro.installNationalShareFixtureForUITesting()
-                selection = .pro
+                selection = .career
             } else {
                 _ = pro.installRetiredShareFixtureForUITesting()
-                selection = .pro
+                selection = .career
             }
 #endif
         }
@@ -509,9 +537,10 @@ struct AppShell: View {
                 Text(verbatim: copyResolver.resolve(AppCopyKey.legacyHandoffLinkBrokenMessage))
             }
         }
-        // 고교 탭이 사라지는 순간 그 탭을 보고 있으면 빈 화면이 남는다.
-        .onChange(of: showsHighSchool) { _, shows in
-            if !shows, selection == .highSchool { selection = .pro }
+        .onChange(of: showsHighSchool) { _, _ in
+            if selection != .records, selection != .settings {
+                selection = .career
+            }
         }
         // 카드를 무시하고도 실제 행동을 했다면 오래된 한 가지를 계속 붙잡지 않는다.
         .onChange(of: highSchool.result?.revision) { _, revision in
@@ -608,7 +637,7 @@ struct AppShell: View {
                     CareerTelemetry.log(.legacyHandoffFailed, ["reason": "cleanup_save_failed"])
                     return
                 }
-                selection = .highSchool
+                selection = .career
             }
         }
     }
@@ -621,7 +650,7 @@ struct AppShell: View {
             return
         }
         guard pro.deleteCareer() else { return }
-        selection = .highSchool
+        selection = .career
     }
 }
 
@@ -738,6 +767,73 @@ private struct ReturnWelcomeCard: View {
         case .highSchool: AppCopyKey.returnPlanContinueHighSchool
         case .pro: AppCopyKey.returnPlanContinuePro
         }
+    }
+}
+
+/// 고교 헤더의 드래프트 전망 칩이 여는 시트. 예전 프로 잠김 화면의 거리 카드와 같다.
+private struct DraftForecastSheet: View {
+    var forecast: DraftForecastSnapshot?
+    var remainingChapters: Int?
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                if let forecast {
+                    BaseballCard(title: copyResolver.resolve(AppCopyKey.proLockedDistanceTitle), tone: .milestone) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            GameCopyText(verbatim: ProspectRankingPresentation.localizedForecastBand(
+                                forecast,
+                                resolver: copyResolver
+                            ))
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(forecast.score >= forecast.threshold ? BaseballTheme.action : BaseballTheme.textPrimary)
+                            GameCopyText(
+                                forecastCopyKey(for: remainingChapters),
+                                arguments: forecastArguments(forecast: forecast, remainingChapters: remainingChapters)
+                            )
+                                .detailStyle()
+                                .monospacedDigit()
+                            GameCopyText(
+                                AppCopyKey.proLockedInterested,
+                                arguments: [
+                                    .userText(ProspectRankingPresentation.localizedForecastTeam(
+                                        forecast,
+                                        resolver: copyResolver
+                                    )),
+                                ]
+                            )
+                                .detailStyle(BaseballTheme.textTertiary)
+                        }
+                    }
+                }
+            }
+            .padding(BaseballMetrics.gutter)
+        }
+        .background(BaseballTheme.canvas)
+        .navigationTitle(copyResolver.resolve(AppCopyKey.proLockedDistanceTitle))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func forecastCopyKey(for remainingChapters: Int?) -> GameCopyKey {
+        guard let remainingChapters else { return AppCopyKey.proLockedForecastBase }
+        return remainingChapters > 0
+            ? AppCopyKey.proLockedForecastChapters
+            : AppCopyKey.proLockedForecastImminent
+    }
+
+    private func forecastArguments(
+        forecast: DraftForecastSnapshot,
+        remainingChapters: Int?
+    ) -> [LocalizedCopyArgument] {
+        var arguments: [LocalizedCopyArgument] = [
+            .integer(forecast.score),
+            .integer(forecast.threshold),
+        ]
+        if let remainingChapters, remainingChapters > 0 {
+            arguments.append(.integer(remainingChapters))
+        }
+        return arguments
     }
 }
 

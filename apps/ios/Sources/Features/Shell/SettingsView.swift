@@ -52,6 +52,13 @@ struct SettingsView: View {
                     }
                 }
                 .accessibilityIdentifier("settings.copyDensity")
+            } header: {
+                GameCopyText(MetaUICopyKey.settingsCopySectionTitle.gameCopyKey)
+            } footer: {
+                GameCopyText(MetaUICopyKey.settingsCopyDensityFooter.gameCopyKey)
+            }
+
+            Section {
                 // 글자 크기는 시스템 설정을 낮추지 않고 하한만 올린다 — 기기 설정을
                 // 찾아 들어가지 않아도 앱 안에서 바로 키울 수 있어야 한다.
                 Picker(copyResolver.resolve(.settingsReadingSize), selection: Binding(
@@ -63,13 +70,8 @@ struct SettingsView: View {
                     }
                 }
                 .accessibilityIdentifier("settings.readingSize")
-            } header: {
-                GameCopyText(MetaUICopyKey.settingsCopySectionTitle.gameCopyKey)
             } footer: {
-                VStack(alignment: .leading, spacing: 4) {
-                    GameCopyText(MetaUICopyKey.settingsCopyDensityFooter.gameCopyKey)
-                    GameCopyText(MetaUICopyKey.settingsReadingSizeFooter.gameCopyKey)
-                }
+                GameCopyText(MetaUICopyKey.settingsReadingSizeFooter.gameCopyKey)
             }
 
             Section {
@@ -90,8 +92,10 @@ struct SettingsView: View {
             } header: {
                 GameCopyText(AppCopyKey.settingsAudioSectionTitle)
             } footer: {
-                // 진동·소리 안내를 한 푸터로 합쳤다(settings.audio.haptics.footer 값이 둘을 담는다).
-                GameCopyText(SettingsCopy.hapticsFooterKey)
+                VStack(alignment: .leading, spacing: 4) {
+                    GameCopyText(AppCopyKey.settingsAudioFooter)
+                    GameCopyText(SettingsCopy.hapticsFooterKey)
+                }
             }
 
             // 복귀 알림은 언제든 끌 수 있도록 설정에 둔다.

@@ -32,6 +32,20 @@ extension HighSchoolCareerStore {
         HighSchoolCareerEngine.draftForecast(state: state)
     }
 
+    nonisolated static func draftEvaluationBreakdown(
+        state: HighSchoolCareerSnapshot
+    ) -> HighSchoolCareerEngine.DraftEvaluationBreakdown {
+        HighSchoolCareerEngine.draftEvaluationBreakdown(state: state)
+    }
+
+    nonisolated static func recommendedTraining(state: HighSchoolCareerSnapshot) -> TrainingFocus {
+        HighSchoolCareerEngine.recommendedTraining(state: state)
+    }
+
+    nonisolated static func recommendedTrainingIntensity(state: HighSchoolCareerSnapshot) -> TrainingIntensity {
+        HighSchoolCareerEngine.recommendedTrainingIntensity(state: state)
+    }
+
     var draftForecast: DraftForecastSnapshot? {
         state.map(Self.draftForecast(state:))
     }

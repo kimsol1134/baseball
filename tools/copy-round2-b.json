@@ -1,0 +1,34 @@
+{
+  "Localizable": {
+    "app.tab.career": {
+      "ko": "커리어",
+      "en": "Career",
+      "ja": "キャリア"
+    },
+    "training.badge.recommended": {
+      "ko": "추천",
+      "en": "Recommended",
+      "ja": "おすすめ"
+    },
+    "training.repeat.recommended-explanation": {
+      "ko": "추천대로 3주 진행 · 대화·경기가 오면 멈춥니다",
+      "en": "Run the pick for 3 weeks · stops for talks or games",
+      "ja": "おすすめのまま3週進みます · 会話や試合が来ると止まります"
+    },
+    "onboarding.bullpen.name-cta": {
+      "ko": "이 투수의 이름을 정하세요",
+      "en": "Name this pitcher",
+      "ja": "この投手の名前を決めてください"
+    },
+    "prologue.action.first-school": {
+      "ko": "첫 등교",
+      "en": "First day of school",
+      "ja": "初めての登校"
+    },
+    "training.result.no-gain": {
+      "ko": "이번엔 없음",
+      "en": "None this time",
+      "ja": "今回はなし"
+    }
+  }
+}

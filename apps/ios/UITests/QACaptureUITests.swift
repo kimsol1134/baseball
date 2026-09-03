@@ -695,14 +695,13 @@ final class QACaptureUITests: XCTestCase {
             app.swipeUp()
             capture("record-\(suffix)-p\(page)")
         }
-        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School", japanese: "高校"))
+        _ = switchTab(app, to: localizedTabTitle(korean: "커리어", english: "Career", japanese: "キャリア"))
     }
 
     private func captureProTab(_ app: XCUIApplication) {
-        guard switchTab(app, to: localizedTabTitle(korean: "프로", english: "Pro", japanese: "プロ")) else { return }
-        capture("pro-tab-locked")
-        captureScrolled(app, "pro-tab-locked-bottom", swipes: 2)
-        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School", japanese: "高校"))
+        guard switchTab(app, to: localizedTabTitle(korean: "커리어", english: "Career", japanese: "キャリア")) else { return }
+        capture("career-tab")
+        captureScrolled(app, "career-tab-bottom", swipes: 2)
     }
 
     private func captureSettingsTab(_ app: XCUIApplication) {
@@ -712,7 +711,7 @@ final class QACaptureUITests: XCTestCase {
             app.swipeUp()
             capture("settings-p\(page)")
         }
-        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School", japanese: "高校"))
+        _ = switchTab(app, to: localizedTabTitle(korean: "커리어", english: "Career", japanese: "キャリア"))
     }
 
     /// 회차 아카이브. 기록 탭 아래쪽에 있다 — 회차가 쌓였을 때만 볼 것이 있다.
@@ -726,7 +725,7 @@ final class QACaptureUITests: XCTestCase {
             app.swipeUp()
             capture("archive-p\(page)")
         }
-        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School", japanese: "高校"))
+        _ = switchTab(app, to: localizedTabTitle(korean: "커리어", english: "Career", japanese: "キャリア"))
     }
 
     @discardableResult

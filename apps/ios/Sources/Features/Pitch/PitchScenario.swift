@@ -326,10 +326,36 @@ struct PitchScenario {
     /// 이 게임에서 가장 좋은 것은 투구인데, 코어 뼈대대로면 첫 중요 경기까지 약 10번의 결정을
     /// 거쳐야 한다. 사는 사람이 대표 메커닉을 만나기까지 그만큼 기다리면 안 된다.
     /// 커리어 상태를 바꾸지 않는 연습 타석이라 결과가 기록에 남지 않는다.
+    static func onboardingBullpen(pitcher: PitcherSnapshot) -> PitchScenario {
+        tutorial(
+            careerID: "onboarding-bullpen",
+            pitcher: pitcher,
+            awakenings: [],
+            memories: [],
+            balanceVersion: PitcherPresetCatalog.balanceVersion
+        )
+    }
+
     static func tutorial(state: HighSchoolCareerSnapshot) -> PitchScenario {
-        PitchScenario(
-            id: "hs-bullpen-\(state.careerID)",
+        tutorial(
+            careerID: state.careerID,
             pitcher: state.pitcher,
+            awakenings: state.selectedAwakenings,
+            memories: state.selectedMemories,
+            balanceVersion: state.balanceVersion ?? 1
+        )
+    }
+
+    private static func tutorial(
+        careerID: String,
+        pitcher: PitcherSnapshot,
+        awakenings: [AwakeningID],
+        memories: [MemoryCardID],
+        balanceVersion: Int
+    ) -> PitchScenario {
+        PitchScenario(
+            id: "hs-bullpen-\(careerID)",
+            pitcher: pitcher,
             // 두 타자 — 한 타자는 첫 공 인플레이로 1구 만에 끝날 수 있어 3구 스크립트가
             // 성립하지 않는다(3차 패널 P1). 둘이면 최소 2구, 통상 6구 안팎이다.
             lineup: [
@@ -355,10 +381,10 @@ struct PitchScenario {
             scoreDifferential: 0,
             fatigue: 0,
             moundComposure: MoundComposureInput(
-                command: state.pitcher.command,
-                stamina: state.pitcher.stamina,
-                awakenings: state.selectedAwakenings,
-                memories: state.selectedMemories
+                command: pitcher.command,
+                stamina: pitcher.stamina,
+                awakenings: awakenings,
+                memories: memories
             ),
             headline: "첫 불펜",
             detail: "기록에 남지 않는 연습 한 타석입니다. 마음껏 던져 보세요.",
@@ -370,7 +396,7 @@ struct PitchScenario {
             // 게다가 기본값이 사인 추종이라 13구가 전부 같은 코스였다 — 배우는 자리가
             // 아니라 같은 버튼을 열세 번 누르는 자리였다. 8구면 3구 스크립트가 두 바퀴 돈다.
             maximumPitches: 8,
-            developmentRulesVersion: state.balanceVersion ?? 1
+            developmentRulesVersion: balanceVersion
         )
     }
 

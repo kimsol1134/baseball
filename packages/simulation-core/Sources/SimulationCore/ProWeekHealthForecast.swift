@@ -15,6 +15,11 @@ public enum ProWeekInjuryRiskBand: String, Codable, CaseIterable, Sendable {
 }
 
 public struct ProWeekHealthForecast: Codable, Equatable, Sendable {
+    /// 표시용 피로 밴드. 주간 화면의 경고(70)와 같은 자리. 고교 HUD와 눈을 맞춘다.
+    public static let fatigueDisplayCautionThreshold = 50
+    public static let fatigueDisplayWarningThreshold = 70
+    public static let fatigueDisplayExhaustionThreshold = 90
+
     public let plan: ProWeekPlan
     public let role: ProRole
     public let expectedPitches: Int

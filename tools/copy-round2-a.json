@@ -1,0 +1,159 @@
+{
+  "Localizable": {
+    "draft.reason.short.undrafted": {
+      "ko": "당락선까지 %lld점 모자랐습니다",
+      "en": "You were %lld points short of the cutoff",
+      "ja": "当落線まで%lld点足りませんでした"
+    },
+    "draft.reason.short.drafted": {
+      "ko": "당락선을 %lld점 넘었습니다",
+      "en": "You cleared the cutoff by %lld points",
+      "ja": "当落線を%lld点上回りました"
+    },
+    "draft.reason.rating": {
+      "ko": "능력 평균",
+      "en": "Ability average",
+      "ja": "能力平均"
+    },
+    "draft.reason.performance": {
+      "ko": "직접 등판 성적",
+      "en": "Official-game pitching",
+      "ja": "公式戦の投球"
+    },
+    "draft.reason.awakening": {
+      "ko": "각성",
+      "en": "Awakening",
+      "ja": "覚醒"
+    },
+    "draft.reason.relationship": {
+      "ko": "팀의 믿음",
+      "en": "Team trust",
+      "ja": "チームの信頼"
+    },
+    "draft.reason.overuse": {
+      "ko": "팔 과부하",
+      "en": "Arm overload",
+      "ja": "腕の過負荷"
+    },
+    "draft.reason.season": {
+      "ko": "시즌 기록",
+      "en": "Season log",
+      "ja": "シーズン記録"
+    },
+    "draft.reason.fan": {
+      "ko": "팬 관심",
+      "en": "Fan interest",
+      "ja": "ファンの関心"
+    },
+    "draft.reason.karma": {
+      "ko": "핸디캡",
+      "en": "Handicap",
+      "ja": "ハンデ"
+    },
+    "draft.reason.chip.rating": {
+      "ko": "능력 평균 %lld · +%lld 필요",
+      "en": "Ability average %lld · +%lld needed",
+      "ja": "能力平均%lld · あと+%lld"
+    },
+    "draft.reason.chip.gain": {
+      "ko": "%@ +%lld",
+      "en": "%@ +%lld",
+      "ja": "%@ +%lld"
+    },
+    "draft.reason.chip.cost": {
+      "ko": "%@ −%lld",
+      "en": "%@ −%lld",
+      "ja": "%@ −%lld"
+    },
+    "draft.reason.advice.rating": {
+      "ko": "한 가지 능력을 끝까지 밀어 올리세요.",
+      "en": "Push one ability all the way up.",
+      "ja": "一つの能力を最後まで伸ばしてください。"
+    },
+    "draft.reason.advice.performance": {
+      "ko": "공식 경기에서 볼넷을 줄이고 삼진을 늘리세요.",
+      "en": "Cut walks and add strikeouts in official games.",
+      "ja": "公式戦では四球を減らし三振を増やしてください。"
+    },
+    "draft.reason.advice.awakening": {
+      "ko": "각성 갈래를 놓치지 마세요.",
+      "en": "Do not miss an awakening branch.",
+      "ja": "覚醒の分岐を逃さないでください。"
+    },
+    "draft.reason.advice.relationship": {
+      "ko": "배터리와 벤치의 말에 귀 기울이세요.",
+      "en": "Listen to the battery and the bench.",
+      "ja": "バッテリーとベンチの言葉に耳を傾けてください。"
+    },
+    "draft.reason.advice.overuse": {
+      "ko": "몰아붙이기 뒤에는 회복을 넣으세요.",
+      "en": "Follow a push week with recovery.",
+      "ja": "追い込みの後は回復を入れてください。"
+    },
+    "draft.reason.advice.season": {
+      "ko": "팀 경기에서 긴 이닝을 지켜 내세요.",
+      "en": "Hold longer innings in team games.",
+      "ja": "チームの試合では長いイニングを守ってください。"
+    },
+    "draft.reason.advice.fan": {
+      "ko": "큰 경기에서 이름을 알리세요.",
+      "en": "Make your name in the big games.",
+      "ja": "大きな試合で名前を知られてください。"
+    },
+    "draft.reason.advice.karma": {
+      "ko": "다음 회차의 핸디캡은 신중히 고르세요.",
+      "en": "Choose the next run's handicap carefully.",
+      "ja": "次の回のハンデは慎重に選んでください。"
+    },
+    "fatigue.status.normal": {
+      "ko": "정상",
+      "en": "Fresh",
+      "ja": "正常"
+    },
+    "fatigue.status.tired": {
+      "ko": "지침 · 성장 확률 감소",
+      "en": "Worn · growth chance down",
+      "ja": "疲れ · 成長確率低下"
+    },
+    "fatigue.status.overwork": {
+      "ko": "과로 · 부상 위험",
+      "en": "Overworked · injury risk",
+      "ja": "過労 · 怪我のリスク"
+    },
+    "fatigue.status.exhausted": {
+      "ko": "탈진 · 훈련 성장 없음",
+      "en": "Spent · no training growth",
+      "ja": "消耗 · 訓練の成長なし"
+    },
+    "fatigue.exhaustion.callout": {
+      "ko": "회복 없이는 능력이 오르지 않습니다",
+      "en": "Abilities will not rise without recovery",
+      "ja": "回復なしでは能力は上がりません"
+    },
+    "fatigue.exhaustion.pick-recovery": {
+      "ko": "회복 고르기",
+      "en": "Choose recovery",
+      "ja": "回復を選ぶ"
+    },
+    "settings.reading-size.footer": {
+      "ko": "기기의 글자 크기 설정보다 작아지지 않습니다. 둘 중 큰 쪽을 따릅니다.",
+      "en": "Never smaller than your device setting. The larger of the two wins.",
+      "ja": "端末の文字サイズ設定より小さくなりません。大きい方に合わせます。"
+    },
+    "settings.copy.density.footer": {
+      "ko": "중요한 결과와 새로 열린 항목은 항상 펼쳐 보여 줍니다.",
+      "en": "Important results and newly opened items always stay expanded.",
+      "ja": "重要な結果と新しく開いた項目は常に展開して表示します。"
+    },
+    "settings.audio.haptics.footer": {
+      "ko": "진동을 끄면 긴장에 따른 릴리스 미터 흔들림이 사라집니다.",
+      "en": "Turning off haptics removes the release meter's pressure wobble.",
+      "ja": "ハプティクスをオフにすると緊張によるリリースメーターの揺れがなくなります。"
+    },
+    "settings.audio.footer": {
+      "ko": "소리는 다른 앱의 음악을 멈추지 않고, 무음 스위치를 따릅니다.",
+      "en": "Sound won't stop music from other apps and follows the Ring/Silent switch.",
+      "ja": "サウンドは他のアプリからの音楽を停止せず、着信/サイレントスイッチに従います。"
+    }
+  }
+}

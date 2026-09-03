@@ -15,6 +15,7 @@ import BaseballIOSDomain
 struct HighSchoolSetupView: View {
     let career: HighSchoolCareerStore
     @Binding var pendingChallenge: ChallengeLink.Pending?
+    var showOnboardingNameCTA = false
 
     @Environment(\.gameCopyResolver) var copyResolver
 
@@ -172,7 +173,7 @@ struct HighSchoolSetupView: View {
     /// 처음 켠 사람은 **다음 회차가 뭔지 아직 모른다.** "고르면 다음 회차 계승이 커집니다"가
     /// 읽히려면 한 번 끝까지 가 보고 계승을 겪어야 한다. Rogue Legacy도 첫 죽음 전까지
     /// 특성을 보여 주지 않는다.
-    var steps: [Step] { isRebirth ? Step.allCases : [.name, .region, .style, .repertoire] }
+    var steps: [Step] { isRebirth ? Step.allCases : [.name, .region, .style] }
     var stepIndex: Int { steps.firstIndex(of: step) ?? 0 }
     var isLastStep: Bool { stepIndex == steps.count - 1 }
 

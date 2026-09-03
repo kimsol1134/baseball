@@ -136,6 +136,7 @@ public enum GameCopySchema {
 public enum AppCopyKey {
     public static let tabHighSchool = GameCopyKey.localizable("app.tab.high-school")
     public static let tabPro = GameCopyKey.localizable("app.tab.pro")
+    public static let tabCareer = GameCopyKey.localizable("app.tab.career")
     public static let tabRecords = GameCopyKey.localizable("app.tab.records")
     public static let tabSettings = GameCopyKey.localizable("app.tab.settings")
 
@@ -143,6 +144,7 @@ public enum AppCopyKey {
     public static let openingSummary = GameCopyKey.localizable("opening.summary")
     public static let openingDescription = GameCopyKey.localizable("opening.description")
     public static let openingStart = GameCopyKey.localizable("opening.start")
+    public static let onboardingBullpenNameCTA = GameCopyKey.localizable("onboarding.bullpen.name-cta")
 
     public static let prologueFirstLifeTitle = GameCopyKey.localizable("prologue.title.first-life")
     public static let prologueRebirthTitle = GameCopyKey.localizable("prologue.title.rebirth")
@@ -152,6 +154,7 @@ public enum AppCopyKey {
     public static let prologueWindAccessibility = GameCopyKey.localizable("prologue.wind.accessibility")
     public static let prologueHandicapHeading = GameCopyKey.localizable("prologue.handicap.heading")
     public static let prologueThrow = GameCopyKey.localizable("prologue.action.throw")
+    public static let prologueFirstSchool = GameCopyKey.localizable("prologue.action.first-school")
     public static let prologueSkip = GameCopyKey.localizable("prologue.action.skip")
     public static let prologueCurrentPlayerTitle = GameCopyKey.localizable("prologue.current-player.title")
     public static let prologueInheritedStartTitle = GameCopyKey.localizable("prologue.inherited-start.title")
@@ -373,6 +376,9 @@ public enum AppCopyKey {
     public static let trainingOpportunityTitle = GameCopyKey.localizable("training.opportunity.title")
     public static let trainingPrompt = GameCopyKey.localizable("training.prompt")
     public static let trainingBadgeOpportunity = GameCopyKey.localizable("training.badge.opportunity")
+    public static let trainingBadgeRecommended = GameCopyKey.localizable("training.badge.recommended")
+    public static let trainingRepeatRecommendedExplanation = GameCopyKey.localizable("training.repeat.recommended-explanation")
+    public static let trainingResultNoGain = GameCopyKey.localizable("training.result.no-gain")
     public static let trainingBadgeSchoolStrength = GameCopyKey.localizable("training.badge.school-strength")
     public static let trainingPitchPickerTitle = GameCopyKey.localizable("training.pitch-picker.title")
     public static let trainingIntensityTitle = GameCopyKey.localizable("training.intensity.title")
@@ -391,7 +397,8 @@ public enum AppCopyKey {
         trainingArmHealthRecovering, trainingArmHealthRisk,
         armHealthResultOuting, armHealthResultPushThrough, armHealthResultRehab,
         armHealthResultNextRecovery, armHealthResultNextManage, trainingOpportunityTitle,
-        trainingPrompt, trainingBadgeOpportunity, trainingBadgeSchoolStrength,
+        trainingPrompt, trainingBadgeOpportunity, trainingBadgeRecommended, trainingBadgeSchoolStrength,
+        trainingRepeatRecommendedExplanation, trainingResultNoGain,
         trainingPitchPickerTitle, trainingIntensityTitle, trainingDoubleBonus,
         trainingCommit, trainingRepeatTitle, trainingRepeatStopExplanation,
         trainingPitchLearningTitle, trainingPitchLearningGrip, trainingPitchLearningBullpen,
@@ -828,8 +835,8 @@ public enum AppCopyKey {
     ]
 
     public static let allCases: [GameCopyKey] = [
-        tabHighSchool, tabPro, tabRecords, tabSettings,
-        openingEyebrow, openingSummary, openingDescription, openingStart,
+        tabHighSchool, tabPro, tabCareer, tabRecords, tabSettings,
+        openingEyebrow, openingSummary, openingDescription, openingStart, onboardingBullpenNameCTA, prologueFirstSchool,
     ] + prologueKeys + [
         actionCancel,
         settingsControlTitle, settingsAutoRelease, settingsAutoReleaseDescription,

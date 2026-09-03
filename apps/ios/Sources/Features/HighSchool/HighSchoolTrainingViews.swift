@@ -146,8 +146,8 @@ struct TrainingSelection: Equatable {
             $0.isCompleted ? nil : $0.pitchType
         }
         return TrainingSelection(
-            focus: state.lastTraining?.focus ?? .command,
-            intensity: state.lastTraining?.intensity ?? .standard,
+            focus: HighSchoolCareerStore.recommendedTraining(state: state),
+            intensity: HighSchoolCareerStore.recommendedTrainingIntensity(state: state),
             targetPitch: activeProjectPitch
                 ?? state.pitcher.pitchProfiles?.first(where: { $0.pitchType != .fourSeam })?.pitchType
                 ?? .slider
@@ -160,6 +160,7 @@ struct TrainingSelection: Equatable {
 /// 훈련하기 · 같은 훈련 3번 연속 — 스크롤 밖 고정 하단 바. 탭 바 위에 항상 보인다.
 struct TrainingCommitBar: View {
     let selection: TrainingSelection
+    var recommendedFocus: TrainingFocus? = nil
     let onCommit: (TrainingFocus, TrainingIntensity, PitchType?) -> Void
     let onCommitBlock: (TrainingFocus, TrainingIntensity, PitchType?) -> Void
     @Environment(\.gameCopyResolver) private var copyResolver
@@ -175,7 +176,11 @@ struct TrainingCommitBar: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(copyResolver.resolve(AppCopyKey.trainingRepeatTitle))
                         .font(.subheadline.weight(.semibold))
-                    Text(copyResolver.resolve(AppCopyKey.trainingRepeatStopExplanation))
+                    Text(copyResolver.resolve(
+                        recommendedFocus == selection.focus
+                            ? AppCopyKey.trainingRepeatRecommendedExplanation
+                            : AppCopyKey.trainingRepeatStopExplanation
+                    ))
                         .detailStyle()
                         .multilineTextAlignment(.leading)
                 }
@@ -367,6 +372,8 @@ struct TrainingCard: View {
             schoolStrengthBadge: copyResolver.resolve(AppCopyKey.trainingBadgeSchoolStrength),
             isOpportunity: state.trainingOpportunity?.focus == option,
             isSchoolStrength: state.school?.strength == option,
+            isRecommended: HighSchoolCareerStore.recommendedTraining(state: state) == option,
+            recommendedBadge: copyResolver.resolve(AppCopyKey.trainingBadgeRecommended),
             selection: $selection.focus
         )
     }
@@ -425,6 +432,7 @@ struct TrainingCard: View {
             focusOptionButton(.breakingBall)
             focusOptionButton(.stamina)
             focusOptionButton(.recovery)
+                .id("hs.training.recovery")
             focusOptionButton(.gamePlanning)
 
             if focus == .breakingBall, !breakingBalls.isEmpty {
@@ -509,6 +517,8 @@ struct TrainingFocusOptionButton: View {
     let schoolStrengthBadge: String
     let isOpportunity: Bool
     let isSchoolStrength: Bool
+    var isRecommended: Bool = false
+    let recommendedBadge: String
     @Binding var selection: TrainingFocus
 
     private var isSelected: Bool { selection == option }
@@ -532,6 +542,13 @@ struct TrainingFocusOptionButton: View {
                                     .padding(.horizontal, 6).padding(.vertical, 2)
                                     .background(BaseballTheme.milestone.opacity(0.25), in: Capsule())
                                     .foregroundStyle(BaseballTheme.milestone)
+                            }
+                            if isRecommended {
+                                Text(verbatim: recommendedBadge)
+                                    .font(.caption2.weight(.bold))
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(BaseballTheme.action.opacity(0.25), in: Capsule())
+                                    .foregroundStyle(BaseballTheme.action)
                             }
                             // 학교 특기는 3년 내내 붙는 상수 보너스다. 기회와 특기가
                             // 겹치는 턴을 알아보는 것이 훈련의 실제 결정이라 함께 표시한다.

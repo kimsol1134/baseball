@@ -62,6 +62,27 @@ public extension AppCopyKey {
     static let conclusionLegacyPreviewBody = GameCopyKey.localizable("conclusion.legacy-preview.body")
     static let conclusionAwaitingRetirementTitle = GameCopyKey.localizable("conclusion.pro.awaiting-retirement-title")
     static let conclusionAwaitingRetirementBody = GameCopyKey.localizable("conclusion.pro.awaiting-retirement-body")
+    static let draftReasonShortUndrafted = GameCopyKey.localizable("draft.reason.short.undrafted")
+    static let draftReasonShortDrafted = GameCopyKey.localizable("draft.reason.short.drafted")
+    static let draftReasonRating = GameCopyKey.localizable("draft.reason.rating")
+    static let draftReasonPerformance = GameCopyKey.localizable("draft.reason.performance")
+    static let draftReasonAwakening = GameCopyKey.localizable("draft.reason.awakening")
+    static let draftReasonRelationship = GameCopyKey.localizable("draft.reason.relationship")
+    static let draftReasonOveruse = GameCopyKey.localizable("draft.reason.overuse")
+    static let draftReasonSeason = GameCopyKey.localizable("draft.reason.season")
+    static let draftReasonFan = GameCopyKey.localizable("draft.reason.fan")
+    static let draftReasonKarma = GameCopyKey.localizable("draft.reason.karma")
+    static let draftReasonChipRating = GameCopyKey.localizable("draft.reason.chip.rating")
+    static let draftReasonChipGain = GameCopyKey.localizable("draft.reason.chip.gain")
+    static let draftReasonChipCost = GameCopyKey.localizable("draft.reason.chip.cost")
+    static let draftReasonAdviceRating = GameCopyKey.localizable("draft.reason.advice.rating")
+    static let draftReasonAdvicePerformance = GameCopyKey.localizable("draft.reason.advice.performance")
+    static let draftReasonAdviceAwakening = GameCopyKey.localizable("draft.reason.advice.awakening")
+    static let draftReasonAdviceRelationship = GameCopyKey.localizable("draft.reason.advice.relationship")
+    static let draftReasonAdviceOveruse = GameCopyKey.localizable("draft.reason.advice.overuse")
+    static let draftReasonAdviceSeason = GameCopyKey.localizable("draft.reason.advice.season")
+    static let draftReasonAdviceFan = GameCopyKey.localizable("draft.reason.advice.fan")
+    static let draftReasonAdviceKarma = GameCopyKey.localizable("draft.reason.advice.karma")
     static let conclusionBestEvaluationRecordTitle = GameCopyKey.localizable("conclusion.best-evaluation.record-title")
     static let conclusionBestEvaluationNextTitle = GameCopyKey.localizable("conclusion.best-evaluation.next-title")
     static let conclusionBestEvaluationRecordBody = GameCopyKey.localizable("conclusion.best-evaluation.record-body")
@@ -183,6 +204,13 @@ public extension AppCopyKey {
         conclusionCarriedMemorySummary, conclusionTeamWaiting, conclusionCoachName, conclusionCompetitorFallback,
         conclusionEnterPro, conclusionNotOver, conclusionLegacyPreviewTitle, conclusionLegacyPreviewBody,
         conclusionAwaitingRetirementTitle, conclusionAwaitingRetirementBody,
+        draftReasonShortUndrafted, draftReasonShortDrafted,
+        draftReasonRating, draftReasonPerformance, draftReasonAwakening, draftReasonRelationship,
+        draftReasonOveruse, draftReasonSeason, draftReasonFan, draftReasonKarma,
+        draftReasonChipRating, draftReasonChipGain, draftReasonChipCost,
+        draftReasonAdviceRating, draftReasonAdvicePerformance, draftReasonAdviceAwakening,
+        draftReasonAdviceRelationship, draftReasonAdviceOveruse, draftReasonAdviceSeason,
+        draftReasonAdviceFan, draftReasonAdviceKarma,
         conclusionBestEvaluationRecordTitle, conclusionBestEvaluationNextTitle,
         conclusionBestEvaluationRecordBody, conclusionBestEvaluationNextBody, conclusionRebirthAction,
         conclusionRebirthSummaryWithEul, conclusionRebirthSummaryWithReul, conclusionFoldTitle,

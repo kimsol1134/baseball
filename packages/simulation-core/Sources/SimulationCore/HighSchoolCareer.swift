@@ -140,6 +140,11 @@ public struct HighSchoolCareerEngine: Sendable {
     // 팔 상태 밴드 경계. HighSchoolCareerView.tsx의 armHealthState()와 반드시 같은 값을 쓴다.
     static let armCautionThreshold = 35
     static let armWarningThreshold = 55
+    /// 표시용 피로 밴드. 성장 신호는 `fatigue - 45`부터 깎이고(`trainingSignalBase`),
+    /// 70은 기존 HUD 경고, 90 근처에서는 표준 훈련 신호가 성장 컷(260) 아래로 떨어진다.
+    public static let fatigueDisplayCautionThreshold = 50
+    public static let fatigueDisplayWarningThreshold = 70
+    public static let fatigueDisplayExhaustionThreshold = 90
     // 이 임계를 넘긴 채 "참고 던진다"를 고르면 결정론적으로 부상이 난다. 경고에서 한두 번 강행하면
     // 넘도록 (경고 + 강행 증가분) 언저리에 둔다.
     static let armInjuryThreshold = 72
@@ -1359,6 +1364,79 @@ public struct HighSchoolCareerEngine: Sendable {
             ratingScore + performanceScore + processBonus + awakeningScore
                 + relationshipScore + seasonTerm + fanTerm + windDelta - karmaPenalty - overusePenalty
         }
+    }
+
+    /// 드래프트 평가 항목의 표시 전용 분해. 저장하지 않으며 `draftEvaluationCore`와 같은 값을 재사용한다.
+    public struct DraftEvaluationBreakdown: Equatable, Sendable {
+        public struct Item: Equatable, Sendable, Identifiable {
+            public let id: String
+            public let points: Int
+            public let maxPoints: Int
+        }
+
+        public let items: [Item]
+        public let threshold: Int
+        public let total: Int
+        /// 능력 네 값의 평균(표시용). 칩 "능력 평균 41"의 숫자.
+        public let ratingAverage: Int
+    }
+
+    public static func draftEvaluationBreakdown(state: HighSchoolCareerSnapshot) -> DraftEvaluationBreakdown {
+        let core = draftEvaluationCore(state: state)
+        let usesV4Balance = (state.balanceVersion ?? 1) >= 4
+        let seasonCap = usesV4Balance ? 2 : 4
+        let ratings = state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina
+        var items: [DraftEvaluationBreakdown.Item] = [
+            .init(id: "rating", points: core.ratingScore, maxPoints: 95),
+            .init(id: "performance", points: core.performanceScore + core.processBonus, maxPoints: 20),
+            .init(id: "awakening", points: core.awakeningScore, maxPoints: 3),
+            .init(id: "relationship", points: core.relationshipScore, maxPoints: 5),
+            .init(id: "season", points: core.seasonTerm + core.windDelta, maxPoints: seasonCap),
+            .init(id: "fan", points: core.fanTerm, maxPoints: 3),
+            .init(id: "overuse", points: -core.overusePenalty, maxPoints: 0),
+            .init(id: "karma", points: -core.karmaPenalty, maxPoints: 0),
+        ]
+        // 지명 점수는 코어 합에 분산(±1)을 더한 값이다. 카드 합이 화면에 찍힌 평가와
+        // 같도록 이미 나온 결과의 차만 성적 항에 얹는다. 판정 자체는 바꾸지 않는다.
+        var total = core.total
+        if let score = state.draftResult?.evaluationScore {
+            let delta = score - core.total
+            if delta != 0, let index = items.firstIndex(where: { $0.id == "performance" }) {
+                let current = items[index]
+                items[index] = .init(id: current.id, points: current.points + delta, maxPoints: current.maxPoints)
+            }
+            total = score
+        }
+        return DraftEvaluationBreakdown(
+            items: items,
+            threshold: draftThreshold(state: state),
+            total: total,
+            ratingAverage: ratings / 4
+        )
+    }
+
+    /// 표시 전용 추천 훈련. 커리어 RNG를 소비하지 않는다.
+    public static func recommendedTraining(state: HighSchoolCareerSnapshot) -> TrainingFocus {
+        if state.fatigue >= fatigueDisplayWarningThreshold { return .recovery }
+        if (state.armRisk ?? 0) >= armWarningThreshold { return .recovery }
+        if let opportunity = state.trainingOpportunity { return opportunity.focus }
+        let talent = state.talent ?? .unlimited
+        let abilities: [(TrainingFocus, Int)] = [
+            (.velocity, talent.ceiling(.stuff) - state.pitcher.stuff),
+            (.command, talent.ceiling(.command) - state.pitcher.command),
+            (.breakingBall, talent.ceiling(.movement) - state.pitcher.movement),
+            (.stamina, talent.ceiling(.stamina) - state.pitcher.stamina),
+        ]
+        return abilities.max { lhs, rhs in
+            if lhs.1 != rhs.1 { return lhs.1 < rhs.1 }
+            return lhs.0.rawValue > rhs.0.rawValue
+        }?.0 ?? .command
+    }
+
+    public static func recommendedTrainingIntensity(state: HighSchoolCareerSnapshot) -> TrainingIntensity {
+        if state.fatigue < 40 { return .intensive }
+        if state.fatigue < 70 { return .standard }
+        return .light
     }
 
     static func draftEvaluationCore(state: HighSchoolCareerSnapshot) -> DraftEvaluationComponents {

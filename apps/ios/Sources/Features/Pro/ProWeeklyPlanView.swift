@@ -308,8 +308,11 @@ struct WeeklyPlanView: View {
                 StatTile(
                     label: copyResolver.resolve(.weeklyFatigue),
                     value: "\(state.fatigue)",
-                    caption: weekProgress.map { ProWeeklyCopy.deltaCaption($0.fatigueDelta, resolver: copyResolver) },
-                    tone: state.fatigue >= 70 ? BaseballTheme.warning : BaseballTheme.textPrimary
+                    caption: copyResolver.resolve(
+                        CareerDisplayRules.proFatigueBand(fatigue: state.fatigue).copyKey
+                    ),
+                    tone: CareerDisplayRules.proFatigueBand(fatigue: state.fatigue) == .normal
+                        ? BaseballTheme.textPrimary : BaseballTheme.warning
                 )
                 StatTile(
                     label: copyResolver.resolve(.weeklyManagerTrust),

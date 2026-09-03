@@ -9,6 +9,8 @@ struct HighSchoolCareerView: View {
     @Binding var pendingChallenge: ChallengeLink.Pending?
     /// 지명을 받고 프로로 넘어갈 때 호출된다.
     let onEnterPro: (DraftResultSnapshot, PitcherSnapshot, PlayerIdentitySnapshot) -> Void
+    var onSkipToPro: (() -> Void)? = nil
+    var onOpenDraftForecast: (() -> Void)? = nil
     /// 이 회차로 프로에 이미 진출했는가. 은퇴 뒤 돌아왔을 때 다시 들어가지 못하게 한다.
     var hasEnteredPro = false
     var weekly: WeeklyProgramStore = .shared
@@ -41,7 +43,7 @@ struct HighSchoolCareerView: View {
         chapterNumber: Int,
         schedule: CareerScheduleSnapshot?
     ) -> Bool {
-        guard draftResult == nil, phase != .awakening else { return false }
+        guard draftResult == nil, phase != .awakening, !climaxPhase(phase) else { return false }
         return (schedule ?? .fixedDefault).hasImportantGame(inChapter: chapterNumber)
     }
 
@@ -78,11 +80,23 @@ struct HighSchoolCareerView: View {
                 // 첫 회차에는 오프닝 장면을 먼저 보여 준다. 앱을 열자마자 폼이 나오면
                 // 게임이 시작됐다는 것 자체가 전달되지 않는다.
                 if career.inheritance.lifeNumber == 1, !openingDismissed {
-                    OpeningView { openingDismissed = true }
+                    OpeningView {
+                        openingDismissed = true
+                        career.beginOnboardingBullpen()
+                    }
+                } else if let session = career.tutorialSession {
+                    PitchView(
+                        session: session,
+                        onFinish: career.finishOnboardingBullpen,
+                        onAbort: career.finishOnboardingBullpen,
+                        isPractice: true,
+                        onRetry: career.retryOnboardingBullpen
+                    )
                 } else {
                     HighSchoolSetupView(
                         career: career,
-                        pendingChallenge: $pendingChallenge
+                        pendingChallenge: $pendingChallenge,
+                        showOnboardingNameCTA: career.finishedOnboardingBullpen
                     )
                 }
             case .failed(let message):
@@ -261,7 +275,16 @@ struct HighSchoolCareerView: View {
     /// 관계 국면에서는 선택지가 뉴스·버즈보다 먼저다(페르소나 보고서 §2-2). 다른
     /// 국면에서는 예전대로 주 행동 위에 둔다.
     static func newsSitsBelowPhaseBody(phase: HighSchoolCareerPhase) -> Bool {
-        phase == .relationship
+        phase == .relationship || climaxPhase(phase)
+    }
+
+    /// 드래프트·유산·완료는 주 행동이 바로 보여야 한다. 뉴스·대회 카드가 스킬트리와
+    /// DraftCard 사이에 서면 빈 캔버스처럼 읽힌다.
+    static func climaxPhase(_ phase: HighSchoolCareerPhase) -> Bool {
+        switch phase {
+        case .draft, .legacy, .completed: true
+        default: false
+        }
     }
 
     private func commitTraining(focus: TrainingFocus, intensity: TrainingIntensity, targetPitch: PitchType?) {
@@ -321,7 +344,8 @@ struct HighSchoolCareerView: View {
                             lifeNumber: state.lifeNumber,
                             forecast: career.draftForecast,
                             // 각성은 자기 키아트를 그린다. 머리말 그림까지 서면 두 장이 겹친다.
-                            compact: state.phase == .awakening
+                            compact: state.phase == .awakening,
+                            onForecastTap: onOpenDraftForecast
                         )
 
                         if state.phase != .awakening {
@@ -332,6 +356,11 @@ struct HighSchoolCareerView: View {
                                     beforeFirstGame: state.performance.importantGamesCompleted == 0
                                 )
                             }
+                        }
+
+                        if Self.climaxPhase(state.phase) {
+                            phaseBody(state: state)
+                                .id(Self.phaseAnchor)
                         }
 
                         if !achievements.freshlyUnlocked.isEmpty {
@@ -385,12 +414,13 @@ struct HighSchoolCareerView: View {
                         }
                         if state.performance.importantGamesCompleted >= 1,
                            state.phase != .importantGame, state.phase != .awakening,
-                           state.phase != .prologue {
+                           state.phase != .prologue, !Self.climaxPhase(state.phase) {
                             WeeklyProgramSummaryRow(store: weekly)
                         }
                         // 복귀 알림 권유 — 첫 중요 경기를 끝낸 직후(감정이 양)에 딱 한 번.
                         if state.performance.importantGamesCompleted >= 1,
                            state.phase != .importantGame, state.phase != .awakening,
+                           !Self.climaxPhase(state.phase),
                            showsReminderNudge {
                             ReminderNudgeCard(
                                 onEnable: {
@@ -405,6 +435,7 @@ struct HighSchoolCareerView: View {
                         }
                         // 걸어 둔 약속 — 내기는 눈앞에 있어야 내기다.
                         if state.draftResult == nil, state.phase != .awakening,
+                           !Self.climaxPhase(state.phase),
                            let pledge = career.pledge {
                             let progress = pledge.progress(in: .init(
                                 state: state, rivalLedger: career.rivalLedger
@@ -449,7 +480,8 @@ struct HighSchoolCareerView: View {
                             )
                         }
                         // 드래프트가 끝난 회차에 챕터 숙제는 소음이다. 각성 국면도 접는다.
-                        if state.draftResult == nil, state.phase != .awakening {
+                        if state.draftResult == nil, state.phase != .awakening,
+                           !Self.climaxPhase(state.phase) {
                             if TournamentBracket.isTournamentChapter(state.chapter.number),
                                let school = state.school {
                                 TournamentCard(state: state, school: school)
@@ -482,8 +514,10 @@ struct HighSchoolCareerView: View {
                                 .id(Self.trainingResultAnchor)
                         }
 
-                        phaseBody(state: state)
-                            .id(Self.phaseAnchor)
+                        if !Self.climaxPhase(state.phase) {
+                            phaseBody(state: state)
+                                .id(Self.phaseAnchor)
+                        }
                         // 관계 선택지 아래로 내려온 소식. 대사와 선택지가 먼저 읽힌다.
                         if Self.newsSitsBelowPhaseBody(phase: state.phase) {
                             newsCards(state: state)
@@ -519,6 +553,7 @@ struct HighSchoolCareerView: View {
                     if state.phase == .training {
                         TrainingCommitBar(
                             selection: trainingSelection,
+                            recommendedFocus: HighSchoolCareerStore.recommendedTraining(state: state),
                             onCommit: commitTraining,
                             onCommitBlock: commitTrainingBlock
                         )
@@ -592,8 +627,13 @@ struct HighSchoolCareerView: View {
             PrologueCard(
                 state: state,
                 lifeNumber: state.lifeNumber,
-                onThrow: career.beginTutorialPitch,
-                onSkip: career.completePrologue
+                onThrow: career.finishedOnboardingBullpen
+                    ? career.completePrologue
+                    : career.beginTutorialPitch,
+                onSkip: career.completePrologue,
+                throwTitleKey: career.finishedOnboardingBullpen
+                    ? AppCopyKey.prologueFirstSchool
+                    : AppCopyKey.prologueThrow
             )
         case .schoolSelection:
             if !career.isChallengeRun && !career.pledgeDecided {
@@ -634,6 +674,24 @@ struct HighSchoolCareerView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("hs.training.tally")
             }
+            if CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue) == .exhausted {
+                BaseballCard(
+                    title: copyResolver.resolve(MetaUICopyKey.fatigueExhaustionCallout.gameCopyKey),
+                    tone: .warning
+                ) {
+                    Button {
+                        trainingSelection.focus = .recovery
+                        trainingSelection.intensity = HighSchoolCareerStore.recommendedTrainingIntensity(state: state)
+                    } label: {
+                        Text(verbatim: copyResolver.resolve(MetaUICopyKey.fatigueExhaustionPickRecovery.gameCopyKey))
+                            .font(BaseballType.detail.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hs.training.pickRecovery")
+                }
+                .accessibilityIdentifier("hs.training.exhaustion")
+            }
             TrainingCard(
                 state: state,
                 armHealth: career.armHealth,
@@ -669,7 +727,13 @@ struct HighSchoolCareerView: View {
             if career.isChallengeRun {
                 ChallengeEndCard(state: state) { career.endChallengeRun() }
             } else {
-                CompletionCard(career: career, state: state, hasEnteredPro: hasEnteredPro, onEnterPro: onEnterPro) {
+                CompletionCard(
+                    career: career,
+                    state: state,
+                    hasEnteredPro: hasEnteredPro,
+                    onEnterPro: onEnterPro,
+                    onSkipToPro: onSkipToPro
+                ) {
                     rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
                 }
             }

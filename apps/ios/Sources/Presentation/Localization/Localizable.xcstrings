@@ -34568,19 +34568,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Turning off haptics removes the release meter's pressure wobble. Sound won't stop other apps' music and follows the Ring/Silent switch."
+            "value": "Turning off haptics removes the release meter's pressure wobble."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ハプティクスをオフにすると緊張によるリリースメーターの揺れがなくなります。サウンドは他のアプリの音楽を止めず、サイレントスイッチに従います。"
+            "value": "ハプティクスをオフにすると緊張によるリリースメーターの揺れがなくなります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "진동을 끄면 긴장에 따른 릴리스 미터 흔들림이 사라집니다. 소리는 다른 앱 음악을 멈추지 않고 무음 스위치를 따릅니다."
+            "value": "진동을 끄면 긴장에 따른 릴리스 미터 흔들림이 사라집니다."
           }
         }
       }
@@ -34854,19 +34854,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Important results and new unlocks always stay open."
+            "value": "Important results and newly opened items always stay expanded."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "重要な結果と新しい解放は常に開いたままです。"
+            "value": "重要な結果と新しく開いた項目は常に展開して表示します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "중요한 결과와 새 해금은 항상 펼쳐집니다."
+            "value": "중요한 결과와 새로 열린 항목은 항상 펼쳐 보여 줍니다."
           }
         }
       }
@@ -40162,13 +40162,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "端末の設定より小さくはなりません。大きい方に合わせます。"
+            "value": "端末の文字サイズ設定より小さくなりません。大きい方に合わせます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "기기 설정보다 작아지지는 않아요. 큰 쪽을 따릅니다."
+            "value": "기기의 글자 크기 설정보다 작아지지 않습니다. 둘 중 큰 쪽을 따릅니다."
           }
         }
       }
@@ -41071,6 +41071,732 @@
           "stringUnit": {
             "state": "translated",
             "value": "체력 보정 −%lld"
+          }
+        }
+      }
+    },
+    "draft.reason.short.undrafted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You were %lld points short of the cutoff"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当落線まで%lld点足りませんでした"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "당락선까지 %lld점 모자랐습니다"
+          }
+        }
+      }
+    },
+    "draft.reason.short.drafted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You cleared the cutoff by %lld points"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当落線を%lld点上回りました"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "당락선을 %lld점 넘었습니다"
+          }
+        }
+      }
+    },
+    "draft.reason.rating": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ability average"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "能力平均"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "능력 평균"
+          }
+        }
+      }
+    },
+    "draft.reason.performance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Official-game pitching"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公式戦の投球"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "직접 등판 성적"
+          }
+        }
+      }
+    },
+    "draft.reason.awakening": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awakening"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "覚醒"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "각성"
+          }
+        }
+      }
+    },
+    "draft.reason.relationship": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team trust"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チームの信頼"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "팀의 믿음"
+          }
+        }
+      }
+    },
+    "draft.reason.overuse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arm overload"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "腕の過負荷"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "팔 과부하"
+          }
+        }
+      }
+    },
+    "draft.reason.season": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season log"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "シーズン記録"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시즌 기록"
+          }
+        }
+      }
+    },
+    "draft.reason.fan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fan interest"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファンの関心"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "팬 관심"
+          }
+        }
+      }
+    },
+    "draft.reason.karma": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handicap"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ハンデ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "핸디캡"
+          }
+        }
+      }
+    },
+    "draft.reason.chip.rating": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ability average %lld · +%lld needed"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "能力平均%lld · あと+%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "능력 평균 %lld · +%lld 필요"
+          }
+        }
+      }
+    },
+    "draft.reason.chip.gain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ +%lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ +%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ +%lld"
+          }
+        }
+      }
+    },
+    "draft.reason.chip.cost": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ −%lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ −%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ −%lld"
+          }
+        }
+      }
+    },
+    "draft.reason.advice.rating": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Push one ability all the way up."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一つの能力を最後まで伸ばしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "한 가지 능력을 끝까지 밀어 올리세요."
+          }
+        }
+      }
+    },
+    "draft.reason.advice.performance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cut walks and add strikeouts in official games."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公式戦では四球を減らし三振を増やしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "공식 경기에서 볼넷을 줄이고 삼진을 늘리세요."
+          }
+        }
+      }
+    },
+    "draft.reason.advice.awakening": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not miss an awakening branch."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "覚醒の分岐を逃さないでください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "각성 갈래를 놓치지 마세요."
+          }
+        }
+      }
+    },
+    "draft.reason.advice.relationship": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen to the battery and the bench."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "バッテリーとベンチの言葉に耳を傾けてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "배터리와 벤치의 말에 귀 기울이세요."
+          }
+        }
+      }
+    },
+    "draft.reason.advice.overuse": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow a push week with recovery."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追い込みの後は回復を入れてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "몰아붙이기 뒤에는 회복을 넣으세요."
+          }
+        }
+      }
+    },
+    "draft.reason.advice.season": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold longer innings in team games."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チームの試合では長いイニングを守ってください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "팀 경기에서 긴 이닝을 지켜 내세요."
+          }
+        }
+      }
+    },
+    "draft.reason.advice.fan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make your name in the big games."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大きな試合で名前を知られてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "큰 경기에서 이름을 알리세요."
+          }
+        }
+      }
+    },
+    "draft.reason.advice.karma": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the next run's handicap carefully."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の回のハンデは慎重に選んでください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 회차의 핸디캡은 신중히 고르세요."
+          }
+        }
+      }
+    },
+    "fatigue.status.normal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fresh"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正常"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정상"
+          }
+        }
+      }
+    },
+    "fatigue.status.tired": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Worn"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "疲れ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지침"
+          }
+        }
+      }
+    },
+    "fatigue.status.overwork": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overworked"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "過労"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "과로"
+          }
+        }
+      }
+    },
+    "fatigue.status.exhausted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spent"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "消耗"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "탈진"
+          }
+        }
+      }
+    },
+    "fatigue.exhaustion.callout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abilities will not rise without recovery"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回復なしでは能力は上がりません"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "회복 없이는 능력이 오르지 않습니다"
+          }
+        }
+      }
+    },
+    "fatigue.exhaustion.pick-recovery": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose recovery"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回復を選ぶ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "회복 고르기"
+          }
+        }
+      }
+    },
+    "app.tab.career": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Career"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キャリア"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "커리어"
+          }
+        }
+      }
+    },
+    "training.badge.recommended": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おすすめ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "추천"
+          }
+        }
+      }
+    },
+    "training.repeat.recommended-explanation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run the pick for 3 weeks · stops for talks or games"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おすすめのまま3週進みます · 会話や試合が来ると止まります"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "추천대로 3주 진행 · 대화·경기가 오면 멈춥니다"
+          }
+        }
+      }
+    },
+    "onboarding.bullpen.name-cta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name this pitcher"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この投手の名前を決めてください"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 투수의 이름을 정하세요"
+          }
+        }
+      }
+    },
+    "prologue.action.first-school": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First day of school"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "初めての登校"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "첫 등교"
+          }
+        }
+      }
+    },
+    "training.result.no-gain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None this time"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今回はなし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번엔 없음"
           }
         }
       }

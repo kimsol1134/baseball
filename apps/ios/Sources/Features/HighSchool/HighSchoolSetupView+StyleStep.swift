@@ -41,6 +41,16 @@ extension HighSchoolSetupView {
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            if !isRebirth {
+                ProgressiveDisclosure(
+                    contentID: "hs.setup.repertoire",
+                    title: copyResolver.resolve(AppCopyKey.setupRepertoireTitle),
+                    summary: PitchCopy.localized(learningPitch, resolver: copyResolver)
+                ) {
+                    repertoireStep
+                }
+            }
         }
     }
 

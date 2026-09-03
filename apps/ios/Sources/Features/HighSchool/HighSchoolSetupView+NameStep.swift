@@ -10,6 +10,14 @@ extension HighSchoolSetupView {
                 .foregroundStyle(BaseballTheme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if showOnboardingNameCTA {
+                Text(verbatim: copyResolver.resolve(AppCopyKey.onboardingBullpenNameCTA))
+                    .font(BaseballType.sectionTitle)
+                    .foregroundStyle(BaseballTheme.action)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hs.setup.nameCTA")
+            }
+
             GameCopyText(AppCopyKey.setupNameDescription)
                 .font(.subheadline)
                 .foregroundStyle(BaseballTheme.textSecondary)

@@ -785,19 +785,19 @@ final class RetentionHookTests: XCTestCase {
             AppShell.retiredDailyInningFallbackTab(
                 hasActiveProCareer: true, showsHighSchool: true
             ),
-            .pro
+            .career
         )
         XCTAssertEqual(
             AppShell.retiredDailyInningFallbackTab(
                 hasActiveProCareer: false, showsHighSchool: true
             ),
-            .highSchool
+            .career
         )
         XCTAssertEqual(
             AppShell.retiredDailyInningFallbackTab(
                 hasActiveProCareer: false, showsHighSchool: false
             ),
-            .pro
+            .career
         )
     }
 

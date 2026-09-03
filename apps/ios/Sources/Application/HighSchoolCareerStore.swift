@@ -142,6 +142,8 @@ final class HighSchoolCareerStore {
     var pitchSession: PitchSession?
     /// 프롤로그의 첫 불펜. 커리어 상태를 바꾸지 않는 연습이라 별도로 들고 있는다.
     var tutorialSession: PitchSession?
+    /// 첫 회차 오프닝에서 연습 투구를 마쳤는가. 저장하지 않는다.
+    var finishedOnboardingBullpen = false
     /// legacy 단계에서 고른 기억 카드.
     var selectedMemories: [MemoryCardID] = []
     /// 플레이 기록으로 생성된 대표 유산 세 후보 중 사용자가 고른 하나.

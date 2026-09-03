@@ -104,13 +104,26 @@ struct TrainingResultPanel: View {
                 .accessibilityIdentifier("hs.training.result.headline")
 
             if !compact {
-                // 결과 한 줄(위의 큰 숫자) 다음에 세부. 능력별 이동은 칩으로 훑는다.
-                EffectChipFlow {
-                    ForEach(receipt.gains.filter { $0.after > $0.before }) { gain in
-                        EffectChip(
-                            text: HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver),
-                            tone: .gain
-                        )
+                let risen = receipt.gains.filter { $0.after > $0.before }
+                if risen.isEmpty {
+                    StatTile(
+                        label: copyResolver.resolve(AppCopyKey.trainingResultNoGain),
+                        value: "0",
+                        caption: copyResolver.resolve(AppCopyKey.trainingResultNoGain),
+                        tone: BaseballTheme.textTertiary
+                    )
+                } else {
+                    HStack(alignment: .top, spacing: 10) {
+                        ForEach(risen) { gain in
+                            StatTile(
+                                label: copyResolver.resolve(gain.ability.displayCopyToken),
+                                value: "\(AbilityDisplayScale.displayRating(gain.after))",
+                                previousValue: "\(AbilityDisplayScale.displayRating(gain.before))",
+                                caption: HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver),
+                                tone: accent,
+                                animatesChange: true
+                            )
+                        }
                     }
                 }
 

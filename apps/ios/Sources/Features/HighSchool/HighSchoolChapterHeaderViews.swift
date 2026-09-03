@@ -12,6 +12,7 @@ struct ChapterHeader: View {
     /// 국면 화면이 자기 키아트를 그릴 때(각성) 머리말은 눈썹+제목 한 덩어리로 줄인다 —
     /// 그림 두 장이 겹쳐 서면 어느 쪽도 무대가 아니다.
     var compact = false
+    var onForecastTap: (() -> Void)? = nil
     @State private var windExpanded = false
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -70,26 +71,38 @@ struct ChapterHeader: View {
                 eyebrow: eyebrow,
                 title: title
             )
-            HStack(spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
                 // 주인공의 얼굴. 게임에서 가장 자주 보는 화면인데 정작 주인공이 없었다.
                 // 1학년(챕터 1~3)은 앳된 얼굴, 2학년부터는 에이스 얼굴 — 성장이 눈에 보인다.
                 PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46,
                              playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
-                Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricFatigue), value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
+                Metric(
+                    title: copyResolver.resolve(AppCopyKey.chapterMetricFatigue),
+                    value: "\(state.fatigue)",
+                    tone: CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue) == .normal
+                        ? .standard : .warning,
+                    caption: copyResolver.resolve(
+                        CareerDisplayRules.highSchoolFatigueBand(fatigue: state.fatigue).copyKey
+                    )
+                )
                 Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricTeamTrust), value: "\(state.relationshipTrust)")
                 Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricTraining), value: "\(state.totalTrainingsCompleted)")
             }
             // 드래프트 거리는 1학년 봄부터 보인다. 3년을 닫고 나서야 "당락선 66"을
             // 처음 보면 지명 실패가 허무하다(페르소나 보고서 §2-3, §4-2).
             if state.phase != .prologue, let forecast {
-                EffectChip(
-                    text: copyResolver.resolve(
-                        AppCopyKey.chapterHeaderDraftForecast,
-                        arguments: [.integer(forecast.score), .integer(forecast.threshold)]
-                    ),
-                    tone: Self.forecastTone(score: forecast.score, threshold: forecast.threshold),
-                    systemImage: "flag.checkered"
-                )
+                Button(action: { onForecastTap?() }) {
+                    EffectChip(
+                        text: copyResolver.resolve(
+                            AppCopyKey.chapterHeaderDraftForecast,
+                            arguments: [.integer(forecast.score), .integer(forecast.threshold)]
+                        ),
+                        tone: Self.forecastTone(score: forecast.score, threshold: forecast.threshold),
+                        systemImage: "flag.checkered"
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(onForecastTap == nil)
                 .accessibilityIdentifier("hs.chapter.draftForecast")
             }
             if state.phase != .prologue {

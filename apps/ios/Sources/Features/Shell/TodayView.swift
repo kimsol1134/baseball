@@ -66,7 +66,11 @@ private struct TodayDashboard: View {
                     Metric(
                         title: copyResolver.resolve(AppCopyKey.proFatigueLabel),
                         value: "\(state.fatigue)",
-                        tone: state.fatigue >= 70 ? .warning : .standard
+                        tone: CareerDisplayRules.proFatigueBand(fatigue: state.fatigue) == .normal
+                            ? .standard : .warning,
+                        caption: copyResolver.resolve(
+                            CareerDisplayRules.proFatigueBand(fatigue: state.fatigue).copyKey
+                        )
                     )
                     Metric(
                         title: copyResolver.resolve(AppCopyKey.proManagerTrustLabel),

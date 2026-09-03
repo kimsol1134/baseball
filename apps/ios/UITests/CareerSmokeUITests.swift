@@ -154,7 +154,7 @@ final class CareerSmokeUITests: XCTestCase {
             "-AppleLocale", "ja_JP",
         ]
         app.launch()
-        for tab in ["プロ", "Pro", "프로"] where app.tabBars.buttons[tab].waitForExistence(timeout: 2) {
+        for tab in ["キャリア", "Career", "커리어"] where app.tabBars.buttons[tab].waitForExistence(timeout: 2) {
             app.tabBars.buttons[tab].tap()
             break
         }

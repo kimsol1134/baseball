@@ -405,8 +405,30 @@ struct StatTile: View {
     var previousValue: String?
     var caption: String?
     var tone: Color = BaseballTheme.textPrimary
+    var animatesChange = false
 
     @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var displayedValue: String
+    @State private var glow = false
+    @State private var bump = false
+
+    init(
+        label: String,
+        value: String,
+        previousValue: String? = nil,
+        caption: String? = nil,
+        tone: Color = BaseballTheme.textPrimary,
+        animatesChange: Bool = false
+    ) {
+        self.label = label
+        self.value = value
+        self.previousValue = previousValue
+        self.caption = caption
+        self.tone = tone
+        self.animatesChange = animatesChange
+        _displayedValue = State(initialValue: animatesChange ? (previousValue ?? value) : value)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -423,7 +445,7 @@ struct StatTile: View {
                         .foregroundStyle(BaseballTheme.textTertiary)
                 }
                 // localization-safe: numeric
-                Text(value)
+                Text(displayedValue)
                     .font(previousValue == nil ? BaseballType.heroNumeral : BaseballType.statNumeral)
                     .foregroundStyle(tone)
                     .monospacedDigit()
@@ -436,9 +458,42 @@ struct StatTile: View {
                     .detailStyle()
             }
         }
+        .padding(glow ? 6 : 0)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(glow ? BaseballTheme.positiveSoft : Color.clear, in: RoundedRectangle(cornerRadius: 8))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityCopy)
+        .sensoryFeedback(.impact(weight: .medium), trigger: bump)
+        .onAppear { runChangeAnimationIfNeeded() }
+    }
+
+    private func runChangeAnimationIfNeeded() {
+        guard animatesChange, let previousValue, previousValue != value else {
+            displayedValue = value
+            return
+        }
+        if reduceMotion {
+            displayedValue = value
+            return
+        }
+        displayedValue = previousValue
+        let start = Int(previousValue) ?? 0
+        let end = Int(value) ?? start
+        let steps = max(1, abs(end - start))
+        let stepDuration = 0.4 / Double(steps)
+        for step in 1...steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + stepDuration * Double(step)) {
+                let next = start + (end - start) * step / steps
+                displayedValue = "\(next)"
+                if next == end {
+                    bump = true
+                    withAnimation(.easeOut(duration: 0.3)) { glow = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        withAnimation(.easeOut(duration: 0.2)) { glow = false }
+                    }
+                }
+            }
+        }
     }
 
     private var accessibilityCopy: String {
@@ -577,6 +632,7 @@ struct KeyArtHeader: View {
     let eyebrow: String
     let title: String
     var accent: Color = BaseballTheme.action
+    var height: CGFloat = BaseballMetrics.keyArtHeight
     @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
@@ -584,8 +640,8 @@ struct KeyArtHeader: View {
             if contrast == .standard {
                 Image(art.rawValue)
                     .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(height: BaseballMetrics.keyArtHeight)
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
                     .overlay {
                         // 캔버스와 같은 색으로 아래를 덮어 이미지가 화면에 녹아들게 한다.
@@ -603,7 +659,6 @@ struct KeyArtHeader: View {
             } else {
                 Rectangle()
                     .fill(BaseballTheme.surfaceRaised)
-                    .frame(height: BaseballMetrics.keyArtHeight)
             }
             VStack(alignment: .leading, spacing: 6) {
                 // localization-safe: resolved-copy
@@ -617,8 +672,9 @@ struct KeyArtHeader: View {
             .padding(.horizontal, 2)
             .padding(.bottom, 2)
         }
-        .frame(height: BaseballMetrics.keyArtHeight)
+        .frame(height: height)
         .frame(maxWidth: .infinity)
+        .clipped()
         .accessibilityElement(children: .combine)
     }
 }

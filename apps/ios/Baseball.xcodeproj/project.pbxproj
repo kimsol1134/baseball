@@ -16,6 +16,7 @@
 		0733BA8290AA665619296834 /* ProOffseasonInvestmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D84CEC8401BB1699F5AC5F0 /* ProOffseasonInvestmentView.swift */; };
 		09515220BC84D0FC7A2820B4 /* HighSchoolCareerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F3FD616DF1F03A14D4C714 /* HighSchoolCareerView.swift */; };
 		09731B26525F864A4E774636 /* HighSchoolPresentation+Labels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C48AF34B8B7D00F1C885743B /* HighSchoolPresentation+Labels.swift */; };
+		09C5CB57765DC0244A0ED995 /* HighSchoolCareerStore+Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843B20BC1C1A3C685AD55B81 /* HighSchoolCareerStore+Onboarding.swift */; };
 		0A3853B90BABF4A09772C762 /* EnglishFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF350981FEF54E7A9ADA24F5 /* EnglishFormattingTests.swift */; };
 		0A5CBC71EFB7F6C73897A9D9 /* ProSeasonDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2877223067C00DD6FDC0B1C7 /* ProSeasonDecisionTests.swift */; };
 		0AEB3543D58F52B829F69F2D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 077E4203F2191CBF2178BCCE /* GoogleService-Info.plist */; };
@@ -111,6 +112,7 @@
 		6F4E1C6A64226D250255C017 /* JapaneseLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B1973DF334F6A0A28797F8B /* JapaneseLocalizationTests.swift */; };
 		711B8426DC9F37452F11C9E1 /* MobileCareerStore+Lifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DE1F860F9A238F0AACC792 /* MobileCareerStore+Lifecycle.swift */; };
 		711B9F40D400AD5D629FD9FA /* AvatarFace.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADF43449898BB854F499262 /* AvatarFace.swift */; };
+		7131600E87EBBDC6BF309DC5 /* DraftEvaluationBreakdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9E24462361534068BE714E /* DraftEvaluationBreakdownTests.swift */; };
 		744FFCF9FFC439AAA92F5CC6 /* HighSchoolSetupView+NameStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A2F974BD6224B76EBF23A1 /* HighSchoolSetupView+NameStep.swift */; };
 		7631A72C8AAA7BE183C6C1A7 /* PitchStrikeZoneViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F783EBFCAD3BE2DC0E72CF04 /* PitchStrikeZoneViews.swift */; };
 		765CBE542F83A18991CA8807 /* HighSchoolChapterHeaderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0F3A4BC1B68E725B1F3E8F /* HighSchoolChapterHeaderViews.swift */; };
@@ -348,6 +350,7 @@
 		81ECBB2327ACE07418616592 /* GrowthCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthCelebrationView.swift; sourceTree = "<group>"; };
 		8291257DAA95D292E42B46C9 /* HighSchoolCareerPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolCareerPersistenceTests.swift; sourceTree = "<group>"; };
 		82E8C6BB32D1E7518208D187 /* Release128JourneyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Release128JourneyUITests.swift; sourceTree = "<group>"; };
+		843B20BC1C1A3C685AD55B81 /* HighSchoolCareerStore+Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HighSchoolCareerStore+Onboarding.swift"; sourceTree = "<group>"; };
 		84ECF8E47B4691522EF0268C /* HighSchoolSharedViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolSharedViews.swift; sourceTree = "<group>"; };
 		86147AE0FD47CCE5781F2C0F /* RecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordView.swift; sourceTree = "<group>"; };
 		87A354F8732E3B5157ED6A03 /* ProRetirementViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProRetirementViews.swift; sourceTree = "<group>"; };
@@ -399,6 +402,7 @@
 		B6FD9FC4DABDF4993821FE27 /* BaseballIOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BaseballIOS.entitlements; sourceTree = "<group>"; };
 		B953034940DAA27530E1A82D /* WeeklyProgramTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyProgramTests.swift; sourceTree = "<group>"; };
 		BB1397E39DE23FAF1C46795E /* ShareCopyKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCopyKeys.swift; sourceTree = "<group>"; };
+		BB9E24462361534068BE714E /* DraftEvaluationBreakdownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftEvaluationBreakdownTests.swift; sourceTree = "<group>"; };
 		BBE3704F64563F164CBC134B /* ExceptionCatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ExceptionCatcher.m; sourceTree = "<group>"; };
 		BC05ADE7DBADF575A7025D41 /* WeeklyProgramStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyProgramStore.swift; sourceTree = "<group>"; };
 		BCC54EB8C7E7162AD8BE487D /* PitchLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchLocalizationTests.swift; sourceTree = "<group>"; };
@@ -747,6 +751,7 @@
 				0343E1B7143DB79A8561F05D /* ChallengeLinkSessionTests.swift */,
 				751AE8B50E946BB684D3670B /* CopyCallerContractTests.swift */,
 				902334DCFD6C688F66710F0E /* DeliveryControlTests.swift */,
+				BB9E24462361534068BE714E /* DraftEvaluationBreakdownTests.swift */,
 				87C79C02C912900DB7953621 /* DramaSnapshotExportTests.swift */,
 				CF350981FEF54E7A9ADA24F5 /* EnglishFormattingTests.swift */,
 				2837CAF42ACF84B7B70646F4 /* GameLineFormatTests.swift */,
@@ -809,6 +814,7 @@
 				21E3CBB1059BC96FD07FC11D /* HighSchoolCareerStore.swift */,
 				031AF0C77B9C167675883FE4 /* HighSchoolCareerStore+ImportantGame.swift */,
 				E1BDBF16E1837D6A79A95D26 /* HighSchoolCareerStore+Lifecycle.swift */,
+				843B20BC1C1A3C685AD55B81 /* HighSchoolCareerStore+Onboarding.swift */,
 				0968A5A736612B25C9F8B921 /* HighSchoolCareerStore+Persistence.swift */,
 				87F34C525AF51126E5E5AB9F /* HighSchoolCareerStore+Progress.swift */,
 				B2165B0CFE36446AE614B325 /* HighSchoolCareerStore+ProLegacy.swift */,
@@ -974,6 +980,7 @@
 				9D3BD29F23FF24C31683863A /* ChallengeLinkSessionTests.swift in Sources */,
 				4B220D4518FCF87400A377EF /* CopyCallerContractTests.swift in Sources */,
 				539AC44A52E0B08CD1390416 /* DeliveryControlTests.swift in Sources */,
+				7131600E87EBBDC6BF309DC5 /* DraftEvaluationBreakdownTests.swift in Sources */,
 				1EF93DE58ADDDBAB32C52EAA /* DramaSnapshotExportTests.swift in Sources */,
 				0A3853B90BABF4A09772C762 /* EnglishFormattingTests.swift in Sources */,
 				59B324B22D4C3D696852895B /* GameLineFormatTests.swift in Sources */,
@@ -1068,6 +1075,7 @@
 				BC11F449443B11E7BAA612C0 /* HighSchoolAwakeningViews.swift in Sources */,
 				5F0C903700827D1D79FCF959 /* HighSchoolCareerStore+ImportantGame.swift in Sources */,
 				2E1D57E059D357F5EA541387 /* HighSchoolCareerStore+Lifecycle.swift in Sources */,
+				09C5CB57765DC0244A0ED995 /* HighSchoolCareerStore+Onboarding.swift in Sources */,
 				64BFDEA7A101E746F1A2D416 /* HighSchoolCareerStore+Persistence.swift in Sources */,
 				A97B9EEC32341CB90A84CB24 /* HighSchoolCareerStore+ProLegacy.swift in Sources */,
 				FCFCF931E518AA2863064C52 /* HighSchoolCareerStore+Progress.swift in Sources */,

@@ -134,6 +134,7 @@ struct PrologueCard: View {
     let lifeNumber: Int
     let onThrow: () -> Void
     let onSkip: () -> Void
+    var throwTitleKey: GameCopyKey = AppCopyKey.prologueThrow
 
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -229,7 +230,7 @@ struct PrologueCard: View {
             // 접힘선 아래에 있으면 유료 게임의 첫 30초를 버리는 것이다(QA P0-1).
             // 이 게임에서 가장 좋은 것은 투구다. 사는 사람이 그걸 두 번째 탭에서 만나게 한다.
             PrimaryButton(
-                title: copyResolver.resolve(AppCopyKey.prologueThrow),
+                title: copyResolver.resolve(throwTitleKey),
                 identifier: "hs.prologue.throw",
                 action: onThrow
             )

@@ -4,6 +4,38 @@ import BaseballIOSDomain
 
 /// 화면·프레젠테이션이 시뮬레이션 규칙 엔진을 직접 부르지 않도록 막는 조회 창구.
 enum CareerDisplayRules {
+    nonisolated static func draftEvaluationBreakdown(
+        state: HighSchoolCareerSnapshot
+    ) -> HighSchoolCareerEngine.DraftEvaluationBreakdown {
+        HighSchoolCareerEngine.draftEvaluationBreakdown(state: state)
+    }
+
+    nonisolated static func recommendedTraining(state: HighSchoolCareerSnapshot) -> TrainingFocus {
+        HighSchoolCareerEngine.recommendedTraining(state: state)
+    }
+
+    nonisolated static func recommendedTrainingIntensity(state: HighSchoolCareerSnapshot) -> TrainingIntensity {
+        HighSchoolCareerEngine.recommendedTrainingIntensity(state: state)
+    }
+
+    enum FatigueDisplayBand: String, Sendable {
+        case normal, tired, overwork, exhausted
+    }
+
+    nonisolated static func highSchoolFatigueBand(fatigue: Int) -> FatigueDisplayBand {
+        if fatigue >= HighSchoolCareerEngine.fatigueDisplayExhaustionThreshold { return .exhausted }
+        if fatigue >= HighSchoolCareerEngine.fatigueDisplayWarningThreshold { return .overwork }
+        if fatigue >= HighSchoolCareerEngine.fatigueDisplayCautionThreshold { return .tired }
+        return .normal
+    }
+
+    nonisolated static func proFatigueBand(fatigue: Int) -> FatigueDisplayBand {
+        if fatigue >= ProWeekHealthForecast.fatigueDisplayExhaustionThreshold { return .exhausted }
+        if fatigue >= ProWeekHealthForecast.fatigueDisplayWarningThreshold { return .overwork }
+        if fatigue >= ProWeekHealthForecast.fatigueDisplayCautionThreshold { return .tired }
+        return .normal
+    }
+
     nonisolated static func recommendedRepertoire(presetID: String) -> StartingRepertoireSelection {
         PitchLearningRules.recommendedSelection(presetID: presetID)
     }

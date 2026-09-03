@@ -272,12 +272,25 @@ struct Metric: View {
     let title: String
     let value: String
     var tone: BaseballCardTone = .standard
+    var caption: String? = nil
 
     var body: some View {
         StatTile(
             label: title,
             value: value,
+            caption: caption,
             tone: tone == .standard ? BaseballTheme.textPrimary : tone.accent
         )
+    }
+}
+
+extension CareerDisplayRules.FatigueDisplayBand {
+    var copyKey: MetaUICopyKey {
+        switch self {
+        case .normal: .fatigueStatusNormal
+        case .tired: .fatigueStatusTired
+        case .overwork: .fatigueStatusOverwork
+        case .exhausted: .fatigueStatusExhausted
+        }
     }
 }
