@@ -2697,11 +2697,11 @@ final class LocalizationCoverageTests: XCTestCase {
     }
 
     func testGlossaryCatalogHasKoreanEnglishJapaneseParity() throws {
-        XCTAssertEqual(GlossaryCatalog.terms.count, 24)
-        XCTAssertEqual(Set(GlossaryCatalog.terms.map(\.id)).count, 24)
+        XCTAssertEqual(GlossaryCatalog.terms.count, 29)
+        XCTAssertEqual(Set(GlossaryCatalog.terms.map(\.id)).count, 29)
         let entries = try gameContentEntries()
         let expectedKeys = Set(GlossaryCatalog.terms.flatMap { [$0.nameKey, $0.definitionKey] })
-        XCTAssertEqual(expectedKeys.count, 48)
+        XCTAssertEqual(expectedKeys.count, 58)
         let glossaryKeys = Set(entries.keys.filter { $0.hasPrefix("content.glossary.") })
         XCTAssertEqual(glossaryKeys, expectedKeys)
 
@@ -2765,6 +2765,20 @@ final class LocalizationCoverageTests: XCTestCase {
             RecordUICopyKey.goalBoardProgress.rawValue,
             RecordUICopyKey.goalBoardCompleted.rawValue,
             RecordUICopyKey.goalBoardConditions.rawValue,
+            RecordUICopyKey.saberTitle.rawValue,
+            RecordUICopyKey.saberIP.rawValue,
+            RecordUICopyKey.saberRA9.rawValue,
+            RecordUICopyKey.saberFIP.rawValue,
+            RecordUICopyKey.saberKPercent.rawValue,
+            RecordUICopyKey.saberBBPercent.rawValue,
+            RecordUICopyKey.saberWHIP.rawValue,
+            RecordUICopyKey.saberWAR.rawValue,
+            RecordUICopyKey.saberSeason.rawValue,
+            RecordUICopyKey.saberSeasonHeader.rawValue,
+            RecordUICopyKey.saberCareer.rawValue,
+            RecordUICopyKey.saberGlossary.rawValue,
+            ProUICopyKey.journeySettlementSaber.rawValue,
+            ProUICopyKey.totalsWAR.rawValue,
             ProUICopyKey.weeklyGoalBoardTitle.rawValue,
             ProUICopyKey.weeklyGoalBoardLine.rawValue,
             ProUICopyKey.weeklyGoalBoardComplete.rawValue,

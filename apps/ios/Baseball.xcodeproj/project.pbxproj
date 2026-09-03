@@ -205,6 +205,7 @@
 		EA000F1A5409E075349B7FBB /* PitchSituationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BBDABD94C6B60B2F9C2AFAB /* PitchSituationTests.swift */; };
 		EA2EEF918C11D0DAD02C2112 /* SimulationCore in Frameworks */ = {isa = PBXBuildFile; productRef = 038EBE72085665C46B77DF02 /* SimulationCore */; };
 		EB9D5B721B2F52C4C5F454A2 /* ProContractInvestmentSurfaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 144B191F0D3922F2BA02EFC6 /* ProContractInvestmentSurfaceTests.swift */; };
+		EBE3741BB5864E467A0E796E /* SabermetricsSurfaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BBB7E4B875B7DE0D7BF0E0A /* SabermetricsSurfaceTests.swift */; };
 		ED06D7A683F9098368E835BC /* HighSchoolPrologueViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D0BBF86E182F630AD79AD3 /* HighSchoolPrologueViews.swift */; };
 		EDDCDF3B84182AF6DFCE5188 /* AchievementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A25EFDF253C228B460D7DE0B /* AchievementsView.swift */; };
 		EE54CD7646BA3BDB5A953FAD /* Release128JourneyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82E8C6BB32D1E7518208D187 /* Release128JourneyUITests.swift */; };
@@ -365,6 +366,7 @@
 		8914567CCE3DC83C86EC8133 /* CareerBootstrapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerBootstrapTests.swift; sourceTree = "<group>"; };
 		8926D9343209F6C1510ED589 /* HighSchoolConclusionLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolConclusionLocalizationTests.swift; sourceTree = "<group>"; };
 		8A9B757DCF03D1CA0F6106AA /* CareerSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerSetupView.swift; sourceTree = "<group>"; };
+		8BBB7E4B875B7DE0D7BF0E0A /* SabermetricsSurfaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SabermetricsSurfaceTests.swift; sourceTree = "<group>"; };
 		8C73750FD0EE581CF75ECD82 /* ko */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = ko; path = ko.lproj/LaunchScreenV2.storyboard; sourceTree = "<group>"; };
 		8C9444147D2AD6F238142F71 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		8EE22E1388FF71375DDA3C39 /* GameCopyKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCopyKey.swift; sourceTree = "<group>"; };
@@ -798,6 +800,7 @@
 				DF108344BFAED17D556F40B5 /* ReviewPromptTests.swift */,
 				3B4D291F1E68F84823F3AD13 /* RivalAdaptationSessionTests.swift */,
 				146CB8283D0AEFCE220F27FE /* RunPledgeTests.swift */,
+				8BBB7E4B875B7DE0D7BF0E0A /* SabermetricsSurfaceTests.swift */,
 				E38A2E681F2B770AB87B7521 /* ScopedPresentationLocalizationTests.swift */,
 				4F32C87C68D1E56CFD66B975 /* SeenContentStoreTests.swift */,
 				42E2D3BF1F0304129547F851 /* ShareCompletionTests.swift */,
@@ -1030,6 +1033,7 @@
 				284D9934BBEF9B22F77E147A /* ReviewPromptTests.swift in Sources */,
 				9D4EF036DCF8995AAD5F1ED9 /* RivalAdaptationSessionTests.swift in Sources */,
 				D0F32E1131A17F3BEF4431A7 /* RunPledgeTests.swift in Sources */,
+				EBE3741BB5864E467A0E796E /* SabermetricsSurfaceTests.swift in Sources */,
 				98FCD81806B401B51B4B5B62 /* ScopedPresentationLocalizationTests.swift in Sources */,
 				15120FB690994C406A76ED6E /* SeenContentStoreTests.swift in Sources */,
 				82580BD7836B80FCB2192667 /* ShareCompletionTests.swift in Sources */,

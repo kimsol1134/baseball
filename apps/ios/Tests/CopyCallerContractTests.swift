@@ -76,6 +76,7 @@ final class CopyCallerContractTests: XCTestCase {
             let resolved = [
                 ProSeasonSettlementCopy.title(arcTitleID: nil, season: 1, resolver: resolver),
                 ProSeasonSettlementCopy.stats(settlement, resolver: resolver),
+                ProSeasonSettlementCopy.saber(settlement, resolver: resolver),
                 ProSeasonSettlementCopy.legacy(settlement, resolver: resolver),
                 ProSeasonSettlementCopy.hallOfFame(settlement, resolver: resolver),
                 ProSeasonSettlementCopy.contract(settlement, resolver: resolver),

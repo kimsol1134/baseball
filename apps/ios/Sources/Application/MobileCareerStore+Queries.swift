@@ -225,6 +225,14 @@ extension MobileCareerStore {
         CareerDisplayRules.goalPermilleBand(permille)
     }
 
+    nonisolated static func saberBoard(state: ProCareerSnapshot) -> SaberMetricsBoard {
+        CareerDisplayRules.saberBoard(for: state)
+    }
+
+    nonisolated static func saberSeason(_ stats: ProSeasonStats, lines: [ProGameLine] = []) -> SaberMetricsLine {
+        CareerDisplayRules.saberSeason(stats, lines: lines)
+    }
+
     func challengeStamp() -> CareerDisplayRules.ChallengeStamp? {
         CareerDisplayRules.challengeStamp(
             highSchoolCareerID: sourceHighSchoolCareerID,

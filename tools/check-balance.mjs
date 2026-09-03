@@ -152,6 +152,12 @@ function outings(args) {
   const d = JSON.parse(raw);
   const outs = d.outs;
   return {
+    games: d.games,
+    outs,
+    strikeouts: d.strikeouts,
+    walks: d.walks,
+    homeRuns: d.homeRuns,
+    saves: d.saves,
     inningsPerGame: outs / 3 / d.games,
     ra9: (d.runsAllowed * 27) / outs,
     k9: (d.strikeouts * 27) / outs,
@@ -164,6 +170,25 @@ function outings(args) {
   };
 }
 
+// Display-only FIP WAR (SabermetricsRules v1). Integer rounding matches the Swift core.
+const SABER_V1 = { ra9Centi: 345, fipConstantCenti: 333 };
+function divRound(numerator, denominator) {
+  if (denominator === 0) return 0;
+  if (numerator >= 0) return Math.trunc((numerator + Math.trunc(denominator / 2)) / denominator);
+  return -Math.trunc((-numerator + Math.trunc(denominator / 2)) / denominator);
+}
+function seasonWarFromOutings(d, { starts, closer, targetIP }) {
+  const outs = d.outs;
+  const games = d.games;
+  if (outs <= 0 || games <= 0) return 0;
+  const fipCenti = divRound((13 * d.homeRuns + 3 * d.walks - 2 * d.strikeouts) * 300, outs) + SABER_V1.fipConstantCenti;
+  const raap9 = SABER_V1.ra9Centi - fipCenti;
+  const replacement = 27 + divRound(81 * starts, games);
+  const leverage = closer && d.saves >= 10 && starts === 0 ? 1300 : 1000;
+  const warCenti = divRound((raap9 + replacement) * outs * leverage, 243000);
+  return divRound(warCenti * targetIP * 3, outs) / 100;
+}
+
 const starter = outings(["--outings", "400"]);
 expect("선발 평균 이닝", starter.inningsPerGame, 4.6, 6.2);
 expect("선발 9이닝당 실점", starter.ra9, 2.6, 4.6);
@@ -174,11 +199,23 @@ expect("선발 K/9", starter.k9, 7.0, 10.5);
 expect("선발 BB/9", starter.bb9, 1.2, 3.2);
 expect("선발 승률", starter.winRate, 0.3, 0.62);
 expect("선발 노디시전 비율", starter.noDecisionRate, 0.1, 0.35);
+expect(
+  "선발 평균 WAR",
+  seasonWarFromOutings(starter, { starts: starter.games, closer: false, targetIP: 180 }),
+  1.5,
+  2.5
+);
 
 // 마무리는 세이브 전환율이 핵심이다. 한 번도 날리지 않으면 마무리를 맡는 긴장이 없어진다.
 const closer = outings(["--outings", "400", "--role", "closer", "--outs-target", "3"]);
 expect("마무리 세이브 비율", closer.saveRate, 0.15, 0.4);
 expect("마무리 9이닝당 실점", closer.ra9, 2.2, 5.2);
+expect(
+  "마무리 평균 WAR",
+  seasonWarFromOutings(closer, { starts: 0, closer: true, targetIP: 65 }),
+  -0.5,
+  2.5
+);
 
 // 제구형이 파워형보다 볼넷이 적어야 한다. 프리셋 차이가 성적에 반영되지 않으면
 // 선수 육성 자체가 의미를 잃는다.

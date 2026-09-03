@@ -39,9 +39,18 @@ struct ProSeasonSettlementView: View {
 
                 // 구단과 시즌 성적. 눈썹은 구단 이름 하나, 본문은 성적 한 줄.
                 BaseballCard(title: ProCareerPresentation.teamName(state.team, resolver: copyResolver)) {
-                    Text(verbatim: ProSeasonSettlementCopy.stats(settlement, resolver: copyResolver))
-                        .detailStyle(BaseballTheme.textPrimary)
-                        .monospacedDigit()
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(verbatim: ProSeasonSettlementCopy.stats(settlement, resolver: copyResolver))
+                            .detailStyle(BaseballTheme.textPrimary)
+                            .monospacedDigit()
+                        let saber = ProSeasonSettlementCopy.saber(settlement, resolver: copyResolver)
+                        if !saber.isEmpty {
+                            Text(verbatim: saber)
+                                .detailStyle(BaseballTheme.textSecondary)
+                                .monospacedDigit()
+                                .accessibilityIdentifier("pro.settlement.saber")
+                        }
+                    }
                 }
 
                 BaseballCard(title: copyResolver.resolve(.directionTitle)) {

@@ -306,6 +306,10 @@ struct CareerTotals: View {
         }
     }
 
+    private var careerWAR: SaberMetricsLine {
+        MobileCareerStore.saberBoard(state: state).career
+    }
+
     var body: some View {
         // 통산 기록은 섹션 제목 하나 아래 숫자 타일 아홉 개. 눈썹은 타일 라벨이 맡는다.
         VStack(alignment: .leading, spacing: 10) {
@@ -339,6 +343,16 @@ struct CareerTotals: View {
                         value: GameFormatters.whip(hits: totals.hits, walks: totals.walks, outs: totals.outs, language: copyResolver.language)
                     )
                 }
+                HStack(spacing: 10) {
+                    Metric(
+                        title: copyResolver.resolve(.totalsWAR),
+                        value: careerWAR.warText,
+                        tone: careerWAR.warTone == .better ? .raised
+                            : careerWAR.warTone == .worse ? .negative
+                            : .standard
+                    )
+                }
+                .accessibilityIdentifier("pro.retirement.career.war")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

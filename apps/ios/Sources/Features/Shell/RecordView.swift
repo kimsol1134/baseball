@@ -405,6 +405,8 @@ private struct RecordBoard: View {
                     lines: state.gameLines ?? []
                 )
 
+                SaberMetricsCard(board: MobileCareerStore.saberBoard(state: state))
+
                 StandingsCard(
                     season: state.season, seed: state.proCareerID,
                     week: state.week, myTeamID: state.team.id,
@@ -535,6 +537,91 @@ private struct RecordBoard: View {
             .safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
         }
         .background(BaseballTheme.canvas)
+    }
+}
+
+struct SaberMetricsCard: View {
+    let board: SaberMetricsBoard
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        BaseballCard(title: copyResolver.resolve(.saberTitle)) {
+            VStack(alignment: .leading, spacing: 10) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        header
+                        ForEach(board.rows) { line in
+                            row(line, isCareer: false)
+                        }
+                        row(board.career, isCareer: true)
+                    }
+                    .padding(.vertical, 2)
+                }
+                GlossaryText(text: copyResolver.resolve(.saberGlossary), color: BaseballTheme.textTertiary)
+            }
+        }
+        .accessibilityIdentifier("record.saber")
+    }
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            headerCell(copyResolver.resolve(.saberSeasonHeader), width: 64, alignment: .leading)
+            headerCell(copyResolver.resolve(.saberIP), width: 52)
+            headerCell(copyResolver.resolve(.saberRA9), width: 48)
+            headerCell(copyResolver.resolve(.saberFIP), width: 48)
+            headerCell(copyResolver.resolve(.saberKPercent), width: 52)
+            headerCell(copyResolver.resolve(.saberBBPercent), width: 52)
+            headerCell(copyResolver.resolve(.saberWHIP), width: 48)
+            headerCell(copyResolver.resolve(.saberWAR), width: 44)
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func row(_ line: SaberMetricsLine, isCareer: Bool) -> some View {
+        HStack(spacing: 12) {
+            Text(verbatim: seasonLabel(line))
+                .font(isCareer ? BaseballType.detail.weight(.bold) : BaseballType.detail)
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .frame(width: 64, alignment: .leading)
+            valueCell(line.inningsText, width: 52, tone: .even)
+            valueCell(line.ra9Text, width: 48, tone: line.ra9Tone)
+            valueCell(line.fipText, width: 48, tone: line.fipTone)
+            valueCell(line.kPercentText, width: 52, tone: line.kPercentTone)
+            valueCell(line.bbPercentText, width: 52, tone: line.bbPercentTone)
+            valueCell(line.whipText, width: 48, tone: line.whipTone)
+            valueCell(line.warText, width: 44, tone: line.warTone)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("record.saber.row.\(line.id)")
+    }
+
+    private func seasonLabel(_ line: SaberMetricsLine) -> String {
+        if let season = line.season {
+            return copyResolver.resolve(.saberSeason, arguments: [.integer(season)])
+        }
+        return copyResolver.resolve(.saberCareer)
+    }
+
+    private func headerCell(_ title: String, width: CGFloat, alignment: Alignment = .trailing) -> some View {
+        Text(verbatim: title)
+            .font(BaseballType.annotation.weight(.bold))
+            .foregroundStyle(BaseballTheme.textTertiary)
+            .frame(width: width, alignment: alignment)
+    }
+
+    private func valueCell(_ value: String, width: CGFloat, tone: SaberMetricsTone) -> some View {
+        Text(verbatim: value)
+            .font(BaseballType.detail.monospacedDigit().weight(.semibold))
+            .foregroundStyle(color(tone))
+            .frame(width: width, alignment: .trailing)
+    }
+
+    private func color(_ tone: SaberMetricsTone) -> Color {
+        switch tone {
+        case .better: BaseballTheme.information
+        case .worse: BaseballTheme.negative
+        case .even: BaseballTheme.textPrimary
+        }
     }
 }
 

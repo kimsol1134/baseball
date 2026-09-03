@@ -9263,6 +9263,50 @@
         }
       }
     },
+    "content.glossary.bb-percent.definition": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walk rate against batters faced. Lower means command held up better."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "対戦した打者のうち四球の割合です。低いほど制球が安定しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "상대한 타자 가운데 볼넷 비율입니다. 낮을수록 제구가 좋았습니다."
+          }
+        }
+      }
+    },
+    "content.glossary.bb-percent.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BB%"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BB%"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BB%"
+          }
+        }
+      }
+    },
     "content.glossary.catcher-chemistry.definition": {
       "localizations": {
         "en": {
@@ -9400,19 +9444,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Earned runs per nine innings. Lower is better."
+            "value": "Runs allowed per nine innings. Earned runs are not split out, so this fills the ERA slot. Lower is better."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "9イニングあたりの自責点。低いほど良い。"
+            "value": "9イニングあたりの失点です。自責点は分けないので、防御率の欄にこの値を置きます。低いほど良いです。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "9이닝당 자책점. 낮을수록 좋다."
+            "value": "9이닝당 실점입니다. 자책점과 실점을 나누지 않으므로 방어율 칸에 이 값을 둡니다. 낮을수록 좋습니다."
           }
         }
       }
@@ -9422,19 +9466,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "ERA"
+            "value": "RA9"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ERA"
+            "value": "RA9"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "ERA"
+            "value": "RA9"
           }
         }
       }
@@ -9479,6 +9523,94 @@
           "stringUnit": {
             "state": "translated",
             "value": "피로"
+          }
+        }
+      }
+    },
+    "content.glossary.fip.definition": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs per nine with defense and luck removed. Uses home runs, walks, and strikeouts. Lower is better."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "守備と運を除いた9イニングあたりの失点です。本塁打・四球・三振だけを使い、低いほど良いです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "수비와 운을 걷어 낸 9이닝당 실점입니다. 홈런·볼넷·삼진만 쓰며, 낮을수록 좋습니다."
+          }
+        }
+      }
+    },
+    "content.glossary.fip.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FIP"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FIP"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FIP"
+          }
+        }
+      }
+    },
+    "content.glossary.k-percent.definition": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strikeout rate against batters faced. It does not swing with innings pitched."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "対戦した打者のうち三振の割合です。投球回の増減に左右されません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "상대한 타자 가운데 삼진 비율입니다. 이닝 수에 휘둘리지 않습니다."
+          }
+        }
+      }
+    },
+    "content.glossary.k-percent.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "K%"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "K%"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "K%"
           }
         }
       }
@@ -9884,19 +10016,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A start of six-plus innings with three earned runs or fewer. The steadiness mark for starters."
+            "value": "A start of at least six innings with three runs or fewer. A stability mark for rotation pitchers."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "先発が6回以上、自責3点以下で抑えた登板。先発の安定指標。"
+            "value": "先発が6イニング以上、失点3点以下に抑えた登板です。先発の安定指標です。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "선발이 6이닝 이상, 자책 3점 이하로 막은 등판. 선발의 안정 지표."
+            "value": "선발이 6이닝 이상, 실점 3점 이하로 막은 등판입니다. 로테이션 투수의 안정 지표입니다."
           }
         }
       }
@@ -9919,6 +10051,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "QS"
+          }
+        }
+      }
+    },
+    "content.glossary.replacement-level.definition": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The readily available ordinary pitcher. WAR is zero at this line."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "いつでも呼べる普通の投手の水準です。WARの0点がここにあります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "언제든 부를 수 있는 평범한 투수의 수준입니다. WAR의 0점이 여기입니다."
+          }
+        }
+      }
+    },
+    "content.glossary.replacement-level.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "replacement level"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代替レベル"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "대체 수준"
           }
         }
       }
@@ -10183,6 +10359,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "재능 벽"
+          }
+        }
+      }
+    },
+    "content.glossary.war.definition": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wins above a replacement pitcher from FIP and innings. A reference number — it does not feed the Hall of Fame or contracts."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代替レベルよりどれだけ勝ったかをFIPとイニングで示した参考値です。殿堂入りや契約には使いません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "대체 수준 투수보다 얼마나 더 이겼는지를 FIP와 이닝으로 줄인 참고 값입니다. 명예의 전당이나 계약에는 넣지 않습니다."
+          }
+        }
+      }
+    },
+    "content.glossary.war.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WAR"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WAR"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WAR"
           }
         }
       }

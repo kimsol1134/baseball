@@ -205,6 +205,42 @@ enum CareerDisplayRules {
         ProCareerGoalBoardRules.permilleBand(permille)
     }
 
+    nonisolated static func saberBoard(for state: ProCareerSnapshot) -> SaberMetricsBoard {
+        let lines = state.gameLines ?? []
+        return SabermetricsRules.board(
+            completed: state.careerStats,
+            current: displaying(state.currentStats, lines: lines),
+            currentLines: lines
+        )
+    }
+
+    nonisolated static func saberSeason(_ stats: ProSeasonStats, lines: [ProGameLine] = []) -> SaberMetricsLine {
+        SabermetricsRules.season(displaying(stats, lines: lines), lines: lines)
+    }
+
+    private nonisolated static func displaying(
+        _ stats: ProSeasonStats,
+        lines: [ProGameLine]
+    ) -> ProSeasonStats {
+        ProSeasonStats(
+            season: stats.season,
+            teamID: stats.teamID,
+            games: stats.games,
+            starts: stats.starts,
+            inningsOuts: stats.inningsOuts,
+            strikeouts: stats.strikeouts,
+            walks: stats.walks,
+            runsAllowed: stats.runsAllowed,
+            hits: max(stats.hits, lines.reduce(0) { $0 + ($1.hits ?? 0) }),
+            homeRuns: max(stats.homeRuns, lines.reduce(0) { $0 + ($1.homeRuns ?? 0) }),
+            pitches: stats.pitches,
+            wins: stats.wins,
+            losses: stats.losses,
+            saves: stats.saves,
+            postseasonGames: stats.postseasonGames
+        )
+    }
+
     struct ChallengeStamp: Equatable, Sendable {
         let seed: String
         let lifeNumber: Int

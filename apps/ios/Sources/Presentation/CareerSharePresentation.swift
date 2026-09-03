@@ -64,6 +64,7 @@ enum CareerSharePresentation {
             badges.append(tierTitle)
         }
         let seasons = max(state.careerStats.count, 1)
+        let war = CareerDisplayRules.saberBoard(for: state).career.warText
         return CareerShareCardModel(
             kind: .retirement,
             playerName: state.identity.name,
@@ -88,8 +89,11 @@ enum CareerSharePresentation {
                 ),
                 CareerShareStat(label: resolver.resolve(ProUICopyKey.totalsWHIP), value: whip),
                 CareerShareStat(
-                    label: resolver.resolve(ProUICopyKey.totalsSeasons),
-                    value: "\(state.careerStats.count)"
+                    label: resolver.resolve(ShareUICopyKey.retirementSeasonsWARLabel),
+                    value: resolver.resolve(
+                        ShareUICopyKey.retirementSeasonsWARValue,
+                        arguments: [.integer(state.careerStats.count), .userText(war)]
+                    )
                 ),
             ],
             badges: badges,

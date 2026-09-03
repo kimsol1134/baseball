@@ -28,6 +28,8 @@ enum ShareUICopyKey: String, CaseIterable, Sendable {
     case recordRuns = "share.card.record.runs"
     case nationalFinal = "share.card.national.final"
     case nationalExempted = "share.card.national.exempted"
+    case retirementSeasonsWARLabel = "share.card.retirement.seasons-war-label"
+    case retirementSeasonsWARValue = "share.card.retirement.seasons-war-value"
 }
 
 extension ShareUICopyKey {

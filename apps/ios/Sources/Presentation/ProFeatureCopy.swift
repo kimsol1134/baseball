@@ -44,6 +44,18 @@ enum ProSeasonSettlementCopy {
         )
     }
 
+    static func saber(_ settlement: ProSeasonSettlement, resolver: GameCopyResolver) -> String {
+        guard settlement.stats.inningsOuts > 0 else { return "" }
+        let line = CareerDisplayRules.saberSeason(settlement.stats)
+        return resolver.resolve(
+            .journeySettlementSaber,
+            arguments: [
+                .userText(line.fipText),
+                .userText(line.warText),
+            ]
+        )
+    }
+
     static func legacy(before: Int, after: Int, resolver: GameCopyResolver) -> String {
         resolver.resolve(
             .journeySettlementLegacy,
