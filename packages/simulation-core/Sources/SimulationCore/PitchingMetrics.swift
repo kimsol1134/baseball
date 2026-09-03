@@ -76,7 +76,8 @@ public enum PitchingMetrics {
 
     /// 리그 평균 RA9. `check-balance`의 등판 실측에서 온 값이고, FIP의 영점이 된다.
     /// 커널 밸런스를 바꾸면 이 값도 다시 재야 한다.
-    public static let leagueRunsPer9 = 3.5
+    /// 2026-09-03: SabermetricsRules.LeagueConstants.v1(400 선발 등판 실측)과 같은 값으로 통일.
+    public static let leagueRunsPer9 = 3.45
 
     /// 수비와 운을 걷어 낸 투수 자신의 성적.
     ///
@@ -102,9 +103,10 @@ public enum PitchingMetrics {
 
     /// FIP 상수. 리그 평균 투수의 FIP가 리그 RA9와 같아지도록 맞춘 값이다.
     ///
-    /// 실측 리그 평균(600등판): HR/9 0.91 · BB/9 2.36 · K/9 9.97 →
-    /// (13×0.91 + 3×2.36 − 2×9.97) / 9 = −0.1657. 3.5 − (−0.1657) = 3.666.
-    public static let fipConstant = 3.67
+    /// 2026-09-03 실측(400 선발 등판, 아웃 유실 수정 이후): HR/9 0.75 · BB/9 2.26 · K/9 7.72 →
+    /// (13×0.75 + 3×2.26 − 2×7.72) / 9 = 0.121. 3.45 − 0.121 = 3.33.
+    /// `SabermetricsRules.LeagueConstants.v1.fipConstantCenti`(333)와 같은 값이어야 한다.
+    public static let fipConstant = 3.33
 
     /// 퀄리티스타트. 야구 중계가 매 경기 세는 값이다.
     ///

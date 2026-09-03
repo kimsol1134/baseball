@@ -40,8 +40,9 @@ final class PitchingMetricsTests: XCTestCase {
     /// 리그 평균 성적의 FIP는 리그 RA9와 거의 같아야 한다. 상수가 어긋나면 모든 선수의
     /// FIP가 통째로 밀려서, 화면이 "수비가 도왔다"를 반대로 말하게 된다.
     func testFipConstantIsAnchoredToLeagueAverage() {
-        // 실측 리그 평균(600등판): 200이닝 환산으로 HR 20 · BB 52 · K 222.
-        let fip = PitchingMetrics.fip(homeRuns: 20, walks: 52, strikeouts: 222, outs: 600)!
+        // 실측 리그 평균(2026-09-03, 400 선발 등판, SabermetricsRules v1): 200이닝 환산으로
+        // HR 17 · BB 50 · K 172 (HR/9 0.75 · BB/9 2.26 · K/9 7.72).
+        let fip = PitchingMetrics.fip(homeRuns: 17, walks: 50, strikeouts: 172, outs: 600)!
         XCTAssertEqual(fip, PitchingMetrics.leagueRunsPer9, accuracy: 0.25)
     }
 

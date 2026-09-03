@@ -15,6 +15,24 @@ final class Release128JourneyUITests: XCTestCase {
         shotIndex = 0
     }
 
+    func testRecordsSaberSectionShowsWithRetiredFixture() throws {
+        executionTimeAllowance = 180
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-uiTestResetCareer", "-uiTestAutoRelease", "-uiTestProCareerJourneyV1",
+            "-baseball.audio.sound", "NO", "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR",
+        ]
+        app.launchEnvironment = ["BASEBALL_UI_RETIRED_SHARE": "1"]
+        app.launch()
+        let recordsTab = app.tabBars.buttons["기록"]
+        XCTAssertTrue(recordsTab.waitForExistence(timeout: timeout), "기록 탭이 없습니다. \(visibleIdentifiers(app))")
+        recordsTab.tap()
+        let saber = identified(app, "record.saber")
+        XCTAssertTrue(saber.waitForExistence(timeout: timeout), "세이버 섹션이 없습니다. \(visibleIdentifiers(app))")
+        XCTAssertTrue(bringIntoView(saber))
+        capture(app, scenario: "saber", step: "records-saber-real")
+    }
+
     func testRetirementSharePreviewOpens() throws {
         executionTimeAllowance = 180
         let app = XCUIApplication()
