@@ -390,9 +390,9 @@ public class Phase7VerticalController(
         is GameCommand.AbandonPitch -> command.sessionId
         is GameCommand.ClearPitchPresentation -> command.sessionId
         GameCommand.EnterSetup,
-        is GameCommand.HighSchool,
-        is GameCommand.Pro,
         is GameCommand.UpdateSettings,
         is GameCommand.RecordAnalytics -> shellSessionId
+        is GameCommand.HighSchool -> store.state.value.highSchool?.commandReceipts?.firstOrNull()?.sessionId?.takeIf { it.isNotBlank() } ?: shellSessionId
+        is GameCommand.Pro -> store.state.value.pro?.commandReceipts?.firstOrNull()?.sessionId?.takeIf { it.isNotBlank() } ?: shellSessionId
     }
 }
