@@ -27,6 +27,7 @@ public object BaseballColors {
     public val negative: Color = Color(0xFFEF746A)
     public val fieldChalk: Color = Color(0xFFDCE5DE)
     public val fieldNight: Color = Color(0xFF050A15)
+    public val fieldDirt: Color = Color(0xFF6B5236)
     public val avatarSkin: List<Color> = listOf(
         Color(0xFFF2CFA5), Color(0xFFE8BD8F), Color(0xFFD9A878), Color(0xFFC98E5F), Color(0xFFB97A4E),
     )

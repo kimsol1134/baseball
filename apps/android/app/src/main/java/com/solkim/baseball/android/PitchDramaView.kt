@@ -1,5 +1,6 @@
 package com.solkim.baseball.android
 
+import android.graphics.BitmapFactory
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -16,19 +17,25 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.sp
 import com.solkim.baseball.application.BatSide
 import com.solkim.baseball.application.BattedBall
@@ -62,6 +69,17 @@ public fun PitchDramaView(
     modifier: Modifier = Modifier,
 ) {
     val textMeasurer = rememberTextMeasurer()
+    val context = LocalContext.current
+    val batterBitmap = remember(context) {
+        runCatching {
+            BitmapFactory.decodeResource(context.resources, R.drawable.batter_stance)?.asImageBitmap()
+        }.getOrNull()
+    }
+    val catcherBitmap = remember(context) {
+        runCatching {
+            BitmapFactory.decodeResource(context.resources, R.drawable.catcher_stance)?.asImageBitmap()
+        }.getOrNull()
+    }
 
     Canvas(modifier = modifier.fillMaxSize()) {
         val size = this.size
@@ -86,6 +104,8 @@ public fun PitchDramaView(
                 outcome = outcome,
                 battedBall = battedBall,
                 batSide = batSide,
+                batterBitmap = batterBitmap,
+                catcherBitmap = catcherBitmap,
                 progress = progress,
                 canvasSize = size,
             )
@@ -109,6 +129,8 @@ private fun DrawScope.drawPitchShot(
     outcome: PitchOutcome?,
     battedBall: BattedBall?,
     batSide: BatSide,
+    batterBitmap: ImageBitmap?,
+    catcherBitmap: ImageBitmap?,
     progress: Float,
     canvasSize: Size,
 ) {
@@ -123,7 +145,7 @@ private fun DrawScope.drawPitchShot(
     drawStadiumLight(canvasSize)
 
     // 타자 / 포수 실루엣
-    drawBatterAndCatcher(batSide, scale, ::place)
+    drawBatterAndCatcher(batSide, batterBitmap, catcherBitmap, scale, ::place)
 
     // 스트라이크 존 & 홈플레이트
     drawStrikeZoneAndPlate(outcome, progress, scale, ::place)
@@ -156,6 +178,8 @@ private fun DrawScope.drawStadiumLight(size: Size) {
 
 private fun DrawScope.drawBatterAndCatcher(
     batSide: BatSide,
+    batterBitmap: ImageBitmap?,
+    catcherBitmap: ImageBitmap?,
     scale: Float,
     place: (Offset) -> Offset,
 ) {
@@ -178,8 +202,25 @@ private fun DrawScope.drawBatterAndCatcher(
     val batterTop = zoneBottomRight.y + zoneHeight * 0.34f - batterHeight
     val batterRect = Rect(batterLeft, batterTop, batterLeft + batterWidth, batterTop + batterHeight)
 
-    val batterPath = PlateFigures.scaled(PlateFigures.batterPath(), batterRect, flipped = isLeftBatter)
-    drawPath(batterPath, color = ink, style = Fill)
+    if (batterBitmap != null) {
+        withTransform({
+            if (isLeftBatter) {
+                translate(batterRect.center.x, 0f)
+                scale(-1f, 1f, Offset.Zero)
+                translate(-batterRect.center.x, 0f)
+            }
+        }) {
+            drawImage(
+                image = batterBitmap,
+                dstOffset = IntOffset(batterRect.left.roundToInt(), batterRect.top.roundToInt()),
+                dstSize = IntSize(batterRect.width.roundToInt(), batterRect.height.roundToInt()),
+                alpha = PlateFigures.ASSET_OPACITY,
+            )
+        }
+    } else {
+        val batterPath = PlateFigures.scaled(PlateFigures.batterPath(), batterRect, flipped = isLeftBatter)
+        drawPath(batterPath, color = ink, style = Fill)
+    }
 
     // 포수 실루엣
     val catcherWidth = zoneWidth * 1.18f
@@ -188,8 +229,17 @@ private fun DrawScope.drawBatterAndCatcher(
     val catcherTop = zoneBottomRight.y + zoneHeight * 0.02f
     val catcherRect = Rect(catcherLeft, catcherTop, catcherLeft + catcherWidth, catcherTop + catcherHeight)
 
-    val catcherPath = PlateFigures.scaled(PlateFigures.catcherPath(), catcherRect, flipped = false)
-    drawPath(catcherPath, color = ink, style = Fill)
+    if (catcherBitmap != null) {
+        drawImage(
+            image = catcherBitmap,
+            dstOffset = IntOffset(catcherRect.left.roundToInt(), catcherRect.top.roundToInt()),
+            dstSize = IntSize(catcherRect.width.roundToInt(), catcherRect.height.roundToInt()),
+            alpha = PlateFigures.ASSET_OPACITY,
+        )
+    } else {
+        val catcherPath = PlateFigures.scaled(PlateFigures.catcherPath(), catcherRect, flipped = false)
+        drawPath(catcherPath, color = ink, style = Fill)
+    }
 }
 
 private fun DrawScope.drawStrikeZoneAndPlate(
@@ -261,7 +311,7 @@ private fun DrawScope.drawCatcherMitt(
     val caught = progress >= CONTACT_PROGRESS
     val target = place(platePoint(actualX, actualY))
     val radius = (if (caught) 15f else 11f) * scale
-    val color = BaseballColors.warning.copy(alpha = if (caught) 0.95f else 0.35f)
+    val color = BaseballColors.fieldDirt.copy(alpha = if (caught) 0.95f else 0.35f)
     val strokeWidth = max(1f, (if (caught) 3.4f else 1.4f) * scale)
     val style = if (caught) {
         Stroke(width = strokeWidth)
@@ -485,11 +535,12 @@ private fun DrawScope.drawFieldShot(
 
         val fielderName = fielding.fielderName
         if (after > 0.55f && fielderName != null) {
+            val fontScale = (scale / density).coerceIn(1f, 2.5f)
             val textLayout = textMeasurer.measure(
                 text = fielderName,
                 style = TextStyle(
                     color = BaseballColors.positive,
-                    fontSize = (13f * scale).sp,
+                    fontSize = (13f * fontScale).sp,
                     fontWeight = FontWeight.Bold,
                 ),
             )
@@ -504,11 +555,12 @@ private fun DrawScope.drawFieldShot(
     if (after > 0.35f) {
         val distanceMeters = (fielding?.landingDistanceTenthsMeters ?: (landing * 10).roundToInt()) / 10
         val distanceStr = "${distanceMeters}m"
+        val fontScale = (scale / density).coerceIn(1f, 2.5f)
         val distLayout = textMeasurer.measure(
             text = distanceStr,
             style = TextStyle(
                 color = tone,
-                fontSize = (26f * scale).sp,
+                fontSize = (22f * fontScale).sp,
                 fontWeight = FontWeight.Black,
                 fontFamily = FontFamily.Monospace,
             ),
@@ -536,6 +588,7 @@ private fun DrawScope.drawVerdict(
     if (flash <= 0f || outcome == null) return
 
     val scale = min(canvasSize.width / PITCH_BOX_WIDTH, canvasSize.height / PITCH_BOX_HEIGHT)
+    val fontScale = (scale / density).coerceIn(1f, 2.5f)
     val label = localizedVerdict(outcome, battedBall)
     val tone = outcomeTone(outcome)
 
@@ -543,7 +596,7 @@ private fun DrawScope.drawVerdict(
         text = label,
         style = TextStyle(
             color = tone.copy(alpha = flash),
-            fontSize = (32f * scale).sp,
+            fontSize = (26f * fontScale).sp,
             fontWeight = FontWeight.Black,
         ),
     )
