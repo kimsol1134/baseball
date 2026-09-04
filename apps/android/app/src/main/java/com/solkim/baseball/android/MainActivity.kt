@@ -8,6 +8,7 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -108,6 +109,9 @@ public class MainActivity : ComponentActivity() {
                 val current = selectedScreen?.takeIf {
                     com.solkim.baseball.application.Phase8ScreenProjection.isReachable(state, it) || it == preferred
                 } ?: preferred
+                BackHandler(enabled = selectedScreen != null) {
+                    selectedScreen = null
+                }
                 Phase8Shell(
                     state = state,
                     busy = busy,
@@ -213,6 +217,7 @@ public class MainActivity : ComponentActivity() {
                     retryPendingMatrixEvents()
                 }
             } catch (error: Throwable) {
+                android.util.Log.e("MainActivity", "performPhase8 failed", error)
                 withContext(Dispatchers.Main) {
                     actionError = "저장하지 못했습니다. 잠시 후 다시 시도해 주세요."
                 }

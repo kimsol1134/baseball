@@ -1,10 +1,18 @@
 package com.solkim.baseball.android
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import com.solkim.baseball.application.AvatarRole
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,9 +36,12 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -108,6 +119,7 @@ public fun Phase8Shell(
         modifier = Modifier.fillMaxSize(),
         containerColor = BaseballColors.canvas,
         topBar = {
+            val preferred = Phase8ScreenProjection.preferredScreen(state)
             TopAppBar(
                 title = {
                     Column {
@@ -115,18 +127,43 @@ public fun Phase8Shell(
                         Text(model.title, style = MaterialTheme.typography.labelMedium)
                     }
                 },
+                navigationIcon = {
+                    if (visibleScreen != preferred) {
+                        TextButton(onClick = { onNavigate(preferred) }) {
+                            Text("← 이야기", color = BaseballColors.action, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = BaseballColors.surface) {
+            NavigationBar(
+                containerColor = BaseballColors.surface,
+                tonalElevation = 0.dp,
+            ) {
                 ProductTab.entries.forEach { tab ->
                     val destination = tab.landingScreen(state)
+                    val isSelected = tab == currentTab
                     NavigationBarItem(
-                        selected = tab == currentTab,
+                        selected = isSelected,
                         onClick = { destination?.let(onNavigate) },
                         enabled = destination != null,
-                        icon = {},
-                        label = { Text(tab.label) },
+                        icon = {
+                            TabIcon(tab = tab, isSelected = isSelected)
+                        },
+                        label = {
+                            Text(
+                                text = tab.label,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = Color.Transparent,
+                            selectedIconColor = BaseballColors.action,
+                            selectedTextColor = BaseballColors.action,
+                            unselectedIconColor = BaseballColors.textTertiary,
+                            unselectedTextColor = BaseballColors.textTertiary,
+                        ),
                     )
                 }
             }
@@ -144,9 +181,13 @@ public fun Phase8Shell(
             if (busy) Phase8SaveStatus(busy = true)
             if (actionError != null) Phase8ErrorCard()
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 playerPortraitSeed(state)?.let { seed ->
-                    AvatarFace(seed = seed, role = if (state.pro != null) AvatarRole.PLAYER else AvatarRole.PLAYER, width = 48.dp)
+                    val stage = if (state.pro != null) PlayerStage.PRO else if (state.highSchool?.run?.chapter?.schoolYear == 1) PlayerStage.FRESHMAN else PlayerStage.ACE
+                    PlayerPortrait(seed = seed, role = AvatarRole.PLAYER, stage = stage, width = 48.dp)
                 }
                 Text(
                     model.title,
@@ -176,27 +217,41 @@ public fun Phase8Shell(
 }
 
 private enum class ProductTab(val label: String) {
-    HIGH_SCHOOL("고교"),
-    PRO("프로"),
+    CAREER("커리어"),
     RECORDS("기록"),
     SETTINGS("설정"),
     ;
 
     fun landingScreen(state: GameAggregateState): Phase8ScreenId? {
+        val preferred = Phase8ScreenProjection.preferredScreen(state)
         val candidates = when (this) {
-            HIGH_SCHOOL -> listOf(
-                Phase8ScreenId.P011_HIGH_SCHOOL_CAREER,
-                Phase8ScreenId.P006_TRAINING,
-                Phase8ScreenId.P003_PROLOGUE,
-                Phase8ScreenId.P002_SETUP,
-                Phase8ScreenId.P001_OPENING,
-            )
-            PRO -> listOf(
-                Phase8ScreenId.P017_PRO_WEEK,
-                Phase8ScreenId.P016_PRO_CONTRACT,
-                Phase8ScreenId.P021_PRO_RETIREMENT,
-                Phase8ScreenId.P020_OFFSEASON,
-            )
+            CAREER -> {
+                if (preferred.group in setOf(Phase8Group.CAREER_CORE, Phase8Group.RECAP_REBIRTH, Phase8Group.PRO)) {
+                    listOf(preferred)
+                } else if (state.pro != null) {
+                    listOf(
+                        preferred,
+                        Phase8ScreenId.P017_PRO_WEEK,
+                        Phase8ScreenId.P016_PRO_CONTRACT,
+                        Phase8ScreenId.P021_PRO_RETIREMENT,
+                        Phase8ScreenId.P020_OFFSEASON,
+                    )
+                } else {
+                    listOf(
+                        preferred,
+                        Phase8ScreenId.P005_SCHOOL_SELECTION,
+                        Phase8ScreenId.P006_TRAINING,
+                        Phase8ScreenId.P007_RELATIONSHIP,
+                        Phase8ScreenId.P008_IMPORTANT_GAME,
+                        Phase8ScreenId.P009_AWAKENING,
+                        Phase8ScreenId.P010_CHAPTER,
+                        Phase8ScreenId.P011_HIGH_SCHOOL_CAREER,
+                        Phase8ScreenId.P003_PROLOGUE,
+                        Phase8ScreenId.P002_SETUP,
+                        Phase8ScreenId.P001_OPENING,
+                    )
+                }
+            }
             RECORDS -> listOf(
                 Phase8ScreenId.P025_RECORDS_LEAGUE,
                 Phase8ScreenId.P024_WEEKLY,
@@ -210,12 +265,27 @@ private enum class ProductTab(val label: String) {
 
     companion object {
         fun forScreen(screen: Phase8ScreenId): ProductTab = when (screen.group) {
-            Phase8Group.PRO -> PRO
+            Phase8Group.PRO, Phase8Group.CAREER_CORE, Phase8Group.RECAP_REBIRTH -> CAREER
             Phase8Group.RECORDS_META, Phase8Group.RETURN_REVIEW -> RECORDS
             Phase8Group.SETTINGS_PLATFORM -> SETTINGS
-            Phase8Group.CAREER_CORE, Phase8Group.RECAP_REBIRTH -> HIGH_SCHOOL
         }
     }
+}
+
+@Composable
+private fun TabIcon(tab: ProductTab, isSelected: Boolean) {
+    val tint = if (isSelected) BaseballColors.action else BaseballColors.textTertiary
+    val iconRes = when (tab) {
+        ProductTab.CAREER -> R.drawable.ic_tab_career
+        ProductTab.RECORDS -> R.drawable.ic_tab_records
+        ProductTab.SETTINGS -> R.drawable.ic_tab_settings
+    }
+    Icon(
+        painter = painterResource(iconRes),
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(24.dp),
+    )
 }
 
 @Composable
@@ -523,7 +593,12 @@ internal fun LifeCardVisual(state: GameAggregateState, careerId: String) {
     Card(colors = CardDefaults.cardColors(containerColor = BaseballColors.surfaceRaised)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                AvatarFace(seed = record.playerName, role = if (record.drafted) AvatarRole.PLAYER else AvatarRole.PLAYER, width = 58.dp)
+                PlayerPortrait(
+                    seed = record.playerName,
+                    role = AvatarRole.PLAYER,
+                    stage = if (record.drafted) PlayerStage.PRO else PlayerStage.ACE,
+                    width = 58.dp,
+                )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("${record.lifeNumber}번째 생", style = MaterialTheme.typography.labelMedium, color = BaseballColors.milestone)
                     Text(record.playerName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
