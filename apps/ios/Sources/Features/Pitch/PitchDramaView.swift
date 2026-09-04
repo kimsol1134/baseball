@@ -204,14 +204,13 @@ struct PitchDramaView: View {
         )
         // **타자는 존을 바라봐야 한다.**
         //
-        // 원본 실루엣은 몸이 화면 왼쪽을 향한다(배트를 든 손이 오른쪽 위). 우타자는 존
-        // 왼쪽 타석에 서므로 존은 그의 오른쪽에 있고, 그러려면 그림을 뒤집어야 한다.
-        // 좌타자는 존 오른쪽에 서니 원본 방향 그대로가 맞다. 반대로 두면 두 타자 모두
-        // 홈플레이트에 등을 돌리고 선 그림이 된다.
+        // 원본 실루엣(BatterStance)은 우타자(몸과 시선이 화면 오른쪽·존을 향하고,
+        // 배트는 화면 왼쪽 위) 기준이다. 우타자는 존 왼쪽 타석에 서므로 원본 그대로 서고,
+        // 좌타자는 존 오른쪽 타석에 서므로 좌우를 뒤집어야 존을 바라보는 좌타자 폼이 된다.
         draw(
             asset: PlateFigures.hasBatterAsset ? PlateFigures.batterAssetName : nil,
             fallback: PlateFigures.batterPath(),
-            in: batterRect, flipped: batSide == .right, ink: ink, context: context
+            in: batterRect, flipped: batSide == .left, ink: ink, context: context
         )
 
         // 포수는 존 아래에 등을 보이고 앉는다. 어깨 위쪽만 보이면 덩어리로 읽히므로
