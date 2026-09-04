@@ -29,6 +29,23 @@ final class SoundBankTests: XCTestCase {
                              "루프가 너무 짧으면 반복이 금방 티가 난다.")
     }
 
+    /// 메뉴 음악이 번들에 있으면 스테레오와 적정 길이로 읽히는지 본다.
+    func testMenuThemeIsBundledAndReadable() throws {
+        let bank = SoundBank()
+        bank.load(bundle: Bundle(for: SoundBankTests.self))
+        let appBank = SoundBank()
+        appBank.load()
+
+        let loaded = bank.loadedAssets.union(appBank.loadedAssets)
+        guard loaded.contains(.menuTheme) else { return }
+
+        let buffer = bank.buffer(for: .menuTheme) ?? appBank.buffer(for: .menuTheme)
+        let unwrapped = try XCTUnwrap(buffer, "메뉴 음악을 PCM으로 읽지 못했습니다.")
+        XCTAssertEqual(unwrapped.format.channelCount, 2, "메뉴 음악은 스테레오여야 공간감이 산다.")
+        XCTAssertGreaterThan(unwrapped.frameLength, AVAudioFrameCount(unwrapped.format.sampleRate * 60),
+                             "메뉴 음악은 최소 1분 이상이어야 반복 피로가 적다.")
+    }
+
     /// 타격음과 포구음이 실제로 실려서 읽히는지 본다.
     ///
     /// 이 둘이 야구 손맛의 본체다. 파일이 빠지면 조용히 합성 노이즈로 되돌아가고, 소리만으로는
