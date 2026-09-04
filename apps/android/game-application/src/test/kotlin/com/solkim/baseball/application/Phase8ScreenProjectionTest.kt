@@ -187,6 +187,13 @@ class Phase8ScreenProjectionTest {
         assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
         val weekly = controller.projection(Phase8ScreenId.P017_PRO_WEEK)
         assertEquals(6, weekly.actions.count { it.id.startsWith("proPlan:") })
+        assertEquals("강속구 불펜", weekly.actions.single { it.id == "proPlan:develop_stuff" }.label)
+        assertEquals("결정구 완성", weekly.actions.single { it.id == "proPlan:develop_movement" }.label)
+        assertEquals("코스 제구 훈련", weekly.actions.single { it.id == "proPlan:refine_command" }.label)
+        assertTrue(weekly.actions.single { it.id == "proAdvanceSegment" }.label.contains("건너뛰기"))
+        assertEquals("페넌트레이스", ProCatalog.segmentLabel(com.solkim.baseball.core.pro.ProSeasonSegment.PENNANT_RACE))
+        assertEquals("올스타 브레이크", ProCatalog.segmentLabel(com.solkim.baseball.core.pro.ProSeasonSegment.ALL_STAR_BREAK))
+        assertEquals("시즌 막바지", ProCatalog.segmentLabel(com.solkim.baseball.core.pro.ProSeasonSegment.SEASON_FINALE))
         weekly.actions.filter { it.enabled }.flatMap { it.payloads }.forEach { payload ->
             assertEquals(payload.envelope, GameCommandCodec.decode(payload.encoded))
         }

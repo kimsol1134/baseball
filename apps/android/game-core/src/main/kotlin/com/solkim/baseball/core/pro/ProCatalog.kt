@@ -44,9 +44,9 @@ public object ProCatalog {
         ProSeasonSegment.SPRING_CAMP -> "스프링캠프"
         ProSeasonSegment.OPENING -> "개막"
         ProSeasonSegment.FIRST_HALF -> "전반기"
-        ProSeasonSegment.ALL_STAR_BREAK -> "올스타 휴식기"
-        ProSeasonSegment.PENNANT_RACE -> "순위 경쟁"
-        ProSeasonSegment.SEASON_FINALE -> "시즌 결말"
+        ProSeasonSegment.ALL_STAR_BREAK -> "올스타 브레이크"
+        ProSeasonSegment.PENNANT_RACE -> "페넌트레이스"
+        ProSeasonSegment.SEASON_FINALE -> "시즌 막바지"
     }
 
     public fun segmentEntryNews(segment: ProSeasonSegment): String = when (segment) {

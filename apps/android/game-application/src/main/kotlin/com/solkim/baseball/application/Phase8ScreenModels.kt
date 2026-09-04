@@ -641,8 +641,22 @@ public object Phase8ScreenProjection {
                     Phase8Row("성장", "구위 ${pro?.pitcher?.stuff ?: 0} · 무브먼트 ${pro?.pitcher?.movement ?: 0}", "표적 능력과 구종을 함께 고릅니다."),
                     Phase8Row("피로", "${pro?.fatigue ?: 0}", "회복 계획은 다음 주 기록에도 반영됩니다."),
                 )))
-                ProWeekPlan.currentChoices.forEach { plan -> addAction("proPlan:${plan.wire}", plan.label, "${plan.label} 계획으로 한 주를 보냅니다.", pro?.phase == com.solkim.baseball.core.pro.ProCareerPhase.WEEKLY_PLAN, listOf(pro(ProCommand.PlanWeek(context.seed(state, "pro-plan:${plan.wire}"), plan, plan.targetPitchOrNull(pro))))) }
-                addAction("proAdvanceSegment", "구간 자동 진행", "정해진 주차만큼 시즌을 진행합니다.", pro?.phase == com.solkim.baseball.core.pro.ProCareerPhase.WEEKLY_PLAN, listOf(pro(ProCommand.AdvanceSegment(context.seed(state, "pro-segment"), ProWeekPlan.DEVELOP_STUFF, null))))
+                ProWeekPlan.currentChoices.forEach { plan ->
+                    addAction(
+                        "proPlan:${plan.wire}",
+                        plan.iosTitle(pro),
+                        plan.iosDescription(pro),
+                        pro?.phase == com.solkim.baseball.core.pro.ProCareerPhase.WEEKLY_PLAN,
+                        listOf(pro(ProCommand.PlanWeek(context.seed(state, "pro-plan:${plan.wire}"), plan, plan.targetPitchOrNull(pro)))),
+                    )
+                }
+                addAction(
+                    "proAdvanceSegment",
+                    "구간 건너뛰기",
+                    "주간 선택 없이 같은 구간을 자동으로 진행합니다. 한 주씩 고르는 길이 기본입니다.",
+                    pro?.phase == com.solkim.baseball.core.pro.ProCareerPhase.WEEKLY_PLAN,
+                    listOf(pro(ProCommand.AdvanceSegment(context.seed(state, "pro-segment"), ProWeekPlan.DEVELOP_STUFF, null))),
+                )
             }
             Phase8ScreenId.P018_PRO_IMPORTANT_GAME -> {
                 addSection(Phase8Section("pro-game", "프로 승부처", listOf(
@@ -1008,14 +1022,49 @@ public object Phase8ScreenProjection {
         HighSchoolRelationshipResponse.CHALLENGE -> "정면으로 부딪치기"
     }
 
-    private val ProWeekPlan.label: String get() = when (this) {
-        ProWeekPlan.DEVELOP_STUFF -> "구위 키우기"
-        ProWeekPlan.DEVELOP_MOVEMENT -> "무브먼트 다듬기"
-        ProWeekPlan.REFINE_COMMAND -> "제구 다듬기"
-        ProWeekPlan.BUILD_STAMINA -> "체력 기르기"
-        ProWeekPlan.RECOVER -> "회복하기"
-        ProWeekPlan.EARN_TRUST -> "믿음 쌓기"
-        ProWeekPlan.DEVELOP_WEAPON -> "주무기 다듬기"
+    private val ProWeekPlan.label: String get() = iosTitle(null)
+
+    private fun ProWeekPlan.iosTitle(pro: com.solkim.baseball.core.pro.ProState?): String {
+        val relief = pro?.role != null && pro.role != ProRole.STARTER
+        val veteran = (pro?.season ?: 1) >= 9
+        val minor = pro?.level == ProLevel.MINOR
+        return when (this) {
+            ProWeekPlan.DEVELOP_STUFF -> when {
+                relief -> "한 타자 강속구"
+                veteran -> "포심 위력 다듬기"
+                else -> "강속구 불펜"
+            }
+            ProWeekPlan.DEVELOP_MOVEMENT -> "결정구 완성"
+            ProWeekPlan.REFINE_COMMAND -> "코스 제구 훈련"
+            ProWeekPlan.BUILD_STAMINA -> if (relief) "연투 버티기" else "긴 이닝 루틴"
+            ProWeekPlan.RECOVER -> if (veteran) "베테랑 회복 루틴" else "회복"
+            ProWeekPlan.EARN_TRUST -> when {
+                minor -> "콜업 경쟁 집중"
+                relief -> "필승조 신뢰 쌓기"
+                else -> "로테이션 신뢰 쌓기"
+            }
+            ProWeekPlan.DEVELOP_WEAPON -> "주무기 다듬기"
+        }
+    }
+
+    private fun ProWeekPlan.iosDescription(pro: com.solkim.baseball.core.pro.ProState?): String {
+        val fatigue = pro?.fatigue ?: 0
+        val risk = when {
+            this == ProWeekPlan.RECOVER -> "부상 위험 낮음"
+            fatigue >= 90 -> "부상 위험 높음"
+            fatigue >= 70 -> "부상 위험 주의"
+            else -> "부상 위험 낮음"
+        }
+        val effect = when (this) {
+            ProWeekPlan.DEVELOP_STUFF -> "구위·포심 구속·헛스윙 성장"
+            ProWeekPlan.DEVELOP_MOVEMENT -> "변화구 결정구를 키웁니다"
+            ProWeekPlan.REFINE_COMMAND -> "존 가장자리를 찌르는 제구"
+            ProWeekPlan.BUILD_STAMINA -> "후반 체감 피로가 줄어듭니다"
+            ProWeekPlan.RECOVER -> "이번 주 피로 20 회복"
+            ProWeekPlan.EARN_TRUST -> "감독의 믿음을 쌓습니다"
+            ProWeekPlan.DEVELOP_WEAPON -> "주무기의 완성도를 올립니다"
+        }
+        return "$effect. $risk"
     }
 
     private val OffseasonDecision.label: String get() = when (this) {

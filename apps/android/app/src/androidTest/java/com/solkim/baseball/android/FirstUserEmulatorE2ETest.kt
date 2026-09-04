@@ -173,17 +173,23 @@ class FirstUserEmulatorE2ETest {
                     "기록 보관하기",
                     "고교에서 연결",
                     "계약 서명",
-                    "구간 자동 진행",
+                    "구간 건너뛰기",
                     "프로 승부처 열기",
                     "경기 결과 확인",
                     "시즌 결산 보기",
                     "계속하기",
-                    "구위 키우기",
-                    "무브먼트 다듬기",
-                    "제구 다듬기",
-                    "체력 기르기",
-                    "회복하기",
-                    "믿음 쌓기",
+                    "강속구 불펜",
+                    "한 타자 강속구",
+                    "포심 위력 다듬기",
+                    "결정구 완성",
+                    "코스 제구 훈련",
+                    "긴 이닝 루틴",
+                    "연투 버티기",
+                    "회복",
+                    "베테랑 회복 루틴",
+                    "로테이션 신뢰 쌓기",
+                    "필승조 신뢰 쌓기",
+                    "콜업 경쟁 집중",
                     "주무기 다듬기",
                     "강하게 더 던진다",
                     "변화구만 다듬는다",
@@ -261,7 +267,7 @@ class FirstUserEmulatorE2ETest {
                         Log.i(TAG, "step=$step tap=$label")
                         when (label) {
                             "고교에서 연결", "계약 서명" -> {
-                                device.wait(Until.hasObject(By.text("구간 자동 진행")), 15_000) ||
+                                device.wait(Until.hasObject(By.text("구간 건너뛰기")), 15_000) ||
                                     device.wait(Until.hasObject(By.text("계약 서명")), 3_000) ||
                                     device.wait(Until.hasObject(By.text("프로 주간")), 3_000)
                             }

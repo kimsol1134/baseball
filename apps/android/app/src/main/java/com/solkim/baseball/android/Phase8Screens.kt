@@ -778,20 +778,44 @@ private fun Phase8ChoiceGrid(
 ) {
     if (model.actions.isEmpty()) return
     Text("이번 주 선택", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-    model.actions.chunked(2).forEach { row ->
+    val weekly = model.actions.filter { it.id.startsWith("proPlan:") || it.id.startsWith("train:") || !it.id.startsWith("proAdvance") }
+    val skip = model.actions.filter { it.id == "proAdvanceSegment" }
+    weekly.chunked(2).forEach { row ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             row.forEach { action ->
-                Button(
-                    onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
-                    enabled = action.enabled,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 56.dp)
-                        .semantics { contentDescription = action.contentDescription },
-                ) { Text(action.label) }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Button(
+                        onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
+                        enabled = action.enabled,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp)
+                            .semantics { contentDescription = action.contentDescription },
+                    ) { Text(action.label) }
+                    Text(
+                        action.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             if (row.size == 1) Spacer(Modifier.weight(1f))
         }
+    }
+    skip.forEach { action ->
+        OutlinedButton(
+            onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
+            enabled = action.enabled,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .semantics { contentDescription = action.contentDescription },
+        ) { Text(action.label) }
+        Text(
+            action.description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

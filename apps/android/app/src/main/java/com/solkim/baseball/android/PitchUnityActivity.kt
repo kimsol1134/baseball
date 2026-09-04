@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
@@ -76,6 +77,8 @@ import com.solkim.baseball.application.PitchOutcome
 import com.solkim.baseball.application.PitchHudProjection
 import com.solkim.baseball.application.PitchHudSelection
 import com.solkim.baseball.application.PitchLiveResult
+import com.solkim.baseball.application.PitchScoreboardModel
+import com.solkim.baseball.application.PitchScoreboardProjection
 import com.solkim.baseball.application.PitchRecommendation
 import com.solkim.baseball.application.PitchZone
 import com.solkim.baseball.design.BaseballColors
@@ -179,42 +182,10 @@ public class PitchUnityActivity : ComponentActivity() {
                 val fielding = if (showingResult) currentFielding() else null
                 val batSide = currentBatSide()
 
-                val proSession = store.current.pro?.activePitch
-                val hsSession = store.current.highSchool?.activePitch
-                val currentInning = proSession?.context?.inning ?: hsSession?.context?.inning ?: 9
-                val currentHalf = if (proSession?.game?.inningState?.half?.name == "TOP") "초" else "말"
-                val inningText = "${currentInning}회$currentHalf"
-                val balls = proSession?.context?.balls ?: hsSession?.context?.balls ?: 0
-                val strikes = proSession?.context?.strikes ?: hsSession?.context?.strikes ?: 0
-                val outs = proSession?.context?.outs ?: hsSession?.context?.outs ?: 0
-                val scoreDiff = proSession?.context?.scoreDifferential ?: hsSession?.context?.scoreDifferential ?: 0
-                val scoreText = when {
-                    scoreDiff == 0 -> "동점"
-                    scoreDiff > 0 -> "${scoreDiff}점 앞섬"
-                    else -> "${-scoreDiff}점 뒤짐"
-                }
-                val runners = when {
-                    proSession != null -> proSession.game.runners
-                    hsSession != null -> BaserunnerStateSnapshot(
-                        hsSession.game.firstOccupied,
-                        hsSession.game.secondOccupied,
-                        hsSession.game.thirdOccupied,
-                        52,
-                    )
-                    else -> BaserunnerStateSnapshot.EMPTY
-                }
-                val situationText = when {
-                    !runners.firstOccupied && !runners.secondOccupied && !runners.thirdOccupied -> "${outs}사 주자 없음"
-                    runners.firstOccupied && runners.secondOccupied && runners.thirdOccupied -> "${outs}사 만루"
-                    else -> {
-                        val onBases = listOfNotNull(
-                            "1루".takeIf { runners.firstOccupied },
-                            "2루".takeIf { runners.secondOccupied },
-                            "3루".takeIf { runners.thirdOccupied }
-                        ).joinToString("·")
-                        "${outs}사 $onBases"
-                    }
-                }
+                val board = PitchScoreboardProjection.model(store.current)
+                val balls = board.balls
+                val strikes = board.strikes
+                val outs = board.outs
                 val isClutch = strikes == 2 && (balls == 3 || outs == 2)
                 val hud = runCatching { PitchHudProjection.model(store.current) }.getOrNull()
                 val batter = hud?.batter
@@ -224,7 +195,9 @@ public class PitchUnityActivity : ComponentActivity() {
                 val batterDiscipline = batter?.discipline ?: 0
                 val batterPower = batter?.power ?: 0
                 val fatigue = store.current.pro?.fatigue ?: store.current.highSchool?.run?.fatigue ?: 0
-                val leverage = proSession?.context?.leverage ?: hsSession?.context?.leverage ?: 500
+                val leverage = store.current.pro?.activePitch?.context?.leverage
+                    ?: store.current.highSchool?.activePitch?.context?.leverage
+                    ?: if (store.current.pitch?.careerKind == PitchCareerKind.TUTORIAL) 200 else 500
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -238,23 +211,18 @@ public class PitchUnityActivity : ComponentActivity() {
                     ) {
                         // 1. Top Header Bar
                         PitchTopBar(
-                            title = if (store.current.pitch?.careerKind == PitchCareerKind.PRO) "프로 중요 경기" else "마운드 승부처",
+                            title = when (store.current.pitch?.careerKind) {
+                                PitchCareerKind.PRO -> "프로 중요 경기"
+                                PitchCareerKind.TUTORIAL -> "불펜 연습"
+                                else -> "마운드 승부처"
+                            },
                             subtitle = status,
                             leverage = leverage,
                             onBack = ::handleBack,
                         )
 
                         // 2. Scoreboard Bar
-                        PitchScoreboardBar(
-                            scoreText = scoreText,
-                            scoreDiff = scoreDiff,
-                            inningText = inningText,
-                            balls = balls,
-                            strikes = strikes,
-                            outs = outs,
-                            situationText = situationText,
-                            fatigue = fatigue,
-                        )
+                        PitchScoreboardBar(board)
 
                         val watchingPitch = isDelivering || resultReady
                         if (!watchingPitch) {
@@ -733,24 +701,18 @@ private fun PitchTopBar(
 }
 
 @Composable
-private fun PitchScoreboardBar(
-    scoreText: String,
-    scoreDiff: Int,
-    inningText: String,
-    balls: Int,
-    strikes: Int,
-    outs: Int,
-    situationText: String,
-    fatigue: Int,
-) {
+private fun PitchScoreboardBar(board: PitchScoreboardModel) {
     val scoreTone = when {
-        scoreDiff > 0 -> BaseballColors.positive
-        scoreDiff < 0 -> BaseballColors.negative
+        board.scoreDiff > 0 -> BaseballColors.positive
+        board.scoreDiff < 0 -> BaseballColors.negative
         else -> BaseballColors.textPrimary
     }
+    val occupied = board.runners.firstOccupied || board.runners.secondOccupied || board.runners.thirdOccupied
     Surface(
         color = BaseballColors.surface,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = board.accessibilityLabel },
     ) {
         Column(
             modifier = Modifier
@@ -768,44 +730,49 @@ private fun PitchScoreboardBar(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
-                        text = scoreText,
+                        text = board.scoreText,
                         color = scoreTone,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Black,
                     )
                     Text(
-                        text = inningText,
+                        text = board.inningText,
                         color = BaseballColors.textSecondary,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    PipGroup(label = "B", count = balls, max = 3, activeColor = BaseballColors.warning)
-                    PipGroup(label = "S", count = strikes, max = 2, activeColor = BaseballColors.action)
-                    PipGroup(label = "O", count = outs, max = 2, activeColor = BaseballColors.negative)
+                    PipGroup(label = "OUT", count = board.outs, max = 2, activeColor = BaseballColors.negative)
                 }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                PipGroup(label = "B", count = board.balls, max = 3, activeColor = BaseballColors.warning)
+                PipGroup(label = "S", count = board.strikes, max = 2, activeColor = BaseballColors.action)
+                RunnerDiamond(board.runners)
                 Text(
-                    text = situationText,
-                    color = if ("만루" in situationText || "1루" in situationText || "2루" in situationText || "3루" in situationText)
-                        BaseballColors.warning else BaseballColors.textSecondary,
+                    text = board.situationText,
+                    color = if (occupied) BaseballColors.warning else BaseballColors.textSecondary,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
                 )
                 Text(
-                    text = "피로 $fatigue",
-                    color = if (fatigue >= 70) BaseballColors.warning else BaseballColors.textTertiary,
+                    text = "피로 ${board.fatigue}",
+                    color = if (board.fatigue >= 70) BaseballColors.warning else BaseballColors.textTertiary,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
+                )
+            }
+            board.outingLine?.let { line ->
+                Text(
+                    text = line,
+                    color = BaseballColors.textTertiary,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = FontFamily.Monospace,
                 )
             }
         }
@@ -817,6 +784,7 @@ private fun PipGroup(label: String, count: Int, max: Int, activeColor: ComposeCo
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier.clearAndSetSemantics { },
     ) {
         Text(
             text = label,
@@ -834,6 +802,30 @@ private fun PipGroup(label: String, count: Int, max: Int, activeColor: ComposeCo
             )
         }
     }
+}
+
+@Composable
+private fun RunnerDiamond(runners: BaserunnerStateSnapshot) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clearAndSetSemantics { },
+    ) {
+        DiamondPip(filled = runners.secondOccupied)
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            DiamondPip(filled = runners.thirdOccupied)
+            DiamondPip(filled = runners.firstOccupied)
+        }
+    }
+}
+
+@Composable
+private fun DiamondPip(filled: Boolean) {
+    Box(
+        modifier = Modifier
+            .size(8.dp)
+            .clip(RoundedCornerShape(1.dp))
+            .background(if (filled) BaseballColors.warning else BaseballColors.border.copy(alpha = 0.45f)),
+    )
 }
 
 @Composable
