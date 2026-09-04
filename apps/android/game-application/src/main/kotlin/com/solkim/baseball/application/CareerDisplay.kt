@@ -24,6 +24,9 @@ typealias MoundHeartbeatCadence = com.solkim.baseball.core.pitch.MoundHeartbeatC
 typealias MoundHeartbeatPattern = com.solkim.baseball.core.pitch.MoundHeartbeatPattern
 typealias MoundHeartbeatSettings = com.solkim.baseball.core.pitch.MoundHeartbeatSettings
 typealias MoundMeterDisturbance = com.solkim.baseball.core.pitch.MoundMeterDisturbance
+typealias BatSide = com.solkim.baseball.core.pitch.BatSide
+typealias BattedBall = com.solkim.baseball.core.pitch.BattedBall
+typealias FieldingResolutionSnapshot = com.solkim.baseball.core.pitch.FieldingResolutionSnapshot
 
 /** 화면이 game-core 규칙 객체를 직접 부르지 않게 하는 조회 창구. */
 public object HighSchoolDisplayRules {
