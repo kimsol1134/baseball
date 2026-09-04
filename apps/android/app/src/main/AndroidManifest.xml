@@ -48,10 +48,6 @@
         <meta-data
             android:name="firebase_crashlytics_collection_enabled"
             android:value="false" />
-        <!-- The generated Unity library declares UnityPlayerActivity as a launcher. Remove that
-             library-only entry: the Compose shell is the sole product launcher, and Unity is
-             initialized only by the explicit trajectory host below. -->
-        <activity android:name="com.unity3d.player.UnityPlayerActivity" tools:node="remove" />
         <activity
             android:name=".PitchUnityActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
