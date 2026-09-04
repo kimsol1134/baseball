@@ -39,6 +39,7 @@ public sealed interface ProCommand {
     public data class SubmitPitch(val pitchSessionId: String, val call: PitchCall, val delivery: PitchDelivery = PitchDelivery.NEUTRAL) : ProCommand
     public data object FinishImportantGame : ProCommand
     public data class ReviewSeason(val seed: String) : ProCommand
+    public data class AcknowledgeSeasonSettlement(val seed: String, val settlementId: String) : ProCommand
     public data class ChooseOffseason(val seed: String, val decision: OffseasonDecision) : ProCommand
     public data class SelectLegacy(val legacyId: String) : ProCommand
     public data object NormalizeBalance : ProCommand
@@ -126,6 +127,7 @@ public object ProCommandCodec {
         is ProCommand.SubmitPitch -> "submitPitch"
         ProCommand.FinishImportantGame -> "finishImportantGame"
         is ProCommand.ReviewSeason -> "reviewSeason"
+        is ProCommand.AcknowledgeSeasonSettlement -> "acknowledgeSeasonSettlement"
         is ProCommand.ChooseOffseason -> "chooseOffseason"
         is ProCommand.SelectLegacy -> "selectLegacy"
         ProCommand.NormalizeBalance -> "normalizeBalance"
@@ -154,6 +156,7 @@ public object ProCommandCodec {
         ))
         ProCommand.FinishImportantGame -> pack(emptyList())
         is ProCommand.ReviewSeason -> pack(listOf(command.seed))
+        is ProCommand.AcknowledgeSeasonSettlement -> pack(listOf(command.seed, command.settlementId))
         is ProCommand.ChooseOffseason -> pack(listOf(command.seed, command.decision.wire))
         is ProCommand.SelectLegacy -> pack(listOf(command.legacyId))
         ProCommand.NormalizeBalance -> pack(emptyList())
@@ -185,6 +188,7 @@ public object ProCommandCodec {
         }
         "finishImportantGame" -> exactPayload(payload) { ProCommand.FinishImportantGame }
         "reviewSeason" -> unpack(payload, 1).let { ProCommand.ReviewSeason(it.single()) }
+        "acknowledgeSeasonSettlement" -> unpack(payload, 2).let { ProCommand.AcknowledgeSeasonSettlement(it[0], it[1]) }
         "chooseOffseason" -> unpack(payload, 2).let { ProCommand.ChooseOffseason(it[0], offseason(it[1])) }
         "selectLegacy" -> unpack(payload, 1).let { ProCommand.SelectLegacy(it.single()) }
         "normalizeBalance" -> exactPayload(payload) { ProCommand.NormalizeBalance }
@@ -354,6 +358,7 @@ public class ProCommandStore(
         }
         ProCommand.FinishImportantGame -> kernel.finishImportantGame(state)
         is ProCommand.ReviewSeason -> kernel.reviewSeason(state, command.seed)
+        is ProCommand.AcknowledgeSeasonSettlement -> kernel.acknowledgeSeasonSettlement(state, command.seed, command.settlementId)
         is ProCommand.ChooseOffseason -> kernel.chooseOffseason(state, command.seed, command.decision)
         is ProCommand.SelectLegacy -> kernel.selectLegacy(state, command.legacyId)
         ProCommand.NormalizeBalance -> kernel.normalizeBalance(state)

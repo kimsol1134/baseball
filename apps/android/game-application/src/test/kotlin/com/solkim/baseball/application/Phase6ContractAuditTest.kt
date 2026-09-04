@@ -502,6 +502,7 @@ class Phase6ContractAuditTest {
             is GameCommand.ResumePitch -> command.sessionId
             is GameCommand.AbandonPitch -> command.sessionId
             is GameCommand.ClearPitchPresentation -> command.sessionId
+            is GameCommand.SetPitchHoldCall -> command.sessionId
             is GameCommand.HighSchool, is GameCommand.Pro, is GameCommand.UpdateSettings, is GameCommand.RecordAnalytics -> "session-store"
         },
         expectedRevision = revision,

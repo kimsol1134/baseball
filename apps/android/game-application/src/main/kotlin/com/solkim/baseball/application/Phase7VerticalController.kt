@@ -95,6 +95,12 @@ public class Phase7VerticalController(
         dispatch(GameCommand.UpdateSettings(settings))
     }
 
+    public suspend fun setPitchHoldCall(holdCall: Boolean) {
+        val pitch = store.state.value.pitch ?: return
+        if (pitch.holdCall == holdCall) return
+        dispatch(GameCommand.SetPitchHoldCall(pitch.sessionId, holdCall))
+    }
+
     public suspend fun startHighSchool(name: String) {
         val trimmed = name.trim().ifBlank { "민서준" }.take(40)
         dispatch(
@@ -517,6 +523,7 @@ public class Phase7VerticalController(
         is GameCommand.ResumePitch -> command.sessionId
         is GameCommand.AbandonPitch -> command.sessionId
         is GameCommand.ClearPitchPresentation -> command.sessionId
+        is GameCommand.SetPitchHoldCall -> command.sessionId
         GameCommand.EnterSetup,
         is GameCommand.UpdateSettings,
         is GameCommand.RecordAnalytics -> shellSessionId

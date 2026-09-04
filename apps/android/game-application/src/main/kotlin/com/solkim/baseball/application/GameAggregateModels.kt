@@ -88,6 +88,7 @@ public data class PitchDurableState(
     val checkpoint: String? = null,
     val suspendedFrom: PitchBoundary? = null,
     val abandonedReason: String? = null,
+    val holdCall: Boolean = false,
 ) {
     public fun validate() {
         require(sessionId.isNotBlank() && sessionId.length <= 128) { "pitch.session" }
@@ -248,7 +249,10 @@ public data class GameAggregateState(
     public fun recomputeCommitment(): String {
         val receipts = commandReceipts.joinToString(",") { "${it.commandId}:${it.committedRevision}:${it.commandHash}:${it.resultHash}" }
         val pitchValue = pitch?.let {
-            listOf(it.sessionId, it.careerKind.wire, it.careerId, it.gameId, it.seed, it.boundary.wire, it.challengeRun, it.pitchIndex, it.committedPitchIds.joinToString(";"), it.consumedPitchIds.joinToString(";"), it.terminalPitchId.orEmpty(), it.resultHashes.joinToString(";"), it.checkpoint.orEmpty(), it.suspendedFrom?.wire.orEmpty(), it.abandonedReason.orEmpty()).joinToString("|")
+            buildList {
+                addAll(listOf(it.sessionId, it.careerKind.wire, it.careerId, it.gameId, it.seed, it.boundary.wire, it.challengeRun, it.pitchIndex, it.committedPitchIds.joinToString(";"), it.consumedPitchIds.joinToString(";"), it.terminalPitchId.orEmpty(), it.resultHashes.joinToString(";"), it.checkpoint.orEmpty(), it.suspendedFrom?.wire.orEmpty(), it.abandonedReason.orEmpty()))
+                if (it.holdCall) add("holdCall")
+            }.joinToString("|")
         }.orEmpty()
         val analytics = analytics.receipts.joinToString(",") { receipt ->
             "${receipt.receiptId}:${receipt.eventName}:${receipt.revision}:${receipt.commitment}:${receipt.properties.joinToString(";") { "${it.first}=${it.second}" }}"
@@ -311,6 +315,7 @@ public sealed interface GameCommand {
     public data class ClearPitchPresentation(public val sessionId: String) : GameCommand
     /** Compose-owned durable settings; production persistence remains guarded by the store mode. */
     public data class UpdateSettings(public val settings: GameSettingsState) : GameCommand
+    public data class SetPitchHoldCall(public val sessionId: String, public val holdCall: Boolean) : GameCommand
     public data class RecordAnalytics(
         public val receiptId: String,
         public val eventName: String,
@@ -340,6 +345,7 @@ public data class GameCommandEnvelope(
             is GameCommand.SuspendPitch -> require(value.sessionId == sessionId) { "game.command.session_mismatch" }
             is GameCommand.ResumePitch -> require(value.sessionId == sessionId) { "game.command.session_mismatch" }
             is GameCommand.AbandonPitch -> require(value.sessionId == sessionId) { "game.command.session_mismatch" }
+            is GameCommand.SetPitchHoldCall -> require(value.sessionId == sessionId) { "game.command.session_mismatch" }
             GameCommand.EnterSetup,
             is GameCommand.HighSchool,
             is GameCommand.Pro,

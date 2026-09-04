@@ -65,6 +65,7 @@ public object GameCommandCodec {
         is GameCommand.AbandonPitch -> "abandonPitch"
         is GameCommand.ClearPitchPresentation -> "clearPitchPresentation"
         is GameCommand.UpdateSettings -> "updateSettings"
+        is GameCommand.SetPitchHoldCall -> "setPitchHoldCall"
         is GameCommand.RecordAnalytics -> "recordAnalytics"
     }
 
@@ -99,6 +100,7 @@ public object GameCommandCodec {
             command.settings.highContrastEnabled.toString(),
             command.settings.reducedMotionEnabled.toString(),
         ))
+        is GameCommand.SetPitchHoldCall -> pack(listOf(command.sessionId, command.holdCall.toString()))
         is GameCommand.RecordAnalytics -> pack(listOf(command.receiptId, command.eventName, command.properties.joinToString(";") { encodeInner(pack(listOf(it.first, it.second)).toByteArray(Charsets.UTF_8)) }))
     }
 
@@ -135,6 +137,7 @@ public object GameCommandCodec {
                 reducedMotionEnabled = strictBoolean(values[6], "settings.motion"),
             ))
         }
+        "setPitchHoldCall" -> unpack(payload, 2).let { GameCommand.SetPitchHoldCall(requireSession(root, it[0]), strictBoolean(it[1], "pitch.holdCall")) }
         "recordAnalytics" -> unpack(payload, 3).let { values ->
             val properties = if (values[2].isEmpty()) emptyList() else values[2].split(';').map { encoded ->
                 val raw = String(decodeInner(encoded), Charsets.UTF_8)

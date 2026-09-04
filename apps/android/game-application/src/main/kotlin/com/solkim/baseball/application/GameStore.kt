@@ -165,6 +165,7 @@ public object GameStateReducer {
                 is GameCommand.AbandonPitch -> abandonPitch(state, command)
                 is GameCommand.ClearPitchPresentation -> clearPitchPresentation(state, command)
                 is GameCommand.UpdateSettings -> updateSettings(state, command)
+                is GameCommand.SetPitchHoldCall -> setPitchHoldCall(state, command)
                 is GameCommand.RecordAnalytics -> recordAnalytics(state, command)
             }
         } catch (error: GameCommandException) {
@@ -410,6 +411,13 @@ public object GameStateReducer {
 
     private fun updateSettings(state: GameAggregateState, command: GameCommand.UpdateSettings): Pair<GameAggregateState, String> =
         state.copy(settings = command.settings) to "settings.updated"
+
+    private fun setPitchHoldCall(state: GameAggregateState, command: GameCommand.SetPitchHoldCall): Pair<GameAggregateState, String> {
+        val pitch = state.pitch ?: throw GameCommandException("pitch.hold_call_missing")
+        require(pitch.sessionId == command.sessionId) { "pitch.hold_call_session" }
+        if (pitch.holdCall == command.holdCall) return state to "pitch.hold_call"
+        return state.copy(pitch = pitch.copy(holdCall = command.holdCall)) to "pitch.hold_call"
+    }
 
     private fun commit(
         previousState: GameAggregateState,

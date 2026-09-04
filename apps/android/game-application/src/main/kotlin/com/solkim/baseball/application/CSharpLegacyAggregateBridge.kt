@@ -120,6 +120,12 @@ public object CSharpLegacyAggregateBridge {
                 eventName = "pitch.presentation_cleared"
                 clearPresentation(payload, projected, command)
             }
+            is GameCommand.SetPitchHoldCall -> {
+                eventName = "pitch.hold_call"
+                val pitch = projected.pitch ?: error("pitch.hold_call_missing")
+                require(pitch.sessionId == command.sessionId) { "pitch.hold_call_session" }
+                applyPitch(payload, pitch.copy(holdCall = command.holdCall))
+            }
             is GameCommand.RecordAnalytics -> {
                 eventName = "analytics.recorded"
                 recordAnalytics(payload, projected, command)

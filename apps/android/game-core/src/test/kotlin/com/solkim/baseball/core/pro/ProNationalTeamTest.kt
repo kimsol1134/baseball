@@ -81,6 +81,9 @@ class ProNationalTeamTest {
         assertEquals(ProCareerPhase.NATIONAL_TOURNAMENT, result.state.phase)
         val tournament = assertNotNull(result.state.nationalTournament)
         assertTrue(tournament.result == ProNationalTournamentResult.GOLD || tournament.result == ProNationalTournamentResult.SILVER)
+        if (tournament.result == ProNationalTournamentResult.GOLD || tournament.result == ProNationalTournamentResult.SILVER) {
+            assertEquals(true, result.state.journeyState?.reputation?.overseasInterest)
+        }
         if (tournament.result == ProNationalTournamentResult.GOLD) {
             assertTrue(tournament.exempted)
             assertTrue(result.state.militaryCompleted)
@@ -192,7 +195,10 @@ class ProNationalTeamTest {
         )
         val reviewed = unsigned.copy(commitment = kernel.commitment(unsigned))
         kernel.validateSavedState(reviewed)
-        return kernel.reviewSeason(reviewed, started.nextSeed)
+        val afterReview = kernel.reviewSeason(reviewed, started.nextSeed)
+        val settlementId = afterReview.state.journeyState?.lastSettlement?.id ?: return afterReview
+        if (afterReview.state.phase != ProCareerPhase.SEASON_SETTLEMENT) return afterReview
+        return kernel.acknowledgeSeasonSettlement(afterReview.state, afterReview.nextSeed, settlementId)
     }
 
     private fun forceAwaitingFinal(result: ProResult): ProResult {

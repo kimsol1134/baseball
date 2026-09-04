@@ -132,6 +132,7 @@ public class PitchUnityActivity : ComponentActivity() {
             finish()
             return
         }
+        holdCall = store.current.pitch?.holdCall == true
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = handleBack()
@@ -361,6 +362,7 @@ public class PitchUnityActivity : ComponentActivity() {
                                                 selectedZone = sign.zone
                                                 selectedIntent = sign.intent
                                                 selectedIntensity = sign.intensity
+                                                persistHoldCall(true)
                                             }
                                             PitchHudSelection.Primary -> {
                                                 hud?.preparation?.primaryRecommendation?.call?.let { call ->
@@ -368,6 +370,7 @@ public class PitchUnityActivity : ComponentActivity() {
                                                     selectedIntent = call.zoneIntent
                                                     selectedIntensity = call.intensity
                                                 }
+                                                persistHoldCall(false)
                                             }
                                             PitchHudSelection.Alternative -> {
                                                 hud?.preparation?.alternativeRecommendation?.call?.let { call ->
@@ -375,11 +378,22 @@ public class PitchUnityActivity : ComponentActivity() {
                                                     selectedIntent = call.zoneIntent
                                                     selectedIntensity = call.intensity
                                                 }
+                                                persistHoldCall(false)
                                             }
                                         }
                                     },
                                     onDeliver = ::submitSelectedPitch,
-                                    onHoldCallChange = { holdCall = it },
+                                    onHoldCallChange = { enabled ->
+                                        persistHoldCall(enabled)
+                                        if (!enabled) {
+                                            selectedSign = PitchHudSelection.Primary
+                                            hud?.preparation?.primaryRecommendation?.call?.let { call ->
+                                                selectedZone = call.zone
+                                                selectedIntent = call.zoneIntent
+                                                selectedIntensity = call.intensity
+                                            }
+                                        }
+                                    },
                                     onFastForward = ::fastForwardCurrentBatter,
                                     onAutoReleaseChange = { enabled ->
                                         activityScope.launch {
@@ -424,6 +438,13 @@ public class PitchUnityActivity : ComponentActivity() {
     override fun onDestroy() {
         activityScope.cancel()
         super.onDestroy()
+    }
+
+    private fun persistHoldCall(enabled: Boolean) {
+        holdCall = enabled
+        activityScope.launch {
+            runCatching { controller.setPitchHoldCall(enabled) }
+        }
     }
 
     private fun lookupSavedSession(expected: String): Boolean {
@@ -579,6 +600,7 @@ public class PitchUnityActivity : ComponentActivity() {
                         request = null
                         lastDelivery = null
                         if (!holdCall) selectedSign = PitchHudSelection.Primary
+                        persistHoldCall(holdCall)
                         status = "다음 타석 · 포수 사인을 보고 던지세요"
                     }
                 }
@@ -1301,6 +1323,8 @@ private fun PitchControlsCard(
         PitchHudSelection.Alternative -> alternative?.shortReason
         is PitchHudSelection.Manual -> primary?.shortReason
     }.orEmpty().ifBlank { primaryExplanation }
+    var rationaleOpen by remember { mutableStateOf(false) }
+    val showManualPlan = holdCall || selection is PitchHudSelection.Manual
     Surface(
         color = BaseballColors.surfaceRaised,
         shape = RoundedCornerShape(16.dp),
@@ -1357,14 +1381,22 @@ private fun PitchControlsCard(
                 }
                 if (selectedReason.isNotBlank()) {
                     Text(
-                        text = selectedReason,
-                        color = BaseballColors.textSecondary,
-                        style = MaterialTheme.typography.bodySmall,
+                        if (rationaleOpen) "사인 근거 ▴" else "사인 근거 ▾",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = BaseballColors.milestone,
+                        modifier = Modifier.clickable { rationaleOpen = !rationaleOpen },
                     )
+                    if (rationaleOpen) {
+                        Text(
+                            text = selectedReason,
+                            color = BaseballColors.textSecondary,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                 }
             }
 
-            Row(
+            if (showManualPlan) Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -1429,17 +1461,19 @@ private fun PitchControlsCard(
                     }
                 }
             }
-            PitchManualPlan(
-                repertoireType = selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM,
-                selectedZone = selectedZone,
-                selectedIntent = selectedIntent,
-                selectedIntensity = selectedIntensity,
-                batSide = batSide,
-                enabled = ready,
-                onChange = { type, zone, intent, intensity ->
-                    onSelect(PitchHudSelection.Manual(type, zone, intent, intensity))
-                },
-            )
+            if (showManualPlan) {
+                PitchManualPlan(
+                    repertoireType = selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM,
+                    selectedZone = selectedZone,
+                    selectedIntent = selectedIntent,
+                    selectedIntensity = selectedIntensity,
+                    batSide = batSide,
+                    enabled = ready,
+                    onChange = { type, zone, intent, intensity ->
+                        onSelect(PitchHudSelection.Manual(type, zone, intent, intensity))
+                    },
+                )
+            }
             PitchCatcherSettings(
                 holdCall = holdCall,
                 scoutingTitle = scoutingTitle,

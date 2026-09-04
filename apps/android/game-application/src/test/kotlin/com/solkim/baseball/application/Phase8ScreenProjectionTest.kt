@@ -272,7 +272,20 @@ class Phase8ScreenProjectionTest {
             ),
         )
         val reviewed = kernel.reviewSeason(callState, callState.seed)
-        val callFixture = aggregateWithPro("phase8-national-call", reviewed.state)
+        assertEquals(ProCareerPhase.SEASON_SETTLEMENT, reviewed.state.phase)
+        val settlementModel = Phase8ScreenProjection.project(
+            aggregateWithPro("phase8-national-settlement", reviewed.state),
+            Phase8ScreenId.P019_PRO_SEASON,
+            context,
+        )
+        Phase8AccessibilityContract.validate(settlementModel)
+        assertEquals("결산 확인", settlementModel.actions.single { it.id == "acknowledgeSettlement" }.label)
+        val called = kernel.acknowledgeSeasonSettlement(
+            reviewed.state,
+            reviewed.nextSeed,
+            requireNotNull(reviewed.state.journeyState?.lastSettlement).id,
+        )
+        val callFixture = aggregateWithPro("phase8-national-call", called.state)
         val callModel = Phase8ScreenProjection.project(callFixture, Phase8ScreenId.P019_PRO_SEASON, context)
         Phase8AccessibilityContract.validate(callModel)
         assertEquals("소집을 수락한다", callModel.actions.single { it.id == "nationalTeam:accept" }.label)
@@ -299,7 +312,7 @@ class Phase8ScreenProjectionTest {
         assertEquals(3, groupModel.sections.single { it.id == "national-group" }.rows.count { it.detail.startsWith("조별") })
         if (tournament.stage == com.solkim.baseball.core.pro.ProNationalTournamentStage.AWAITING_FINAL) {
             assertTrue(groupModel.actions.any { it.id == "nationalTeam:startFinal" && it.enabled })
-            assertTrue(groupModel.actions.any { it.id == "nationalTeam:autoFinal" && it.enabled })
+            assertTrue(groupModel.actions.none { it.id == "nationalTeam:autoFinal" })
         } else {
             assertTrue(groupModel.actions.any { it.id == "nationalTeam:acknowledge" && it.enabled })
         }

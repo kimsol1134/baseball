@@ -344,6 +344,7 @@ public object Phase9AnalyticsProjector {
                 }
             }
             is GameCommand.UpdateSettings -> Unit
+            is GameCommand.SetPitchHoldCall -> Unit
             is GameCommand.RecordAnalytics -> Unit
             is GameCommand.ReservePitch,
             is GameCommand.StartPitch,

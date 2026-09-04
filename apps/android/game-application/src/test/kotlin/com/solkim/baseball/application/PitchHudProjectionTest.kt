@@ -151,6 +151,11 @@ class PitchHudProjectionTest {
         assertEquals(alternative.intensity, PitchHudProjection.resolveCall(store.current, PitchHudSelection.Alternative).intensity)
         assertTrue(primary.pitchType in PitchHudProjection.repertoire(store.current))
         assertTrue(alternative.pitchType in PitchHudProjection.repertoire(store.current))
+        assertFalse(requireNotNull(store.current.pitch).holdCall)
+        controller.setPitchHoldCall(true)
+        assertTrue(requireNotNull(store.current.pitch).holdCall)
+        val restored = GameAggregateCodec.decodePayload(GameAggregateCodec.encodePayload(store.current))
+        assertTrue(requireNotNull(restored.pitch).holdCall)
 
         val primaryRequest = controller.submitPitch(
             launch.sessionId,

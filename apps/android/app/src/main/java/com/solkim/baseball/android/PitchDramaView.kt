@@ -330,6 +330,12 @@ private fun DrawScope.drawCatcherMitt(
         val dotRadius = RESULT_LANDING_DOT_RADIUS_DP.dp.toPx()
         val ringStroke = max(2f, 2.2.dp.toPx())
         drawCircle(
+            color = BaseballColors.fieldChalk.copy(alpha = 0.55f),
+            radius = ringRadius * 1.35f,
+            center = target,
+            style = Stroke(width = max(1.2f, 1.4.dp.toPx()), cap = StrokeCap.Round),
+        )
+        drawCircle(
             color = ringColor.copy(alpha = 0.95f),
             radius = ringRadius,
             center = target,

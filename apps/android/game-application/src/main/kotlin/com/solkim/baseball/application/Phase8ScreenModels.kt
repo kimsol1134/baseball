@@ -329,6 +329,7 @@ public object Phase8ScreenProjection {
                 ProCareerPhase.SEASON_DECISION,
                 ProCareerPhase.NATIONAL_TEAM_CALL,
                 ProCareerPhase.NATIONAL_TOURNAMENT,
+                ProCareerPhase.SEASON_SETTLEMENT,
                 ProCareerPhase.SEASON_REVIEW -> Phase8ScreenId.P019_PRO_SEASON
                 ProCareerPhase.OFFSEASON_DECISION -> Phase8ScreenId.P020_OFFSEASON
                 ProCareerPhase.RETIREMENT_DECISION -> Phase8ScreenId.P021_PRO_RETIREMENT
@@ -690,7 +691,23 @@ public object Phase8ScreenProjection {
             }
             Phase8ScreenId.P019_PRO_SEASON -> {
                 val tournament = pro?.nationalTournament
+                val settlement = pro?.journeyState?.lastSettlement
                 when {
+                    pro?.phase == ProCareerPhase.SEASON_SETTLEMENT && settlement != null -> {
+                        addSection(Phase8Section("season-settlement", "시즌 리뷰", listOf(
+                            Phase8Row("시즌", settlement.season.toString(), "올해 기록과 다음 길을 확인합니다."),
+                            Phase8Row("연봉 정산", "${settlement.salaryIncome}원", "이번 시즌 계약에서 들어온 금액입니다."),
+                            Phase8Row("팬 지지", "${settlement.fanBefore} → ${settlement.fanAfter}", "시즌 변화 ${if (settlement.fanDelta >= 0) "+" else ""}${settlement.fanDelta}"),
+                            Phase8Row("구단 유산", "${settlement.teamLegacyBefore} → ${settlement.teamLegacyAfter}", "명예의 전당 예상 ${settlement.hallOfFameBefore} → ${settlement.hallOfFameAfter}"),
+                        )))
+                        addAction(
+                            "acknowledgeSettlement",
+                            "결산 확인",
+                            "결산을 확인하고 다음 국면으로 갑니다.",
+                            true,
+                            listOf(pro(ProCommand.AcknowledgeSeasonSettlement(context.seed(state, "season-settlement"), settlement.id))),
+                        )
+                    }
                     pro?.phase == ProCareerPhase.NATIONAL_TEAM_CALL -> {
                         val fan = pro.journeyState?.reputation?.fanSupport ?: 0
                         val market = (pro.pitcher.stuff + pro.pitcher.command + pro.pitcher.movement + pro.pitcher.stamina) / 4
@@ -746,13 +763,6 @@ public object Phase8ScreenProjection {
                                 "대표팀 결승에 직접 올라 슬라이더로 던집니다.",
                                 true,
                                 listOf(pro(ProCommand.StartNationalFinal(context.seed(state, "national-team:start-final")))),
-                            )
-                            addAction(
-                                "nationalTeam:autoFinal",
-                                "결승 자동 진행",
-                                "직접 등판 없이 결승을 시뮬합니다. 시드는 소비하지 않습니다.",
-                                true,
-                                listOf(pro(ProCommand.ResolveNationalFinalAutomatically(context.seed(state, "national-team:auto-final")))),
                             )
                         }
                         tournament.result?.let { outcome ->
@@ -1222,6 +1232,7 @@ public object Phase8ScreenProjection {
         ProCareerPhase.SEASON_DECISION -> "시즌 결정"
         ProCareerPhase.IMPORTANT_GAME -> "중요 경기"
         ProCareerPhase.SEASON_REVIEW -> "시즌 결산"
+        ProCareerPhase.SEASON_SETTLEMENT -> "시즌 리뷰"
         ProCareerPhase.NATIONAL_TEAM_CALL -> "대표팀 소집"
         ProCareerPhase.NATIONAL_TOURNAMENT -> "대표팀 대회"
         ProCareerPhase.OFFSEASON_DECISION -> "비시즌 선택"

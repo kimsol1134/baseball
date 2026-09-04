@@ -174,12 +174,26 @@ public object ProJourneyStateCodec {
         value.string("id"), recognitionKind(value.string("kind")), value.string("contentID"), value.int("season"), value.nullableString("teamID"), value.nullableInt("value"),
     )
 
-    private fun encodeReputation(value: ProReputationState): JsonValue.Obj = obj(
-        "fanSupport" to num(value.fanSupport), "lastMerchandiseTier" to nullable(value.lastMerchandiseTier) { str(it.wire) }, "endorsementSeasons" to ints(value.endorsementSeasons),
-    )
+    private fun encodeReputation(value: ProReputationState): JsonValue.Obj {
+        val fields = linkedMapOf(
+            "fanSupport" to num(value.fanSupport),
+            "lastMerchandiseTier" to nullable(value.lastMerchandiseTier) { str(it.wire) },
+            "endorsementSeasons" to ints(value.endorsementSeasons),
+        )
+        if (value.overseasInterest != null) fields["overseasInterest"] = JsonValue.Bool(value.overseasInterest)
+        return JsonValue.Obj(fields)
+    }
 
     private fun decodeReputation(value: JsonValue.Obj): ProReputationState = ProReputationState(
-        value.int("fanSupport"), value.nullableEnum("lastMerchandiseTier", ProMerchandiseTier.entries, { it.wire }), value.ints("endorsementSeasons"),
+        value.int("fanSupport"),
+        value.nullableEnum("lastMerchandiseTier", ProMerchandiseTier.entries, { it.wire }),
+        value.ints("endorsementSeasons"),
+        overseasInterest = when (val raw = value.entries["overseasInterest"]) {
+            null -> null
+            JsonValue.Null -> null
+            is JsonValue.Bool -> raw.value
+            else -> fail("pro.journey.overseasInterest")
+        },
     )
 
     private fun encodeFinance(value: ProFinanceState): JsonValue.Obj = obj(

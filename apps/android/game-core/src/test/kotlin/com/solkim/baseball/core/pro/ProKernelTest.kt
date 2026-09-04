@@ -152,8 +152,14 @@ class ProKernelTest {
         ).let { it.copy(commitment = kernel.commitment(it)) }
         kernel.validateSavedState(reviewed)
         val afterReview = kernel.reviewSeason(reviewed, applied.nextSeed)
-        val roundTripped = ProStateCodec.decode(ProStateCodec.encode(afterReview.state))
-        assertEquals(afterReview.state, roundTripped)
+        assertEquals(ProCareerPhase.SEASON_SETTLEMENT, afterReview.state.phase)
+        val settled = kernel.acknowledgeSeasonSettlement(
+            afterReview.state,
+            afterReview.nextSeed,
+            requireNotNull(afterReview.state.journeyState?.lastSettlement).id,
+        )
+        val roundTripped = ProStateCodec.decode(ProStateCodec.encode(settled.state))
+        assertEquals(settled.state, roundTripped)
         assertEquals(ProCareerPhase.OFFSEASON_DECISION, roundTripped.phase)
         assertTrue(roundTripped.decisionHistory.any { it.type == ProSeasonDecisionType.MEDIA_OPPORTUNITY })
     }
@@ -173,7 +179,10 @@ class ProKernelTest {
             commitment = "",
         ).let { it.copy(commitment = kernel.commitment(it)) }
         kernel.validateSavedState(reviewed)
-        val after = kernel.reviewSeason(reviewed, started.nextSeed)
+        val afterReview = kernel.reviewSeason(reviewed, started.nextSeed)
+        assertEquals(ProCareerPhase.SEASON_SETTLEMENT, afterReview.state.phase)
+        val settlementId = requireNotNull(afterReview.state.journeyState?.lastSettlement).id
+        val after = kernel.acknowledgeSeasonSettlement(afterReview.state, afterReview.nextSeed, settlementId)
         assertEquals(ProCareerPhase.NATIONAL_TEAM_CALL, after.state.phase)
         assertEquals(null, after.state.pendingDecision)
         val declined = kernel.respondToNationalTeamCall(after.state, after.nextSeed, accepted = false)
@@ -193,7 +202,12 @@ class ProKernelTest {
             commitment = "",
         ).let { it.copy(commitment = kernel.commitment(it)) }
         kernel.validateSavedState(reviewed)
-        val offseason = kernel.reviewSeason(reviewed, started.nextSeed).state
+        val afterReview = kernel.reviewSeason(reviewed, started.nextSeed)
+        val offseason = kernel.acknowledgeSeasonSettlement(
+            afterReview.state,
+            afterReview.nextSeed,
+            requireNotNull(afterReview.state.journeyState?.lastSettlement).id,
+        ).state
         val eligible = offseason.copy(serviceYears = 6, commitment = "").let { it.copy(commitment = kernel.commitment(it)) }
         kernel.validateSavedState(eligible)
         val signed = kernel.chooseOffseason(eligible, started.nextSeed, OffseasonDecision.FREE_AGENCY)
@@ -252,6 +266,7 @@ class ProKernelTest {
             ProCommand.SubmitPitch("pitch-1", call, PitchDelivery(700, 650)),
             ProCommand.FinishImportantGame,
             ProCommand.ReviewSeason("7"),
+            ProCommand.AcknowledgeSeasonSettlement("7b", "settlement:1"),
             ProCommand.ChooseOffseason("8", OffseasonDecision.FREE_AGENCY),
             ProCommand.SelectLegacy("power_imprint"),
             ProCommand.NormalizeBalance,
@@ -355,6 +370,11 @@ class ProKernelTest {
                 }
                 ProCareerPhase.SEASON_REVIEW -> {
                     val result = kernel.reviewSeason(state, seed)
+                    state = ProStateCodec.decode(ProStateCodec.encode(result.state)); seed = result.nextSeed
+                }
+                ProCareerPhase.SEASON_SETTLEMENT -> {
+                    val settlementId = state.journeyState?.lastSettlement?.id ?: error("missing settlement")
+                    val result = kernel.acknowledgeSeasonSettlement(state, seed, settlementId)
                     state = ProStateCodec.decode(ProStateCodec.encode(result.state)); seed = result.nextSeed
                 }
                 ProCareerPhase.OFFSEASON_DECISION -> {

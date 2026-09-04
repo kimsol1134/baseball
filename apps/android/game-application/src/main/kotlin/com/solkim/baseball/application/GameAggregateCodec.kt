@@ -102,23 +102,29 @@ public object GameAggregateCodec : JsonPayloadCodec<GameAggregateState> {
         )
     }
 
-    private fun encodePitch(value: PitchDurableState): JsonValue.Obj = JsonValue.Obj(linkedMapOf<String, JsonValue>(
-        "sessionId" to JsonValue.Str(value.sessionId), "careerKind" to JsonValue.Str(value.careerKind.wire), "careerId" to JsonValue.Str(value.careerId), "gameId" to JsonValue.Str(value.gameId), "seed" to JsonValue.Str(value.seed),
-        "boundary" to JsonValue.Str(value.boundary.wire), "challengeRun" to JsonValue.Bool(value.challengeRun), "pitchIndex" to JsonValue.Num(value.pitchIndex.toString()),
-        "committedPitchIds" to JsonValue.Arr(value.committedPitchIds.map { JsonValue.Str(it) }), "consumedPitchIds" to JsonValue.Arr(value.consumedPitchIds.map { JsonValue.Str(it) }),
-        "terminalPitchId" to if (value.terminalPitchId == null) JsonValue.Null else JsonValue.Str(value.terminalPitchId), "resultHashes" to JsonValue.Arr(value.resultHashes.map { JsonValue.Str(it) }),
-        "checkpoint" to if (value.checkpoint == null) JsonValue.Null else JsonValue.Str(value.checkpoint), "suspendedFrom" to if (value.suspendedFrom == null) JsonValue.Null else JsonValue.Str(value.suspendedFrom.wire),
-        "abandonedReason" to if (value.abandonedReason == null) JsonValue.Null else JsonValue.Str(value.abandonedReason),
-    ))
+    private fun encodePitch(value: PitchDurableState): JsonValue.Obj {
+        val fields = linkedMapOf<String, JsonValue>(
+            "sessionId" to JsonValue.Str(value.sessionId), "careerKind" to JsonValue.Str(value.careerKind.wire), "careerId" to JsonValue.Str(value.careerId), "gameId" to JsonValue.Str(value.gameId), "seed" to JsonValue.Str(value.seed),
+            "boundary" to JsonValue.Str(value.boundary.wire), "challengeRun" to JsonValue.Bool(value.challengeRun), "pitchIndex" to JsonValue.Num(value.pitchIndex.toString()),
+            "committedPitchIds" to JsonValue.Arr(value.committedPitchIds.map { JsonValue.Str(it) }), "consumedPitchIds" to JsonValue.Arr(value.consumedPitchIds.map { JsonValue.Str(it) }),
+            "terminalPitchId" to if (value.terminalPitchId == null) JsonValue.Null else JsonValue.Str(value.terminalPitchId), "resultHashes" to JsonValue.Arr(value.resultHashes.map { JsonValue.Str(it) }),
+            "checkpoint" to if (value.checkpoint == null) JsonValue.Null else JsonValue.Str(value.checkpoint), "suspendedFrom" to if (value.suspendedFrom == null) JsonValue.Null else JsonValue.Str(value.suspendedFrom.wire),
+            "abandonedReason" to if (value.abandonedReason == null) JsonValue.Null else JsonValue.Str(value.abandonedReason),
+        )
+        if (value.holdCall) fields["holdCall"] = JsonValue.Bool(true)
+        return JsonValue.Obj(fields)
+    }
 
     private fun decodePitch(value: JsonValue.Obj): PitchDurableState {
-        requireExact(value, pitchFields, "pitch")
+        val keys = value.entries.keys
+        require(keys == pitchFields || keys == pitchFields + "holdCall") { "pitch.fields" }
         return PitchDurableState(
             sessionId = value.string("sessionId"), careerKind = enumWire(value.string("careerKind"), PitchCareerKind.entries, "pitch.careerKind") { it.wire }, careerId = value.string("careerId"), gameId = value.string("gameId"), seed = value.string("seed"),
             boundary = enumWire(value.string("boundary"), PitchBoundary.entries, "pitch.boundary") { it.wire }, pitchIndex = value.integer("pitchIndex"),
             challengeRun = value.bool("challengeRun"),
             committedPitchIds = value.strings("committedPitchIds"), consumedPitchIds = value.strings("consumedPitchIds"), terminalPitchId = value.nullableString("terminalPitchId"), resultHashes = value.strings("resultHashes"),
             checkpoint = value.nullableString("checkpoint"), suspendedFrom = value.nullableString("suspendedFrom")?.let { enumWire(it, PitchBoundary.entries, "pitch.suspendedFrom") { item -> item.wire } }, abandonedReason = value.nullableString("abandonedReason"),
+            holdCall = value.entries["holdCall"]?.let { (it as? JsonValue.Bool)?.value ?: throw GameSaveCodecException("pitch.holdCall") } == true,
         )
     }
 

@@ -34,6 +34,7 @@ public enum class ProCareerPhase(public val wire: String) {
     SEASON_DECISION("season_decision"),
     IMPORTANT_GAME("important_game"),
     SEASON_REVIEW("season_review"),
+    SEASON_SETTLEMENT("season_settlement"),
     NATIONAL_TEAM_CALL("national_team_call"),
     NATIONAL_TOURNAMENT("national_tournament"),
     OFFSEASON_DECISION("offseason_decision"),

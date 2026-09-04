@@ -148,6 +148,7 @@ public data class ProReputationState(
     val fanSupport: Int = 0,
     val lastMerchandiseTier: ProMerchandiseTier? = null,
     val endorsementSeasons: List<Int> = emptyList(),
+    val overseasInterest: Boolean? = null,
 )
 
 public enum class ProFanReasonKind(public val wire: String) {

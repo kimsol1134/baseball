@@ -6,6 +6,7 @@ import com.solkim.baseball.core.pitch.PitchKind
 import com.solkim.baseball.core.pitch.PitchZone
 import com.solkim.baseball.core.pro.ProCareerPhase
 import com.solkim.baseball.core.pro.ProCatalog
+import com.solkim.baseball.core.pro.ProCommand
 import com.solkim.baseball.persistence.SaveLoadStatus
 import com.solkim.baseball.persistence.SaveRepositoryException
 import kotlinx.coroutines.runBlocking
@@ -72,6 +73,7 @@ class Phase8CareerCompletionStoreTest {
             assertFalse(session.store.current.settings.autoReleaseEnabled)
             session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
             session.executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
+            session.finishSettlementIfOpen()
             session.finishNationalTeamIfOpen()
             session = session.reopenAndAssert(ProCareerPhase.OFFSEASON_DECISION, "v10-direct-review")
             assertEquals(10, session.store.current.pro?.proRulesVersion)
@@ -91,6 +93,7 @@ class Phase8CareerCompletionStoreTest {
                 session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
                 assertEquals(index + 1, session.store.current.pro?.season)
                 session.executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
+                session.finishSettlementIfOpen()
                 session.finishNationalTeamIfOpen()
                 assertCodecRoundTrip(session.store.current, "after-review-$index")
                 val expectedPhase = if (index + 1 >= ProCatalog.MAXIMUM_CAREER_SEASONS) {
@@ -118,6 +121,7 @@ class Phase8CareerCompletionStoreTest {
                 val season = requireNotNull(session.store.current.pro).season
                 session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
                 session.executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
+                session.finishSettlementIfOpen()
                 session.finishNationalTeamIfOpen()
                 val expectedPhase = if (season >= ProCatalog.MAXIMUM_CAREER_SEASONS) {
                     ProCareerPhase.RETIREMENT_DECISION
@@ -190,6 +194,11 @@ class Phase8CareerCompletionStoreTest {
             assertFalse(store.current.settings.autoReleaseEnabled)
         }
 
+        suspend fun finishSettlementIfOpen() {
+            if (store.current.pro?.phase != ProCareerPhase.SEASON_SETTLEMENT) return
+            executeFirst(Phase8ScreenId.P019_PRO_SEASON, "acknowledgeSettlement")
+        }
+
         suspend fun finishNationalTeamIfOpen() {
             var guard = 0
             while (true) {
@@ -201,12 +210,24 @@ class Phase8CareerCompletionStoreTest {
                         if (tournament?.result != null) {
                             executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:acknowledge")
                         } else {
-                            executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:autoFinal")
+                            resolveNationalFinalAutomatically()
                         }
                     }
                     else -> return
                 }
             }
+        }
+
+        suspend fun resolveNationalFinalAutomatically() {
+            val seed = context.seed(store.current, "national-team:auto-final")
+            store.dispatch(
+                GameCommandEnvelope(
+                    commandId = "national-auto-final-${store.current.revision}",
+                    sessionId = "phase8-ui",
+                    expectedRevision = store.current.revision,
+                    command = GameCommand.Pro(ProCommand.ResolveNationalFinalAutomatically(seed)),
+                ),
+            )
         }
 
         suspend fun advanceProUntil(target: ProCareerPhase) {
@@ -220,13 +241,14 @@ class Phase8CareerCompletionStoreTest {
                     ProCareerPhase.CONTRACT_OFFER -> executeFirst(Phase8ScreenId.P016_PRO_CONTRACT, "signContract")
                     ProCareerPhase.WEEKLY_PLAN -> executeFirst(Phase8ScreenId.P017_PRO_WEEK, "proAdvanceSegment")
                     ProCareerPhase.SEASON_DECISION -> executeFirst(Phase8ScreenId.P019_PRO_SEASON) { it.id.startsWith("seasonDecision:") }
+                    ProCareerPhase.SEASON_SETTLEMENT -> executeFirst(Phase8ScreenId.P019_PRO_SEASON, "acknowledgeSettlement")
                     ProCareerPhase.NATIONAL_TEAM_CALL -> executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:accept")
                     ProCareerPhase.NATIONAL_TOURNAMENT -> {
                         val tournament = store.current.pro?.nationalTournament
                         if (tournament?.result != null) {
                             executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:acknowledge")
                         } else {
-                            executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:autoFinal")
+                            resolveNationalFinalAutomatically()
                         }
                     }
                     ProCareerPhase.IMPORTANT_GAME -> finishProImportantGame()

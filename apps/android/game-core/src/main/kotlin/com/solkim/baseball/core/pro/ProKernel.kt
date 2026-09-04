@@ -1147,7 +1147,34 @@ public class ProKernel(
             decisionCount = state.decisionHistory.count { it.season == state.season },
         )
         val offerNational = state.season < ProCatalog.MAXIMUM_CAREER_SEASONS && shouldOfferNationalTeam(state)
+        val journey = state.journeyState
+        val openSettlement = journey != null
+        val years = max(1, state.contract?.yearsRemaining ?: 1)
+        val nextRoute = when {
+            state.season >= ProCatalog.MAXIMUM_CAREER_SEASONS -> ProSettlementNextRoute.FORCED_RETIREMENT
+            state.serviceYears >= 6 -> ProSettlementNextRoute.FREE_AGENCY_ELIGIBLE
+            else -> ProSettlementNextRoute.UNDER_CONTRACT
+        }
+        val nextJourney = if (openSettlement) {
+            ProJourneyKernel.settle(
+                state = journey,
+                careerId = state.careerId,
+                season = state.season,
+                teamId = state.team.id,
+                salary = max(1L, (state.contract?.annualSalary ?: 0).toLong()),
+                merchandise = 0L,
+                fanDelta = 0,
+                legacyDelta = 0,
+                hallOfFameDelta = 0,
+                yearsBefore = years,
+                yearsAfter = years,
+                nextRoute = nextRoute,
+            )
+        } else {
+            journey
+        }
         val phase = when {
+            openSettlement -> ProCareerPhase.SEASON_SETTLEMENT
             state.season >= ProCatalog.MAXIMUM_CAREER_SEASONS -> ProCareerPhase.RETIREMENT_DECISION
             offerNational -> ProCareerPhase.NATIONAL_TEAM_CALL
             else -> ProCareerPhase.OFFSEASON_DECISION
@@ -1161,9 +1188,39 @@ public class ProKernel(
             seasonLedgers = state.seasonLedgers + ledger,
             pendingDecision = null,
             news = (listOf("시즌 ${state.season} 종료 · ${stats.games}경기 · ${stats.strikeouts}K · 9이닝당 실점 ${"%.2f".format(java.util.Locale.ROOT, stats.runPerNinePermille / 1_000.0)}") + state.news).take(30),
+            journeyState = nextJourney,
             commitment = "",
         )
         return result(next, seed.nextSeed(), listOf("pro_season_reviewed"))
+    }
+
+    public fun acknowledgeSeasonSettlement(state: ProState, seedText: String, settlementId: String): ProResult {
+        validate(state, ProCareerPhase.SEASON_SETTLEMENT)
+        seed(seedText)
+        val journey = state.journeyState ?: throw ProKernelException("pro.settlement_missing")
+        val settlement = journey.lastSettlement ?: throw ProKernelException("pro.settlement_missing")
+        require(settlement.id == settlementId) { "pro.settlement_stale" }
+        if (journey.settlementAcknowledged) {
+            return result(state, seedText, listOf("pro_settlement_acknowledged_idempotent"))
+        }
+        val acknowledged = ProJourneyKernel.acknowledgeSettlement(journey, settlementId)
+        val offerNational = state.season < ProCatalog.MAXIMUM_CAREER_SEASONS && shouldOfferNationalTeam(state.copy(journeyState = acknowledged))
+        val phase = when {
+            state.season >= ProCatalog.MAXIMUM_CAREER_SEASONS || settlement.nextRoute == ProSettlementNextRoute.FORCED_RETIREMENT ->
+                ProCareerPhase.RETIREMENT_DECISION
+            offerNational -> ProCareerPhase.NATIONAL_TEAM_CALL
+            else -> ProCareerPhase.OFFSEASON_DECISION
+        }
+        return result(
+            state.copy(
+                revision = state.revision + 1UL,
+                phase = phase,
+                journeyState = acknowledged,
+                commitment = "",
+            ),
+            seedText,
+            listOf("pro_settlement_acknowledged"),
+        )
     }
 
     public fun respondToNationalTeamCall(state: ProState, seedText: String, accepted: Boolean): ProResult {
@@ -1414,9 +1471,14 @@ public class ProKernel(
             )
             news.add(0, "해외 스카우트 문의가 들어왔습니다.")
         }
+        val overseas = if (outcome == ProNationalTournamentResult.GOLD || outcome == ProNationalTournamentResult.SILVER) {
+            true
+        } else {
+            journey?.reputation?.overseasInterest
+        }
         val nextJourney = journey?.copy(
             recognitions = recognitions.distinctBy { it.id },
-            reputation = journey.reputation.copy(fanSupport = fan),
+            reputation = journey.reputation.copy(fanSupport = fan, overseasInterest = overseas),
         )
         val history = state.nationalTeamHistory + ProNationalTeamRecord(
             season = state.season,
@@ -1636,8 +1698,13 @@ public class ProKernel(
             requireLeaderboardSnapshot(ledger.leaderboards, "pro.ledger_leaderboards")
         }
         require((state.phase == ProCareerPhase.SEASON_DECISION) == (state.pendingDecision != null)) { "pro.decision_phase" }
-        if (state.phase == ProCareerPhase.NATIONAL_TEAM_CALL) {
+        if (state.phase == ProCareerPhase.NATIONAL_TEAM_CALL && state.journeyState != null) {
             require(shouldOfferNationalTeam(state)) { "pro.national_team_call" }
+        }
+        if (state.phase == ProCareerPhase.SEASON_SETTLEMENT && state.journeyState != null) {
+            val settlement = state.journeyState.lastSettlement
+            require(settlement != null && !state.journeyState.settlementAcknowledged) { "pro.settlement_phase" }
+            require(settlement.season == state.season && settlement.teamId == state.team.id) { "pro.settlement_identity" }
         }
         val tournamentExpected = state.phase == ProCareerPhase.NATIONAL_TOURNAMENT ||
             (state.phase == ProCareerPhase.IMPORTANT_GAME && state.seasonTrigger == ProSeasonTrigger.NATIONAL_FINAL)
