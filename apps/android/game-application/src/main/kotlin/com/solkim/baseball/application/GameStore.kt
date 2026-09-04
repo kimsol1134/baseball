@@ -354,19 +354,33 @@ public object GameStateReducer {
         require(pitch.boundary == PitchBoundary.COMPLETED || pitch.boundary == PitchBoundary.ABANDONED) {
             "pitch.clear_boundary"
         }
-        val highSchool = state.highSchool
-        if (highSchool?.lastPresentation != null) {
-            val resigned = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel()
-                .commitShadowState(highSchool.copy(lastPresentation = null))
-            return state.copy(highSchool = resigned) to "pitch.presentation_cleared"
+        return when (pitch.careerKind) {
+            PitchCareerKind.PRO -> {
+                val pro = state.pro
+                if (pro != null && (pro.lastPresentation != null || pro.lastBattedBall != null || pro.lastFielding != null)) {
+                    val cleared = pro.copy(
+                        lastPresentation = null,
+                        lastBattedBall = null,
+                        lastFielding = null,
+                        commitment = "",
+                    )
+                    val resigned = cleared.copy(commitment = com.solkim.baseball.core.pro.ProKernel().commitment(cleared))
+                    state.copy(pro = resigned) to "pitch.presentation_cleared"
+                } else {
+                    state to "pitch.presentation_already_clear"
+                }
+            }
+            PitchCareerKind.HIGH_SCHOOL, PitchCareerKind.TUTORIAL -> {
+                val highSchool = state.highSchool
+                if (highSchool?.lastPresentation != null) {
+                    val resigned = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel()
+                        .commitShadowState(highSchool.copy(lastPresentation = null))
+                    state.copy(highSchool = resigned) to "pitch.presentation_cleared"
+                } else {
+                    state to "pitch.presentation_already_clear"
+                }
+            }
         }
-        val pro = state.pro
-        if (pro?.lastPresentation != null) {
-            val cleared = pro.copy(lastPresentation = null, commitment = "")
-            val resigned = cleared.copy(commitment = com.solkim.baseball.core.pro.ProKernel().commitment(cleared))
-            return state.copy(pro = resigned) to "pitch.presentation_cleared"
-        }
-        return state to "pitch.presentation_already_clear"
     }
 
     private fun recordAnalytics(state: GameAggregateState, command: GameCommand.RecordAnalytics): Pair<GameAggregateState, String> {

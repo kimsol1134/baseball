@@ -377,7 +377,43 @@ class Phase8ScreenProjectionTest {
         controller.execute(screen, action.id, action.payloads)
     }
 
-    private suspend fun completedHighSchoolFixture(installId: String): Pair<KotlinGameStore, Phase8Controller> {
+    @Test
+    fun preferredNextLifeSurfaceArchivesThenOpensLinkedProWithoutLeavingEnding() = runBlocking {
+        val (store, controller) = completedHighSchoolFixture("phase8-ending-entry", archive = false)
+        assertEquals(Phase8ScreenId.P015_REBIRTH, controller.preferredScreen())
+        assertFalse(store.current.settings.autoReleaseEnabled)
+        val highSchool = requireNotNull(store.current.highSchool)
+        assertEquals(HighSchoolPhase.COMPLETED, highSchool.run.phase)
+        assertNotNull(highSchool.selectedSignatureLegacyId)
+        assertTrue(highSchool.archive.none { it.careerId == highSchool.run.careerId })
+
+        val beforeArchive = controller.projection(Phase8ScreenId.P015_REBIRTH)
+        assertTrue(beforeArchive.actions.single { it.id == "finalizeArchive" }.enabled)
+        assertFalse(beforeArchive.actions.single { it.id == "quickRebirth" }.enabled)
+        assertFalse(beforeArchive.actions.single { it.id == "customizeRebirth" }.enabled)
+        assertTrue(beforeArchive.actions.single { it.id == "startLinked" }.enabled)
+        assertTrue(beforeArchive.actions.single { it.id == "startDirect" }.enabled)
+
+        executeFirst(controller, Phase8ScreenId.P015_REBIRTH, "finalizeArchive")
+        assertEquals(Phase8ScreenId.P015_REBIRTH, controller.preferredScreen())
+        val archived = requireNotNull(store.current.highSchool)
+        assertTrue(archived.archive.any { it.careerId == archived.run.careerId })
+        val afterArchive = controller.projection(Phase8ScreenId.P015_REBIRTH)
+        assertFalse(afterArchive.actions.single { it.id == "finalizeArchive" }.enabled)
+        assertTrue(afterArchive.actions.single { it.id == "quickRebirth" }.enabled)
+        assertTrue(afterArchive.actions.single { it.id == "startLinked" }.enabled)
+        assertTrue(afterArchive.actions.single { it.id == "startDirect" }.enabled)
+
+        executeFirst(controller, Phase8ScreenId.P015_REBIRTH, "startLinked")
+        assertEquals(Phase8ScreenId.P016_PRO_CONTRACT, controller.preferredScreen())
+        assertNotNull(store.current.pro)
+        executeFirst(controller, Phase8ScreenId.P016_PRO_CONTRACT, "signContract")
+        assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
+        assertEquals(ProCareerPhase.WEEKLY_PLAN, store.current.pro?.phase)
+        assertFalse(store.current.settings.autoReleaseEnabled)
+    }
+
+    private suspend fun completedHighSchoolFixture(installId: String, archive: Boolean = true): Pair<KotlinGameStore, Phase8Controller> {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial(installId))
         val controller = Phase8Controller(store, context)
         executeFirst(controller, Phase8ScreenId.P001_OPENING)
@@ -394,7 +430,9 @@ class Phase8ScreenProjectionTest {
             executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP, "prepareLegacy")
         }
         executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP) { it.id.startsWith("selectLegacy:") }
-        executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP, "finalizeArchive")
+        if (archive) {
+            executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP, "finalizeArchive")
+        }
         return store to controller
     }
 

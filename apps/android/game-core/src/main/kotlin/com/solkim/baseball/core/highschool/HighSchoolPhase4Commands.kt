@@ -177,7 +177,9 @@ public class HighSchoolPhase4CommandStore(
         is HighSchoolPhase4Command.Relationship -> kernel.resolveRelationship(command.seed, state, command.response)
         is HighSchoolPhase4Command.ReserveImportantGame -> kernel.reserveImportantGame(command.seed, state)
         is HighSchoolPhase4Command.SubmitPitch -> {
-            require(command.sessionId == state.activePitch?.sessionId) { "command.pitch_session_mismatch" }
+            if (state.activePitch != null) {
+                require(command.sessionId == state.activePitch.sessionId) { "command.pitch_session_mismatch" }
+            }
             kernel.submitPitch(state, command.sessionId, command.call, command.delivery)
         }
         HighSchoolPhase4Command.FinishImportantGame -> kernel.finishImportantGame(state)

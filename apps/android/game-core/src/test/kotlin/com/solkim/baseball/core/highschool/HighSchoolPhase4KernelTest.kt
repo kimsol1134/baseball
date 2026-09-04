@@ -4,6 +4,7 @@ import com.solkim.baseball.core.pitch.PitchCall
 import com.solkim.baseball.core.pitch.PitchDelivery
 import com.solkim.baseball.core.pitch.PitchIntensity
 import com.solkim.baseball.core.pitch.PitchKind
+import com.solkim.baseball.core.pitch.PitchOutcome
 import com.solkim.baseball.core.pitch.PitchSequenceEvaluator
 import com.solkim.baseball.core.pitch.PitchSequencePitch
 import com.solkim.baseball.core.pitch.PitchZone
@@ -277,6 +278,54 @@ class HighSchoolPhase4KernelTest {
         val invalidEnvelope = String(tutorial).replace("\"commandId\":\"noncanonical\"", "\"commandId\":\"\"")
         assertFailsWith<HighSchoolPhase4CommandException> {
             HighSchoolPhase4CommandCodec.decode(invalidEnvelope.toByteArray())
+        }
+    }
+
+    @Test
+    fun tutorialPitchConsumesCallAndDeliveryWithoutCountingAsOfficialGame() {
+        val started = kernel.beginTutorial(
+            kernel.start(HighSchoolPhase4StartRequest("918220", "power_prospect", "user", "2026-W33", "2026-08-14")).state,
+        ).state
+        val sessionId = "tutorial-session"
+        val strikeCall = PitchCall(PitchKind.FOUR_SEAM, PitchZone(1, 1), ZoneIntent.STRIKE, PitchIntensity.NORMAL)
+        val chaseCall = PitchCall(PitchKind.SLIDER, PitchZone(0, 0), ZoneIntent.CHASE, PitchIntensity.NORMAL)
+        val wild = kernel.submitPitch(started, sessionId, chaseCall, PitchDelivery(0, 0))
+        val perfect = kernel.submitPitch(started, sessionId, strikeCall, PitchDelivery(1_000, 1_000))
+        val wildPresentation = requireNotNull(wild.state.lastPresentation)
+        val perfectPresentation = requireNotNull(perfect.state.lastPresentation)
+        assertNotEquals(wildPresentation.snapshot.trajectorySeries, perfectPresentation.snapshot.trajectorySeries)
+        assertTrue(PitchOutcome.entries.any { it.wire == wildPresentation.outcome })
+        assertTrue(PitchOutcome.entries.any { it.wire == perfectPresentation.outcome })
+        assertEquals(0, perfect.state.run.performance.pitches)
+        assertEquals(0UL, perfect.state.completedGameCounter)
+        assertEquals(null, perfect.state.activePitch)
+        val fairOutcomes = setOf("in_play_out", "single", "double", "triple", "home_run")
+        listOf(wildPresentation, perfectPresentation).forEach { presentation ->
+            if (presentation.outcome in fairOutcomes) {
+                assertTrue(presentation.battedBall != null, "fair ball ${presentation.outcome} must keep kernel contact")
+                assertTrue(presentation.fielding?.landingDistanceTenthsMeters != null, "fair ball must keep landing distance")
+            }
+        }
+        val roundTrip = HighSchoolPhase4StateCodec.decode(HighSchoolPhase4StateCodec.encode(perfect.state))
+        assertEquals(perfectPresentation, roundTrip.lastPresentation)
+
+        val viaCommand = HighSchoolPhase4CommandStore(initialState = started).dispatch(
+            HighSchoolPhase4CommandEnvelope(
+                commandId = "tutorial-submit",
+                sessionId = "shell",
+                expectedRevision = started.revision,
+                command = HighSchoolPhase4Command.SubmitPitch(sessionId, strikeCall, PitchDelivery(1_000, 1_000)),
+            ),
+        )
+        assertEquals(perfect.state.lastPresentation, viaCommand.state.lastPresentation)
+
+        assertFailsWith<IllegalArgumentException> {
+            kernel.submitPitch(
+                kernel.start(HighSchoolPhase4StartRequest("918221", "power_prospect", "user", "2026-W33", "2026-08-14")).state,
+                sessionId,
+                strikeCall,
+                PitchDelivery(1_000, 1_000),
+            )
         }
     }
 

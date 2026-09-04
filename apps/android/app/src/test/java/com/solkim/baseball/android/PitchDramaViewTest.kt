@@ -4,7 +4,6 @@ import com.solkim.baseball.application.BattedBall
 import com.solkim.baseball.application.PitchOutcome
 import com.solkim.baseball.design.BaseballColors
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 

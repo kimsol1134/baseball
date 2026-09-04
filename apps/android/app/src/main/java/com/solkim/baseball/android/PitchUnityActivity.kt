@@ -29,10 +29,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -71,9 +69,14 @@ import com.solkim.baseball.application.BattedBall
 import com.solkim.baseball.application.FieldingResolutionSnapshot
 import com.solkim.baseball.application.PitchBoundary
 import com.solkim.baseball.application.PitchCareerKind
+import com.solkim.baseball.application.PitchDramaCamera
 import com.solkim.baseball.application.PitchDelivery
 import com.solkim.baseball.application.PitchKind
 import com.solkim.baseball.application.PitchOutcome
+import com.solkim.baseball.application.PitchHudProjection
+import com.solkim.baseball.application.PitchHudSelection
+import com.solkim.baseball.application.PitchLiveResult
+import com.solkim.baseball.application.PitchRecommendation
 import com.solkim.baseball.application.PitchZone
 import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.design.BaseballMigrationTheme
@@ -98,6 +101,7 @@ public class PitchUnityActivity : ComponentActivity() {
     private lateinit var sessionId: String
     private lateinit var expectedRevision: String
     private var status by mutableStateOf("투구 준비 완료")
+    private var selectedSign by mutableStateOf<PitchHudSelection>(PitchHudSelection.Primary)
     private var selectedPitchIndex by mutableStateOf(0)
     private var selectedZone by mutableStateOf(PitchZone(1, 1))
     private var request by mutableStateOf<PitchPresentationRequest?>(null)
@@ -135,14 +139,17 @@ public class PitchUnityActivity : ComponentActivity() {
                     val saved = request
                     if (isDelivering && saved != null) {
                         dramaProgress.snapTo(0f)
-                        val duration = if (settings.reducedMotionEnabled) 80 else 1600
+                        val duration = PitchDramaCamera.replayDurationMs(
+                            saved.flightDurationMs,
+                            settings.reducedMotionEnabled,
+                        )
                         val seed = moundSeed()
 
                         // 1. 릴리스 사운드 / 햅틱
                         platform().audioHaptics.presentNativeMarker("release", playbackSettings(), seed)
 
-                        // 2. 컨택/포구 타이밍 사운드 / 햅틱 (46% 지점)
-                        val contactDelay = (duration * 0.46f).toLong()
+                        // 2. 컨택/포구 타이밍 사운드 / 햅틱
+                        val contactDelay = (duration * PitchDramaCamera.CONTACT_PROGRESS).toLong()
                         launch {
                             delay(contactDelay)
                             val outcome = currentOutcome()
@@ -154,7 +161,6 @@ public class PitchUnityActivity : ComponentActivity() {
                             platform().audioHaptics.presentNativeMarker(marker, playbackSettings(), seed)
                         }
 
-                        // 3. 궤적 비행 애니메이션 (1.6초 영화 같은 템포)
                         dramaProgress.animateTo(
                             targetValue = 1f,
                             animationSpec = tween(durationMillis = duration, easing = LinearEasing),
@@ -162,11 +168,15 @@ public class PitchUnityActivity : ComponentActivity() {
 
                         // 4. 완료 후 consume 커밋
                         consumeAfterAnimationComplete(saved)
+                    } else if (saved == null) {
+                        dramaProgress.snapTo(0f)
                     }
                 }
 
-                val outcome = currentOutcome()
-                val battedBall = currentBattedBall()
+                val showingResult = request != null
+                val outcome = if (showingResult) currentOutcome() else null
+                val battedBall = if (showingResult) currentBattedBall() else null
+                val fielding = if (showingResult) currentFielding() else null
                 val batSide = currentBatSide()
 
                 val proSession = store.current.pro?.activePitch
@@ -206,12 +216,13 @@ public class PitchUnityActivity : ComponentActivity() {
                     }
                 }
                 val isClutch = strikes == 2 && (balls == 3 || outs == 2)
-                val batter = proSession?.batter
-                val batterName = batter?.name ?: if (hsSession != null) "고교 4번 타자" else "상대 타자"
+                val hud = runCatching { PitchHudProjection.model(store.current) }.getOrNull()
+                val batter = hud?.batter
+                val batterName = batter?.name ?: "상대 타자"
                 val isLeftBatter = (batter?.batSide ?: BatSide.RIGHT) == BatSide.LEFT
-                val batterContact = batter?.contact ?: 55
-                val batterDiscipline = batter?.discipline ?: 50
-                val batterPower = batter?.power ?: 60
+                val batterContact = batter?.contact ?: 0
+                val batterDiscipline = batter?.discipline ?: 0
+                val batterPower = batter?.power ?: 0
                 val fatigue = store.current.pro?.fatigue ?: store.current.highSchool?.run?.fatigue ?: 0
                 val leverage = proSession?.context?.leverage ?: hsSession?.context?.leverage ?: 500
 
@@ -245,95 +256,108 @@ public class PitchUnityActivity : ComponentActivity() {
                             fatigue = fatigue,
                         )
 
-                        // 3. Scrollable Content
-                        Column(
+                        val watchingPitch = isDelivering || resultReady
+                        if (!watchingPitch) {
+                            Box(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                                PitchMatchupCard(
+                                    batterName = batterName,
+                                    isLeftBatter = isLeftBatter,
+                                    contact = batterContact,
+                                    discipline = batterDiscipline,
+                                    power = batterPower,
+                                )
+                            }
+                        }
+
+                        Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = if (watchingPitch) 4.dp else 8.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(BaseballColors.fieldNight)
+                                .border(1.dp, BaseballColors.border.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
                         ) {
-                            // Matchup Card
-                            PitchMatchupCard(
-                                batterName = batterName,
-                                isLeftBatter = isLeftBatter,
-                                contact = batterContact,
-                                discipline = batterDiscipline,
-                                power = batterPower,
+                            PitchDramaView(
+                                request = request,
+                                outcome = outcome,
+                                battedBall = battedBall,
+                                fielding = fielding,
+                                batSide = batSide,
+                                progress = dramaProgress.value,
+                                modifier = Modifier.fillMaxSize(),
                             )
 
-                            // 4. Dedicated 320dp Cinema Drama View
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(320.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(BaseballColors.fieldNight)
-                                    .border(1.dp, BaseballColors.border.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
-                            ) {
-                                PitchDramaView(
-                                    request = request,
-                                    outcome = outcome,
-                                    battedBall = battedBall,
-                                    fielding = null,
-                                    batSide = batSide,
-                                    progress = dramaProgress.value,
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-
-                                if (isClutch && dramaProgress.value < 1f) {
-                                    Surface(
-                                        modifier = Modifier
-                                            .padding(12.dp)
-                                            .align(Alignment.TopStart),
-                                        color = BaseballColors.canvas.copy(alpha = 0.85f),
-                                        shape = CircleShape,
-                                        border = BorderStroke(1.dp, BaseballColors.milestone),
-                                    ) {
-                                        Text(
-                                            text = "승부구",
-                                            color = BaseballColors.milestone,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Black,
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                        )
-                                    }
+                            if (isClutch && dramaProgress.value < 1f) {
+                                Surface(
+                                    modifier = Modifier
+                                        .padding(12.dp)
+                                        .align(Alignment.TopStart),
+                                    color = BaseballColors.canvas.copy(alpha = 0.85f),
+                                    shape = CircleShape,
+                                    border = BorderStroke(1.dp, BaseballColors.milestone),
+                                ) {
+                                    Text(
+                                        text = "승부구",
+                                        color = BaseballColors.milestone,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    )
                                 }
                             }
+                        }
 
-                            // 5. Result Card OR Pitch Controls
-                            if (resultReady) {
-                                PitchResultCard(
-                                    outcome = outcome,
-                                    battedBall = battedBall,
-                                    velocityTenthsKph = request?.velocityDeciKph ?: selectedPitchVelocity(),
-                                    delivery = lastDelivery,
-                                    onReplay = {
-                                        composeScope.launch {
-                                            dramaProgress.snapTo(0f)
-                                            dramaProgress.animateTo(1f, tween(1600, easing = LinearEasing))
-                                        }
-                                    },
-                                    onPostgame = ::completeAndReturn,
-                                )
-                            } else {
-                                PitchControlsCard(
-                                    selectedPitchIndex = selectedPitchIndex,
-                                    selectedZone = selectedZone,
-                                    ready = !isDelivering,
-                                    velocityTenthsKph = selectedPitchVelocity(),
-                                    autoRelease = settings.autoReleaseEnabled,
-                                    fatigue = fatigue,
-                                    reduceMotion = settings.reducedMotionEnabled,
-                                    hapticsEnabled = settings.hapticsEnabled,
-                                    soundEnabled = settings.soundEnabled,
-                                    tension = moundTension(),
-                                    disturbanceSeed = moundSeed(),
-                                    adverseEpisode = moundAdverseEpisode(),
-                                    onSelectPitch = { selectedPitchIndex = it },
-                                    onSelectZone = { selectedZone = it },
-                                    onDeliver = ::submitSelectedPitch,
-                                )
+                        if (!isDelivering) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                if (resultReady) {
+                                    val continueInSession = controller.canContinueOfficialPitch()
+                                    PitchResultCard(
+                                        outcome = outcome,
+                                        battedBall = battedBall,
+                                        velocityTenthsKph = request?.velocityDeciKph ?: selectedPitchVelocity(),
+                                        delivery = lastDelivery,
+                                        continueInSession = continueInSession,
+                                        onReplay = {
+                                            composeScope.launch {
+                                                dramaProgress.snapTo(0f)
+                                                val replayMs = PitchDramaCamera.replayDurationMs(
+                                                    request?.flightDurationMs ?: 420,
+                                                    settings.reducedMotionEnabled,
+                                                )
+                                                dramaProgress.animateTo(1f, tween(replayMs, easing = LinearEasing))
+                                            }
+                                        },
+                                        onNextPitch = if (continueInSession) ::continueInSession else null,
+                                        onPostgame = ::completeAndReturn,
+                                    )
+                                } else {
+                                    val repertoire = hud?.repertoire.orEmpty()
+                                    PitchControlsCard(
+                                        repertoire = repertoire,
+                                        primary = hud?.preparation?.primaryRecommendation,
+                                        alternative = hud?.preparation?.alternativeRecommendation,
+                                        selection = selectedSign,
+                                        selectedZone = selectedCallZone(hud),
+                                        ready = repertoire.isNotEmpty(),
+                                        velocityTenthsKph = selectedPitchVelocity(),
+                                        autoRelease = settings.autoReleaseEnabled,
+                                        fatigue = fatigue,
+                                        reduceMotion = settings.reducedMotionEnabled,
+                                        hapticsEnabled = settings.hapticsEnabled,
+                                        soundEnabled = settings.soundEnabled,
+                                        tension = moundTension(),
+                                        disturbanceSeed = moundSeed(),
+                                        adverseEpisode = moundAdverseEpisode(),
+                                        onSelect = { selectedSign = it },
+                                        onDeliver = ::submitSelectedPitch,
+                                    )
+                                }
                             }
                         }
                     }
@@ -353,6 +377,7 @@ public class PitchUnityActivity : ComponentActivity() {
             resultReady = false
             isDelivering = false
             selectedPitchIndex = 0
+            selectedSign = PitchHudSelection.Primary
             selectedZone = PitchZone(1, 1)
         }
         expectedRevision = nextRevision
@@ -402,10 +427,7 @@ public class PitchUnityActivity : ComponentActivity() {
                         }
                     }
                     PitchBoundary.PLAYING -> {
-                        val saved = state.highSchool?.lastPresentation
-                        val savedPro = state.pro?.lastPresentation
-                        if ((pitch.careerKind.name == "HIGH_SCHOOL" && saved != null) ||
-                            (pitch.careerKind.name == "PRO" && savedPro != null)) {
+                        if (controller.shouldRecoverPlayingPresentation(state, sessionId)) {
                             val rebuilt = controller.commitSavedPresentation(sessionId, selectedPitchIndex)
                             withContext(Dispatchers.Main) {
                                 request = rebuilt
@@ -440,9 +462,7 @@ public class PitchUnityActivity : ComponentActivity() {
             try {
                 val saved = controller.submitPitch(
                     sessionId = sessionId,
-                    pitchIndex = selectedPitchIndex,
-                    pitchType = pitchTypeForIndex(selectedPitchIndex),
-                    zone = selectedZone,
+                    selection = selectedSign,
                     delivery = delivery,
                 )
                 withContext(Dispatchers.Main) {
@@ -491,6 +511,42 @@ public class PitchUnityActivity : ComponentActivity() {
         }
     }
 
+    private fun continueInSession() {
+        activityScope.launch {
+            try {
+                controller.completePitchAndPostgame(sessionId)
+                val launch = controller.continueOfficialPitch()
+                withContext(Dispatchers.Main) {
+                    if (launch == null) {
+                        returningToShell = true
+                        startActivity(Intent(this@PitchUnityActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+                        finish()
+                    } else {
+                        sessionId = launch.sessionId
+                        expectedRevision = launch.expectedRevision.toString()
+                        resultReady = false
+                        isDelivering = false
+                        request = null
+                        lastDelivery = null
+                        selectedSign = PitchHudSelection.Primary
+                        status = "다음 타석 · 포수 사인을 보고 던지세요"
+                    }
+                }
+            } catch (error: Throwable) {
+                withContext(Dispatchers.Main) { status = "다음 타석 준비 실패 · ${error.message ?: "invalid"}" }
+            }
+        }
+    }
+
+    private fun selectedCallZone(hud: com.solkim.baseball.application.PitchHudModel?): PitchZone {
+        val preparation = hud?.preparation
+        return when (val sign = selectedSign) {
+            PitchHudSelection.Primary -> preparation?.primaryRecommendation?.call?.zone ?: selectedZone
+            PitchHudSelection.Alternative -> preparation?.alternativeRecommendation?.call?.zone ?: selectedZone
+            is PitchHudSelection.Manual -> sign.zone
+        }
+    }
+
     private fun handleBack() {
         val pitch = store.state.value.pitch ?: run { finish(); return }
         if (pitch.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.COMMITTED, PitchBoundary.CONSUMED)) {
@@ -508,30 +564,25 @@ public class PitchUnityActivity : ComponentActivity() {
         }
     }
 
-    private fun pitchTypeForIndex(index: Int): PitchKind = when (index.coerceIn(0, 3)) {
-        0 -> PitchKind.FOUR_SEAM
-        1 -> PitchKind.SLIDER
-        2 -> PitchKind.CURVEBALL
-        else -> PitchKind.CHANGEUP
+    private fun selectedPitchType(): PitchKind {
+        val hud = runCatching { PitchHudProjection.model(store.current) }.getOrNull()
+        val repertoire = hud?.repertoire.orEmpty()
+        return when (val sign = selectedSign) {
+            PitchHudSelection.Primary -> hud?.preparation?.primaryRecommendation?.call?.pitchType
+            PitchHudSelection.Alternative -> hud?.preparation?.alternativeRecommendation?.call?.pitchType
+            is PitchHudSelection.Manual -> sign.pitchType
+        } ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM
     }
 
-    private fun currentOutcome(): PitchOutcome? {
-        val proEntry = store.current.pro?.activePitch?.log?.entries?.lastOrNull()
-        if (proEntry != null) return proEntry.outcome
-        val hsEntry = store.current.highSchool?.activePitch?.log?.entries?.lastOrNull()
-        if (hsEntry != null) return hsEntry.outcome
-        return null
-    }
+    private fun currentOutcome(): PitchOutcome? = PitchLiveResult.outcome(store.current)
 
-    private fun currentBattedBall(): BattedBall? {
-        val proContact = store.current.pro?.activePitch?.log?.entries?.lastOrNull()?.contactQuality
-        val hsContact = store.current.highSchool?.activePitch?.log?.entries?.lastOrNull()?.contactQuality
-        val contact = proContact ?: hsContact ?: return null
-        return BattedBall(exitVelocityTenthsKph = 1400, launchAngleTenthsDegrees = 150, directionTenthsDegrees = 0, contactQuality = contact)
-    }
+    private fun currentBattedBall(): BattedBall? = PitchLiveResult.battedBall(store.current)
+
+    private fun currentFielding(): com.solkim.baseball.application.FieldingResolutionSnapshot? =
+        PitchLiveResult.fielding(store.current)
 
     private fun currentBatSide(): BatSide =
-        store.current.pro?.activePitch?.batter?.batSide ?: BatSide.RIGHT
+        runCatching { PitchHudProjection.batter(store.current).batSide }.getOrDefault(BatSide.RIGHT)
 
     private fun moundTension(): Double {
         val state = store.current
@@ -556,7 +607,7 @@ public class PitchUnityActivity : ComponentActivity() {
         val strikes = proSession?.context?.strikes ?: hsSession?.context?.strikes ?: 0
         val outs = proSession?.context?.outs ?: hsSession?.context?.outs ?: 0
         val fatigue = pro?.fatigue ?: hs?.run?.fatigue ?: 0
-        val batter = proSession?.batter
+        val batter = runCatching { PitchHudProjection.batter(state) }.getOrNull()
         val threat = if (batter != null) MoundTensionModel.batterThreat(batter.contact, batter.discipline, batter.power) else 50
         val adverse = moundAdverseEpisode()
         val composure = MoundComposureInput(
@@ -590,9 +641,9 @@ public class PitchUnityActivity : ComponentActivity() {
     )
 
     private fun selectedPitchVelocity(): Int {
-        val kind = pitchTypeForIndex(selectedPitchIndex)
-        val profiles = store.current.pro?.pitcher?.pitchProfiles ?: emptyList()
-        return profiles.firstOrNull { it.pitchType == kind }?.velocityTenthsKph ?: 1_350
+        val kind = selectedPitchType()
+        val pitcher = runCatching { PitchHudProjection.pitcher(store.current) }.getOrNull()
+        return pitcher?.pitchProfiles?.firstOrNull { it.pitchType == kind }?.velocityTenthsKph ?: 1_350
     }
 
     private fun platform(): com.solkim.baseball.platform.NativePhase9Platform = (application as BaseballApplication).platform
@@ -845,7 +896,9 @@ private fun PitchResultCard(
     battedBall: BattedBall?,
     velocityTenthsKph: Int,
     delivery: PitchDelivery?,
+    continueInSession: Boolean = false,
     onReplay: () -> Unit,
+    onNextPitch: (() -> Unit)? = null,
     onPostgame: () -> Unit,
 ) {
     val tone = outcomeTone(outcome)
@@ -930,13 +983,35 @@ private fun PitchResultCard(
                 ) {
                     Text("투구 다시 보기", color = BaseballColors.textPrimary)
                 }
-                Button(
+                if (continueInSession && onNextPitch != null) {
+                    Button(
+                        onClick = onNextPitch,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 50.dp),
+                    ) {
+                        Text("다음 공 던지기")
+                    }
+                } else {
+                    Button(
+                        onClick = onPostgame,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 50.dp),
+                    ) {
+                        Text("결과 화면으로")
+                    }
+                }
+            }
+            if (continueInSession && onNextPitch != null) {
+                OutlinedButton(
                     onClick = onPostgame,
                     modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 50.dp),
+                        .fillMaxWidth()
+                        .heightIn(min = 44.dp),
+                    border = BorderStroke(1.dp, BaseballColors.border),
                 ) {
-                    Text("결과 화면으로")
+                    Text("잠시 나가기", color = BaseballColors.textSecondary)
                 }
             }
         }
@@ -959,7 +1034,10 @@ private fun resultCommentary(outcome: PitchOutcome?): String = when (outcome) {
 
 @Composable
 private fun PitchControlsCard(
-    selectedPitchIndex: Int,
+    repertoire: List<PitchKind>,
+    primary: PitchRecommendation?,
+    alternative: PitchRecommendation?,
+    selection: PitchHudSelection,
     selectedZone: PitchZone,
     ready: Boolean,
     velocityTenthsKph: Int,
@@ -971,10 +1049,14 @@ private fun PitchControlsCard(
     tension: Double,
     disturbanceSeed: ULong,
     adverseEpisode: Boolean,
-    onSelectPitch: (Int) -> Unit,
-    onSelectZone: (PitchZone) -> Unit,
+    onSelect: (PitchHudSelection) -> Unit,
     onDeliver: (PitchDelivery) -> Unit,
 ) {
+    val selectedType = when (selection) {
+        PitchHudSelection.Primary -> primary?.call?.pitchType
+        PitchHudSelection.Alternative -> alternative?.call?.pitchType
+        is PitchHudSelection.Manual -> selection.pitchType
+    }
     Surface(
         color = BaseballColors.surfaceRaised,
         shape = RoundedCornerShape(16.dp),
@@ -987,14 +1069,38 @@ private fun PitchControlsCard(
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // 1. Pitch selection
-            val kinds = listOf("직구", "슬라이더", "커브", "체인지업")
+            if (primary != null && alternative != null) {
+                Text("포수 사인", style = MaterialTheme.typography.labelMedium, color = BaseballColors.milestone)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    CatcherSignChip(
+                        label = "1안",
+                        recommendation = primary,
+                        selected = selection is PitchHudSelection.Primary,
+                        enabled = ready,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onSelect(PitchHudSelection.Primary) },
+                    )
+                    CatcherSignChip(
+                        label = "2안",
+                        recommendation = alternative,
+                        selected = selection is PitchHudSelection.Alternative,
+                        enabled = ready,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onSelect(PitchHudSelection.Alternative) },
+                    )
+                }
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                kinds.forEachIndexed { index, label ->
-                    val isSelected = selectedPitchIndex == index
+                repertoire.forEach { kind ->
+                    val label = PitchHudProjection.koreanLabel(kind)
+                    val isSelected = selectedType == kind
                     Surface(
                         color = if (isSelected) BaseballColors.action.copy(alpha = 0.18f) else BaseballColors.surfaceSoft,
                         shape = RoundedCornerShape(8.dp),
@@ -1003,7 +1109,9 @@ private fun PitchControlsCard(
                             .weight(1f)
                             .height(44.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .clickable(enabled = ready) { onSelectPitch(index) }
+                            .clickable(enabled = ready) {
+                                onSelect(PitchHudSelection.Manual(kind, selectedZone))
+                            }
                             .semantics {
                                 role = Role.Button
                                 contentDescription = "$label ${if (isSelected) "선택됨" else "선택 가능"}"
@@ -1021,8 +1129,14 @@ private fun PitchControlsCard(
                 }
             }
 
-            // 2. Zone Picker (Strike Zone Grid)
-            ZonePicker(selected = selectedZone, onSelect = onSelectZone, enabled = ready)
+            ZonePicker(
+                selected = selectedZone,
+                onSelect = { zone ->
+                    val type = selectedType ?: repertoire.firstOrNull() ?: return@ZonePicker
+                    onSelect(PitchHudSelection.Manual(type, zone))
+                },
+                enabled = ready,
+            )
 
             // 3. Pitch Delivery Control (Core Slider Invariant)
             PitchDeliveryControl(
@@ -1037,6 +1151,50 @@ private fun PitchControlsCard(
                 tension = tension,
                 disturbanceSeed = disturbanceSeed,
                 adverseEpisode = adverseEpisode,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CatcherSignChip(
+    label: String,
+    recommendation: PitchRecommendation,
+    selected: Boolean,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val call = recommendation.call
+    val summary = "$label ${PitchHudProjection.koreanLabel(call.pitchType)} ${call.zone.row + 1}-${call.zone.column + 1}"
+    Surface(
+        color = if (selected) BaseballColors.action.copy(alpha = 0.18f) else BaseballColors.surfaceSoft,
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(if (selected) 1.5.dp else 1.dp, if (selected) BaseballColors.action else BaseballColors.border.copy(alpha = 0.5f)),
+        modifier = modifier
+            .heightIn(min = 52.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(enabled = enabled, onClick = onClick)
+            .semantics {
+                role = Role.Button
+                contentDescription = "$summary ${if (selected) "선택됨" else "선택 가능"}. ${recommendation.shortReason}"
+            },
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = summary,
+                color = if (selected) BaseballColors.action else BaseballColors.textPrimary,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = recommendation.shortReason,
+                color = BaseballColors.textSecondary,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 2,
             )
         }
     }

@@ -10,12 +10,9 @@ import com.solkim.baseball.core.highschool.HighSchoolRelationshipResponse
 import com.solkim.baseball.core.highschool.HighSchoolSchoolId
 import com.solkim.baseball.core.highschool.HighSchoolTrainingFocus
 import com.solkim.baseball.core.highschool.HighSchoolTrainingIntensity
-import com.solkim.baseball.core.pitch.PitchCall
 import com.solkim.baseball.core.pitch.PitchDelivery
-import com.solkim.baseball.core.pitch.PitchIntensity
 import com.solkim.baseball.core.pitch.PitchKind
 import com.solkim.baseball.core.pitch.PitchZone
-import com.solkim.baseball.core.pitch.ZoneIntent
 import com.solkim.baseball.core.pitch.PitchOutcome
 import com.solkim.baseball.core.pro.ProCommand
 import com.solkim.baseball.model.Hashing
@@ -229,7 +226,7 @@ public class Phase7VerticalController(
         val savedHighSchool = highSchool?.lastPresentation
         val savedPro = state.pro?.lastPresentation
         val request = when {
-            pitch.careerKind == PitchCareerKind.HIGH_SCHOOL && savedHighSchool != null ->
+            pitch.careerKind in setOf(PitchCareerKind.HIGH_SCHOOL, PitchCareerKind.TUTORIAL) && savedHighSchool != null ->
                 PitchPresentationFactory.fromHighSchoolPresentation(sessionId, savedHighSchool.pitchNumber, savedHighSchool)
             pitch.careerKind == PitchCareerKind.PRO && savedPro != null -> {
                 val outcome = state.pro?.activePitch?.log?.entries?.lastOrNull()?.outcome ?: PitchOutcome.CALLED_STRIKE
@@ -261,20 +258,31 @@ public class Phase7VerticalController(
         pitchType: PitchKind,
         zone: PitchZone,
         delivery: PitchDelivery,
+    ): PitchPresentationRequest = submitPitch(
+        sessionId,
+        PitchHudSelection.Manual(pitchType, zone),
+        delivery,
+        pitchIndex,
+    )
+
+    public suspend fun submitPitch(
+        sessionId: String,
+        selection: PitchHudSelection,
+        delivery: PitchDelivery,
+        pitchIndex: Int = 0,
     ): PitchPresentationRequest {
         val state = store.state.value
         val pitch = requireNotNull(state.pitch) { "phase7.pitch_missing" }
         require(pitch.sessionId == sessionId && pitch.boundary == PitchBoundary.PLAYING) { "phase7.pitch_not_playing" }
+        val call = PitchHudProjection.resolveCall(state, selection)
         val request = when (pitch.careerKind) {
-            PitchCareerKind.TUTORIAL -> KotlinPitchPresentationSession().request(sessionId, pitchIndex, pitch.pitchIndex + 1)
+            PitchCareerKind.TUTORIAL,
             PitchCareerKind.HIGH_SCHOOL -> {
-                val call = PitchCall(pitchType, zone, ZoneIntent.EDGE, PitchIntensity.NORMAL)
                 dispatch(GameCommand.HighSchool(HighSchoolPhase4Command.SubmitPitch(sessionId, call, delivery)))
                 val presentation = requireNotNull(store.state.value.highSchool?.lastPresentation) { "phase7.presentation_missing" }
                 PitchPresentationFactory.fromHighSchoolPresentation(sessionId, presentation.pitchNumber, presentation)
             }
             PitchCareerKind.PRO -> {
-                val call = PitchCall(pitchType, zone, ZoneIntent.EDGE, PitchIntensity.NORMAL)
                 dispatch(GameCommand.Pro(ProCommand.SubmitPitch(sessionId, call, delivery)))
                 val after = store.state.value
                 val presentation = requireNotNull(after.pro?.lastPresentation) { "phase7.pro_presentation_missing" }
@@ -301,6 +309,7 @@ public class Phase7VerticalController(
             "phase7.saved_presentation_boundary"
         }
         val request = when (pitch.careerKind) {
+            PitchCareerKind.TUTORIAL,
             PitchCareerKind.HIGH_SCHOOL -> {
                 val presentation = requireNotNull(state.highSchool?.lastPresentation) { "phase7.presentation_missing" }
                 PitchPresentationFactory.fromHighSchoolPresentation(sessionId, presentation.pitchNumber, presentation)
@@ -310,7 +319,6 @@ public class Phase7VerticalController(
                 val outcome = state.pro?.activePitch?.log?.entries?.lastOrNull()?.outcome ?: PitchOutcome.CALLED_STRIKE
                 PitchPresentationFactory.fromTrajectoryPresentation(sessionId, state.pro?.activePitch?.pitchIndex ?: pitch.pitchIndex + 1, presentation, outcome)
             }
-            PitchCareerKind.TUTORIAL -> error("phase7.saved_presentation_career")
         }
         dispatch(
             GameCommand.CommitPitch(
@@ -347,6 +355,88 @@ public class Phase7VerticalController(
         if (store.state.value.pitch?.boundary == PitchBoundary.TERMINAL) {
             dispatch(GameCommand.CompletePitch(sessionId))
         }
+    }
+
+    /**
+     * After a completed non-terminal official pitch, start the next pitch in this activity.
+     * Does not dispatch Phase8 `nextImportantPitch`.
+     */
+    public suspend fun continueOfficialPitch(): PitchLaunch? {
+        val state = store.state.value
+        val pitch = state.pitch ?: return null
+        require(pitch.boundary == PitchBoundary.COMPLETED || pitch.boundary == PitchBoundary.ABANDONED) {
+            "phase7.continue_boundary"
+        }
+        val highSchool = state.highSchool?.activePitch
+        if (pitch.careerKind == PitchCareerKind.HIGH_SCHOOL && highSchool != null && !highSchool.ended) {
+            return reserveNextImportantPitch()
+        }
+        val pro = state.pro?.activePitch
+        if (pitch.careerKind == PitchCareerKind.PRO && pro != null && !pro.ended) {
+            dispatch(GameCommand.ClearPitchPresentation(pro.sessionId))
+            return reserveCurrentProPitch()
+        }
+        return null
+    }
+
+    /**
+     * Crash recovery for PLAYING is only valid when this session already has a kernel result.
+     * A leftover tutorial (or previous game) presentation must not commit a fresh mound.
+     */
+    public fun shouldRecoverPlayingPresentation(
+        state: GameAggregateState = store.state.value,
+        sessionId: String,
+    ): Boolean {
+        val pitch = state.pitch ?: return false
+        if (pitch.sessionId != sessionId || pitch.boundary != PitchBoundary.PLAYING) return false
+        return when (pitch.careerKind) {
+            PitchCareerKind.HIGH_SCHOOL -> {
+                val highSchool = state.highSchool ?: return false
+                val session = highSchool.activePitch ?: return false
+                highSchool.lastPresentation != null &&
+                    session.sessionId == sessionId &&
+                    session.pitches > 0
+            }
+            PitchCareerKind.PRO -> {
+                val pro = state.pro ?: return false
+                val session = pro.activePitch ?: return false
+                pro.lastPresentation != null &&
+                    session.sessionId == sessionId &&
+                    session.log.entries.isNotEmpty()
+            }
+            PitchCareerKind.TUTORIAL -> false
+        }
+    }
+
+    public fun canContinueOfficialPitch(state: GameAggregateState = store.state.value): Boolean {
+        val pitch = state.pitch ?: return false
+        if (pitch.boundary != PitchBoundary.COMPLETED && pitch.boundary != PitchBoundary.ABANDONED &&
+            pitch.boundary != PitchBoundary.TERMINAL
+        ) {
+            return false
+        }
+        val highSchool = state.highSchool?.activePitch
+        if (pitch.careerKind == PitchCareerKind.HIGH_SCHOOL && highSchool != null && !highSchool.ended) return true
+        val pro = state.pro?.activePitch
+        return pitch.careerKind == PitchCareerKind.PRO && pro != null && !pro.ended
+    }
+
+    private suspend fun reserveCurrentProPitch(): PitchLaunch {
+        val state = store.state.value
+        val pro = requireNotNull(state.pro) { "phase7.pro_missing" }
+        val active = requireNotNull(pro.activePitch) { "phase7.pitch_missing" }
+        dispatch(
+            GameCommand.ReservePitch(
+                sessionId = active.sessionId,
+                careerKind = PitchCareerKind.PRO,
+                careerId = pro.careerId,
+                gameId = active.log.gameId,
+                seed = active.seed,
+                challengeRun = false,
+            ),
+        )
+        dispatch(GameCommand.StartPitch(active.sessionId))
+        return PitchLaunch(active.sessionId, store.state.value.revision)
     }
 
     private suspend fun reserveCurrentHighSchoolPitch(): PitchLaunch {

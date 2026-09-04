@@ -466,22 +466,41 @@ public class AtomicJsonRepository<T>(
         } catch (error: SaveRepositoryException) {
             SaveDecodeResult.Invalid(error.message ?: "save.invalid")
         } catch (error: Exception) {
-            SaveDecodeResult.Invalid("payload.invalid:${error.javaClass.simpleName}")
+            SaveDecodeResult.Invalid("payload.invalid:${error.javaClass.simpleName}:${compactDecodeDetail(error.message)}")
         }
     }
 
     private fun requireSame(actual: SaveDecodeResult<T>, expected: SaveEnvelope<T>, location: String) {
-        val valid = actual as? SaveDecodeResult.Valid ?: throw SaveRepositoryException(SaveFailureCode.VERIFICATION_FAILED, "save.$location.invalid")
+        val valid = actual as? SaveDecodeResult.Valid ?: throw SaveRepositoryException(
+            SaveFailureCode.VERIFICATION_FAILED,
+            "save.$location.invalid:${decodeFailureReason(actual)}",
+        )
         if (valid.envelope.revision != expected.revision || valid.envelope.payloadSha256 != expected.payloadSha256) {
             throw SaveRepositoryException(SaveFailureCode.VERIFICATION_FAILED, "save.$location.mismatch")
         }
     }
 
     private fun requireSame(actual: SaveDecodeResult<T>, expected: SaveDecodeResult<T>, location: String) {
-        val left = actual as? SaveDecodeResult.Valid ?: throw SaveRepositoryException(SaveFailureCode.VERIFICATION_FAILED, "save.$location.invalid")
-        val right = expected as? SaveDecodeResult.Valid ?: throw SaveRepositoryException(SaveFailureCode.VERIFICATION_FAILED, "save.$location.expected_invalid")
+        val left = actual as? SaveDecodeResult.Valid ?: throw SaveRepositoryException(
+            SaveFailureCode.VERIFICATION_FAILED,
+            "save.$location.invalid:${decodeFailureReason(actual)}",
+        )
+        val right = expected as? SaveDecodeResult.Valid ?: throw SaveRepositoryException(
+            SaveFailureCode.VERIFICATION_FAILED,
+            "save.$location.expected_invalid:${decodeFailureReason(expected)}",
+        )
         requireSame(left, right.envelope, location)
     }
+
+    private fun decodeFailureReason(result: SaveDecodeResult<*>): String = when (result) {
+        is SaveDecodeResult.Invalid -> result.reason
+        is SaveDecodeResult.Future -> "future:${result.schemaVersion}"
+        is SaveDecodeResult.Older -> "older:${result.schemaVersion}"
+        is SaveDecodeResult.Valid -> "valid"
+    }
+
+    private fun compactDecodeDetail(message: String?): String =
+        (message ?: "none").replace('\n', ' ').replace('\r', ' ').take(240)
 
     private data class Located<T>(val path: Path, val origin: String, val rank: Int, val decode: SaveDecodeResult<T>)
 

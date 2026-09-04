@@ -4,6 +4,8 @@ import com.solkim.baseball.core.pitch.BatSide
 import com.solkim.baseball.core.pitch.BatterScoutingSnapshot
 import com.solkim.baseball.core.pitch.BatterSnapshot
 import com.solkim.baseball.core.pitch.BaserunnerStateSnapshot
+import com.solkim.baseball.core.pitch.BattedBall
+import com.solkim.baseball.core.pitch.FieldingResolutionSnapshot
 import com.solkim.baseball.core.pitch.GameLogSnapshot
 import com.solkim.baseball.core.pitch.GameStateSnapshot
 import com.solkim.baseball.core.pitch.PitchAnalysisEntry
@@ -356,6 +358,8 @@ public data class HighSchoolPresentationState(
     val pitchNumber: Int,
     val outcome: String,
     val terminal: Boolean,
+    val battedBall: BattedBall? = null,
+    val fielding: FieldingResolutionSnapshot? = null,
 )
 
 public data class HighSchoolCommandReceipt(
@@ -507,7 +511,7 @@ internal fun GameLogSnapshot.toPhase4Log(): HighSchoolPitchLog = HighSchoolPitch
 internal fun HighSchoolPitchGame.toBatterGameIdentity(): BatSide = BatSide.RIGHT
 
 /** Adapter with a stable pitch profile shape for HighSchool -> PitchKernel. */
-internal fun HighSchoolState.toPitcherSnapshot(): PitcherSnapshot = PitcherSnapshot(
+public fun HighSchoolState.toPitcherSnapshot(): PitcherSnapshot = PitcherSnapshot(
     id = pitcher.id,
     name = pitcher.name,
     stuff = pitcher.stuff,
@@ -523,7 +527,7 @@ internal fun HighSchoolState.toPitcherSnapshot(): PitcherSnapshot = PitcherSnaps
     throwingHand = pitcher.throwingHand,
 )
 
-internal fun HighSchoolState.toBatterSnapshot(): BatterSnapshot = BatterSnapshot(
+public fun HighSchoolState.toBatterSnapshot(): BatterSnapshot = BatterSnapshot(
     id = rival.id,
     name = rival.name,
     contact = rival.contact,

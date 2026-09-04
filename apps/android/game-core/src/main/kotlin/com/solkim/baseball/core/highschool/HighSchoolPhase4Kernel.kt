@@ -1,7 +1,9 @@
 package com.solkim.baseball.core.highschool
 
 import com.solkim.baseball.core.StableHash
+import com.solkim.baseball.core.pitch.BatSide
 import com.solkim.baseball.core.pitch.BatterScoutingSnapshot
+import com.solkim.baseball.core.pitch.BatterSnapshot
 import com.solkim.baseball.core.pitch.GameLogSnapshot
 import com.solkim.baseball.core.pitch.PitchCall
 import com.solkim.baseball.core.pitch.PitchDelivery
@@ -12,6 +14,7 @@ import com.solkim.baseball.core.pitch.PitchOutcome
 import com.solkim.baseball.core.pitch.PitchPreparation
 import com.solkim.baseball.core.pitch.PitchSequenceEvaluator
 import com.solkim.baseball.core.pitch.PitchSequencePitch
+import com.solkim.baseball.core.pitch.PitchSnapshot
 import com.solkim.baseball.core.pitch.PitchZone
 import com.solkim.baseball.core.pitch.PlateAppearanceContext
 import com.solkim.baseball.core.pitch.RivalMemorySnapshot
@@ -266,12 +269,20 @@ public class HighSchoolPhase4Kernel(
             game = initialGame,
             log = initialLog,
         )
-        return result(sign(state.copy(activePitch = session)), "important_game_reserved", listOf("game.$gameNumber"), preparation)
+        return result(
+            sign(state.copy(activePitch = session, lastPresentation = null)),
+            "important_game_reserved",
+            listOf("game.$gameNumber"),
+            preparation,
+        )
     }
 
     /**
      * Submits one player call to the Kotlin PitchKernel. The returned trajectory is the only
      * data suitable for Unity presentation; this method never delegates result generation.
+     *
+     * Tutorial pitches use the same call+delivery path but do not open an important-game session
+     * and do not count toward official records.
      */
     public fun submitPitch(
         state: HighSchoolPhase4State,
@@ -279,7 +290,8 @@ public class HighSchoolPhase4Kernel(
         call: PitchCall,
         delivery: PitchDelivery = PitchDelivery.NEUTRAL,
     ): HighSchoolPhase4Result {
-        val session = state.activePitch ?: error("pitch.no_session")
+        if (state.activePitch == null) return submitTutorialPitch(state, sessionId, call, delivery)
+        val session = state.activePitch
         require(session.sessionId == sessionId) { "pitch.session_stale" }
         require(!session.ended) { "pitch.ended" }
         val pitcher = state.run.toPitcherSnapshot()
@@ -371,15 +383,112 @@ public class HighSchoolPhase4Kernel(
                 activePitch = nextSession,
                 achievements = achievementProgress.unlocked,
                 unacknowledgedAchievements = achievementProgress.unacknowledged,
-                lastPresentation = HighSchoolPresentationState(
-                    snapshot.trajectoryPresentation,
-                    snapshot.pitchNumber,
-                    snapshot.outcome.wire,
-                    snapshot.ended,
-                ),
+                lastPresentation = presentationFrom(snapshot),
             ),
         )
         return result(next, "pitch_submitted", snapshot.reasonCodes, result.nextPreparation, next.lastPresentation)
+    }
+
+    /**
+     * One practice pitch during the prologue. Slider timing and the chosen zone go through
+     * [PitchKernel.submit] exactly like an official pitch. The outcome is stored on
+     * [HighSchoolPhase4State.lastPresentation] so the mound screen can show strike/ball.
+     * Career totals, important-game receipts, and [activePitch] stay untouched.
+     */
+    public fun submitTutorialPitch(
+        state: HighSchoolPhase4State,
+        sessionId: String,
+        call: PitchCall,
+        delivery: PitchDelivery = PitchDelivery.NEUTRAL,
+    ): HighSchoolPhase4Result {
+        require(sessionId.isNotBlank() && sessionId.length <= 128) { "tutorial.session" }
+        require(state.run.phase == HighSchoolPhase.PROLOGUE) { "tutorial.phase" }
+        require(state.tutorial.started && !state.tutorial.completed) { "tutorial.lifecycle" }
+        require(state.activePitch == null) { "tutorial.active_pitch" }
+        val pitcher = state.run.toPitcherSnapshot()
+        val preparation = prepareTutorial(state, sessionId)
+        val pitchNumber = (state.lastPresentation?.pitchNumber ?: 0) + 1
+        val seed = StableHash.fnv1a64Value("tutorial|${state.run.careerId}|$sessionId|$pitchNumber").toString()
+        val context = PlateAppearanceContext(
+            plateAppearanceId = "$sessionId:pa:$pitchNumber",
+            revision = 0UL,
+            inning = 1,
+            outs = 0,
+            balls = 0,
+            strikes = 0,
+            pitchNumber = 1,
+            scoreDifferential = 0,
+            leverage = 200,
+            fatigue = 0,
+        )
+        val kernelResult = pitch.submit(
+            PitchKernel.SubmitRequest(
+                seed = seed,
+                pitcher = pitcher,
+                batter = HighSchoolTutorialMound.BATTER,
+                scouting = HighSchoolTutorialMound.SCOUTING,
+                context = context,
+                preparationToken = preparation.preparationToken,
+                call = call,
+            ),
+            delivery,
+        )
+        val snapshot = kernelResult.snapshot
+        val next = sign(
+            state.copy(
+                lastPresentation = presentationFrom(snapshot),
+            ),
+        )
+        return result(next, "tutorial_pitch_submitted", snapshot.reasonCodes, kernelResult.nextPreparation, next.lastPresentation)
+    }
+
+    public fun prepareTutorial(state: HighSchoolPhase4State, sessionId: String): PitchPreparation {
+        require(sessionId.isNotBlank() && sessionId.length <= 128) { "tutorial.session" }
+        require(state.run.phase == HighSchoolPhase.PROLOGUE) { "tutorial.phase" }
+        require(state.tutorial.started && !state.tutorial.completed) { "tutorial.lifecycle" }
+        val pitcher = state.run.toPitcherSnapshot()
+        val pitchNumber = (state.lastPresentation?.pitchNumber ?: 0) + 1
+        val seed = StableHash.fnv1a64Value("tutorial|${state.run.careerId}|$sessionId|$pitchNumber").toString()
+        val context = PlateAppearanceContext(
+            plateAppearanceId = "$sessionId:pa:$pitchNumber",
+            revision = 0UL,
+            inning = 1,
+            outs = 0,
+            balls = 0,
+            strikes = 0,
+            pitchNumber = 1,
+            scoreDifferential = 0,
+            leverage = 200,
+            fatigue = 0,
+        )
+        return pitch.prepare(
+            PitchKernel.PrepareRequest(
+                seed,
+                pitcher,
+                HighSchoolTutorialMound.BATTER,
+                HighSchoolTutorialMound.SCOUTING,
+                context,
+            ),
+        )
+    }
+
+    public fun prepareActivePitch(state: HighSchoolPhase4State): PitchPreparation {
+        val session = state.activePitch ?: error("pitch.no_session")
+        val pitcher = state.run.toPitcherSnapshot()
+        val batter = state.run.toBatterSnapshot()
+        val scouting = state.run.toScoutingSnapshot()
+        return pitch.prepare(
+            PitchKernel.PrepareRequest(
+                seed = session.seed,
+                pitcher = pitcher,
+                batter = batter,
+                scouting = scouting,
+                context = session.context.toPitchContext(),
+                rivalMemory = session.memory.toRivalMemory(pitcher.id, batter.id),
+                gameState = session.game.toGameState(),
+                gameLog = session.log.toGameLog(),
+            ),
+        )
     }
 
     public fun finishImportantGame(state: HighSchoolPhase4State): HighSchoolPhase4Result {
@@ -1096,8 +1205,30 @@ public class HighSchoolPhase4Kernel(
         return HighSchoolPhase4Result(committed, listOf(HighSchoolEvent(event, 0, reasons)), eventHash, preparation, presentation)
     }
 
+    private fun presentationFrom(snapshot: PitchSnapshot): HighSchoolPresentationState = HighSchoolPresentationState(
+        snapshot = snapshot.trajectoryPresentation,
+        pitchNumber = snapshot.pitchNumber,
+        outcome = snapshot.outcome.wire,
+        terminal = snapshot.ended,
+        battedBall = snapshot.battedBall,
+        fielding = snapshot.fieldingResolution,
+    )
+
     private fun List<HighSchoolTournamentSnapshot>.updateForChapter(chapter: Int): List<HighSchoolTournamentSnapshot> =
         map { if (it.chapter == chapter) it.copy(completed = true) else it }
+
+}
+
+public object HighSchoolTutorialMound {
+    public val BATTER: BatterSnapshot = BatterSnapshot("bullpen-batter", "연습 타자", 42, 40, 40, BatSide.RIGHT)
+    public val SCOUTING: BatterScoutingSnapshot = BatterScoutingSnapshot(
+        hotZone = PitchZone(1, 1),
+        coldZone = PitchZone(2, 0),
+        pitchStrength = PitchKind.FOUR_SEAM,
+        pitchWeakness = PitchKind.CURVEBALL,
+        chaseTendency = 45,
+        reliability = 100,
+    )
 }
 
 private fun HighSchoolPitchMemory.toRivalMemory(pitcherId: String, batterId: String): RivalMemorySnapshot =

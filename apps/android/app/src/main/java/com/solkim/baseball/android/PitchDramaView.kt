@@ -1,15 +1,9 @@
 package com.solkim.baseball.android
 
 import android.graphics.BitmapFactory
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -28,6 +22,8 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -40,10 +36,10 @@ import androidx.compose.ui.unit.sp
 import com.solkim.baseball.application.BatSide
 import com.solkim.baseball.application.BattedBall
 import com.solkim.baseball.application.FieldingResolutionSnapshot
+import com.solkim.baseball.application.PitchDramaCamera
 import com.solkim.baseball.application.PitchOutcome
 import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.model.PitchPresentationRequest
-import com.solkim.baseball.model.TrailKind
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
@@ -81,13 +77,23 @@ public fun PitchDramaView(
         }.getOrNull()
     }
 
-    Canvas(modifier = modifier.fillMaxSize()) {
+    Canvas(
+        modifier = modifier
+            .fillMaxSize()
+            .semantics {
+                contentDescription = PitchDramaCamera.accessibility(
+                    outcome,
+                    battedBall,
+                    fielding,
+                    progress,
+                    ::localizedVerdict,
+                )
+            },
+    ) {
         val size = this.size
-        // 1. 야간 구장 배경
         drawRect(color = BaseballColors.fieldNight)
 
-        val isFairBall = outcome in FAIR_BALL_OUTCOMES
-        val inFieldShot = isFairBall && progress >= CUT_PROGRESS
+        val inFieldShot = PitchDramaCamera.usesFieldShot(outcome, progress)
 
         if (inFieldShot) {
             drawFieldShot(
@@ -155,8 +161,8 @@ private fun DrawScope.drawPitchShot(
     val actualY = request?.plateYMm?.toDouble() ?: 0.0
     drawCatcherMitt(outcome, progress, actualX, actualY, scale, ::place)
 
-    // 날아오는 공 & 궤적
-    drawIncomingBall(request, outcome, progress, scale, ::place)
+    // 날아오는 공 & 맞은 뒤 떠나는 공
+    drawIncomingBall(request, outcome, battedBall, progress, scale, ::place)
 
     // 배트 컨택 시 임팩트 섬광
     drawImpactBurst(outcome, battedBall, actualX, actualY, progress, scale, ::place)
@@ -305,7 +311,7 @@ private fun DrawScope.drawCatcherMitt(
     scale: Float,
     place: (Offset) -> Offset,
 ) {
-    val isBatted = outcome in BATTED_OUTCOMES
+    val isBatted = outcome in PitchDramaCamera.BATTED_OUTCOMES
     if (isBatted) return
 
     val caught = progress >= CONTACT_PROGRESS
@@ -324,6 +330,7 @@ private fun DrawScope.drawCatcherMitt(
 private fun DrawScope.drawIncomingBall(
     request: PitchPresentationRequest?,
     outcome: PitchOutcome?,
+    battedBall: BattedBall?,
     progress: Float,
     scale: Float,
     place: (Offset) -> Offset,
@@ -331,13 +338,12 @@ private fun DrawScope.drawIncomingBall(
     val points = calculateReplayPoints(request)
     if (points.size < 2) return
 
-    val flight = min(1f, max(0f, progress / CONTACT_PROGRESS))
+    val flight = PitchDramaCamera.incomingFlight(progress)
     val shownCount = max(2, (points.size * flight).roundToInt())
     val visiblePoints = points.take(shownCount)
-
     val tone = outcomeTone(outcome)
+    val departingT = PitchDramaCamera.departureProgress(outcome, progress)
 
-    // 궤적 선
     val trailPath = Path().apply {
         moveTo(place(visiblePoints[0]).x, place(visiblePoints[0]).y)
         for (i in 1 until visiblePoints.size) {
@@ -347,33 +353,61 @@ private fun DrawScope.drawIncomingBall(
     }
     val startPt = place(visiblePoints.first())
     val endPt = place(visiblePoints.last())
+    val trailWidth = max(1.6f, (2.2f + 5.6f * flight) * scale)
     drawPath(
         trailPath,
         brush = Brush.linearGradient(
-            colors = listOf(tone.copy(alpha = 0.05f), tone.copy(alpha = 0.8f)),
+            colors = listOf(tone.copy(alpha = 0.04f), tone.copy(alpha = 0.55f + 0.4f * flight)),
             start = startPt,
             end = endPt,
         ),
-        style = Stroke(width = max(1.5f, 2.8f * scale), cap = StrokeCap.Round, join = StrokeJoin.Round),
+        style = Stroke(width = trailWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
     )
+    if (visiblePoints.size >= 4 && departingT <= 0f) {
+        val streakFrom = place(visiblePoints[visiblePoints.size - 4])
+        drawLine(
+            color = BaseballColors.fieldChalk.copy(alpha = 0.35f + 0.45f * flight),
+            start = streakFrom,
+            end = endPt,
+            strokeWidth = max(2.4f, (3.2f + 4.8f * flight) * scale),
+            cap = StrokeCap.Round,
+        )
+    }
 
-    // 공 헤드
-    val head = visiblePoints.last()
+    val plate = points.last()
+    val head = if (departingT > 0f) {
+        val delta = PitchDramaCamera.departingBallDelta(outcome, battedBall, departingT)
+        Offset(plate.x + delta.x, plate.y + delta.y)
+    } else {
+        visiblePoints.last()
+    }
+    if (departingT > 0f) {
+        val from = place(plate)
+        val to = place(head)
+        drawLine(
+            color = tone.copy(alpha = 0.9f),
+            start = from,
+            end = to,
+            strokeWidth = max(1.8f, 3.2f * scale),
+            cap = StrokeCap.Round,
+        )
+    }
+
     val center = place(head)
-    val caught = (outcome !in BATTED_OUTCOMES) && progress >= CONTACT_PROGRESS
-    val radius = (if (caught) 3.2f else 2.2f + 5.4f * flight) * scale
+    val caught = (outcome !in PitchDramaCamera.BATTED_OUTCOMES) && progress >= CONTACT_PROGRESS
+    val recede = if (departingT > 0f) 1f - 0.55f * departingT else flight
+    val approach = recede * recede
+    val radius = (if (caught) 3.2f else 1.7f + 2.4f * recede + 5.2f * approach) * scale
 
-    // 공 외곽 빛 (Glow)
     drawCircle(
         brush = Brush.radialGradient(
-            colors = listOf(BaseballColors.fieldChalk.copy(alpha = 0.22f * flight), Color.Transparent),
+            colors = listOf(BaseballColors.fieldChalk.copy(alpha = 0.22f * recede), Color.Transparent),
             center = center,
             radius = radius * 2f,
         ),
         radius = radius * 2f,
         center = center,
     )
-    // 공 본체
     drawCircle(
         color = BaseballColors.fieldChalk,
         radius = radius,
@@ -393,7 +427,7 @@ private fun DrawScope.drawImpactBurst(
     val pulse = calculateImpactPulse(progress)
     if (pulse <= 0f) return
 
-    val isBatted = outcome in BATTED_OUTCOMES
+    val isBatted = outcome in PitchDramaCamera.BATTED_OUTCOMES
     val target = place(platePoint(actualX, actualY))
     val quality = (battedBall?.contactQuality ?: 400) / 1000f
     val burst = when {
@@ -429,16 +463,10 @@ private fun DrawScope.drawFieldShot(
     textMeasurer: TextMeasurer,
     canvasSize: Size,
 ) {
-    val spaceWidth = 320f
-    val spaceHeight = 300f
-    val scale = min(canvasSize.width / spaceWidth, canvasSize.height / spaceHeight)
-    val offsetX = (canvasSize.width - spaceWidth * scale) / 2f
-    val offsetY = (canvasSize.height - spaceHeight * scale) / 2f
-
-    fun place(pt: Offset): Offset = Offset(offsetX + pt.x * scale, offsetY + pt.y * scale)
-
-    val home = Offset(160f, 268f)
-    val metersToPoints = 1.75f
+    val scale = min(canvasSize.width / 320f, canvasSize.height / 300f).coerceAtLeast(0.7f)
+    val home = Offset(canvasSize.width * 0.5f, canvasSize.height * 0.90f)
+    val maxReach = min(canvasSize.width * 0.48f, home.y - canvasSize.height * 0.06f)
+    val metersToPoints = maxReach / 118f
 
     fun fieldPoint(distanceMeters: Float, degrees: Float): Offset {
         val clamped = min(48f, max(-48f, degrees))
@@ -447,75 +475,84 @@ private fun DrawScope.drawFieldShot(
         return Offset(home.x + sin(radians) * length, home.y - cos(radians) * length)
     }
 
-    // 1. 페어 구역과 외야 펜스
+    val fenceRadius = 118f * metersToPoints
     val fairPath = Path().apply {
-        moveTo(place(home).x, place(home).y)
-        val leftFence = place(fieldPoint(118f, -48f))
+        moveTo(home.x, home.y)
+        val leftFence = fieldPoint(118f, -48f)
         lineTo(leftFence.x, leftFence.y)
-        // 펜스 호 그리기
-        val fenceRadius = 118f * metersToPoints * scale
-        val homePlaced = place(home)
         arcTo(
-            rect = Rect(homePlaced.x - fenceRadius, homePlaced.y - fenceRadius, homePlaced.x + fenceRadius, homePlaced.y + fenceRadius),
+            rect = Rect(home.x - fenceRadius, home.y - fenceRadius, home.x + fenceRadius, home.y + fenceRadius),
             startAngleDegrees = 222f,
             sweepAngleDegrees = 96f,
             forceMoveTo = false,
         )
         close()
     }
-    drawPath(fairPath, color = BaseballColors.canvas.copy(alpha = 0.55f), style = Fill)
-    drawPath(fairPath, color = BaseballColors.fieldChalk.copy(alpha = 0.32f), style = Stroke(width = max(1f, scale)))
+    drawPath(
+        fairPath,
+        brush = Brush.radialGradient(
+            colors = listOf(BaseballColors.actionSoft, BaseballColors.canvas.copy(alpha = 0.72f)),
+            center = Offset(home.x, home.y - fenceRadius * 0.45f),
+            radius = fenceRadius,
+        ),
+        style = Fill,
+    )
+    drawPath(fairPath, color = BaseballColors.fieldChalk.copy(alpha = 0.42f), style = Stroke(width = max(1.4f, 1.8f * scale)))
 
-    // 2. 내야 다이아몬드
     val diamondPath = Path().apply {
-        moveTo(place(home).x, place(home).y)
-        val firstBase = place(fieldPoint(27.4f, 45f))
-        val secondBase = place(fieldPoint(38.8f, 0f))
-        val thirdBase = place(fieldPoint(27.4f, -45f))
+        moveTo(home.x, home.y)
+        val firstBase = fieldPoint(27.4f, 45f)
+        val secondBase = fieldPoint(38.8f, 0f)
+        val thirdBase = fieldPoint(27.4f, -45f)
         lineTo(firstBase.x, firstBase.y)
         lineTo(secondBase.x, secondBase.y)
         lineTo(thirdBase.x, thirdBase.y)
         close()
     }
-    drawPath(diamondPath, color = Color(0x384E382A), style = Fill)
-    drawPath(diamondPath, color = BaseballColors.fieldChalk.copy(alpha = 0.5f), style = Stroke(width = max(1f, scale)))
+    drawPath(diamondPath, color = BaseballColors.fieldDirt.copy(alpha = 0.55f), style = Fill)
+    drawPath(diamondPath, color = BaseballColors.fieldChalk.copy(alpha = 0.65f), style = Stroke(width = max(1.2f, 1.6f * scale)))
 
-    // 3. 타구 비행 궤적
     val after = min(1f, (progress - CUT_PROGRESS) / (1f - CUT_PROGRESS))
     val direction = (battedBall?.directionTenthsDegrees ?: 0) / 10f
     val landing = (fielding?.landingDistanceTenthsMeters ?: 400) / 10f
     val travelled = landing * after
     val ballPt = fieldPoint(travelled, direction)
-
     val tone = outcomeTone(outcome)
+
     drawLine(
-        color = tone.copy(alpha = 0.85f),
-        start = place(home),
-        end = place(ballPt),
-        strokeWidth = max(1.5f, 2.6f * scale),
+        color = tone.copy(alpha = 0.9f),
+        start = home,
+        end = ballPt,
+        strokeWidth = max(2.4f, 3.4f * scale),
         cap = StrokeCap.Round,
     )
 
-    // 낙하 예정 지점 점선 링
-    val targetPt = place(fieldPoint(landing, direction))
-    val ringRadius = 12f * scale
+    val targetPt = fieldPoint(landing, direction)
+    val ringRadius = 16f * scale
     drawCircle(
-        color = tone.copy(alpha = 0.35f + 0.4f * after),
+        color = tone.copy(alpha = 0.4f + 0.45f * after),
         radius = ringRadius,
         center = targetPt,
-        style = Stroke(width = max(1f, 1.6f * scale), pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f * scale, 4f * scale))),
+        style = Stroke(width = max(1.4f, 2f * scale), pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f * scale, 4f * scale))),
     )
 
-    // 날아가는 타구 (정점에서 커졌다가 낙하하며 작아짐)
     val arc = sin(after * PI.toFloat())
-    val ballRadius = (3.4f + 3.2f * arc) * scale
+    val ballRadius = (5.2f + 5.8f * arc) * scale
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(BaseballColors.fieldChalk, tone.copy(alpha = 0.35f)),
+            center = ballPt,
+            radius = ballRadius * 2.2f,
+        ),
+        radius = ballRadius * 2.2f,
+        center = ballPt,
+    )
     drawCircle(
         color = BaseballColors.fieldChalk,
         radius = ballRadius,
-        center = place(ballPt),
+        center = ballPt,
     )
 
-    // 4. 수비수 달리기 연출
     if (fielding != null) {
         val startCoords = fielderHome(fielding.fielderPosition)
         val startPt = fieldPoint(startCoords.first, startCoords.second)
@@ -525,12 +562,11 @@ private fun DrawScope.drawFieldShot(
             startPt.x + (endPt.x - startPt.x) * chase,
             startPt.y + (endPt.y - startPt.y) * chase,
         )
-        val markerCenter = place(currentFielderPt)
-        val markerSize = 6f * scale
+        val markerSize = 8f * scale
         drawCircle(
             color = BaseballColors.positive,
             radius = markerSize,
-            center = markerCenter,
+            center = currentFielderPt,
         )
 
         val fielderName = fielding.fielderName
@@ -540,18 +576,17 @@ private fun DrawScope.drawFieldShot(
                 text = fielderName,
                 style = TextStyle(
                     color = BaseballColors.positive,
-                    fontSize = (13f * fontScale).sp,
+                    fontSize = (14f * fontScale).sp,
                     fontWeight = FontWeight.Bold,
                 ),
             )
             drawText(
                 textLayoutResult = textLayout,
-                topLeft = Offset(markerCenter.x - textLayout.size.width / 2f, markerCenter.y - 18f * scale),
+                topLeft = Offset(currentFielderPt.x - textLayout.size.width / 2f, currentFielderPt.y - 22f * scale),
             )
         }
     }
 
-    // 5. 비거리 숫자 표시
     if (after > 0.35f) {
         val distanceMeters = (fielding?.landingDistanceTenthsMeters ?: (landing * 10).roundToInt()) / 10
         val distanceStr = "${distanceMeters}m"
@@ -560,7 +595,7 @@ private fun DrawScope.drawFieldShot(
             text = distanceStr,
             style = TextStyle(
                 color = tone,
-                fontSize = (22f * fontScale).sp,
+                fontSize = (28f * fontScale).sp,
                 fontWeight = FontWeight.Black,
                 fontFamily = FontFamily.Monospace,
             ),
@@ -568,8 +603,8 @@ private fun DrawScope.drawFieldShot(
         drawText(
             textLayoutResult = distLayout,
             topLeft = Offset(
-                offsetX + spaceWidth * scale - 20f * scale - distLayout.size.width,
-                offsetY + spaceHeight * scale - 18f * scale - distLayout.size.height,
+                canvasSize.width - 16f * scale - distLayout.size.width,
+                canvasSize.height - 14f * scale - distLayout.size.height,
             ),
         )
     }
@@ -617,25 +652,8 @@ private const val PITCH_BOX_MIN_Y = 62f
 private const val PITCH_BOX_WIDTH = 228f
 private const val PITCH_BOX_HEIGHT = 246f
 private const val PLATE_PLANE_Y = 205f
-private const val CONTACT_PROGRESS = 0.46f
-private const val CUT_PROGRESS = 0.56f
-
-private val FAIR_BALL_OUTCOMES = setOf(
-    PitchOutcome.IN_PLAY_OUT,
-    PitchOutcome.SINGLE,
-    PitchOutcome.DOUBLE,
-    PitchOutcome.TRIPLE,
-    PitchOutcome.HOME_RUN,
-)
-
-private val BATTED_OUTCOMES = setOf(
-    PitchOutcome.FOUL,
-    PitchOutcome.IN_PLAY_OUT,
-    PitchOutcome.SINGLE,
-    PitchOutcome.DOUBLE,
-    PitchOutcome.TRIPLE,
-    PitchOutcome.HOME_RUN,
-)
+private const val CONTACT_PROGRESS = PitchDramaCamera.CONTACT_PROGRESS
+private const val CUT_PROGRESS = PitchDramaCamera.CUT_PROGRESS
 
 private fun platePoint(x: Double, y: Double): Offset {
     val px = min(272f, max(48f, (160.0 + x * 0.15).toFloat()))
@@ -698,7 +716,7 @@ private fun calculateShakeOffset(
     progress: Float,
     scale: Float,
 ): Offset {
-    val isBatted = outcome in BATTED_OUTCOMES
+    val isBatted = outcome in PitchDramaCamera.BATTED_OUTCOMES
     val pulse = calculateImpactPulse(progress)
     if (!isBatted || pulse <= 0f) return Offset.Zero
 

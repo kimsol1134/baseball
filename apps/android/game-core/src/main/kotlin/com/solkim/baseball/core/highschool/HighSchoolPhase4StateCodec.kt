@@ -1,5 +1,9 @@
 package com.solkim.baseball.core.highschool
 
+import com.solkim.baseball.core.pitch.BattedBall
+import com.solkim.baseball.core.pitch.DefenseImpact
+import com.solkim.baseball.core.pitch.FieldingResolutionSnapshot
+import com.solkim.baseball.core.pitch.FieldingSector
 import com.solkim.baseball.core.pitch.PitchKind
 import com.solkim.baseball.core.pitch.PitchOutcome
 import com.solkim.baseball.core.pitch.PitchZone
@@ -18,8 +22,8 @@ import java.util.Base64
 /** Strict, deterministic, shadow-only Phase 4 snapshot wire. */
 public object HighSchoolPhase4StateCodec {
     public const val SCHEMA: String = "baseball-high-school-phase4-state-v1"
-    /** v2 profiles/hand; v3 sequence history; v4 tournament/prospect fields; v5 rich content/echo; v6 Meta ledgers; v7 training evidence; v8 mastery. */
-    public const val SCHEMA_VERSION: Int = 8
+    /** v2 profiles/hand; v3 sequence history; v4 tournament/prospect fields; v5 rich content/echo; v6 Meta ledgers; v7 training evidence; v8 mastery; v9 batted-ball contact. */
+    public const val SCHEMA_VERSION: Int = 9
     public const val MAX_BYTES: Int = 4 * 1024 * 1024
     private const val MAGIC: String = "P4M1"
     private val ROOT_FIELDS = setOf("schema", "schemaVersion", "payload", "stateCommitment")
@@ -115,7 +119,7 @@ public object HighSchoolPhase4StateCodec {
         val tournaments = input.readTournaments(includeSchools = payloadVersion >= 4)
         val prospects = input.readProspects(includeTag = payloadVersion >= 4)
         val activePitch = input.readNullable { readPitchSession(includeSequencePitches = payloadVersion >= 3) }
-        val lastPresentation = input.readNullable { readPresentation() }
+        val lastPresentation = input.readNullable { readPresentation(includeContact = payloadVersion >= 9) }
         val tutorial = HighSchoolTutorialState(input.readBoolean(), input.readBoolean())
         val challengeActive = input.readBoolean()
         val challengeBackup = input.readNullable {
@@ -127,6 +131,7 @@ public object HighSchoolPhase4StateCodec {
                 includeRichEcho = payloadVersion >= 5,
                 includeMetaFields = payloadVersion >= 6,
                 includeTrainingEvidence = payloadVersion >= 7,
+                includePresentationContact = payloadVersion >= 9,
             )
         }
         val completedCounter = input.readULong()
@@ -438,10 +443,54 @@ public object HighSchoolPhase4StateCodec {
 
     private fun DataOutputStream.writePresentation(value: HighSchoolPresentationState) {
         writeString(value.snapshot.pitchType.wire); writeString(value.snapshot.presentationSeed); writeInt(value.snapshot.flightDurationMilliseconds); writeInt(value.snapshot.plateXMm); writeInt(value.snapshot.plateYMm); writeInt(value.snapshot.velocityTenthsKph); writeInts(value.snapshot.trajectorySeries); writeInt(value.pitchNumber); writeString(value.outcome); writeBoolean(value.terminal)
+        writeNullable(value.battedBall) { writeBattedBall(it) }
+        writeNullable(value.fielding) { writeFielding(it) }
     }
-    private fun DataInputStream.readPresentation(): HighSchoolPresentationState = HighSchoolPresentationState(
-        com.solkim.baseball.core.pitch.TrajectoryPresentationSnapshot(pitchKind(readString()), readString(), readInt(), readInt(), readInt(), readInt(), readInts()), readInt(), readString(), readBoolean(),
+    private fun DataInputStream.readPresentation(includeContact: Boolean = true): HighSchoolPresentationState = HighSchoolPresentationState(
+        com.solkim.baseball.core.pitch.TrajectoryPresentationSnapshot(pitchKind(readString()), readString(), readInt(), readInt(), readInt(), readInt(), readInts()),
+        readInt(),
+        readString(),
+        readBoolean(),
+        battedBall = if (includeContact) readNullable { readBattedBall() } else null,
+        fielding = if (includeContact) readNullable { readFielding() } else null,
     )
+
+    private fun DataOutputStream.writeBattedBall(value: BattedBall) {
+        writeInt(value.exitVelocityTenthsKph); writeInt(value.launchAngleTenthsDegrees); writeInt(value.directionTenthsDegrees); writeInt(value.contactQuality)
+    }
+    private fun DataInputStream.readBattedBall(): BattedBall =
+        BattedBall(readInt(), readInt(), readInt(), readInt())
+
+    private fun DataOutputStream.writeFielding(value: FieldingResolutionSnapshot) {
+        writeString(value.neutralOutcome.wire); writeString(value.finalOutcome.wire); writeString(value.sector.name)
+        writeInt(value.difficulty); writeInt(value.defenseRating); writeInt(value.defenseAdjustment); writeInt(value.parkAdjustment)
+        writeString(value.impact.name)
+        writeNullableString(value.fielderPosition); writeNullableString(value.fielderName)
+        writeNullableInt(value.landingDistanceTenthsMeters); writeNullableInt(value.hangTimeMilliseconds); writeNullableInt(value.apexHeightTenthsMeters)
+        writeNullable(value.ballFlightSeries) { writeInts(it) }
+        writeString(value.shortExplanation)
+    }
+    private fun DataInputStream.readFielding(): FieldingResolutionSnapshot = FieldingResolutionSnapshot(
+        pitchOutcome(readString()),
+        pitchOutcome(readString()),
+        fieldingSector(readString()),
+        readInt(),
+        readInt(),
+        readInt(),
+        readInt(),
+        defenseImpact(readString()),
+        readNullableString(),
+        readNullableString(),
+        readNullableInt(),
+        readNullableInt(),
+        readNullableInt(),
+        readNullable { readInts() },
+        readString(),
+    )
+    private fun fieldingSector(value: String): FieldingSector =
+        FieldingSector.entries.firstOrNull { it.name == value } ?: fail("presentation.fielding_sector")
+    private fun defenseImpact(value: String): DefenseImpact =
+        DefenseImpact.entries.firstOrNull { it.name == value } ?: fail("presentation.defense_impact")
 
     private fun DataOutputStream.writeChallengeBackup(value: HighSchoolChallengeBackup) {
         writeString(HighSchoolStateCodec.encode(value.run).toBase64()); writePitcher(value.startingPitcher, includeProfiles = true, includeMastery = true); writeInheritance(value.inheritance); writeArchive(value.archive); writeStrings(value.achievements); writeStrings(value.unacknowledgedAchievements); writeWeekly(value.weekly, includeMetaFields = true); writeNullable(value.pledge) { writePledge(it) }; writeNullable(value.nextRunIntent) { writeNextRunIntent(it) }; writeNullableString(value.selectedSignatureLegacyId); writeNullable(value.returnPlan) { writeReturnPlan(it, includeMetaFields = true) }; writeNullable(value.rebirthEcho) { writeEcho(it) }; writeSeasonLog(value.seasonLog); writeTournaments(value.tournaments); writeProspects(value.prospectBoard); writeULong(value.completedGameCounter); writeStrings(value.completedGameReceipts); writeTrainingEvidence(value.trainingEvidence); writeString(value.selectedDayKey); writeBoolean(value.tutorial.started); writeBoolean(value.tutorial.completed); writeCommandReceipts(value.commandReceipts); writeULong(value.revision); writeNullable(value.lastPresentation) { writePresentation(it) }
@@ -454,6 +503,7 @@ public object HighSchoolPhase4StateCodec {
         includeMetaFields: Boolean,
         includeTrainingEvidence: Boolean,
         includeMastery: Boolean,
+        includePresentationContact: Boolean = false,
     ): HighSchoolChallengeBackup {
         val run = HighSchoolStateCodec.decode(readString().fromBase64())
         val startingPitcher = readPitcher(includeProfiles, includeMastery)
@@ -477,7 +527,7 @@ public object HighSchoolPhase4StateCodec {
         val tutorial = HighSchoolTutorialState(readBoolean(), readBoolean())
         val commandReceipts = readCommandReceipts()
         val revision = readULong()
-        val lastPresentation = readNullable { readPresentation() }
+        val lastPresentation = readNullable { readPresentation(includeContact = includePresentationContact) }
         return HighSchoolChallengeBackup(
             run = run,
             startingPitcher = startingPitcher,

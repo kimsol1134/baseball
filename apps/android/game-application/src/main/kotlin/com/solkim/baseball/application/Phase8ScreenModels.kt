@@ -596,6 +596,32 @@ public object Phase8ScreenProjection {
                     canBeginRebirth,
                     listOf(hs(HighSchoolPhase4Command.BeginRebirth(context.seed(state, "customize-rebirth"), context.dayKey(state), HighSchoolRebirthEntryPath.CUSTOMIZE))),
                 )
+                addAction(
+                    "finalizeArchive",
+                    "기록 보관하기",
+                    "이번 생의 기록을 보관하고 다음 선택으로 갑니다.",
+                    run?.phase == HighSchoolPhase.COMPLETED &&
+                        highSchool?.selectedSignatureLegacyId != null &&
+                        highSchool.archive.none { it.careerId == run.careerId },
+                    listOf(hs(HighSchoolPhase4Command.FinalizeArchive)),
+                )
+                if (state.pro == null && run?.phase == HighSchoolPhase.COMPLETED) {
+                    addAction(
+                        "startLinked",
+                        "고교에서 연결",
+                        "현재 고교 기록을 보존한 채 프로로 이어 갑니다.",
+                        true,
+                        listOf(pro(ProCommand.StartLinked(linkedRequest(state, context)))),
+                    )
+                    val name = run?.identity?.name?.ifBlank { null } ?: "민서준"
+                    addAction(
+                        "startDirect",
+                        "직접 프로 시작",
+                        "고교 기록과 분리된 새 프로 커리어를 시작합니다.",
+                        true,
+                        listOf(pro(ProCommand.StartDirect(ProStartDirectRequest(context.seed(state, "pro-direct"), "power_prospect", name)))),
+                    )
+                }
             }
             Phase8ScreenId.P016_PRO_CONTRACT -> {
                 addSection(Phase8Section("pro-contract", "프로 계약", listOf(

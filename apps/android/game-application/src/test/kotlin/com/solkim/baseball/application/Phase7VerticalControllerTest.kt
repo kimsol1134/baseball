@@ -10,6 +10,8 @@ import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class Phase7VerticalControllerTest {
@@ -171,6 +173,133 @@ class Phase7VerticalControllerTest {
         controller.chooseSchool()
         assertEquals(Phase7Route.TRAINING, controller.route())
         assertEquals(0UL, store.current.meta.completedGameCount)
+    }
+
+    @Test
+    fun tutorialSubmitPitchStoresKernelOutcomeFromCallAndDelivery() = runBlocking {
+        suspend fun throwTutorial(delivery: PitchDelivery, zone: PitchZone): Pair<KotlinGameStore, String> {
+            val repository = InMemoryShadowFixtureGameStoreRepository(GameAggregateState.initial("phase7-tutorial-feel"))
+            val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase7-tutorial-feel"), repository)
+            val controller = Phase7VerticalController(store)
+            controller.enterSetup()
+            controller.startHighSchool("민서준")
+            controller.beginTutorial()
+            val sessionId = "phase7-tutorial-feel"
+            send(
+                store,
+                "reserve-feel",
+                GameCommand.ReservePitch(
+                    sessionId,
+                    PitchCareerKind.TUTORIAL,
+                    TUTORIAL_CAREER_ID,
+                    "tutorial",
+                    "20260814",
+                ),
+            )
+            send(store, "start-feel", GameCommand.StartPitch(sessionId))
+            controller.submitPitch(sessionId, 0, PitchKind.FOUR_SEAM, zone, delivery)
+            return store to requireNotNull(store.current.highSchool?.lastPresentation).outcome
+        }
+
+        val (wildStore, wildOutcome) = throwTutorial(PitchDelivery(0, 0), PitchZone(0, 0))
+        val (perfectStore, perfectOutcome) = throwTutorial(PitchDelivery(1_000, 1_000), PitchZone(1, 1))
+        val wildPresentation = requireNotNull(wildStore.current.highSchool?.lastPresentation)
+        val perfectPresentation = requireNotNull(perfectStore.current.highSchool?.lastPresentation)
+        assertNotEquals(wildPresentation.snapshot.trajectorySeries, perfectPresentation.snapshot.trajectorySeries)
+        assertEquals(wildOutcome, PitchLiveResult.outcome(wildStore.current)?.wire)
+        assertEquals(perfectOutcome, PitchLiveResult.outcome(perfectStore.current)?.wire)
+        assertEquals(wildPresentation.battedBall, PitchLiveResult.battedBall(wildStore.current))
+        assertEquals(perfectPresentation.battedBall, PitchLiveResult.battedBall(perfectStore.current))
+        assertEquals(wildPresentation.fielding, PitchLiveResult.fielding(wildStore.current))
+        assertEquals(perfectPresentation.fielding, PitchLiveResult.fielding(perfectStore.current))
+        assertEquals(0UL, perfectStore.current.meta.completedGameCount)
+        assertEquals(0, perfectStore.current.highSchool?.run?.performance?.pitches)
+
+        val restarted = restart(perfectStore, InMemoryShadowFixtureGameStoreRepository(perfectStore.current), "phase7-tutorial-feel")
+        assertEquals(perfectOutcome, PitchLiveResult.outcome(restarted.current)?.wire)
+        assertEquals(
+            perfectPresentation.snapshot.trajectorySeries,
+            restarted.current.highSchool?.lastPresentation?.snapshot?.trajectorySeries,
+        )
+    }
+
+    @Test
+    fun leftoverTutorialPresentationDoesNotRecoverOntoOfficialMound() = runBlocking {
+        val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase7-tutorial-leftover"))
+        val controller = Phase7VerticalController(store)
+        controller.enterSetup()
+        controller.startHighSchool("민서준")
+        controller.beginTutorial()
+        val tutorial = controller.reserveTutorialPitch()
+        val tutorialRequest = controller.submitPitch(
+            tutorial.sessionId,
+            PitchHudSelection.Primary,
+            PitchDelivery(200, 200),
+        )
+        assertNotNull(store.current.highSchool?.lastPresentation)
+        controller.consumePresentation(tutorial.sessionId, tutorialRequest)
+        controller.completePitchAndPostgame(tutorial.sessionId)
+        controller.completeTutorial()
+        controller.chooseSchool()
+        var guard = 0
+        while (store.current.highSchool?.run?.phase != HighSchoolPhase.IMPORTANT_GAME && guard++ < 120) {
+            when (store.current.highSchool?.run?.phase) {
+                HighSchoolPhase.TRAINING -> controller.commitTraining()
+                HighSchoolPhase.RELATIONSHIP -> controller.resolveRelationship()
+                HighSchoolPhase.AWAKENING -> controller.chooseAwakening()
+                HighSchoolPhase.CHAPTER_REVIEW -> controller.advanceChapter()
+                else -> error("unexpected phase ${store.current.highSchool?.run?.phase}")
+            }
+        }
+        val launch = controller.reserveImportantGame()
+        assertEquals(PitchBoundary.PLAYING, store.current.pitch?.boundary)
+        assertEquals(null, store.current.highSchool?.lastPresentation)
+        assertFalse(controller.shouldRecoverPlayingPresentation(store.current, launch.sessionId))
+        controller.submitPitch(launch.sessionId, PitchHudSelection.Primary, PitchDelivery(200, 200))
+        assertNotNull(store.current.highSchool?.lastPresentation)
+        assertEquals(1, store.current.highSchool?.activePitch?.pitches)
+    }
+
+    @Test
+    fun officialPitchContinuesFromControllerWithoutPhase8NextImportantPitch() = runBlocking {
+        val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase7-continue"))
+        val controller = Phase7VerticalController(store)
+        controller.enterSetup()
+        controller.startHighSchool("민서준")
+        controller.beginTutorial()
+        controller.completeTutorial()
+        controller.chooseSchool()
+        var guard = 0
+        while (store.current.highSchool?.run?.phase != HighSchoolPhase.IMPORTANT_GAME && guard++ < 120) {
+            when (store.current.highSchool?.run?.phase) {
+                HighSchoolPhase.TRAINING -> controller.commitTraining()
+                HighSchoolPhase.RELATIONSHIP -> controller.resolveRelationship()
+                HighSchoolPhase.AWAKENING -> controller.chooseAwakening()
+                HighSchoolPhase.CHAPTER_REVIEW -> controller.advanceChapter()
+                else -> error("unexpected phase ${store.current.highSchool?.run?.phase}")
+            }
+        }
+        val launch = controller.reserveImportantGame()
+        val request = controller.submitPitch(
+            launch.sessionId,
+            PitchHudSelection.Primary,
+            PitchDelivery(200, 200),
+        )
+        controller.consumePresentation(launch.sessionId, request)
+        controller.completePitchAndPostgame(launch.sessionId)
+        val active = requireNotNull(store.current.highSchool?.activePitch)
+        assertFalse(active.ended)
+        assertNotNull(PitchLiveResult.outcome(store.current))
+        val next = requireNotNull(controller.continueOfficialPitch())
+        assertEquals(null, PitchLiveResult.outcome(store.current))
+        assertEquals(null, PitchLiveResult.battedBall(store.current))
+        assertEquals(null, PitchLiveResult.fielding(store.current))
+        assertEquals(PitchBoundary.PLAYING, store.current.pitch?.boundary)
+        assertEquals(active.sessionId, next.sessionId)
+        controller.submitPitch(next.sessionId, PitchHudSelection.Primary, PitchDelivery(200, 200))
+        assertNotNull(store.current.highSchool?.lastPresentation)
+        assertNotNull(PitchLiveResult.outcome(store.current))
+        assertEquals(2, requireNotNull(store.current.highSchool?.activePitch).pitches)
     }
 
     @Test

@@ -8,6 +8,8 @@ import com.solkim.baseball.core.highschool.HighSchoolPhase4State
 import com.solkim.baseball.core.highschool.HighSchoolState
 import com.solkim.baseball.core.pitch.BatterScoutingSnapshot
 import com.solkim.baseball.core.pitch.BatterSnapshot
+import com.solkim.baseball.core.pitch.BattedBall
+import com.solkim.baseball.core.pitch.FieldingResolutionSnapshot
 import com.solkim.baseball.core.pitch.GameLogSnapshot
 import com.solkim.baseball.core.pitch.GameStateSnapshot
 import com.solkim.baseball.core.pitch.PitchCall
@@ -502,6 +504,10 @@ public data class ProState(
     val resolvedFollowUps: List<ProDecisionFollowUp>? = null,
     /** v9 spring-camp role request. Preserved on decode; unused by v8 simulation. */
     val roleRequest: ProRoleRequestState? = null,
+    /** Last kernel-authored contact. Missing on legacy saves. */
+    val lastBattedBall: BattedBall? = null,
+    /** Last kernel-authored fielding resolution for the drama cut. Missing on legacy saves. */
+    val lastFielding: FieldingResolutionSnapshot? = null,
 )
 
 /** v9 weekly decision temporary effects. Missing on legacy saves; decodeIfPresent keeps v8 bytes. */

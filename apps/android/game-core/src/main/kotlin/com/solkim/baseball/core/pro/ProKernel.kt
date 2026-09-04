@@ -478,7 +478,7 @@ public class ProKernel(
             standings = deriveStandings(state.copy(week = nextWeek, currentGameLines = state.currentGameLines + lines, currentStats = currentStats)),
             leaderboards = deriveLeaderboards(state.copy(week = nextWeek, currentStats = currentStats, currentGameLines = state.currentGameLines + lines)),
             activePitch = null,
-            lastPresentation = null,
+            lastPresentation = null, lastBattedBall = null, lastFielding = null,
             commitment = "",
         )
         val events = buildList {
@@ -631,7 +631,7 @@ public class ProKernel(
             scouting = scouting,
             boundary = ProPitchBoundary.RESERVED,
         )
-        val next = availabilityState.copy(revision = availabilityState.revision + 1UL, activePitch = session, lastPresentation = null, commitment = "")
+        val next = availabilityState.copy(revision = availabilityState.revision + 1UL, activePitch = session, lastPresentation = null, lastBattedBall = null, lastFielding = null, commitment = "")
         return result(next, seedText, listOf("pro_pitch_reserved"), preparation)
     }
 
@@ -703,6 +703,8 @@ public class ProKernel(
             revision = state.revision + 1UL,
             activePitch = nextSession,
             lastPresentation = snapshot.trajectoryPresentation,
+            lastBattedBall = snapshot.battedBall,
+            lastFielding = snapshot.fieldingResolution,
             commitment = "",
         )
         return result(next, submitted.nextSeed, listOf("pro_pitch_submitted"), submitted.nextPreparation, snapshot.trajectoryPresentation)
@@ -788,7 +790,7 @@ public class ProKernel(
             seasonTrigger = null,
             currentRival = null,
             activePitch = null,
-            lastPresentation = null,
+            lastPresentation = null, lastBattedBall = null, lastFielding = null,
             decisionHistory = history,
             milestones = if (state.level == ProLevel.MAJOR) state.milestones.addUnique("1군 첫 중요 승부") else state.milestones,
             news = (listOf("승부처 등판 · ${session.strikeouts}탈삼진 · ${session.walks}볼넷 · ${session.runsAllowed}실점 · 감독의 믿음 ${if (trustDelta >= 0) "+" else ""}$trustDelta") + state.news).take(30),
@@ -910,7 +912,7 @@ public class ProKernel(
             decisionHistory = history,
             postseason = nextPostseason,
             activePitch = null,
-            lastPresentation = null,
+            lastPresentation = null, lastBattedBall = null, lastFielding = null,
             commitment = "",
         )
         return result(
@@ -1202,7 +1204,7 @@ public class ProKernel(
             importantGames = 0,
             pendingDecision = null,
             activePitch = null,
-            lastPresentation = null,
+            lastPresentation = null, lastBattedBall = null, lastFielding = null,
             news = news.take(30),
             commitment = "",
             proRulesVersion = max(state.proRulesVersion, CURRENT_RULES_VERSION),
@@ -1504,7 +1506,7 @@ public class ProKernel(
             selectedLegacyId = null,
             highSchoolArchiveSettlement = null,
             activePitch = null,
-            lastPresentation = null,
+            lastPresentation = null, lastBattedBall = null, lastFielding = null,
             lastSegmentProgress = null,
             hallOfFameScore = null,
             news = listOf("신인 계약 제안 · ${team.name} · $identityName${if (draftEvaluation > 0) " · 평가 $draftEvaluation" else ""}"),

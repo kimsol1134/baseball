@@ -64,6 +64,59 @@ class ProKernelTest {
     }
 
     @Test
+    fun seasonReviewArchivesPostseasonGamesThroughStateCodec() {
+        val signed = kernel.startDirect(ProStartDirectRequest("404", "power_prospect", "결산투수")).state
+        val postseasonGames = listOf(
+            ProPostseasonGameLine(
+                round = ProAutumnRound.WILD_CARD,
+                gameNumber = 1,
+                teamRuns = 4,
+                opponentRuns = 2,
+                directlyPlayed = true,
+                playerPitches = 88,
+                playerOuts = 15,
+                playerRunsAllowed = 1,
+                playerStrikeouts = 5,
+                playerWalks = 1,
+                playerHits = 4,
+                playerStarted = true,
+            ),
+        )
+        val record = ProSeasonStats(
+            season = 1,
+            teamId = signed.team.id,
+            games = 24,
+            starts = 24,
+            inningsOuts = 360,
+            strikeouts = 120,
+            walks = 24,
+            runsAllowed = 48,
+            hits = 90,
+            pitches = 2_400,
+            wins = 12,
+            losses = 8,
+            postseasonGames = postseasonGames,
+        )
+        val archived = signed.copy(
+            phase = ProCareerPhase.OFFSEASON_DECISION,
+            week = ProCatalog.WEEKS_PER_SEASON,
+            seasonSegment = ProSeasonSegment.SEASON_FINALE,
+            currentStats = ProSeasonStats(1, signed.team.id),
+            currentGameLines = emptyList(),
+            careerStats = listOf(record),
+            seasonLedgers = listOf(
+                ProSeasonLedger(1, signed.team.id, record, signed.standings, signed.leaderboards, emptyList(), listOf("1시즌 완주"), 0),
+            ),
+            commitment = "",
+        ).let { it.copy(commitment = kernel.commitment(it)) }
+        kernel.validateSavedState(archived)
+        val roundTripped = ProStateCodec.decode(ProStateCodec.encode(archived))
+        assertEquals(postseasonGames, roundTripped.careerStats.single().postseasonGames)
+        assertEquals(postseasonGames, roundTripped.seasonLedgers.single().record.postseasonGames)
+        assertEquals(archived, roundTripped)
+    }
+
+    @Test
     fun commandCodecAndStoreRejectDuplicateStaleTamperedUnknownAndFutureWire() {
         val request = ProStartDirectRequest("31", "precision_commander", "고태윤")
         val start = ProCommandEnvelope(commandId = "start-1", sessionId = "pro-session", expectedRevision = 0UL, command = ProCommand.StartDirect(request))
