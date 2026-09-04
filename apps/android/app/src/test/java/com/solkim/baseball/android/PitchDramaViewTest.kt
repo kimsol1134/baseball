@@ -1,9 +1,11 @@
 package com.solkim.baseball.android
 
 import com.solkim.baseball.application.BattedBall
+import com.solkim.baseball.application.PitchDramaCamera
 import com.solkim.baseball.application.PitchOutcome
 import com.solkim.baseball.design.BaseballColors
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -68,5 +70,49 @@ class PitchDramaViewTest {
         val (ssDist, ssDeg) = fielderHome("shortstop")
         assertEquals(38f, ssDist, 0.1f)
         assertEquals(-20f, ssDeg, 0.1f)
+    }
+
+    @Test
+    fun catcherCutResultFreezeKeepsTakenPitchesOnCatcherCamera() {
+        assertTrue(isTakenPitchCatcherFreeze(PitchOutcome.CALLED_STRIKE, 1f))
+        assertTrue(isTakenPitchCatcherFreeze(PitchOutcome.SWINGING_STRIKE, PitchDramaCamera.CONTACT_PROGRESS))
+        assertTrue(isTakenPitchCatcherFreeze(PitchOutcome.BALL, 1f))
+        assertTrue(isTakenPitchCatcherFreeze(PitchOutcome.FOUL, 1f))
+        assertTrue(isTakenPitchCatcherFreeze(PitchOutcome.HIT_BY_PITCH, 1f))
+        assertFalse(isTakenPitchCatcherFreeze(PitchOutcome.SINGLE, 1f))
+        assertFalse(isTakenPitchCatcherFreeze(PitchOutcome.HOME_RUN, 1f))
+        assertFalse(isTakenPitchCatcherFreeze(PitchOutcome.IN_PLAY_OUT, 1f))
+        assertFalse(isTakenPitchCatcherFreeze(PitchOutcome.CALLED_STRIKE, 0.2f))
+        assertFalse(isTakenPitchCatcherFreeze(null, 1f))
+        assertTrue(isCatcherCutAfterContact(PitchOutcome.SINGLE, PitchDramaCamera.CONTACT_PROGRESS))
+        assertFalse(isCatcherCutAfterContact(PitchOutcome.SINGLE, PitchDramaCamera.CUT_PROGRESS))
+    }
+
+    @Test
+    fun resultFreezeZoneAlphasMatchIosReadability() {
+        assertEquals(0.85f, RESULT_ZONE_STROKE_ALPHA, 0.001f)
+        assertEquals(0.40f, RESULT_ZONE_GRID_ALPHA, 0.001f)
+        assertEquals(0.50f, LIVE_ZONE_STROKE_ALPHA, 0.001f)
+        assertEquals(0.16f, LIVE_ZONE_GRID_ALPHA, 0.001f)
+        assertEquals(0.85f, zoneStrokeAlpha(PitchOutcome.BALL, 1f, 0f), 0.001f)
+        assertEquals(0.40f, zoneGridAlpha(PitchOutcome.BALL, 1f), 0.001f)
+        assertEquals(0.50f, zoneStrokeAlpha(PitchOutcome.BALL, 0.1f, 0f), 0.001f)
+        assertEquals(0.16f, zoneGridAlpha(PitchOutcome.BALL, 0.1f), 0.001f)
+        assertEquals(1.0f, zoneStrokeAlpha(PitchOutcome.CALLED_STRIKE, 0.1f, 1f), 0.001f)
+    }
+
+    @Test
+    fun keepFullIncomingTrailOnlyForNonBattedCatcherFreeze() {
+        assertTrue(keepFullIncomingTrail(PitchOutcome.CALLED_STRIKE, 1f))
+        assertTrue(keepFullIncomingTrail(PitchOutcome.SWINGING_STRIKE, 1f))
+        assertTrue(keepFullIncomingTrail(PitchOutcome.BALL, 1f))
+        assertTrue(keepFullIncomingTrail(PitchOutcome.HIT_BY_PITCH, 1f))
+        assertFalse(keepFullIncomingTrail(PitchOutcome.FOUL, 1f))
+        assertFalse(keepFullIncomingTrail(PitchOutcome.SINGLE, 1f))
+        assertFalse(keepFullIncomingTrail(PitchOutcome.CALLED_STRIKE, 0.1f))
+        assertTrue(RESULT_LANDING_DOT_RADIUS_DP in 4f..6f)
+        assertTrue(RESULT_LANDING_RING_RADIUS_DP > RESULT_LANDING_DOT_RADIUS_DP)
+        assertEquals(0.18f, RESULT_TRAIL_START_ALPHA, 0.001f)
+        assertEquals(0.90f, RESULT_TRAIL_END_ALPHA, 0.001f)
     }
 }

@@ -50,7 +50,7 @@ public object ProStateCodec {
     private val ROOT_FIELDS = setOf("schema", "schemaVersion", "payload", "stateCommitment")
 
     public fun encode(state: ProState): ByteArray {
-        require(state.journeyState == null) { "pro.state.journey_requires_v2" }
+        if (state.journeyState != null) return ProStateCodecV2.encode(state)
         try { ProKernel().validateSavedState(state) } catch (error: IllegalArgumentException) { throw ProStateCodecException(error.message ?: "pro.state.invalid") }
         val output = ByteArrayOutputStream()
         DataOutputStream(output).use { data -> writeState(data, state) }
@@ -71,6 +71,15 @@ public object ProStateCodec {
         catch (_: Exception) { fail("pro.state.json") }
         requireExact(root, ROOT_FIELDS, "pro.state.root")
         if (!bytes.contentEquals(StrictJson.canonical(root).toByteArray(Charsets.UTF_8))) fail("pro.state.noncanonical")
+        if (root.string("schema") == ProStateCodecV2.SCHEMA) {
+            return try {
+                ProStateCodecV2.decode(bytes)
+            } catch (error: ProStateCodecException) {
+                throw error
+            } catch (error: IllegalArgumentException) {
+                fail(error.message ?: "pro.state.invalid")
+            }
+        }
         if (root.string("schema") != SCHEMA) fail("pro.state.schema")
         val version = root.integer("schemaVersion")
         if (version !in 1..SCHEMA_VERSION) fail(if (version > SCHEMA_VERSION) "pro.state.future:$version" else "pro.state.migration:$version")
@@ -103,6 +112,9 @@ public object ProStateCodec {
         out.writeNullable(state.roleRequest) { writeRoleRequest(it) }
         out.writeNullable(state.lastBattedBall) { writeBattedBall(it) }
         out.writeNullable(state.lastFielding) { writeFielding(it) }
+        out.writeNullable(state.nationalTournament) { writeNationalTournament(it) }
+        out.writeList(state.nationalTeamHistory) { writeNationalRecord(it) }
+        out.writeNullable(state.nationalTeamCarry) { writeNationalCarry(it) }
     }
 
     private fun readState(input: DataInputStream, version: Int): ProState {
@@ -125,8 +137,11 @@ public object ProStateCodec {
         val roleRequest = if (input.available() > 0) input.readNullable { readRoleRequest() } else null
         val lastBattedBall = if (input.available() > 0) input.readNullable { readBattedBall() } else null
         val lastFielding = if (input.available() > 0) input.readNullable { readFielding() } else null
+        val nationalTournament = if (input.available() > 0) input.readNullable { readNationalTournament() } else null
+        val nationalHistory = if (input.available() > 0) input.readList { readNationalRecord() } else emptyList()
+        val nationalCarry = if (input.available() > 0) input.readNullable { readNationalCarry() } else null
         if (input.available() != 0) fail("pro.state.trailing_bytes")
-        return ProState(careerId, revision, mode, source, legacyContext, activePreserved, seed, name, pitcher, team, entitlement, age, season, week, phase, level, role, rolePreference, managerTrust, catcherTrust, fatigue, injuryWeeks, serviceYears, military, contract, currentStats, currentLines, careerStats, ledgers, awards, milestones, decisions, pending, development, segment, trigger, rival, tensions, importantGames, standings, leaderboards, legacy, selectedLegacy, settlement, activePitch, presentation, lastSegment, hof, news, receipts, commitment, proRulesVersion, postseason = postseason, activeDecisionModifiers = modifiers, resolvedFollowUps = followUps, roleRequest = roleRequest, lastBattedBall = lastBattedBall, lastFielding = lastFielding)
+        return ProState(careerId, revision, mode, source, legacyContext, activePreserved, seed, name, pitcher, team, entitlement, age, season, week, phase, level, role, rolePreference, managerTrust, catcherTrust, fatigue, injuryWeeks, serviceYears, military, contract, currentStats, currentLines, careerStats, ledgers, awards, milestones, decisions, pending, development, segment, trigger, rival, tensions, importantGames, standings, leaderboards, legacy, selectedLegacy, settlement, activePitch, presentation, lastSegment, hof, news, receipts, commitment, proRulesVersion, postseason = postseason, activeDecisionModifiers = modifiers, resolvedFollowUps = followUps, roleRequest = roleRequest, lastBattedBall = lastBattedBall, lastFielding = lastFielding, nationalTournament = nationalTournament, nationalTeamHistory = nationalHistory, nationalTeamCarry = nationalCarry)
     }
 
     private fun DataOutputStream.writeTeam(value: ProTeam) { writeString(value.id); writeString(value.name); writeString(value.positionCompetitor); writeString(value.developmentPlan); writeInt(value.demand) }
@@ -328,6 +343,43 @@ public object ProStateCodec {
         readNullable { readInts() },
         readString(),
     )
+    private fun DataOutputStream.writeNationalGame(value: ProNationalTournamentGameLine) {
+        writeString(value.opponentId); writeInt(value.gameNumber); writeInt(value.teamRuns); writeInt(value.opponentRuns)
+        writeBoolean(value.directlyPlayed); writeNullableInt(value.playerPitches); writeNullableInt(value.playerOuts)
+        writeNullableInt(value.playerRunsAllowed); writeNullableInt(value.playerStrikeouts); writeNullableInt(value.playerWalks)
+        writeNullableInt(value.playerHits)
+    }
+    private fun DataInputStream.readNationalGame(): ProNationalTournamentGameLine = ProNationalTournamentGameLine(
+        readString(), readInt(), readInt(), readInt(), readBoolean(),
+        readNullableInt(), readNullableInt(), readNullableInt(), readNullableInt(), readNullableInt(), readNullableInt(),
+    )
+    private fun DataOutputStream.writeNationalTournament(value: ProNationalTournamentState) {
+        writeULong(value.seed); writeString(value.resumeSeed); writeInt(value.startingFatigue)
+        writeList(value.groupGames) { writeNationalGame(it) }
+        writeString(value.stage.wire); writeString(value.finalOpponentId)
+        writeNullable(value.finalLine) { writeNationalGame(it) }
+        writeNullableString(value.result?.wire); writeInt(value.fatigueCarry); writeInt(value.injuryWeeks)
+        writeInt(value.fanDelta); writeBoolean(value.exempted)
+    }
+    private fun DataInputStream.readNationalTournament(): ProNationalTournamentState = ProNationalTournamentState(
+        readULong(), readString(), readInt(), readList { readNationalGame() },
+        nationalStage(readString()), readString(), readNullable { readNationalGame() },
+        readNullableString()?.let(::nationalResult), readInt(), readInt(), readInt(), readBoolean(),
+    )
+    private fun DataOutputStream.writeNationalRecord(value: ProNationalTeamRecord) {
+        writeInt(value.season); writeString(value.result.wire); writeNullable(value.directGameLine) { writeNationalGame(it) }
+    }
+    private fun DataInputStream.readNationalRecord(): ProNationalTeamRecord =
+        ProNationalTeamRecord(readInt(), nationalResult(readString()), readNullable { readNationalGame() })
+    private fun DataOutputStream.writeNationalCarry(value: ProNationalTeamCarryState) {
+        writeInt(value.season); writeInt(value.fatigue); writeInt(value.injuryWeeks)
+    }
+    private fun DataInputStream.readNationalCarry(): ProNationalTeamCarryState =
+        ProNationalTeamCarryState(readInt(), readInt(), readInt())
+    private fun nationalStage(value: String): ProNationalTournamentStage =
+        ProNationalTournamentStage.entries.firstOrNull { it.wire == value } ?: fail("pro.state.national_stage")
+    private fun nationalResult(value: String): ProNationalTournamentResult =
+        ProNationalTournamentResult.entries.firstOrNull { it.wire == value } ?: fail("pro.state.national_result")
     private fun fieldingSector(value: String): FieldingSector =
         FieldingSector.entries.firstOrNull { it.name == value } ?: fail("pro.state.fielding_sector")
     private fun defenseImpact(value: String): DefenseImpact =

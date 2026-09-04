@@ -170,6 +170,8 @@ public object CSharpLegacyProBridge {
         ProCareerPhase.SEASON_DECISION -> "SeasonDecision"
         ProCareerPhase.IMPORTANT_GAME -> "ImportantGame"
         ProCareerPhase.SEASON_REVIEW -> "SeasonReview"
+        ProCareerPhase.NATIONAL_TEAM_CALL -> "NationalTeamCall"
+        ProCareerPhase.NATIONAL_TOURNAMENT -> "NationalTournament"
         ProCareerPhase.OFFSEASON_DECISION -> "OffseasonDecision"
         ProCareerPhase.RETIREMENT_DECISION -> "RetirementDecision"
         ProCareerPhase.LEGACY_SELECTION, ProCareerPhase.COMPLETED -> "Completed"

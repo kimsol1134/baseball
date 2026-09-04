@@ -26,6 +26,8 @@ import com.solkim.baseball.core.pro.ProEntitlement
 import com.solkim.baseball.core.pro.ProHighSchoolLegacyContext
 import com.solkim.baseball.core.pro.ProKernel
 import com.solkim.baseball.core.pro.ProLevel
+import com.solkim.baseball.core.pro.ProNationalTeamRules
+import com.solkim.baseball.core.pro.ProNationalTournamentStage
 import com.solkim.baseball.core.pro.ProRole
 import com.solkim.baseball.core.pro.ProSeasonSegment
 import com.solkim.baseball.core.pro.ProStartDirectRequest
@@ -325,6 +327,8 @@ public object Phase8ScreenProjection {
                 ProCareerPhase.WEEKLY_PLAN -> Phase8ScreenId.P017_PRO_WEEK
                 ProCareerPhase.IMPORTANT_GAME -> Phase8ScreenId.P018_PRO_IMPORTANT_GAME
                 ProCareerPhase.SEASON_DECISION,
+                ProCareerPhase.NATIONAL_TEAM_CALL,
+                ProCareerPhase.NATIONAL_TOURNAMENT,
                 ProCareerPhase.SEASON_REVIEW -> Phase8ScreenId.P019_PRO_SEASON
                 ProCareerPhase.OFFSEASON_DECISION -> Phase8ScreenId.P020_OFFSEASON
                 ProCareerPhase.RETIREMENT_DECISION -> Phase8ScreenId.P021_PRO_RETIREMENT
@@ -381,7 +385,8 @@ public object Phase8ScreenProjection {
         Phase8ScreenId.P013_DRAFT -> state.highSchool?.run?.phase == HighSchoolPhase.DRAFT
         Phase8ScreenId.P014_RUN_RECAP -> state.highSchool?.run?.phase == HighSchoolPhase.LEGACY || state.highSchool?.run?.phase == HighSchoolPhase.COMPLETED
         Phase8ScreenId.P015_REBIRTH -> state.stage == GameStage.BETWEEN_LIVES || state.highSchool?.run?.phase == HighSchoolPhase.COMPLETED
-        Phase8ScreenId.P016_PRO_CONTRACT -> state.pro == null && (state.highSchool != null || state.stage == GameStage.OPENING)
+        Phase8ScreenId.P016_PRO_CONTRACT ->
+            state.pro != null || state.highSchool != null || state.stage == GameStage.OPENING
         Phase8ScreenId.P017_PRO_WEEK -> state.pro != null
         Phase8ScreenId.P018_PRO_IMPORTANT_GAME ->
             state.pro?.phase == ProCareerPhase.IMPORTANT_GAME &&
@@ -624,10 +629,15 @@ public object Phase8ScreenProjection {
                 }
             }
             Phase8ScreenId.P016_PRO_CONTRACT -> {
+                val contract = pro?.contract
+                val salary = contract?.annualSalary
+                val salaryText = if (salary == null) "제안 대기" else "%,d원".format(java.util.Locale.KOREA, salary)
                 addSection(Phase8Section("pro-contract", "프로 계약", listOf(
                     Phase8Row("경로", "고교 연결 · 직접 시작", "고교 연결은 현재 고교 기록을 보존합니다."),
                     Phase8Row("팀", pro?.team?.name ?: "팀을 고르는 중", pro?.team?.developmentPlan ?: "팀의 성장 계획"),
-                    Phase8Row("계약", pro?.phase?.label ?: "아직 계약 전", "계약은 저장된 커리어를 엽니다."),
+                    Phase8Row("계약 기간", "${contract?.yearsRemaining ?: 0}년", "제시된 계약의 남은 시즌"),
+                    Phase8Row("연봉", salaryText, "시즌 단위 연봉. 총 보장은 기간과 함께 읽습니다."),
+                    Phase8Row("보직", contract?.rolePromise?.label ?: pro?.role?.label ?: "선발", "계약이 약속한 등판 역할"),
                 )))
                 val name = run?.identity?.name ?: "민서준"
                 addAction("startDirect", "직접 프로 시작", "고교 기록과 분리된 새 프로 커리어를 시작합니다.", state.pro == null, listOf(pro(ProCommand.StartDirect(ProStartDirectRequest(context.seed(state, "pro-direct"), "power_prospect", name)))))
@@ -679,26 +689,145 @@ public object Phase8ScreenProjection {
                 addAction("abandonPitch", "이번 투구 포기", "이번 타석만 포기합니다.", state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
             }
             Phase8ScreenId.P019_PRO_SEASON -> {
-                addSection(Phase8Section("pro-season", "프로 시즌", listOf(
-                    Phase8Row("시즌", pro?.season?.toString() ?: "—", ProCatalog.segmentLabel(pro?.seasonSegment ?: ProSeasonSegment.SPRING_CAMP)),
-                    Phase8Row("개인 기록", "${pro?.currentStats?.games ?: 0}경기 · ${pro?.currentStats?.strikeouts ?: 0}탈삼진", "현재 시즌 성적"),
-                    Phase8Row("팀 순위", "${pro?.standings?.firstOrNull { it.isPlayerTeam }?.wins ?: 0}승", "리그 순위와 리더보드"),
-                    Phase8Row("수상과 이정표", "${pro?.awards?.size ?: 0} · ${pro?.milestones?.size ?: 0}", "결정 기록 ${pro?.decisionHistory?.size ?: 0}개"),
-                    Phase8Row("다음 이야기", pro?.pendingDecision?.title ?: "다음 주간 계획", pro?.pendingDecision?.detail ?: "저장된 시즌 흐름을 이어 갑니다."),
-                )))
-                pro?.pendingDecision?.let { decision ->
-                    decision.choices.forEach { choice ->
-                        addAction("seasonDecision:${choice.id}", choice.title, choice.detail, pro.phase == ProCareerPhase.SEASON_DECISION, listOf(pro(ProCommand.ApplySeasonDecision(context.seed(state, "decision:${choice.id}"), decision.id, choice.id))))
+                val tournament = pro?.nationalTournament
+                when {
+                    pro?.phase == ProCareerPhase.NATIONAL_TEAM_CALL -> {
+                        val fan = pro.journeyState?.reputation?.fanSupport ?: 0
+                        val market = (pro.pitcher.stuff + pro.pitcher.command + pro.pitcher.movement + pro.pitcher.stamina) / 4
+                        addSection(Phase8Section("national-call", "국가대표 소집 통보", listOf(
+                            Phase8Row("국가대표", "시즌 성적이 대표팀 레이더에 걸렸습니다.", "수락하면 조별 3경기를 치르고 결승은 직접 등판합니다."),
+                            Phase8Row("선발 이유", "시장 점수 $market · 팬 지지 $fan", "짝수 시즌, 31세 이하, 팬 지지나 수상·기량이 기준을 넘을 때 소집됩니다."),
+                            Phase8Row("대가", "다음 스프링캠프를 피로를 안고 시작합니다.", "결승에서 많이 던질수록 무겁고, 부상 판정도 한 번 있습니다."),
+                        )))
+                        addAction(
+                            "nationalTeam:accept",
+                            "소집을 수락한다",
+                            "조별 3경기를 치르고 결승은 직접 등판합니다.",
+                            true,
+                            listOf(pro(ProCommand.RespondNationalTeamCall(context.seed(state, "national-team:accept"), true))),
+                        )
+                        addAction(
+                            "nationalTeam:decline",
+                            "이번엔 사양한다",
+                            "소집을 거절하고 비시즌으로 갑니다. 팬 지지가 조금 내려갑니다.",
+                            true,
+                            listOf(pro(ProCommand.RespondNationalTeamCall(context.seed(state, "national-team:decline"), false))),
+                        )
+                    }
+                    pro?.phase == ProCareerPhase.NATIONAL_TOURNAMENT && tournament != null -> {
+                        val groupRows = tournament.groupGames.map { line ->
+                            Phase8Row(
+                                ProNationalTeamRules.opponentLabel(line.opponentId),
+                                "${line.teamRuns}-${line.opponentRuns} ${if (line.won) "승" else "패"}",
+                                "조별 ${line.gameNumber}경기",
+                            )
+                        }
+                        addSection(
+                            Phase8Section(
+                                "national-group",
+                                "조별 경기",
+                                groupRows + listOf(
+                                    Phase8Row(
+                                        "조별 성적",
+                                        "${tournament.groupWins}승 ${tournament.groupGames.size}경기",
+                                        if (tournament.stage == ProNationalTournamentStage.AWAITING_FINAL) {
+                                            "2승 이상으로 결승에 올랐습니다. 결승은 직접 등판입니다."
+                                        } else {
+                                            tournament.result?.let(ProNationalTeamRules::resultLabel) ?: "대회 진행 중"
+                                        },
+                                    ),
+                                ),
+                            ),
+                        )
+                        if (tournament.stage == ProNationalTournamentStage.AWAITING_FINAL && tournament.result == null) {
+                            addAction(
+                                "nationalTeam:startFinal",
+                                "결승 직접 등판",
+                                "대표팀 결승에 직접 올라 슬라이더로 던집니다.",
+                                true,
+                                listOf(pro(ProCommand.StartNationalFinal(context.seed(state, "national-team:start-final")))),
+                            )
+                            addAction(
+                                "nationalTeam:autoFinal",
+                                "결승 자동 진행",
+                                "직접 등판 없이 결승을 시뮬합니다. 시드는 소비하지 않습니다.",
+                                true,
+                                listOf(pro(ProCommand.ResolveNationalFinalAutomatically(context.seed(state, "national-team:auto-final")))),
+                            )
+                        }
+                        tournament.result?.let { outcome ->
+                            addSection(
+                                Phase8Section(
+                                    "national-result",
+                                    "대회 결과",
+                                    listOfNotNull(
+                                        Phase8Row(ProNationalTeamRules.resultLabel(outcome), ProNationalTeamRules.news(outcome), "팬 지지 ${if (tournament.fanDelta >= 0) "+" else ""}${tournament.fanDelta}"),
+                                        if (tournament.exempted) Phase8Row("병역", "병역 면제 처리됐습니다.", "금메달 한 번으로 복무를 마칩니다.") else null,
+                                    ),
+                                ),
+                            )
+                            addAction(
+                                "nationalTeam:acknowledge",
+                                "오프시즌으로",
+                                "대회 결과를 확인하고 비시즌 선택으로 갑니다.",
+                                true,
+                                listOf(pro(ProCommand.AcknowledgeNationalTeamResult(context.seed(state, "national-team:acknowledge")))),
+                            )
+                        }
+                    }
+                    else -> {
+                        addSection(Phase8Section("pro-season", "프로 시즌", listOf(
+                            Phase8Row("시즌", pro?.season?.toString() ?: "—", ProCatalog.segmentLabel(pro?.seasonSegment ?: ProSeasonSegment.SPRING_CAMP)),
+                            Phase8Row("개인 기록", "${pro?.currentStats?.games ?: 0}경기 · ${pro?.currentStats?.strikeouts ?: 0}탈삼진", "현재 시즌 성적"),
+                            Phase8Row("팀 순위", "${pro?.standings?.firstOrNull { it.isPlayerTeam }?.wins ?: 0}승", "리그 순위와 리더보드"),
+                            Phase8Row("수상과 이정표", "${pro?.awards?.size ?: 0} · ${pro?.milestones?.size ?: 0}", "결정 기록 ${pro?.decisionHistory?.size ?: 0}개"),
+                            Phase8Row("다음 이야기", pro?.pendingDecision?.title ?: "다음 주간 계획", pro?.pendingDecision?.detail ?: "저장된 시즌 흐름을 이어 갑니다."),
+                        )))
+                        pro?.pendingDecision?.let { decision ->
+                            decision.choices.forEach { choice ->
+                                addAction("seasonDecision:${choice.id}", choice.title, choice.detail, pro.phase == ProCareerPhase.SEASON_DECISION, listOf(pro(ProCommand.ApplySeasonDecision(context.seed(state, "decision:${choice.id}"), decision.id, choice.id))))
+                            }
+                        }
+                        addAction("reviewSeason", "시즌 결산 보기", "이번 시즌의 기록과 다음 결정을 저장합니다.", pro?.phase == ProCareerPhase.SEASON_REVIEW, listOf(pro(ProCommand.ReviewSeason(context.seed(state, "season-review")))))
                     }
                 }
-                addAction("reviewSeason", "시즌 결산 보기", "이번 시즌의 기록과 다음 결정을 저장합니다.", pro?.phase == ProCareerPhase.SEASON_REVIEW, listOf(pro(ProCommand.ReviewSeason(context.seed(state, "season-review")))))
             }
             Phase8ScreenId.P020_OFFSEASON -> {
                 addSection(Phase8Section("offseason", "비시즌 선택", listOf(
                     Phase8Row("현재 계약", "${pro?.contract?.yearsRemaining ?: 0}년", "계속하기와 새로운 선택을 비교합니다."),
                     Phase8Row("복무", "${pro?.serviceYears ?: 0}년", if (pro?.militaryCompleted == true) "완료" else "선택 가능"),
                 )))
-                OffseasonDecision.entries.forEach { decision -> addAction("offseason:${decision.wire}", decision.label, "${decision.label}을(를) 선택합니다.", pro?.phase == com.solkim.baseball.core.pro.ProCareerPhase.OFFSEASON_DECISION, listOf(pro(ProCommand.ChooseOffseason(context.seed(state, "offseason:${decision.wire}"), decision))), decision == OffseasonDecision.RETIRE) }
+                val offseasonEnabled = pro?.phase == com.solkim.baseball.core.pro.ProCareerPhase.OFFSEASON_DECISION
+                val faEligible = (pro?.serviceYears ?: 0) >= 6
+                addAction(
+                    "offseason:continue",
+                    "계속하기",
+                    "현재 구단에 남아 다음 시즌을 준비합니다. 나이와 계약만 한 해 진행됩니다.",
+                    offseasonEnabled,
+                    listOf(pro(ProCommand.ChooseOffseason(context.seed(state, "offseason:continue"), OffseasonDecision.CONTINUE))),
+                )
+                addAction(
+                    "offseason:military_service",
+                    "군 복무",
+                    "두 시즌 동안 계약을 멈추고 복무를 다녀옵니다. 한 번만 선택할 수 있습니다.",
+                    offseasonEnabled && pro?.militaryCompleted != true,
+                    listOf(pro(ProCommand.ChooseOffseason(context.seed(state, "offseason:military_service"), OffseasonDecision.MILITARY_SERVICE))),
+                )
+                addAction(
+                    "offseason:free_agency",
+                    "FA 시장",
+                    "6년 이상 1군 복무를 채운 뒤에만 새 팀과 계약할 수 있습니다.",
+                    offseasonEnabled && faEligible,
+                    listOf(pro(ProCommand.ChooseOffseason(context.seed(state, "offseason:free_agency"), OffseasonDecision.FREE_AGENCY))),
+                )
+                addAction(
+                    "offseason:retire",
+                    "은퇴하기",
+                    "여기서 커리어를 마칩니다. 통산 기록과 명예의 전당 점수가 확정됩니다. 되돌릴 수 없습니다.",
+                    offseasonEnabled,
+                    listOf(pro(ProCommand.ChooseOffseason(context.seed(state, "offseason:retire"), OffseasonDecision.RETIRE))),
+                    destructive = true,
+                )
             }
             Phase8ScreenId.P021_PRO_RETIREMENT -> {
                 addSection(Phase8Section("retirement", "은퇴", listOf(
@@ -799,7 +928,7 @@ public object Phase8ScreenProjection {
         Phase8ScreenId.P016_PRO_CONTRACT -> "고교에서 이어 가거나 직접 프로를 시작합니다."
         Phase8ScreenId.P017_PRO_WEEK -> "여섯 계획 중 하나로 한 주를 보냅니다."
         Phase8ScreenId.P018_PRO_IMPORTANT_GAME -> "프로의 승부처에서도 저장 경계를 지킵니다."
-        Phase8ScreenId.P019_PRO_SEASON -> "성장, 기록, 수상과 결정을 돌아봅니다."
+        Phase8ScreenId.P019_PRO_SEASON -> "성장, 기록, 수상과 대표팀 결정을 돌아봅니다."
         Phase8ScreenId.P020_OFFSEASON -> "다음 시즌의 길을 선택합니다."
         Phase8ScreenId.P021_PRO_RETIREMENT -> "긴 커리어의 마지막을 준비합니다."
         Phase8ScreenId.P022_PRO_LEGACY -> "프로의 시간을 하나의 유산으로 남깁니다."
@@ -1093,6 +1222,8 @@ public object Phase8ScreenProjection {
         ProCareerPhase.SEASON_DECISION -> "시즌 결정"
         ProCareerPhase.IMPORTANT_GAME -> "중요 경기"
         ProCareerPhase.SEASON_REVIEW -> "시즌 결산"
+        ProCareerPhase.NATIONAL_TEAM_CALL -> "대표팀 소집"
+        ProCareerPhase.NATIONAL_TOURNAMENT -> "대표팀 대회"
         ProCareerPhase.OFFSEASON_DECISION -> "비시즌 선택"
         ProCareerPhase.RETIREMENT_DECISION -> "은퇴 결정"
         ProCareerPhase.LEGACY_SELECTION -> "유산 선택"

@@ -35,9 +35,11 @@ class ProKernelTest {
         val changedLast = if (state.commitment.last() == '0') '1' else '0'
         val tampered = String(encoded).replace(state.commitment, state.commitment.dropLast(1) + changedLast)
         assertFailsWith<ProStateCodecException> { ProStateCodec.decode(tampered.toByteArray()) }
-        val future = String(encoded).replace(
-            "\"schemaVersion\":${ProStateCodec.SCHEMA_VERSION}",
-            "\"schemaVersion\":${ProStateCodec.SCHEMA_VERSION + 1}",
+        val encodedText = String(encoded)
+        val schemaVersion = if (encodedText.contains(ProStateCodecV2.SCHEMA)) ProStateCodecV2.SCHEMA_VERSION else ProStateCodec.SCHEMA_VERSION
+        val future = encodedText.replace(
+            "\"schemaVersion\":$schemaVersion",
+            "\"schemaVersion\":${schemaVersion + 1}",
         )
         assertFailsWith<ProStateCodecException> { ProStateCodec.decode(future.toByteArray()) }
         val linkedRequest = ProStartLinkedRequest(
@@ -117,6 +119,90 @@ class ProKernelTest {
     }
 
     @Test
+    fun newDirectCareerUsesRulesVersion10AndMediaDecisionOpensOnHashedWeek() {
+        val started = kernel.startDirect(ProStartDirectRequest("404", "power_prospect", "미디어투수"))
+        var state = started.state
+        assertEquals(10, state.proRulesVersion)
+        assertEquals(ProCatalog.RULES_VERSION, state.proRulesVersion)
+        val mediaWeek = ProCatalog.mediaOpportunityWeek(state.careerId, state.season, state.proRulesVersion)
+        assertTrue(mediaWeek in ProCatalog.WEEKLY_SEASON_DECISION_WEEKS)
+        val prepared = state.copy(
+            week = mediaWeek - 1,
+            seasonSegment = ProCatalog.segment(mediaWeek - 1),
+            importantGames = 2,
+            commitment = "",
+        ).let { it.copy(commitment = kernel.commitment(it)) }
+        kernel.validateSavedState(prepared)
+        val opened = kernel.planWeek(prepared, prepared.seed, ProWeekPlan.EARN_TRUST)
+        assertEquals(ProCareerPhase.SEASON_DECISION, opened.state.phase)
+        assertEquals(ProSeasonDecisionType.MEDIA_OPPORTUNITY, opened.state.pendingDecision?.type)
+        assertEquals(mediaWeek, opened.state.week)
+        val applied = kernel.applySeasonDecision(
+            opened.state,
+            opened.nextSeed,
+            requireNotNull(opened.state.pendingDecision).id,
+            requireNotNull(opened.state.pendingDecision).choices.first().id,
+        )
+        val reviewed = applied.state.copy(
+            phase = ProCareerPhase.SEASON_REVIEW,
+            pendingDecision = null,
+            week = ProCatalog.WEEKS_PER_SEASON,
+            seasonSegment = ProCatalog.segment(ProCatalog.WEEKS_PER_SEASON),
+            commitment = "",
+        ).let { it.copy(commitment = kernel.commitment(it)) }
+        kernel.validateSavedState(reviewed)
+        val afterReview = kernel.reviewSeason(reviewed, applied.nextSeed)
+        val roundTripped = ProStateCodec.decode(ProStateCodec.encode(afterReview.state))
+        assertEquals(afterReview.state, roundTripped)
+        assertEquals(ProCareerPhase.OFFSEASON_DECISION, roundTripped.phase)
+        assertTrue(roundTripped.decisionHistory.any { it.type == ProSeasonDecisionType.MEDIA_OPPORTUNITY })
+    }
+
+    @Test
+    fun nationalTeamCallOpensAfterEvenSeasonWithFanSupport() {
+        val started = kernel.startDirect(ProStartDirectRequest("808", "power_prospect", "대표투수"))
+        val journey = requireNotNull(started.state.journeyState)
+        val reviewed = started.state.copy(
+            phase = ProCareerPhase.SEASON_REVIEW,
+            season = 2,
+            age = 20,
+            week = ProCatalog.WEEKS_PER_SEASON,
+            seasonSegment = ProCatalog.segment(ProCatalog.WEEKS_PER_SEASON),
+            currentStats = started.state.currentStats.copy(season = 2),
+            journeyState = journey.copy(reputation = journey.reputation.copy(fanSupport = 70)),
+            commitment = "",
+        ).let { it.copy(commitment = kernel.commitment(it)) }
+        kernel.validateSavedState(reviewed)
+        val after = kernel.reviewSeason(reviewed, started.nextSeed)
+        assertEquals(ProCareerPhase.NATIONAL_TEAM_CALL, after.state.phase)
+        assertEquals(null, after.state.pendingDecision)
+        val declined = kernel.respondToNationalTeamCall(after.state, after.nextSeed, accepted = false)
+        assertEquals(ProCareerPhase.OFFSEASON_DECISION, declined.state.phase)
+        assertEquals(68, declined.state.journeyState?.reputation?.fanSupport)
+        val roundTripped = ProStateCodec.decode(ProStateCodec.encode(declined.state))
+        assertEquals(declined.state, roundTripped)
+    }
+
+    @Test
+    fun freeAgencyOnRulesVersion10SignsMaximumContractYears() {
+        val started = kernel.startDirect(ProStartDirectRequest("909", "power_prospect", "자유투수"))
+        val reviewed = started.state.copy(
+            phase = ProCareerPhase.SEASON_REVIEW,
+            week = ProCatalog.WEEKS_PER_SEASON,
+            seasonSegment = ProCatalog.segment(ProCatalog.WEEKS_PER_SEASON),
+            commitment = "",
+        ).let { it.copy(commitment = kernel.commitment(it)) }
+        kernel.validateSavedState(reviewed)
+        val offseason = kernel.reviewSeason(reviewed, started.nextSeed).state
+        val eligible = offseason.copy(serviceYears = 6, commitment = "").let { it.copy(commitment = kernel.commitment(it)) }
+        kernel.validateSavedState(eligible)
+        val signed = kernel.chooseOffseason(eligible, started.nextSeed, OffseasonDecision.FREE_AGENCY)
+        assertEquals(ProCatalog.maximumContractYears(eligible.proRulesVersion), signed.state.contract?.yearsRemaining)
+        assertEquals(5, signed.state.contract?.yearsRemaining)
+        assertNotEquals(eligible.team.id, signed.state.team.id)
+    }
+
+    @Test
     fun commandCodecAndStoreRejectDuplicateStaleTamperedUnknownAndFutureWire() {
         val request = ProStartDirectRequest("31", "precision_commander", "고태윤")
         val start = ProCommandEnvelope(commandId = "start-1", sessionId = "pro-session", expectedRevision = 0UL, command = ProCommand.StartDirect(request))
@@ -169,6 +255,10 @@ class ProKernelTest {
             ProCommand.ChooseOffseason("8", OffseasonDecision.FREE_AGENCY),
             ProCommand.SelectLegacy("power_imprint"),
             ProCommand.NormalizeBalance,
+            ProCommand.RespondNationalTeamCall("9", true),
+            ProCommand.StartNationalFinal("10"),
+            ProCommand.ResolveNationalFinalAutomatically("11"),
+            ProCommand.AcknowledgeNationalTeamResult("12"),
         )
         commands.forEachIndexed { index, command ->
             val envelope = ProCommandEnvelope(commandId = "wire-$index", sessionId = "wire-session", expectedRevision = 0UL, command = command)
@@ -236,6 +326,19 @@ class ProKernelTest {
                     val pending = state.pendingDecision ?: error("missing pending decision")
                     state = ProStateCodec.decode(ProStateCodec.encode(kernel.applySeasonDecision(state, seed, pending.id, pending.choices.first().id).state))
                 }
+                ProCareerPhase.NATIONAL_TEAM_CALL -> {
+                    val result = kernel.respondToNationalTeamCall(state, seed, accepted = true)
+                    state = ProStateCodec.decode(ProStateCodec.encode(result.state)); seed = result.nextSeed
+                }
+                ProCareerPhase.NATIONAL_TOURNAMENT -> {
+                    val tournament = state.nationalTournament ?: error("missing national tournament")
+                    val result = if (tournament.result != null) {
+                        kernel.acknowledgeNationalTeamResult(state, seed)
+                    } else {
+                        kernel.resolveNationalFinalAutomatically(state, seed)
+                    }
+                    state = ProStateCodec.decode(ProStateCodec.encode(result.state)); seed = result.nextSeed
+                }
                 ProCareerPhase.IMPORTANT_GAME -> {
                     var result = kernel.reserveImportantGame(state, seed)
                     state = ProStateCodec.decode(ProStateCodec.encode(result.state))
@@ -280,7 +383,9 @@ class ProKernelTest {
         })
         assertEquals(state.awards, state.seasonLedgers.flatMap { it.awards }.distinct())
         assertTrue(state.milestones.any { it.contains("은퇴") })
-        assertTrue(state.decisionHistory.all { record -> state.decisionHistory.count { it.season == record.season } <= 3 })
+        assertTrue(state.decisionHistory.all { record ->
+            state.decisionHistory.count { it.season == record.season } <= ProCatalog.maximumDecisions(state.proRulesVersion)
+        })
         assertEquals(state.currentStats.teamId, state.team.id)
         assertTrue(state.currentGameLines.isEmpty() || state.currentStats.games == state.currentGameLines.size)
         assertEquals(null, state.highSchoolArchiveSettlement)

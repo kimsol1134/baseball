@@ -91,6 +91,10 @@ public class Phase7VerticalController(
         dispatch(GameCommand.EnterSetup)
     }
 
+    public suspend fun updateSettings(settings: GameSettingsState) {
+        dispatch(GameCommand.UpdateSettings(settings))
+    }
+
     public suspend fun startHighSchool(name: String) {
         val trimmed = name.trim().ifBlank { "민서준" }.take(40)
         dispatch(
@@ -419,6 +423,40 @@ public class Phase7VerticalController(
         if (pitch.careerKind == PitchCareerKind.HIGH_SCHOOL && highSchool != null && !highSchool.ended) return true
         val pro = state.pro?.activePitch
         return pitch.careerKind == PitchCareerKind.PRO && pro != null && !pro.ended
+    }
+
+    public suspend fun fastForwardCurrentBatter(): PitchPresentationRequest? {
+        var last: PitchPresentationRequest? = null
+        var guard = 0
+        while (guard++ < 40) {
+            val state = store.state.value
+            val pitch = state.pitch ?: return last
+            if (pitch.careerKind == PitchCareerKind.TUTORIAL) return last
+            val plateEnded = when (pitch.careerKind) {
+                PitchCareerKind.HIGH_SCHOOL -> state.highSchool?.activePitch?.ended == true
+                PitchCareerKind.PRO -> state.pro?.activePitch?.ended == true
+                PitchCareerKind.TUTORIAL -> true
+            }
+            when (pitch.boundary) {
+                PitchBoundary.PLAYING -> {
+                    last = submitPitch(pitch.sessionId, PitchHudSelection.Primary, PitchDelivery.NEUTRAL)
+                    consumePresentation(pitch.sessionId, last)
+                }
+                PitchBoundary.TERMINAL -> {
+                    completePitchAndPostgame(pitch.sessionId)
+                    val after = store.state.value
+                    val done = after.highSchool?.activePitch?.ended == true || after.pro?.activePitch?.ended == true
+                    if (done) return last
+                    continueOfficialPitch() ?: return last
+                }
+                PitchBoundary.COMPLETED -> {
+                    if (plateEnded) return last
+                    continueOfficialPitch() ?: return last
+                }
+                else -> return last
+            }
+        }
+        return last
     }
 
     private suspend fun reserveCurrentProPitch(): PitchLaunch {

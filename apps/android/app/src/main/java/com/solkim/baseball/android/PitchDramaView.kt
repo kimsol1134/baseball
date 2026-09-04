@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.solkim.baseball.application.BatSide
 import com.solkim.baseball.application.BattedBall
@@ -156,13 +157,20 @@ private fun DrawScope.drawPitchShot(
     // 스트라이크 존 & 홈플레이트
     drawStrikeZoneAndPlate(outcome, progress, scale, ::place)
 
-    // 포수 미트
     val actualX = request?.plateXMm?.toDouble() ?: 0.0
     val actualY = request?.plateYMm?.toDouble() ?: 0.0
-    drawCatcherMitt(outcome, progress, actualX, actualY, scale, ::place)
+    val takenFreeze = isTakenPitchCatcherFreeze(outcome, progress)
+    // 결과 프리즈의 착지 링은 궤적 위에 올려야 점이 가려지지 않는다.
+    if (!takenFreeze) {
+        drawCatcherMitt(outcome, progress, actualX, actualY, scale, ::place)
+    }
 
     // 날아오는 공 & 맞은 뒤 떠나는 공
     drawIncomingBall(request, outcome, battedBall, progress, scale, ::place)
+
+    if (takenFreeze) {
+        drawCatcherMitt(outcome, progress, actualX, actualY, scale, ::place)
+    }
 
     // 배트 컨택 시 임팩트 섬광
     drawImpactBurst(outcome, battedBall, actualX, actualY, progress, scale, ::place)
@@ -260,6 +268,8 @@ private fun DrawScope.drawStrikeZoneAndPlate(
 
     val isStrike = outcome == PitchOutcome.CALLED_STRIKE || outcome == PitchOutcome.SWINGING_STRIKE
     val flash = if (isStrike) calculateVerdictFlash(progress) else 0f
+    val strokeAlpha = zoneStrokeAlpha(outcome, progress, flash)
+    val gridAlpha = zoneGridAlpha(outcome, progress)
 
     // 스트라이크 시 존 플래시
     if (flash > 0f) {
@@ -270,16 +280,16 @@ private fun DrawScope.drawStrikeZoneAndPlate(
         )
     }
 
-    // 존 외곽선
+    // 존 외곽선. 컨택 이후 포수 컷은 iOS 결과 프리즈처럼 밝게 유지한다.
     drawRect(
-        color = BaseballColors.fieldChalk.copy(alpha = 0.5f + flash * 0.5f),
+        color = BaseballColors.fieldChalk.copy(alpha = strokeAlpha),
         topLeft = zoneRect.topLeft,
         size = zoneRect.size,
         style = Stroke(width = max(1f, (1.3f + flash * 1.8f) * scale)),
     )
 
     // 3x3 그리드
-    val gridColor = BaseballColors.fieldChalk.copy(alpha = 0.16f)
+    val gridColor = BaseballColors.fieldChalk.copy(alpha = gridAlpha)
     val gridStroke = Stroke(width = max(0.5f, scale))
     for (step in 1..2) {
         val ratio = step / 3f
@@ -311,20 +321,39 @@ private fun DrawScope.drawCatcherMitt(
     scale: Float,
     place: (Offset) -> Offset,
 ) {
-    val isBatted = outcome in PitchDramaCamera.BATTED_OUTCOMES
-    if (isBatted) return
+    if (outcome in PitchDramaCamera.FAIR_BALL_OUTCOMES) return
 
-    val caught = progress >= CONTACT_PROGRESS
     val target = place(platePoint(actualX, actualY))
-    val radius = (if (caught) 15f else 11f) * scale
-    val color = BaseballColors.fieldDirt.copy(alpha = if (caught) 0.95f else 0.35f)
-    val strokeWidth = max(1f, (if (caught) 3.4f else 1.4f) * scale)
-    val style = if (caught) {
-        Stroke(width = strokeWidth)
-    } else {
-        Stroke(width = strokeWidth, pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f * scale, 4f * scale)))
+    if (isTakenPitchCatcherFreeze(outcome, progress)) {
+        val ringColor = outcomeTone(outcome)
+        val ringRadius = RESULT_LANDING_RING_RADIUS_DP.dp.toPx()
+        val dotRadius = RESULT_LANDING_DOT_RADIUS_DP.dp.toPx()
+        val ringStroke = max(2f, 2.2.dp.toPx())
+        drawCircle(
+            color = ringColor.copy(alpha = 0.95f),
+            radius = ringRadius,
+            center = target,
+            style = Stroke(width = ringStroke, cap = StrokeCap.Round),
+        )
+        drawCircle(
+            color = BaseballColors.fieldChalk,
+            radius = dotRadius,
+            center = target,
+        )
+        return
     }
-    drawCircle(color = color, radius = radius, center = target, style = style)
+
+    val radius = 11f * scale
+    val strokeWidth = max(1f, 1.4f * scale)
+    drawCircle(
+        color = BaseballColors.fieldDirt.copy(alpha = 0.35f),
+        radius = radius,
+        center = target,
+        style = Stroke(
+            width = strokeWidth,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f * scale, 4f * scale)),
+        ),
+    )
 }
 
 private fun DrawScope.drawIncomingBall(
@@ -339,8 +368,14 @@ private fun DrawScope.drawIncomingBall(
     if (points.size < 2) return
 
     val flight = PitchDramaCamera.incomingFlight(progress)
-    val shownCount = max(2, (points.size * flight).roundToInt())
-    val visiblePoints = points.take(shownCount)
+    val takenFreeze = isTakenPitchCatcherFreeze(outcome, progress)
+    val freezeTrail = keepFullIncomingTrail(outcome, progress)
+    val visiblePoints = if (takenFreeze) {
+        points
+    } else {
+        val shownCount = max(2, (points.size * flight).roundToInt())
+        points.take(shownCount)
+    }
     val tone = outcomeTone(outcome)
     val departingT = PitchDramaCamera.departureProgress(outcome, progress)
 
@@ -353,17 +388,23 @@ private fun DrawScope.drawIncomingBall(
     }
     val startPt = place(visiblePoints.first())
     val endPt = place(visiblePoints.last())
-    val trailWidth = max(1.6f, (2.2f + 5.6f * flight) * scale)
+    val trailStartAlpha = if (takenFreeze) RESULT_TRAIL_START_ALPHA else 0.04f
+    val trailEndAlpha = if (takenFreeze) RESULT_TRAIL_END_ALPHA else (0.55f + 0.4f * flight)
+    val trailWidth = if (takenFreeze) {
+        max(2f, 3.6f * scale)
+    } else {
+        max(1.6f, (2.2f + 5.6f * flight) * scale)
+    }
     drawPath(
         trailPath,
         brush = Brush.linearGradient(
-            colors = listOf(tone.copy(alpha = 0.04f), tone.copy(alpha = 0.55f + 0.4f * flight)),
+            colors = listOf(tone.copy(alpha = trailStartAlpha), tone.copy(alpha = trailEndAlpha)),
             start = startPt,
             end = endPt,
         ),
         style = Stroke(width = trailWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
     )
-    if (visiblePoints.size >= 4 && departingT <= 0f) {
+    if (!takenFreeze && visiblePoints.size >= 4 && departingT <= 0f) {
         val streakFrom = place(visiblePoints[visiblePoints.size - 4])
         drawLine(
             color = BaseballColors.fieldChalk.copy(alpha = 0.35f + 0.45f * flight),
@@ -393,11 +434,13 @@ private fun DrawScope.drawIncomingBall(
         )
     }
 
+    // 논배트 프리즈의 착지점은 미트의 링+점이 그린다.
+    if (freezeTrail) return
+
     val center = place(head)
-    val caught = (outcome !in PitchDramaCamera.BATTED_OUTCOMES) && progress >= CONTACT_PROGRESS
     val recede = if (departingT > 0f) 1f - 0.55f * departingT else flight
     val approach = recede * recede
-    val radius = (if (caught) 3.2f else 1.7f + 2.4f * recede + 5.2f * approach) * scale
+    val radius = (1.7f + 2.4f * recede + 5.2f * approach) * scale
 
     drawCircle(
         brush = Brush.radialGradient(
@@ -654,6 +697,42 @@ private const val PITCH_BOX_HEIGHT = 246f
 private const val PLATE_PLANE_Y = 205f
 private const val CONTACT_PROGRESS = PitchDramaCamera.CONTACT_PROGRESS
 private const val CUT_PROGRESS = PitchDramaCamera.CUT_PROGRESS
+
+internal const val LIVE_ZONE_STROKE_ALPHA = 0.50f
+internal const val LIVE_ZONE_GRID_ALPHA = 0.16f
+internal const val RESULT_ZONE_STROKE_ALPHA = 0.85f
+internal const val RESULT_ZONE_GRID_ALPHA = 0.40f
+internal const val RESULT_TRAIL_START_ALPHA = 0.18f
+internal const val RESULT_TRAIL_END_ALPHA = 0.90f
+internal const val RESULT_LANDING_DOT_RADIUS_DP = 5f
+internal const val RESULT_LANDING_RING_RADIUS_DP = 12f
+
+internal fun isCatcherCutAfterContact(outcome: PitchOutcome?, progress: Float): Boolean =
+    progress >= PitchDramaCamera.CONTACT_PROGRESS &&
+        !PitchDramaCamera.usesFieldShot(outcome, progress)
+
+internal fun isTakenPitchCatcherFreeze(outcome: PitchOutcome?, progress: Float): Boolean =
+    isCatcherCutAfterContact(outcome, progress) &&
+        outcome != null &&
+        outcome !in PitchDramaCamera.FAIR_BALL_OUTCOMES
+
+internal fun keepFullIncomingTrail(outcome: PitchOutcome?, progress: Float): Boolean =
+    isTakenPitchCatcherFreeze(outcome, progress) &&
+        outcome !in PitchDramaCamera.BATTED_OUTCOMES
+
+internal fun zoneStrokeAlpha(outcome: PitchOutcome?, progress: Float, flash: Float): Float =
+    if (isCatcherCutAfterContact(outcome, progress)) {
+        RESULT_ZONE_STROKE_ALPHA
+    } else {
+        LIVE_ZONE_STROKE_ALPHA + flash * 0.5f
+    }
+
+internal fun zoneGridAlpha(outcome: PitchOutcome?, progress: Float): Float =
+    if (isCatcherCutAfterContact(outcome, progress)) {
+        RESULT_ZONE_GRID_ALPHA
+    } else {
+        LIVE_ZONE_GRID_ALPHA
+    }
 
 private fun platePoint(x: Double, y: Double): Offset {
     val px = min(272f, max(48f, (160.0 + x * 0.15).toFloat()))

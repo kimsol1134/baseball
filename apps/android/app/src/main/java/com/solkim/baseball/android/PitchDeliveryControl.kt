@@ -8,8 +8,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,7 +21,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,6 +68,7 @@ public fun PitchDeliveryControl(
     autoRelease: Boolean,
     enabled: Boolean,
     onDeliver: (PitchDelivery) -> Unit,
+    holdPrompt: String = "길게 눌러 와인드업",
     modifier: Modifier = Modifier,
     velocityTenthsKph: Int = 1_350,
     fatigue: Int = 0,
@@ -72,20 +78,10 @@ public fun PitchDeliveryControl(
     tension: Double = 0.0,
     disturbanceSeed: ULong = 0UL,
     adverseEpisode: Boolean = false,
+    pitchTypeLabel: String = "포심",
+    onAutoReleaseChange: ((Boolean) -> Unit)? = null,
+    autoReleaseLabel: String = "자동 릴리스 — 탭 한 번으로 중립 투구",
 ) {
-    if (autoRelease) {
-        Button(
-            onClick = { if (enabled) onDeliver(PitchDelivery.NEUTRAL) },
-            enabled = enabled,
-            modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).semantics {
-                contentDescription = "탭 한 번으로 중립 릴리스"
-            },
-        ) {
-            Text("탭 한 번으로 던지기")
-        }
-        return
-    }
-
     val density = LocalDensity.current
     val aimRadiusPx = with(density) { PitchReleaseMeter.AIM_RADIUS_POINTS.toFloat().dp.toPx() }
     val context = LocalContext.current
@@ -164,10 +160,32 @@ public fun PitchDeliveryControl(
         pressing -> "과녁에 맞춰 주세요"
         holdHint -> "짧게 탭하면 던져지지 않습니다. 누르고 있다가 놓으세요."
         lastHint != null -> lastHint!!
-        else -> "누르고 있다가 초록 지점에서 놓으세요"
+        else -> holdPrompt
+    }
+
+    val tempoLabel = when {
+        velocityTenthsKph >= 1_400 -> "빠름"
+        velocityTenthsKph < 1_230 -> "느림"
+        else -> "보통"
+    }
+    val velocityLabel = "${velocityTenthsKph / 10}.${velocityTenthsKph % 10} km/h"
+
+    LaunchedEffect(autoRelease) {
+        if (autoRelease) pressing = false
     }
 
     Column(modifier) {
+        if (autoRelease) {
+            Button(
+                onClick = { if (enabled) onDeliver(PitchDelivery.NEUTRAL) },
+                enabled = enabled,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics {
+                    contentDescription = "탭 한 번으로 중립 릴리스"
+                },
+            ) {
+                Text("탭 한 번으로 던지기")
+            }
+        } else {
         Text(
             prompt,
             style = MaterialTheme.typography.bodyMedium,
@@ -175,6 +193,26 @@ public fun PitchDeliveryControl(
             modifier = Modifier.semantics { contentDescription = "릴리스 타이밍 안내" },
         )
         Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                "$pitchTypeLabel 릴리스",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = BaseballColors.textSecondary,
+            )
+            Text(
+                "$tempoLabel · $velocityLabel",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = FontFamily.Monospace,
+                color = BaseballColors.milestone,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
         ReleaseMeterBar(meter = meter, pressing = pressing, inPerfect = inPerfect)
         Spacer(Modifier.height(12.dp))
         Box(
@@ -253,9 +291,46 @@ public fun PitchDeliveryControl(
                     )
                 }
             } else {
-                Text("누르고 있다가 놓기", color = BaseballColors.actionInk, style = MaterialTheme.typography.titleMedium)
+                Text(holdPrompt, color = BaseballColors.actionInk, style = MaterialTheme.typography.titleMedium)
             }
         }
+        }
+        AutoReleaseToggle(
+            label = autoReleaseLabel,
+            checked = autoRelease,
+            enabled = enabled,
+            onAutoReleaseChange = onAutoReleaseChange,
+        )
+    }
+}
+
+@Composable
+private fun AutoReleaseToggle(
+    label: String,
+    checked: Boolean,
+    enabled: Boolean,
+    onAutoReleaseChange: ((Boolean) -> Unit)?,
+) {
+    if (onAutoReleaseChange == null) return
+    Spacer(Modifier.height(8.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = label },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = BaseballColors.textTertiary,
+            modifier = Modifier.weight(1f),
+        )
+        Switch(
+            checked = checked,
+            enabled = enabled,
+            onCheckedChange = { onAutoReleaseChange(!checked) },
+        )
     }
 }
 

@@ -1,6 +1,8 @@
 package com.solkim.baseball.application
 
 import com.solkim.baseball.core.highschool.HighSchoolTutorialMound
+import com.solkim.baseball.core.pitch.PitchCall
+import com.solkim.baseball.core.pitch.PitchDelivery
 import com.solkim.baseball.core.pitch.PitchKernel
 import com.solkim.baseball.core.pitch.PitchKind
 import com.solkim.baseball.core.pitch.PitchProfileSnapshot
@@ -17,6 +19,69 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
 class PitchHudProjectionTest {
+    @Test
+    fun tutorialHudProjectsIosOrderCopyAndSliderDefault() = runBlocking {
+        val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("hud-tutorial-ios"))
+        val controller = Phase7VerticalController(store)
+        controller.enterSetup()
+        controller.startHighSchool("민서준")
+        controller.beginTutorial()
+        controller.reserveTutorialPitch()
+        assertFalse(store.current.settings.autoReleaseEnabled)
+        val hud = PitchHudProjection.model(store.current)
+        assertEquals("첫 불펜", hud.scenarioTitle)
+        assertTrue(hud.scenarioDetail.contains("연습"))
+        assertTrue(hud.scenarioDetail.contains("타석"))
+        assertEquals("포심", PitchHudProjection.koreanLabel(PitchKind.FOUR_SEAM))
+        assertTrue(hud.scoutingTitle.contains("상대 분석"))
+        assertTrue(hud.scoutingBody.isNotBlank())
+        assertFalse(hud.canFastForward)
+        assertEquals("중요도", hud.stakesLabel)
+        assertEquals("공 맞히기", hud.contactLabel)
+        assertEquals("볼 고르기", hud.disciplineLabel)
+        assertEquals("장타력", hud.powerLabel)
+        assertTrue(hud.currentPitchLine.contains("·"))
+        assertTrue(hud.primaryExplanation.length > 12)
+        assertEquals("길게 눌러 와인드업", hud.holdToReleasePrompt)
+        assertFalse(hud.autoReleaseEnabled)
+        assertEquals("코치", hud.coachLabel)
+        assertTrue(requireNotNull(hud.coachTip).startsWith("①"))
+        assertEquals("타자가 내 공을 읽는 정도", hud.adaptationTitle)
+        assertTrue(hud.catcherConfidenceLabel.contains("사인 확신"))
+        assertTrue(hud.catcherTrustLabel.contains("포수 호흡"))
+        assertEquals("중단", hud.abortLabel)
+        assertTrue(hud.autoReleaseLabel.contains("자동 릴리스"))
+        val primary = hud.preparation.primaryRecommendation
+        assertTrue(primary.shortReason == hud.primaryExplanation)
+        assertTrue(hud.currentPitchLine.contains(PitchHudProjection.koreanLabel(primary.call.pitchType)))
+    }
+
+    @Test
+    fun officialHudProjectsMatchupLabelsAndPrimaryExplanation() = runBlocking {
+        val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("hud-official-ios"))
+        val controller = Phase7VerticalController(store)
+        controller.enterSetup()
+        controller.startHighSchool("민서준")
+        controller.beginTutorial()
+        controller.completeTutorial()
+        controller.chooseSchool()
+        reachImportantGame(controller, store)
+        controller.reserveImportantGame()
+        assertFalse(store.current.settings.autoReleaseEnabled)
+        val hud = PitchHudProjection.model(store.current)
+        assertEquals("마운드 승부처", hud.scenarioTitle)
+        assertEquals("중요도", hud.stakesLabel)
+        assertEquals("공 맞히기", hud.contactLabel)
+        assertEquals("볼 고르기", hud.disciplineLabel)
+        assertEquals("장타력", hud.powerLabel)
+        assertTrue(hud.primaryExplanation.length > 12)
+        assertEquals("길게 눌러 와인드업", hud.holdToReleasePrompt)
+        assertFalse(hud.autoReleaseEnabled)
+        assertEquals(null, hud.coachTip)
+        assertEquals("중단", hud.abortLabel)
+        assertEquals("타자가 내 공을 읽는 정도", hud.adaptationTitle)
+    }
+
     @Test
     fun missingTypeCannotBeSelectedAndPresentTypeResolves() {
         val pitcher = PitcherSnapshot(

@@ -12,12 +12,26 @@ import kotlin.math.max
 /** Frozen fictional pro catalog copied from the current Swift/C# source set. */
 public object ProCatalog {
     /** Pro schedule, fatigue, and overload-injury rules currently used by new careers. */
-    public const val RULES_VERSION: Int = 8
+    public const val RULES_VERSION: Int = 10
     public const val BALANCE_VERSION: Int = 4
     public const val MAXIMUM_CAREER_SEASONS: Int = 20
     public const val WEEKS_PER_SEASON: Int = 24
     public const val DEMOTION_TRUST: Int = 34
     public val SEASON_DECISION_WEEKS: List<Int> = listOf(6, 13, 20)
+    public val WEEKLY_SEASON_DECISION_WEEKS: List<Int> = listOf(3, 6, 9, 12, 15, 18, 21)
+    public val COMPATIBLE_DECISION_WEEKS: List<Int> = (SEASON_DECISION_WEEKS + WEEKLY_SEASON_DECISION_WEEKS).distinct().sorted()
+
+    public fun decisionWeeks(rulesVersion: Int): List<Int> =
+        if (rulesVersion >= 9) WEEKLY_SEASON_DECISION_WEEKS else SEASON_DECISION_WEEKS
+
+    public fun maximumDecisions(rulesVersion: Int): Int = if (rulesVersion >= 9) 7 else 3
+
+    public fun maximumContractYears(rulesVersion: Int): Int = if (rulesVersion >= 10) 5 else 4
+
+    public fun mediaOpportunityWeek(careerId: String, season: Int, rulesVersion: Int): Int {
+        val weeks = decisionWeeks(rulesVersion)
+        return weeks[(proHash("$careerId|$season|media") % weeks.size.toULong()).toInt()]
+    }
 
     public val teams: List<ProTeam> = HighSchoolDraftTeamRules.teams.map {
         ProTeam(it.id, it.name, it.positionCompetitor, it.developmentPlan, it.demand)

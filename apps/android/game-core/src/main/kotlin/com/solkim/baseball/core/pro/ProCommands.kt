@@ -42,6 +42,10 @@ public sealed interface ProCommand {
     public data class ChooseOffseason(val seed: String, val decision: OffseasonDecision) : ProCommand
     public data class SelectLegacy(val legacyId: String) : ProCommand
     public data object NormalizeBalance : ProCommand
+    public data class RespondNationalTeamCall(val seed: String, val accepted: Boolean) : ProCommand
+    public data class StartNationalFinal(val seed: String) : ProCommand
+    public data class ResolveNationalFinalAutomatically(val seed: String) : ProCommand
+    public data class AcknowledgeNationalTeamResult(val seed: String) : ProCommand
 }
 
 public data class ProCommandEnvelope(
@@ -125,6 +129,10 @@ public object ProCommandCodec {
         is ProCommand.ChooseOffseason -> "chooseOffseason"
         is ProCommand.SelectLegacy -> "selectLegacy"
         ProCommand.NormalizeBalance -> "normalizeBalance"
+        is ProCommand.RespondNationalTeamCall -> "respondNationalTeamCall"
+        is ProCommand.StartNationalFinal -> "startNationalFinal"
+        is ProCommand.ResolveNationalFinalAutomatically -> "resolveNationalFinalAutomatically"
+        is ProCommand.AcknowledgeNationalTeamResult -> "acknowledgeNationalTeamResult"
     }
 
     private fun payload(command: ProCommand): String = when (command) {
@@ -149,6 +157,10 @@ public object ProCommandCodec {
         is ProCommand.ChooseOffseason -> pack(listOf(command.seed, command.decision.wire))
         is ProCommand.SelectLegacy -> pack(listOf(command.legacyId))
         ProCommand.NormalizeBalance -> pack(emptyList())
+        is ProCommand.RespondNationalTeamCall -> pack(listOf(command.seed, command.accepted.toString()))
+        is ProCommand.StartNationalFinal -> pack(listOf(command.seed))
+        is ProCommand.ResolveNationalFinalAutomatically -> pack(listOf(command.seed))
+        is ProCommand.AcknowledgeNationalTeamResult -> pack(listOf(command.seed))
     }
 
     private fun canonical(command: ProCommand): String = "${kind(command)}|${payload(command)}"
@@ -176,6 +188,10 @@ public object ProCommandCodec {
         "chooseOffseason" -> unpack(payload, 2).let { ProCommand.ChooseOffseason(it[0], offseason(it[1])) }
         "selectLegacy" -> unpack(payload, 1).let { ProCommand.SelectLegacy(it.single()) }
         "normalizeBalance" -> exactPayload(payload) { ProCommand.NormalizeBalance }
+        "respondNationalTeamCall" -> unpack(payload, 2).let { ProCommand.RespondNationalTeamCall(it[0], it[1].bool("nationalTeam.accepted")) }
+        "startNationalFinal" -> unpack(payload, 1).let { ProCommand.StartNationalFinal(it.single()) }
+        "resolveNationalFinalAutomatically" -> unpack(payload, 1).let { ProCommand.ResolveNationalFinalAutomatically(it.single()) }
+        "acknowledgeNationalTeamResult" -> unpack(payload, 1).let { ProCommand.AcknowledgeNationalTeamResult(it.single()) }
         else -> fail("pro.command.kind_unknown:$kind")
     }
 
@@ -341,5 +357,9 @@ public class ProCommandStore(
         is ProCommand.ChooseOffseason -> kernel.chooseOffseason(state, command.seed, command.decision)
         is ProCommand.SelectLegacy -> kernel.selectLegacy(state, command.legacyId)
         ProCommand.NormalizeBalance -> kernel.normalizeBalance(state)
+        is ProCommand.RespondNationalTeamCall -> kernel.respondToNationalTeamCall(state, command.seed, command.accepted)
+        is ProCommand.StartNationalFinal -> kernel.startNationalFinal(state, command.seed)
+        is ProCommand.ResolveNationalFinalAutomatically -> kernel.resolveNationalFinalAutomatically(state, command.seed)
+        is ProCommand.AcknowledgeNationalTeamResult -> kernel.acknowledgeNationalTeamResult(state, command.seed)
     }
 }

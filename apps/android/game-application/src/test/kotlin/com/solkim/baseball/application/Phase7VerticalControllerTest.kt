@@ -285,6 +285,12 @@ class Phase7VerticalControllerTest {
             PitchHudSelection.Primary,
             PitchDelivery(200, 200),
         )
+        assertFalse(store.current.settings.autoReleaseEnabled)
+        val afterThrow = PitchHudProjection.model(store.current)
+        assertEquals("길게 눌러 와인드업", afterThrow.holdToReleasePrompt)
+        assertFalse(afterThrow.autoReleaseEnabled)
+        val kernelOutcome = store.current.highSchool?.activePitch?.log?.entries?.lastOrNull()?.outcome
+        assertEquals(kernelOutcome, PitchLiveResult.outcome(store.current))
         controller.consumePresentation(launch.sessionId, request)
         controller.completePitchAndPostgame(launch.sessionId)
         val active = requireNotNull(store.current.highSchool?.activePitch)

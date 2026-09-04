@@ -185,12 +185,21 @@ class Phase8ScreenProjectionTest {
         assertTrue(contract.actions.single { it.id == "startDirect" }.payloads.isNotEmpty())
         controller.execute(Phase8ScreenId.P016_PRO_CONTRACT, "startDirect", contract.actions.single { it.id == "startDirect" }.payloads)
         assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
+        assertEquals(10, initialStore.current.pro?.proRulesVersion)
+        assertEquals(ProCatalog.RULES_VERSION, initialStore.current.pro?.proRulesVersion)
         val weekly = controller.projection(Phase8ScreenId.P017_PRO_WEEK)
         assertEquals(6, weekly.actions.count { it.id.startsWith("proPlan:") })
         assertEquals("강속구 불펜", weekly.actions.single { it.id == "proPlan:develop_stuff" }.label)
         assertEquals("결정구 완성", weekly.actions.single { it.id == "proPlan:develop_movement" }.label)
         assertEquals("코스 제구 훈련", weekly.actions.single { it.id == "proPlan:refine_command" }.label)
         assertTrue(weekly.actions.single { it.id == "proAdvanceSegment" }.label.contains("건너뛰기"))
+        assertTrue(weekly.actions.first { it.enabled }.id.startsWith("proPlan:"))
+        assertTrue(weekly.actions.single { it.id == "proPlan:develop_stuff" }.description.contains("부상"))
+        val signedContract = controller.projection(Phase8ScreenId.P016_PRO_CONTRACT)
+        val contractLabels = signedContract.sections.flatMap { it.rows }.map { it.label }
+        assertTrue("계약 기간" in contractLabels)
+        assertTrue("연봉" in contractLabels)
+        assertTrue("보직" in contractLabels)
         assertEquals("페넌트레이스", ProCatalog.segmentLabel(com.solkim.baseball.core.pro.ProSeasonSegment.PENNANT_RACE))
         assertEquals("올스타 브레이크", ProCatalog.segmentLabel(com.solkim.baseball.core.pro.ProSeasonSegment.ALL_STAR_BREAK))
         assertEquals("시즌 막바지", ProCatalog.segmentLabel(com.solkim.baseball.core.pro.ProSeasonSegment.SEASON_FINALE))
@@ -207,6 +216,18 @@ class Phase8ScreenProjectionTest {
             Phase8ScreenId.P021_PRO_RETIREMENT to signedPro(kernel, base.copy(phase = ProCareerPhase.RETIREMENT_DECISION)),
             Phase8ScreenId.P022_PRO_LEGACY to linkedLegacyFixture(kernel),
         )
+        val offseasonModel = Phase8ScreenProjection.project(
+            aggregateWithPro("fixture-offseason-copy", fixtures.getValue(Phase8ScreenId.P020_OFFSEASON)),
+            Phase8ScreenId.P020_OFFSEASON,
+            context,
+        )
+        assertEquals("계속하기", offseasonModel.actions.single { it.id == "offseason:continue" }.label)
+        assertTrue(offseasonModel.actions.single { it.id == "offseason:continue" }.description.length > 12)
+        assertEquals("군 복무", offseasonModel.actions.single { it.id == "offseason:military_service" }.label)
+        assertTrue(offseasonModel.actions.single { it.id == "offseason:military_service" }.description.contains("복무"))
+        assertEquals("은퇴하기", offseasonModel.actions.single { it.id == "offseason:retire" }.label)
+        assertTrue(offseasonModel.actions.single { it.id == "offseason:retire" }.description.contains("되돌릴 수 없"))
+
         fixtures.forEach { (id, pro) ->
             val state = aggregateWithPro("fixture-${id.wire}", pro)
             assertTrue(Phase8ScreenProjection.isReachable(state, id), "${id.wire} fixture is unreachable")
@@ -226,6 +247,62 @@ class Phase8ScreenProjectionTest {
             context,
         )
         Phase8AccessibilityContract.validate(records)
+    }
+
+    @Test
+    fun nationalTeamCallAndGroupStageProjectThreeGamesOnP019() = runBlocking {
+        val kernel = ProKernel()
+        val startedStore = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase8-national"))
+        val startedController = Phase8Controller(startedStore, context)
+        val start = startedController.projection(Phase8ScreenId.P016_PRO_CONTRACT).actions.single { it.id == "startDirect" }
+        startedController.execute(Phase8ScreenId.P016_PRO_CONTRACT, start.id, start.payloads)
+        val base = requireNotNull(startedStore.current.pro)
+        val journey = requireNotNull(base.journeyState)
+        val callState = signedPro(
+            kernel,
+            base.copy(
+                phase = ProCareerPhase.SEASON_REVIEW,
+                season = 2,
+                age = 20,
+                week = ProCatalog.WEEKS_PER_SEASON,
+                seasonSegment = com.solkim.baseball.core.pro.ProCatalog.segment(ProCatalog.WEEKS_PER_SEASON),
+                currentStats = base.currentStats.copy(season = 2),
+                journeyState = journey.copy(reputation = journey.reputation.copy(fanSupport = 70)),
+                commitment = "",
+            ),
+        )
+        val reviewed = kernel.reviewSeason(callState, callState.seed)
+        val callFixture = aggregateWithPro("phase8-national-call", reviewed.state)
+        val callModel = Phase8ScreenProjection.project(callFixture, Phase8ScreenId.P019_PRO_SEASON, context)
+        Phase8AccessibilityContract.validate(callModel)
+        assertEquals("소집을 수락한다", callModel.actions.single { it.id == "nationalTeam:accept" }.label)
+        assertEquals("이번엔 사양한다", callModel.actions.single { it.id == "nationalTeam:decline" }.label)
+        assertTrue(callModel.actions.single { it.id == "nationalTeam:accept" }.enabled)
+        callModel.actions.filter { it.enabled }.forEach { action ->
+            action.payloads.forEach { payload ->
+                assertEquals(payload.envelope, GameCommandCodec.decode(payload.encoded))
+            }
+        }
+
+        val tournamentStore = KotlinGameStore.fromShadowFixture(callFixture)
+        val tournamentController = Phase8Controller(tournamentStore, context)
+        assertEquals(Phase8ScreenId.P019_PRO_SEASON, tournamentController.preferredScreen())
+        tournamentController.execute(
+            Phase8ScreenId.P019_PRO_SEASON,
+            "nationalTeam:accept",
+            callModel.actions.single { it.id == "nationalTeam:accept" }.payloads,
+        )
+        val tournament = requireNotNull(tournamentStore.current.pro?.nationalTournament)
+        assertEquals(3, tournament.groupGames.size)
+        val groupModel = tournamentController.projection(Phase8ScreenId.P019_PRO_SEASON)
+        Phase8AccessibilityContract.validate(groupModel)
+        assertEquals(3, groupModel.sections.single { it.id == "national-group" }.rows.count { it.detail.startsWith("조별") })
+        if (tournament.stage == com.solkim.baseball.core.pro.ProNationalTournamentStage.AWAITING_FINAL) {
+            assertTrue(groupModel.actions.any { it.id == "nationalTeam:startFinal" && it.enabled })
+            assertTrue(groupModel.actions.any { it.id == "nationalTeam:autoFinal" && it.enabled })
+        } else {
+            assertTrue(groupModel.actions.any { it.id == "nationalTeam:acknowledge" && it.enabled })
+        }
     }
 
     @Test

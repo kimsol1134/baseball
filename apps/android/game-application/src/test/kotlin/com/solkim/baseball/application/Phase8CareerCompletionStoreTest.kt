@@ -63,14 +63,35 @@ class Phase8CareerCompletionStoreTest {
     }
 
     @Test
+    fun newDirectCareerUsesRulesVersion10AndReviewSeasonRoundTripsOnFileStore() = runBlocking {
+        withTempDirectory { directory ->
+            var session = openFileSession("phase8-v10-direct-review", directory)
+            session.executeFirst(Phase8ScreenId.P016_PRO_CONTRACT, "startDirect")
+            assertEquals(10, session.store.current.pro?.proRulesVersion)
+            assertEquals(ProCatalog.RULES_VERSION, session.store.current.pro?.proRulesVersion)
+            assertFalse(session.store.current.settings.autoReleaseEnabled)
+            session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
+            session.executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
+            session.finishNationalTeamIfOpen()
+            session = session.reopenAndAssert(ProCareerPhase.OFFSEASON_DECISION, "v10-direct-review")
+            assertEquals(10, session.store.current.pro?.proRulesVersion)
+            assertEquals(ProCareerPhase.OFFSEASON_DECISION, session.store.current.pro?.phase)
+            session.store.close()
+        }
+    }
+
+    @Test
     fun reviewSeasonOnFileStoreReloadsOffseasonTwice() = runBlocking {
         withTempDirectory { directory ->
             var session = openFileSession("phase8-review-save", directory)
             session.completeHighSchoolAndEnterPro()
+            assertEquals(10, session.store.current.pro?.proRulesVersion)
+            assertEquals(ProCatalog.RULES_VERSION, session.store.current.pro?.proRulesVersion)
             repeat(2) { index ->
                 session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
                 assertEquals(index + 1, session.store.current.pro?.season)
                 session.executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
+                session.finishNationalTeamIfOpen()
                 assertCodecRoundTrip(session.store.current, "after-review-$index")
                 val expectedPhase = if (index + 1 >= ProCatalog.MAXIMUM_CAREER_SEASONS) {
                     ProCareerPhase.RETIREMENT_DECISION
@@ -97,6 +118,7 @@ class Phase8CareerCompletionStoreTest {
                 val season = requireNotNull(session.store.current.pro).season
                 session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
                 session.executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
+                session.finishNationalTeamIfOpen()
                 val expectedPhase = if (season >= ProCatalog.MAXIMUM_CAREER_SEASONS) {
                     ProCareerPhase.RETIREMENT_DECISION
                 } else {
@@ -168,6 +190,25 @@ class Phase8CareerCompletionStoreTest {
             assertFalse(store.current.settings.autoReleaseEnabled)
         }
 
+        suspend fun finishNationalTeamIfOpen() {
+            var guard = 0
+            while (true) {
+                assertTrue(++guard < 8, "national team did not drain; phase=${store.current.pro?.phase}")
+                when (store.current.pro?.phase) {
+                    ProCareerPhase.NATIONAL_TEAM_CALL -> executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:accept")
+                    ProCareerPhase.NATIONAL_TOURNAMENT -> {
+                        val tournament = store.current.pro?.nationalTournament
+                        if (tournament?.result != null) {
+                            executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:acknowledge")
+                        } else {
+                            executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:autoFinal")
+                        }
+                    }
+                    else -> return
+                }
+            }
+        }
+
         suspend fun advanceProUntil(target: ProCareerPhase) {
             var guard = 0
             while (store.current.pro?.phase != target) {
@@ -179,6 +220,15 @@ class Phase8CareerCompletionStoreTest {
                     ProCareerPhase.CONTRACT_OFFER -> executeFirst(Phase8ScreenId.P016_PRO_CONTRACT, "signContract")
                     ProCareerPhase.WEEKLY_PLAN -> executeFirst(Phase8ScreenId.P017_PRO_WEEK, "proAdvanceSegment")
                     ProCareerPhase.SEASON_DECISION -> executeFirst(Phase8ScreenId.P019_PRO_SEASON) { it.id.startsWith("seasonDecision:") }
+                    ProCareerPhase.NATIONAL_TEAM_CALL -> executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:accept")
+                    ProCareerPhase.NATIONAL_TOURNAMENT -> {
+                        val tournament = store.current.pro?.nationalTournament
+                        if (tournament?.result != null) {
+                            executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:acknowledge")
+                        } else {
+                            executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:autoFinal")
+                        }
+                    }
                     ProCareerPhase.IMPORTANT_GAME -> finishProImportantGame()
                     ProCareerPhase.SEASON_REVIEW -> if (target == ProCareerPhase.SEASON_REVIEW) return else executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
                     ProCareerPhase.OFFSEASON_DECISION -> executeFirst(Phase8ScreenId.P020_OFFSEASON, "offseason:continue")

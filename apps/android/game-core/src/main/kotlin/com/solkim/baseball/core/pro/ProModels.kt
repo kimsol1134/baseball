@@ -34,6 +34,8 @@ public enum class ProCareerPhase(public val wire: String) {
     SEASON_DECISION("season_decision"),
     IMPORTANT_GAME("important_game"),
     SEASON_REVIEW("season_review"),
+    NATIONAL_TEAM_CALL("national_team_call"),
+    NATIONAL_TOURNAMENT("national_tournament"),
     OFFSEASON_DECISION("offseason_decision"),
     RETIREMENT_DECISION("retirement_decision"),
     LEGACY_SELECTION("legacy_selection"),
@@ -115,6 +117,7 @@ public enum class ProSeasonTrigger(public val wire: String) {
     AUTUMN_SEMIFINAL("autumn_semifinal"),
     AUTUMN_PLAYOFF("autumn_playoff"),
     AUTUMN_FINAL("autumn_final"),
+    NATIONAL_FINAL("national_final"),
 }
 
 public enum class ProSeasonDecisionType(public val wire: String) {
@@ -126,6 +129,8 @@ public enum class ProSeasonDecisionType(public val wire: String) {
     SEASON_FINALE("season_finale"),
     FORM_CRISIS("form_crisis"),
     AGING_CROSSROADS("aging_crossroads"),
+    MEDIA_OPPORTUNITY("media_opportunity"),
+    NATIONAL_TEAM("national_team"),
 }
 
 public enum class ProPitchBoundary(public val wire: String) {
@@ -508,6 +513,9 @@ public data class ProState(
     val lastBattedBall: BattedBall? = null,
     /** Last kernel-authored fielding resolution for the drama cut. Missing on legacy saves. */
     val lastFielding: FieldingResolutionSnapshot? = null,
+    val nationalTournament: ProNationalTournamentState? = null,
+    val nationalTeamHistory: List<ProNationalTeamRecord> = emptyList(),
+    val nationalTeamCarry: ProNationalTeamCarryState? = null,
 )
 
 /** v9 weekly decision temporary effects. Missing on legacy saves; decodeIfPresent keeps v8 bytes. */
