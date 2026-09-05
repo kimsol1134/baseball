@@ -1,6 +1,5 @@
 package com.solkim.baseball.application
 
-import com.solkim.baseball.bridge.PitchIpcCodec
 import com.solkim.baseball.core.pitch.BatterScoutingSnapshot
 import com.solkim.baseball.core.pitch.BatSide
 import com.solkim.baseball.core.pitch.PitchCall
@@ -22,9 +21,9 @@ import com.solkim.baseball.model.TrailKind
 import com.solkim.baseball.model.TrajectoryPoint
 
 /**
- * Converts an authoritative Kotlin result into the renderer-only IPC snapshot.
+ * Converts an authoritative Kotlin result into the Compose canvas trajectory snapshot.
  *
- * The Unity request contains trajectory and visual metadata only. It intentionally does not
+ * The request contains trajectory and visual metadata only. It intentionally does not
  * carry outcome, count, save, or player-authority fields; those remain in [PitchKernelResult].
  */
 public object PitchPresentationFactory {
@@ -52,7 +51,7 @@ public object PitchPresentationFactory {
         return fromSnapshot(sessionId, sequence, state.snapshot, outcome)
     }
 
-    /** Converts the saved Pro trajectory snapshot without moving any result meaning into Unity. */
+    /** Converts the saved Pro trajectory snapshot without moving any result meaning into the canvas. */
     public fun fromTrajectoryPresentation(
         sessionId: String,
         sequence: Int,
@@ -75,7 +74,7 @@ public object PitchPresentationFactory {
             )
         }
         val pitchType = presentation.pitchType
-        return PitchIpcCodec.createRequest(
+        return PitchPresentationRequest.signed(
             requestId = "$sessionId:request:$sequence",
             pitchId = "$sessionId:pitch:$sequence",
             sequence = sequence,
@@ -119,7 +118,7 @@ public object PitchPresentationFactory {
     }
 }
 
-/** One Kotlin-owned pitch session used by the Compose host; Unity receives only its snapshot. */
+/** One Kotlin-owned pitch session used by the Compose host; the canvas receives only its snapshot. */
 public class KotlinPitchPresentationSession(
     private val kernel: PitchKernel = PitchKernel(),
 ) {

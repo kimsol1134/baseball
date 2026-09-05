@@ -1,0 +1,5 @@
+<resources>
+    <string name="baseball_return_channel">復帰のお知らせ</string>
+    <string name="baseball_return_title">次の場面が待っています</string>
+    <string name="baseball_return_body">物語の続きを見に行きましょう。</string>
+</resources>

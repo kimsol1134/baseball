@@ -1,17 +1,23 @@
-# Compose migration app
+# Compose Android app
 
-This is the shadow-read-only Android shell for the Compose + pitch-only Unity migration. Its
-application ID is intentionally `com.solkim.baseball.android.compose.dev`; it is not the
-production package.
+Native Jetpack Compose host. The mound is a 2-cut canvas plus the hold-to-release slider.
+Unity is not part of this product or its Gradle graph.
 
-`bash
+The debug application ID is `com.solkim.baseball.android.compose.dev`.
+
+For an isolated first-session QA install, build debug and its instrumentation APK with
+`-PbaseballLaunchQa=true`. This uses `com.solkim.baseball.android.compose.qa` and leaves
+the normal development and production saves intact. Remove the disposable QA package
+after testing; never clear the production or development package to obtain a fresh run.
+
+Add `-PbaseballQaNativeStore=true` with that QA flag to exercise the production legacy-envelope
+writer and native career sidecars inside the isolated QA package. Ordinary debug uses the shadow
+repository; shipping release always uses the native writer. Test both paths before a release.
+
+```bash
 ./gradlew test --no-daemon --stacktrace
-cd ../..
-./tools/export-android-pitch-unity.sh
-cd apps/android
 ./gradlew :app:assembleDebug --no-daemon --stacktrace
-`
+```
 
-The generated `unityLibrary` is included only when the export wrapper has produced
-`artifacts/android-compose/unity-export/current/unityLibrary`. The oracle
-`apps/android-unity` remains untouched and authoritative until migration gates pass.
+C# save decode still lives in Kotlin (`CSharpLegacyGameStoreRepository`). The historical
+`apps/android-unity` tree is an oracle, not a build dependency.

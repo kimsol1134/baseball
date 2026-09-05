@@ -27,7 +27,7 @@ public class BaseballApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        val nativeAuthoritative = BuildConfig.PHASE10_PRODUCTION_BUILD &&
+        val nativeAuthoritative = (BuildConfig.PHASE10_PRODUCTION_BUILD || (BuildConfig.DEBUG && BuildConfig.QA_NATIVE_STORE)) &&
             BuildConfig.NATIVE_AUTHORITY_MODE == NativeAuthorityMode.NATIVE_AUTHORITATIVE.wire
         val distribution = if (nativeAuthoritative) BuildConfig.RELEASE_DISTRIBUTION else "development"
         val environment = when {

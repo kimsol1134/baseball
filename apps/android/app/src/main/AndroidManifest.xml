@@ -28,9 +28,11 @@
     <application
         android:allowBackup="false"
         android:name=".BaseballApplication"
+        android:appCategory="game"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
         android:resizeableActivity="false"
         android:supportsRtl="true"
         android:theme="@style/Theme.BaseballMigration"
@@ -49,19 +51,32 @@
             android:name="firebase_crashlytics_collection_enabled"
             android:value="false" />
         <activity
-            android:name=".PitchUnityActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:name=".PitchActivity"
             android:exported="false"
             android:resizeableActivity="false"
             android:screenOrientation="portrait" />
         <activity
             android:name=".MainActivity"
+            android:launchMode="singleTop"
             android:exported="true"
             android:resizeableActivity="false"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="yagurebirth" android:host="challenge" />
+            </intent-filter>
+            <!-- HTTPS can be opened explicitly; verified App Links require the Play signing cert. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="baseball-reincarnation.vercel.app" android:pathPrefix="/challenge/" />
             </intent-filter>
         </activity>
         <provider

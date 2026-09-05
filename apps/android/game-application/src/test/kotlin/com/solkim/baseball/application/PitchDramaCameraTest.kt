@@ -2,6 +2,7 @@ package com.solkim.baseball.application
 
 import com.solkim.baseball.core.pitch.BattedBall
 import com.solkim.baseball.core.pitch.PitchOutcome
+import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -37,6 +38,13 @@ class PitchDramaCameraTest {
         assertTrue(slow in PitchDramaCamera.MIN_REPLAY_MS..PitchDramaCamera.MAX_REPLAY_MS)
         val incomingFast = fast * PitchDramaCamera.CONTACT_PROGRESS
         assertTrue(incomingFast < 420f, "incoming must stay under the old 736ms crawl")
+        val clutch = PitchDramaCamera.replayDurationMs(450, reducedMotion = false, clutch = true)
+        val normal = PitchDramaCamera.replayDurationMs(450, reducedMotion = false, clutch = false)
+        assertEquals((normal * PitchDramaCamera.CLUTCH_TEMPO).roundToInt(), clutch)
+        assertEquals(
+            PitchDramaCamera.REDUCED_MOTION_REPLAY_MS,
+            PitchDramaCamera.replayDurationMs(450, reducedMotion = true, clutch = true),
+        )
     }
 
     @Test

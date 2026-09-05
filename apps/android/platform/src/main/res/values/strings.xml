@@ -1,0 +1,5 @@
+<resources>
+    <string name="baseball_return_channel">복귀 안내</string>
+    <string name="baseball_return_title">다음 장면을 기다리고 있어요</string>
+    <string name="baseball_return_body">저장된 복귀 계획을 확인해 보세요.</string>
+</resources>

@@ -1,0 +1,5 @@
+<resources>
+    <string name="baseball_return_channel">Return reminders</string>
+    <string name="baseball_return_title">Your next scene is waiting</string>
+    <string name="baseball_return_body">Pick up where your story left off.</string>
+</resources>

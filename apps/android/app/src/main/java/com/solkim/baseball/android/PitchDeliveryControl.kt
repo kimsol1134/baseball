@@ -1,9 +1,6 @@
 package com.solkim.baseball.android
 
 import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -22,9 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
+import com.solkim.baseball.android.LocalizedGameText as Text
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,6 +36,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import android.view.HapticFeedbackConstants
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -49,12 +50,13 @@ import com.solkim.baseball.application.MoundHeartbeatSettings
 import com.solkim.baseball.application.MoundMeterDisturbance
 import com.solkim.baseball.application.MoundTensionModel
 import com.solkim.baseball.application.PitchDelivery
+import com.solkim.baseball.application.PitchReleaseWindow
+import androidx.compose.runtime.rememberUpdatedState
 import com.solkim.baseball.application.PitchReleaseMeter
 import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.platform.NativeAudioHapticsService
 import com.solkim.baseball.platform.NativePlaybackSettings
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.hypot
 import kotlin.random.Random
@@ -72,6 +74,7 @@ public fun PitchDeliveryControl(
     modifier: Modifier = Modifier,
     velocityTenthsKph: Int = 1_350,
     fatigue: Int = 0,
+    commandRating: Int = PitchReleaseWindow.BASELINE_COMMAND,
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
     soundEnabled: Boolean = true,
@@ -82,13 +85,20 @@ public fun PitchDeliveryControl(
     onAutoReleaseChange: ((Boolean) -> Unit)? = null,
     autoReleaseLabel: String = "자동 릴리스 — 탭 한 번으로 중립 투구",
 ) {
+    val sliderDescription = rememberGameCopy().resolve("android.pitch.slider-description")
+    SliderFrameRate(enabled && !autoRelease && !reduceMotion)
     val density = LocalDensity.current
     val aimRadiusPx = with(density) { PitchReleaseMeter.AIM_RADIUS_POINTS.toFloat().dp.toPx() }
     val context = LocalContext.current
-    val vibrator = remember(context) { context.pitchVibrator() }
+    val touchView = LocalView.current
+    val windUp = remember(touchView) { PitchWindUpFeedback(touchView) }
+    DisposableEffect(windUp) { onDispose { windUp.stop() } }
     val audio = remember(context) { context.pitchAudio() }
     val playback = NativePlaybackSettings(soundEnabled, false, hapticsEnabled, reduceMotion)
+    val latestCommand by rememberUpdatedState(commandRating)
+    var heldCommand by remember { mutableStateOf(commandRating) }
     var pressing by remember { mutableStateOf(false) }
+    val windowCommand = if (pressing) heldCommand else commandRating
     var meter by remember { mutableStateOf(0.0) }
     var drag by remember { mutableStateOf(Offset.Zero) }
     var sway by remember { mutableStateOf(Offset.Zero) }
@@ -100,19 +110,18 @@ public fun PitchDeliveryControl(
     val amplitude = PitchReleaseMeter.swayAmplitude(fatigue, reduceMotion)
     val amplitudePx = with(density) { amplitude.toFloat().dp.toPx() }.toDouble()
 
-    LaunchedEffect(pressing, sweep, amplitudePx, tension, disturbanceSeed, hapticsEnabled, soundEnabled, reduceMotion, adverseEpisode) {
-        if (!pressing) {
+    val idleBeats = remember { mutableListOf<Double>() }
+    LaunchedEffect(enabled, pressing, tension, disturbanceSeed, hapticsEnabled, soundEnabled, adverseEpisode) {
+        if (!enabled || pressing) {
             audio?.stopHeartbeat()
             return@LaunchedEffect
         }
-        val phases = DoubleArray(4) { Random.nextDouble(0.0, 2 * PI) }
-        val beats = mutableListOf<Double>()
         val startNanos = System.nanoTime()
-        val heartbeatJob = launch {
+        try {
             runMoundHeartbeat(tension, disturbanceSeed, includeEntry = true, adverseEpisode) { eventTension, irregular ->
                 val elapsed = (System.nanoTime() - startNanos) / 1_000_000_000.0
-                beats.add(elapsed)
-                if (beats.size > 24) beats.removeAt(0)
+                idleBeats.add(elapsed)
+                if (idleBeats.size > 24) idleBeats.removeAt(0)
                 if (MoundHeartbeatSettings.heartbeatAudioEnabled(soundEnabled)) {
                     audio?.playHeartbeat(MoundHeartbeatAudio.renderPcm(eventTension, irregular), MoundHeartbeatAudio.SAMPLE_RATE, playback)
                 }
@@ -121,37 +130,46 @@ public fun PitchDeliveryControl(
                     audio?.heartbeatBeat(intensity, playback)
                 }
             }
-        }
-        try {
-            var last = withFrameNanos { it }
-            while (true) {
-                val now = withFrameNanos { it }
-                val elapsed = ((System.nanoTime() - startNanos).coerceAtLeast(0L)) / 1_000_000_000.0
-                val delta = ((now - last).coerceAtLeast(0L)) / 1_000_000_000.0
-                last = now
-                val step = minOf(0.1, delta)
-                val base = PitchReleaseMeter.phase(elapsed, sweep)
-                meter = MoundMeterDisturbance.position(base, elapsed, tension, beats, hapticsEnabled, reduceMotion, disturbanceSeed)
-                val offset = PitchReleaseMeter.swayOffset(elapsed, amplitudePx, phases)
-                sway = Offset(offset.first.toFloat(), offset.second.toFloat())
-                val inSweet = kotlin.math.abs(meter - 0.5) <= 0.09
-                if (inSweet && !wasInSweetSpot && hapticsEnabled && !reduceMotion) {
-                    vibrator.pulse(18)
-                }
-                wasInSweetSpot = inSweet
-                if (step < 0) break
-            }
         } finally {
-            heartbeatJob.cancel()
             audio?.stopHeartbeat()
         }
     }
+    LaunchedEffect(pressing, sweep, amplitudePx, tension, disturbanceSeed, hapticsEnabled, reduceMotion) {
+        if (!pressing) return@LaunchedEffect
+        val phases = DoubleArray(4) { Random.nextDouble(0.0, 2 * PI) }
+        val startNanos = System.nanoTime()
+        var last = withFrameNanos { it }
+        var previousBase = 0.0
+        var direction = 0
+        try { while (true) {
+            val now = withFrameNanos { it }
+            val elapsed = ((System.nanoTime() - startNanos).coerceAtLeast(0L)) / 1_000_000_000.0
+            val delta = ((now - last).coerceAtLeast(0L)) / 1_000_000_000.0
+            last = now
+            val step = minOf(0.1, delta)
+            val base = PitchReleaseMeter.phase(elapsed, sweep)
+            meter = MoundMeterDisturbance.position(base, elapsed, tension, idleBeats, hapticsEnabled, reduceMotion, disturbanceSeed)
+            val nextDirection = if (base > previousBase) 1 else if (base < previousBase) -1 else direction
+            if (direction != 0 && nextDirection != direction) windUp.cue(HapticFeedbackConstants.CLOCK_TICK, hapticsEnabled, edge = true)
+            direction = nextDirection
+            previousBase = base
+            val offset = PitchReleaseMeter.swayOffset(elapsed, amplitudePx, phases)
+            sway = Offset(offset.first.toFloat(), offset.second.toFloat())
+            val inSweet = PitchReleaseWindow.contains(meter, heldCommand)
+            if (inSweet && !wasInSweetSpot && hapticsEnabled) {
+                windUp.cue(HapticFeedbackConstants.CLOCK_TICK, hapticsEnabled)
+            }
+            wasInSweetSpot = inSweet
+            windUp.update(1.0 - kotlin.math.abs(meter - 0.5) * 2.0, hapticsEnabled)
+            if (step < 0) break
+        } } finally { windUp.stop() }
+    }
 
     val aim = clampAim(sway + drag, aimRadiusPx)
-    val live = PitchReleaseMeter.delivery(meter, aim.x.toDouble(), aim.y.toDouble(), aimRadiusPx.toDouble())
+    val live = PitchReleaseMeter.delivery(meter, aim.x.toDouble(), aim.y.toDouble(), aimRadiusPx.toDouble(), windowCommand)
     val onTarget = hypot(aim.x.toDouble(), aim.y.toDouble()) <= with(density) { 14.dp.toPx() }
     val inPerfect = pressing && live.isPerfectRelease
-    val inSweet = pressing && kotlin.math.abs(meter - 0.5) <= 0.09
+    val inSweet = pressing && PitchReleaseWindow.contains(meter, windowCommand)
     val prompt = when {
         !enabled -> "연출 준비 중"
         pressing && onTarget && inPerfect -> "지금 놓으면 완벽합니다"
@@ -179,9 +197,7 @@ public fun PitchDeliveryControl(
             Button(
                 onClick = { if (enabled) onDeliver(PitchDelivery.NEUTRAL) },
                 enabled = enabled,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics {
-                    contentDescription = "탭 한 번으로 중립 릴리스"
-                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).gameDescription("탭 한 번으로 중립 릴리스"),
             ) {
                 Text("탭 한 번으로 던지기")
             }
@@ -190,7 +206,7 @@ public fun PitchDeliveryControl(
             prompt,
             style = MaterialTheme.typography.bodyMedium,
             color = BaseballColors.fieldChalk,
-            modifier = Modifier.semantics { contentDescription = "릴리스 타이밍 안내" },
+            modifier = Modifier.gameDescription("릴리스 타이밍 안내"),
         )
         Spacer(Modifier.height(10.dp))
         Row(
@@ -199,13 +215,16 @@ public fun PitchDeliveryControl(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                "$pitchTypeLabel 릴리스",
+                rememberGameCopy().resolve("control.window.title"), verbatim = true,
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = BaseballColors.textSecondary,
             )
             Text(
                 "$tempoLabel · $velocityLabel",
+                modifier = Modifier.weight(1f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace,
@@ -213,7 +232,7 @@ public fun PitchDeliveryControl(
             )
         }
         Spacer(Modifier.height(8.dp))
-        ReleaseMeterBar(meter = meter, pressing = pressing, inPerfect = inPerfect)
+        ReleaseMeterBar(meter = meter, pressing = pressing, inPerfect = inPerfect, commandRating = windowCommand)
         Spacer(Modifier.height(12.dp))
         Box(
             modifier = Modifier
@@ -223,23 +242,27 @@ public fun PitchDeliveryControl(
                     if (pressing) BaseballColors.action.copy(alpha = 0.18f) else BaseballColors.action,
                     RoundedCornerShape(18.dp),
                 )
-                .semantics { contentDescription = "투구 슬라이더. 누르고 조준한 뒤 놓으면 던집니다." }
+                .testTag("pitch.slider").gameDescription(sliderDescription)
                 .pointerInput(enabled, aimRadiusPx, hapticsEnabled, reduceMotion) {
                     if (!enabled) return@pointerInput
                     awaitEachGesture {
-                        awaitFirstDown(requireUnconsumed = false)
+                        val down = awaitFirstDown(requireUnconsumed = true)
+                        down.consume()
+                        windUp.cue(HapticFeedbackConstants.LONG_PRESS, hapticsEnabled)
                         holdHint = false
                         lastHint = null
                         drag = Offset.Zero
                         sway = Offset.Zero
                         wasInSweetSpot = false
+                        heldCommand = latestCommand
                         pressStartedAtNanos = System.nanoTime()
                         pressing = true
                         var released = false
                         try {
                             while (!released) {
                                 val event = awaitPointerEvent()
-                                val change = event.changes.firstOrNull() ?: break
+                                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                if (change.isConsumed || event.changes.any { it.id != down.id && it.pressed }) break
                                 val delta = change.position - change.previousPosition
                                 drag += delta
                                 change.consume()
@@ -248,8 +271,9 @@ public fun PitchDeliveryControl(
                         } finally {
                             val held = (System.nanoTime() - pressStartedAtNanos) / 1_000_000_000.0
                             pressing = false
-                            if (held < PitchReleaseMeter.MINIMUM_HOLD_SECONDS) {
-                                holdHint = true
+                            windUp.stop()
+                            if (!released || held < PitchReleaseMeter.MINIMUM_HOLD_SECONDS) {
+                                holdHint = released
                                 drag = Offset.Zero
                                 sway = Offset.Zero
                             } else {
@@ -259,9 +283,15 @@ public fun PitchDeliveryControl(
                                     releasedAim.x.toDouble(),
                                     releasedAim.y.toDouble(),
                                     aimRadiusPx.toDouble(),
+                                    heldCommand,
                                 )
-                                if (hapticsEnabled && !reduceMotion) {
-                                    vibrator.pulse(if (scored.isPerfectRelease) 42 else 12)
+                                if (hapticsEnabled) {
+                                    val feedback = when {
+                                        scored.isPerfectRelease && Build.VERSION.SDK_INT >= 30 -> HapticFeedbackConstants.CONFIRM
+                                        Build.VERSION.SDK_INT >= 27 -> HapticFeedbackConstants.VIRTUAL_KEY_RELEASE
+                                        else -> HapticFeedbackConstants.VIRTUAL_KEY
+                                    }
+                                    windUp.cue(feedback, hapticsEnabled)
                                 }
                                 lastHint = PitchReleaseMeter.coachingHint(scored)
                                 onDeliver(scored)
@@ -316,7 +346,7 @@ private fun AutoReleaseToggle(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .semantics { contentDescription = label },
+            .gameDescription(label),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -335,31 +365,43 @@ private fun AutoReleaseToggle(
 }
 
 @Composable
-private fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolean) {
+private fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolean, commandRating: Int) {
     val perfectWidth = (1_000 - PitchDelivery.PERFECT_RELEASE_THRESHOLD) / 1_000f
+    val windowWidth = PitchReleaseWindow.width(commandRating).toFloat()
+    val copy = rememberGameCopy()
+    val windowLabel = copy.resolve("control.window.accessibility", com.solkim.baseball.application.GameCopyArgument.Decimal(PitchReleaseWindow.widthPermille(commandRating) / 10.0))
     Canvas(
         Modifier
             .fillMaxWidth()
             .height(16.dp)
+            .testTag("pitch.controlWindow").semantics { contentDescription = windowLabel }
             .padding(horizontal = 2.dp),
     ) {
         val width = size.width
         val height = size.height
         drawRoundRect(BaseballColors.surfaceRaised, cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f))
-        val sweet = width * 0.18f
+        val sweet = width * windowWidth
         drawRoundRect(
             BaseballColors.action.copy(alpha = 0.42f),
-            topLeft = Offset(width * 0.41f, 0f),
+            topLeft = Offset(width * (0.5f - windowWidth / 2f), 0f),
             size = androidx.compose.ui.geometry.Size(sweet, height),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f),
         )
         val perfect = (width * perfectWidth).coerceAtLeast(3f)
         drawRoundRect(
-            BaseballColors.milestone,
-            topLeft = Offset(width * (0.5f - perfectWidth / 2f), 0f),
-            size = androidx.compose.ui.geometry.Size(perfect, height),
+            BaseballColors.milestone.copy(alpha = if (inPerfect) 1f else 0.92f),
+            topLeft = Offset(width * (0.5f - perfectWidth / 2f), -(if (inPerfect) 3f else 0f)),
+            size = androidx.compose.ui.geometry.Size(perfect, height + if (inPerfect) 6f else 0f),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f),
         )
+        if (inPerfect) {
+            drawRoundRect(
+                BaseballColors.milestone.copy(alpha = 0.28f),
+                topLeft = Offset(width * (0.5f - perfectWidth / 2f) - 4f, -5f),
+                size = androidx.compose.ui.geometry.Size(perfect + 8f, height + 10f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(height, height),
+            )
+        }
         val needleX = ((width - 6f) * meter.toFloat()).coerceIn(0f, width - 6f)
         drawRoundRect(
             color = if (inPerfect) BaseballColors.milestone else if (pressing) BaseballColors.action else BaseballColors.border,
@@ -428,27 +470,3 @@ private suspend fun delaySeconds(seconds: Double) {
 
 private fun android.content.Context.pitchAudio(): NativeAudioHapticsService? =
     (applicationContext as? BaseballApplication)?.platform?.audioHaptics
-
-private fun android.content.Context.pitchVibrator(): Vibrator? = try {
-    if (Build.VERSION.SDK_INT >= 31) {
-        getSystemService(VibratorManager::class.java)?.defaultVibrator
-    } else {
-        @Suppress("DEPRECATION")
-        getSystemService(Vibrator::class.java)
-    }
-} catch (_: Throwable) {
-    null
-}
-
-private fun Vibrator?.pulse(milliseconds: Long) {
-    val device = this ?: return
-    if (!device.hasVibrator()) return
-    runCatching {
-        if (Build.VERSION.SDK_INT >= 26) {
-            device.vibrate(VibrationEffect.createOneShot(milliseconds.coerceIn(1L, 80L), VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-            @Suppress("DEPRECATION")
-            device.vibrate(milliseconds.coerceIn(1L, 80L))
-        }
-    }
-}

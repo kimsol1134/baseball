@@ -412,7 +412,7 @@ public class NativeReminderScheduler(
     private fun createChannel() {
         if (Build.VERSION.SDK_INT < 26) return
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, "복귀 안내", NotificationManager.IMPORTANCE_DEFAULT),
+            NotificationChannel(CHANNEL_ID, context.getString(R.string.baseball_return_channel), NotificationManager.IMPORTANCE_DEFAULT),
         )
     }
 }
@@ -455,7 +455,7 @@ public class ReminderAlarmReceiver : BroadcastReceiver() {
         val channelId = NativeReminderScheduler.CHANNEL_ID
         if (Build.VERSION.SDK_INT >= 26) {
             context.getSystemService(NotificationManager::class.java).createNotificationChannel(
-                NotificationChannel(channelId, "복귀 안내", NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(channelId, context.getString(R.string.baseball_return_channel), NotificationManager.IMPORTANCE_DEFAULT),
             )
         }
         val openIntent = Intent(context, Class.forName("com.solkim.baseball.android.MainActivity")).apply {
@@ -466,8 +466,8 @@ public class ReminderAlarmReceiver : BroadcastReceiver() {
         val pending = PendingIntent.getActivity(context, rawToken.hashCode(), openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.baseball_notification_small)
-            .setContentTitle(intent.getStringExtra("baseball.notification.title") ?: "다음 장면을 기다리고 있어요")
-            .setContentText(intent.getStringExtra("baseball.notification.body") ?: "저장된 복귀 계획을 확인해 보세요.")
+            .setContentTitle(intent.getStringExtra("baseball.notification.title")?.takeUnless { it == "다음 장면을 기다리고 있어요" } ?: context.getString(R.string.baseball_return_title))
+            .setContentText(intent.getStringExtra("baseball.notification.body")?.takeUnless { it == "저장된 복귀 계획을 확인해 보세요." } ?: context.getString(R.string.baseball_return_body))
             .setAutoCancel(true)
             .setContentIntent(pending)
             .build()
@@ -577,7 +577,7 @@ public class NativeLifeCardShareService(
 
     public fun clearCache() {
         context.cacheDir.listFiles().orEmpty()
-            .filter { it.name.startsWith("phase9-share-") }
+            .filter { it.name.startsWith("phase9-share-") || it.name == "achievement-share" }
             .forEach { it.deleteRecursively() }
     }
 
@@ -676,16 +676,37 @@ public data class NativePlaybackSettings(
 
 /** The native copy of the plan-owned presentation map. Unity only supplies trajectory markers. */
 public object NativeAudioResources {
+    public const val MUSIC_TOGGLE_RAW: String = "baseball_menu_theme"
+    public const val MUSIC_CROWD_RAW: String = "baseball_crowd_loop"
+    public const val PITCH_RELEASE_RAW: String = "baseball_pitch_release"
+    public const val PITCH_PLATE_RAW: String = "baseball_pitch_plate"
+    public const val PITCH_IMPACT_RAW: String = "baseball_pitch_impact"
+
     public val MENU_TAP: Int = R.raw.baseball_menu_tap
     public val PAD_CONFIRM: Int = R.raw.baseball_pad_confirm
     public val PITCH_RELEASE: Int = R.raw.baseball_pitch_release
     public val PITCH_PLATE: Int = R.raw.baseball_pitch_plate
     public val PITCH_IMPACT: Int = R.raw.baseball_pitch_impact
+    public val MUSIC_THEME: Int = R.raw.baseball_menu_theme
     public val MUSIC_CROWD: Int = R.raw.baseball_crowd_loop
+
+    public fun musicToggleResource(): Int = MUSIC_THEME
+
+    public fun pitchMarkerResource(marker: PresentationMarker): Int = when (marker) {
+        PresentationMarker.RELEASE -> PITCH_RELEASE
+        PresentationMarker.PLATE -> PITCH_PLATE
+        PresentationMarker.IMPACT -> PITCH_IMPACT
+    }
+
+    public fun pitchMarkerRawName(marker: PresentationMarker): String = when (marker) {
+        PresentationMarker.RELEASE -> PITCH_RELEASE_RAW
+        PresentationMarker.PLATE -> PITCH_PLATE_RAW
+        PresentationMarker.IMPACT -> PITCH_IMPACT_RAW
+    }
 }
 
 public object HapticPolicy {
-    public fun shouldVibrate(settings: NativePlaybackSettings, systemHapticsEnabled: Boolean): Boolean = settings.hapticsEnabled && !settings.reducedMotionEnabled && systemHapticsEnabled
+    public fun shouldVibrate(settings: NativePlaybackSettings, systemHapticsEnabled: Boolean): Boolean = settings.hapticsEnabled && systemHapticsEnabled
 }
 
 /** iOS `Haptics.heartbeatBeat` — two transients 0.16s apart. Reduce-motion does not mute this pulse. */
@@ -727,11 +748,7 @@ public class NativeAudioHapticsService(
     /** Presentation markers are the only pitch path allowed to produce sound/haptics. */
     public fun presentPitchMarker(marker: PresentationMarker, settings: NativePlaybackSettings, presentationSeed: String) {
         val seed = presentationSeed.toULongOrNull() ?: return
-        val resource = when (marker) {
-            PresentationMarker.RELEASE -> NativeAudioResources.PITCH_RELEASE
-            PresentationMarker.PLATE -> NativeAudioResources.PITCH_PLATE
-            PresentationMarker.IMPACT -> NativeAudioResources.PITCH_IMPACT
-        }
+        val resource = NativeAudioResources.pitchMarkerResource(marker)
         playEffect(resource, settings, seed)
         if (marker == PresentationMarker.IMPACT) presentNativeMarker("pitch-impact", settings, seed)
     }

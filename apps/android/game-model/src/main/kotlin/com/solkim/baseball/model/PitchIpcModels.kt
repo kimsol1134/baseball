@@ -174,6 +174,68 @@ public data class PitchPresentationRequest(
             throw IpcValidationException("requestSha256.invalid")
         }
     }
+
+    public companion object {
+        public fun signed(
+            requestId: String,
+            pitchId: String,
+            sequence: Int,
+            pitchType: PitchType,
+            flightDurationMs: Int,
+            plateXMm: Int,
+            plateYMm: Int,
+            velocityDeciKph: Int,
+            trajectory: List<TrajectoryPoint>,
+            presentationSeed: String,
+            visual: PresentationVisual,
+        ): PitchPresentationRequest {
+            val unsigned = PitchPresentationRequest(
+                requestId = requestId,
+                pitchId = pitchId,
+                sequence = sequence,
+                pitchType = pitchType,
+                flightDurationMs = flightDurationMs,
+                plateXMm = plateXMm,
+                plateYMm = plateYMm,
+                velocityDeciKph = velocityDeciKph,
+                trajectory = trajectory,
+                presentationSeed = presentationSeed,
+                visual = visual,
+                requestSha256 = "0".repeat(64),
+            )
+            val hash = Hashing.sha256Hex(StrictJson.canonical(unsigned.bodyJson()))
+            return unsigned.copy(requestSha256 = hash).also { it.validate() }
+        }
+    }
+
+    private fun bodyJson(): JsonValue.Obj {
+        val entries = linkedMapOf<String, JsonValue>(
+            "requestId" to JsonValue.Str(requestId),
+            "pitchId" to JsonValue.Str(pitchId),
+            "sequence" to JsonValue.Num(sequence.toString()),
+            "pitchType" to JsonValue.Str(pitchType.wire),
+            "flightDurationMs" to JsonValue.Num(flightDurationMs.toString()),
+            "plateXMm" to JsonValue.Num(plateXMm.toString()),
+            "plateYMm" to JsonValue.Num(plateYMm.toString()),
+            "velocityDeciKph" to JsonValue.Num(velocityDeciKph.toString()),
+            "trajectory" to JsonValue.Arr(trajectory.map { point ->
+                JsonValue.Obj(linkedMapOf(
+                    "timePermille" to JsonValue.Num(point.timePermille.toString()),
+                    "xMm" to JsonValue.Num(point.xMm.toString()),
+                    "yMm" to JsonValue.Num(point.yMm.toString()),
+                    "zMm" to JsonValue.Num(point.zMm.toString()),
+                ))
+            }),
+            "presentationSeed" to JsonValue.Str(presentationSeed),
+            "visual" to JsonValue.Obj(linkedMapOf(
+                "trailKind" to JsonValue.Str(visual.trailKind.wire),
+                "impactKind" to JsonValue.Str(visual.impactKind.wire),
+                "reducedMotion" to JsonValue.Bool(visual.reducedMotion),
+                "qualityTier" to JsonValue.Str(visual.qualityTier.wire),
+            )),
+        )
+        return JsonValue.Obj(entries)
+    }
 }
 
 public data class PitchIpcCommand(

@@ -11,6 +11,14 @@ import org.junit.Test
 
 class PitchDramaViewTest {
 
+    @Test fun stableReleaseFeedbackMatchesTheVisibleGreenThreshold() {
+        assertEquals("안정 릴리스", releaseTimingLabel(820))
+        assertEquals("안정 구간에 가까웠어요", releaseTimingLabel(819))
+        assertEquals("안정 릴리스 · 조준은 흔들렸어요", releaseTimingLabel(820, 500))
+        assertEquals("★ 퍼펙트 릴리스", releaseTimingLabel(975))
+        assertFalse(releaseTimingLabel(974).contains("퍼펙트"))
+    }
+
     @Test
     fun plateFiguresConstantsAreValid() {
         assertTrue("batter aspect ratio must be positive", PlateFigures.BATTER_ASPECT > 0f)
@@ -39,21 +47,21 @@ class PitchDramaViewTest {
 
     @Test
     fun localizedVerdictProducesReadableKoreanLabels() {
-        assertEquals("헛스윙 삼진", localizedVerdict(PitchOutcome.SWINGING_STRIKE, null))
+        assertEquals("헛스윙", localizedVerdict(PitchOutcome.SWINGING_STRIKE, null))
         assertEquals("루킹 스트라이크", localizedVerdict(PitchOutcome.CALLED_STRIKE, null))
         assertEquals("볼", localizedVerdict(PitchOutcome.BALL, null))
         assertEquals("파울", localizedVerdict(PitchOutcome.FOUL, null))
         assertEquals("몸에 맞는 공", localizedVerdict(PitchOutcome.HIT_BY_PITCH, null))
-        assertEquals("1루타", localizedVerdict(PitchOutcome.SINGLE, null))
+        assertEquals("안타", localizedVerdict(PitchOutcome.SINGLE, null))
         assertEquals("2루타", localizedVerdict(PitchOutcome.DOUBLE, null))
         assertEquals("3루타", localizedVerdict(PitchOutcome.TRIPLE, null))
-        assertEquals("홈런!", localizedVerdict(PitchOutcome.HOME_RUN, null))
+        assertEquals("홈런", localizedVerdict(PitchOutcome.HOME_RUN, null))
 
-        // 인플레이 아웃은 발사각도에 따라 뜬공/땅볼 분류
-        val flyBall = BattedBall(1300, 300, 0, 400) // 30도
+        val flyBall = BattedBall(1300, 300, 0, 400)
         assertEquals("뜬공 아웃", localizedVerdict(PitchOutcome.IN_PLAY_OUT, flyBall))
-
-        val groundBall = BattedBall(1300, 50, 0, 400) // 5도
+        val lineDrive = BattedBall(1300, 180, 0, 400)
+        assertEquals("직선타 아웃", localizedVerdict(PitchOutcome.IN_PLAY_OUT, lineDrive))
+        val groundBall = BattedBall(1300, 50, 0, 400)
         assertEquals("땅볼 아웃", localizedVerdict(PitchOutcome.IN_PLAY_OUT, groundBall))
     }
 

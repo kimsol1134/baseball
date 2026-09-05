@@ -1,5 +1,7 @@
 package com.solkim.baseball.platform
 
+import com.solkim.baseball.model.PresentationMarker
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import org.junit.Assert.assertEquals
@@ -297,10 +299,31 @@ public class Phase9PlatformContractTest {
     }
 
     @Test
-    public fun audioHapticPolicyHonorsReducedMotionAndSystemSetting() {
+    public fun musicToggleUsesMenuThemeNotCrowdAndPitchMarkersKeepExistingFiles() {
+        assertEquals("baseball_menu_theme", NativeAudioResources.MUSIC_TOGGLE_RAW)
+        assertEquals("baseball_crowd_loop", NativeAudioResources.MUSIC_CROWD_RAW)
+        assertNotEquals(NativeAudioResources.MUSIC_CROWD_RAW, NativeAudioResources.MUSIC_TOGGLE_RAW)
+        assertNotEquals(NativeAudioResources.MUSIC_CROWD, NativeAudioResources.musicToggleResource())
+        assertEquals(NativeAudioResources.MUSIC_THEME, NativeAudioResources.musicToggleResource())
+        assertEquals("baseball_pitch_release", NativeAudioResources.pitchMarkerRawName(PresentationMarker.RELEASE))
+        assertEquals("baseball_pitch_plate", NativeAudioResources.pitchMarkerRawName(PresentationMarker.PLATE))
+        assertEquals("baseball_pitch_impact", NativeAudioResources.pitchMarkerRawName(PresentationMarker.IMPACT))
+        assertEquals(NativeAudioResources.PITCH_RELEASE, NativeAudioResources.pitchMarkerResource(PresentationMarker.RELEASE))
+        assertEquals(NativeAudioResources.PITCH_PLATE, NativeAudioResources.pitchMarkerResource(PresentationMarker.PLATE))
+        assertEquals(NativeAudioResources.PITCH_IMPACT, NativeAudioResources.pitchMarkerResource(PresentationMarker.IMPACT))
+        val raw = File("src/main/res/raw")
+        assertTrue(raw.resolve("${NativeAudioResources.MUSIC_TOGGLE_RAW}.wav").isFile)
+        assertTrue(raw.resolve("${NativeAudioResources.MUSIC_CROWD_RAW}.m4a").isFile)
+        assertTrue(raw.resolve("${NativeAudioResources.PITCH_RELEASE_RAW}.wav").isFile)
+        assertTrue(raw.resolve("${NativeAudioResources.PITCH_PLATE_RAW}.wav").isFile)
+        assertTrue(raw.resolve("${NativeAudioResources.PITCH_IMPACT_RAW}.wav").isFile)
+    }
+
+    @Test
+    public fun audioHapticPolicyIsIndependentOfVisualMotionAndHonorsSystemSetting() {
         val enabled = NativePlaybackSettings(soundEnabled = true, musicEnabled = true, hapticsEnabled = true, reducedMotionEnabled = false)
         assertTrue(HapticPolicy.shouldVibrate(enabled, true))
-        assertFalse(HapticPolicy.shouldVibrate(enabled.copy(reducedMotionEnabled = true), true))
+        assertTrue(HapticPolicy.shouldVibrate(enabled.copy(reducedMotionEnabled = true), true))
         assertFalse(HapticPolicy.shouldVibrate(enabled, false))
         assertFalse(HapticPolicy.shouldVibrate(enabled.copy(hapticsEnabled = false), true))
     }

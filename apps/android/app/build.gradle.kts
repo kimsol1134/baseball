@@ -13,10 +13,10 @@ val phase9AmplitudeApiKey = providers.gradleProperty("phase9AmplitudeApiKey").or
     .replace("\\", "\\\\")
     .replace("\"", "\\\"")
 val phase10VersionCode = providers.gradleProperty("phase10VersionCode")
-    .orElse("37")
+    .orElse("42")
     .get()
     .toIntOrNull()
-    ?.also { require(it > 5) { "versionCode must be higher than the current Play Unity baseline" } }
+    ?.also { require(it > 5) { "versionCode must be higher than the current Play baseline" } }
     ?: error("phase10VersionCode must be an integer")
 val phase10VersionName = providers.gradleProperty("phase10VersionName").orElse("1.0.0").get()
 val releaseDistribution = providers.gradleProperty("phase11Distribution").orElse("internal").get()
@@ -77,6 +77,7 @@ android {
         buildConfigField("String", "PHASE9_AMPLITUDE_API_KEY", "\"$phase9AmplitudeApiKey\"")
         buildConfigField("String", "NATIVE_AUTHORITY_MODE", "\"nativeShadowReadOnly\"")
         buildConfigField("boolean", "PHASE10_PRODUCTION_BUILD", "false")
+        buildConfigField("boolean", "QA_NATIVE_STORE", "false")
         buildConfigField("String", "RELEASE_DISTRIBUTION", "\"development\"")
     }
 
@@ -95,9 +96,17 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".compose.dev"
+            // Isolated launch QA leaves any existing development career untouched.
+            applicationIdSuffix = when {
+                providers.gradleProperty("baseballCoreQa").orNull == "true" -> ".core.compose.qa"
+                providers.gradleProperty("baseballLaunchQa").orNull == "true" -> ".compose.qa"
+                else -> ".compose.dev"
+            }
             versionNameSuffix = "-migration"
-            buildConfigField("String", "NATIVE_AUTHORITY_MODE", "\"nativeShadowReadOnly\"")
+            val nativeQa = providers.gradleProperty("baseballLaunchQa").orNull == "true" &&
+                providers.gradleProperty("baseballQaNativeStore").orNull == "true"
+            buildConfigField("boolean", "QA_NATIVE_STORE", nativeQa.toString())
+            buildConfigField("String", "NATIVE_AUTHORITY_MODE", if (nativeQa) "\"nativeAuthoritative\"" else "\"nativeShadowReadOnly\"")
             buildConfigField("boolean", "PHASE10_PRODUCTION_BUILD", "false")
             buildConfigField("String", "RELEASE_DISTRIBUTION", "\"development\"")
         }
@@ -134,8 +143,6 @@ dependencies {
     implementation(project(":design-system"))
     implementation(project(":game-application"))
     implementation(project(":game-model"))
-    implementation(project(":unity-bridge"))
-    implementation(project(":unity-runtime"))
     implementation(project(":platform"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
@@ -151,12 +158,4 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.uiautomator)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-}
-
-// The generated Unity export is optional for pure JVM contract tests, but mandatory for a real
-// pitch-host APK. This conditional keeps the shadow-read-only scaffold buildable before export.
-if (project.findProject(":unityLibrary") != null) {
-    dependencies {
-        implementation(project(":unityLibrary"))
-    }
 }

@@ -66,6 +66,11 @@ public fun PitchDramaView(
     modifier: Modifier = Modifier,
 ) {
     val textMeasurer = rememberTextMeasurer()
+    val copy = rememberGameCopy()
+    val verdict = outcome?.let { copy.legacy(localizedVerdict(it, battedBall)) }.orEmpty()
+    val displayFielding = remember(fielding, copy) {
+        fielding?.copy(fielderName = fielding.fielderName?.let { copy.legacy(it) })
+    }
     val context = LocalContext.current
     val batterBitmap = remember(context) {
         runCatching {
@@ -82,13 +87,13 @@ public fun PitchDramaView(
         modifier = modifier
             .fillMaxSize()
             .semantics {
-                contentDescription = PitchDramaCamera.accessibility(
+                contentDescription = copy.legacy(PitchDramaCamera.accessibility(
                     outcome,
                     battedBall,
-                    fielding,
+                    displayFielding,
                     progress,
                     ::localizedVerdict,
-                )
+                ))
             },
     ) {
         val size = this.size
@@ -101,7 +106,7 @@ public fun PitchDramaView(
                 progress = progress,
                 outcome = outcome,
                 battedBall = battedBall,
-                fielding = fielding,
+                fielding = displayFielding,
                 textMeasurer = textMeasurer,
                 canvasSize = size,
             )
@@ -121,7 +126,7 @@ public fun PitchDramaView(
         // 판정 결과 텍스트 오버레이
         drawVerdict(
             outcome = outcome,
-            battedBall = battedBall,
+            label = verdict,
             progress = progress,
             textMeasurer = textMeasurer,
             canvasSize = size,
@@ -663,7 +668,7 @@ private fun DrawScope.drawFieldShot(
 
 private fun DrawScope.drawVerdict(
     outcome: PitchOutcome?,
-    battedBall: BattedBall?,
+    label: String,
     progress: Float,
     textMeasurer: TextMeasurer,
     canvasSize: Size,
@@ -673,7 +678,6 @@ private fun DrawScope.drawVerdict(
 
     val scale = min(canvasSize.width / PITCH_BOX_WIDTH, canvasSize.height / PITCH_BOX_HEIGHT)
     val fontScale = (scale / density).coerceIn(1f, 2.5f)
-    val label = localizedVerdict(outcome, battedBall)
     val tone = outcomeTone(outcome)
 
     val textLayout = textMeasurer.measure(
@@ -792,7 +796,9 @@ private fun calculateImpactPulse(progress: Float): Float {
 private fun calculateVerdictFlash(progress: Float): Float {
     val start = CONTACT_PROGRESS + 0.04f
     if (progress < start) return 0f
-    return min(1f, (progress - start) / 0.1f)
+    val peak = min(1f, (progress - start) / 0.1f)
+    if (progress < 0.92f) return peak
+    return (peak * (1f - (progress - 0.92f) / 0.08f)).coerceAtLeast(0f)
 }
 
 private fun calculateShakeOffset(
@@ -827,19 +833,23 @@ internal fun outcomeTone(outcome: PitchOutcome?): Color = when (outcome) {
 }
 
 internal fun localizedVerdict(outcome: PitchOutcome, battedBall: BattedBall?): String = when (outcome) {
-    PitchOutcome.SWINGING_STRIKE -> "헛스윙 삼진"
+    PitchOutcome.SWINGING_STRIKE -> "헛스윙"
     PitchOutcome.CALLED_STRIKE -> "루킹 스트라이크"
     PitchOutcome.BALL -> "볼"
     PitchOutcome.FOUL -> "파울"
     PitchOutcome.HIT_BY_PITCH -> "몸에 맞는 공"
     PitchOutcome.IN_PLAY_OUT -> {
-        val angle = (battedBall?.launchAngleTenthsDegrees ?: 100) / 10
-        if (angle >= 25) "뜬공 아웃" else "땅볼 아웃"
+        val tenths = battedBall?.launchAngleTenthsDegrees ?: 100
+        when {
+            tenths < 100 -> "땅볼 아웃"
+            tenths < 250 -> "직선타 아웃"
+            else -> "뜬공 아웃"
+        }
     }
-    PitchOutcome.SINGLE -> "1루타"
+    PitchOutcome.SINGLE -> "안타"
     PitchOutcome.DOUBLE -> "2루타"
     PitchOutcome.TRIPLE -> "3루타"
-    PitchOutcome.HOME_RUN -> "홈런!"
+    PitchOutcome.HOME_RUN -> "홈런"
 }
 
 internal fun fielderHome(position: String?): Pair<Float, Float> = when (position) {

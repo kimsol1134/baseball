@@ -8,7 +8,6 @@ dependencies {
     api(project(":game-model"))
     api(project(":game-core"))
     implementation(project(":game-persistence"))
-    implementation(project(":unity-bridge"))
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(kotlin("test"))
     testImplementation(libs.junit)

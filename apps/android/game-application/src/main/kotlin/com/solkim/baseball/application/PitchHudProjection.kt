@@ -1,5 +1,7 @@
 package com.solkim.baseball.application
 
+import com.solkim.baseball.core.pitch.PitchLearningProject
+import com.solkim.baseball.core.pitch.PitchLearningRules
 import com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel
 import com.solkim.baseball.core.highschool.HighSchoolTutorialMound
 import com.solkim.baseball.core.highschool.toBatterSnapshot
@@ -74,7 +76,7 @@ public object PitchHudProjection {
     public fun pitcher(state: GameAggregateState): PitcherSnapshot {
         val pitch = state.pitch
         val pro = state.pro
-        if (pitch?.careerKind == PitchCareerKind.PRO && pro != null) return pro.pitcher
+        if (pitch?.careerKind == PitchCareerKind.PRO && pro != null) return PitchLearningRules.playable(pro.pitcher, pro.pitchLearningProject)
         val highSchool = requireNotNull(state.highSchool) { "pitch.hud.highSchool_missing" }
         return highSchool.run.toPitcherSnapshot()
     }
@@ -107,7 +109,7 @@ public object PitchHudProjection {
                 PitchKernel().prepare(
                     PitchKernel.PrepareRequest(
                         seed = session.seed,
-                        pitcher = pro.pitcher,
+                        pitcher = PitchLearningRules.playable(pro.pitcher, pro.pitchLearningProject),
                         batter = session.batter,
                         scouting = session.scouting,
                         context = session.context,
