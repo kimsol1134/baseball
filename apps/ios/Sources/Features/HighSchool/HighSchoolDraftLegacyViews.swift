@@ -264,6 +264,7 @@ struct LegacyCard: View {
             $0.id == career.selectedSignatureLegacyID
         }
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            DisclosureGroup(copyResolver.resolve(.localizable("mobile.core.career-details"))) {
             if includeReason {
             DraftReasonCard(
                 state: state,
@@ -348,6 +349,8 @@ struct LegacyCard: View {
                 }
             }
             WindSettlementCard(wind: state.careerWind)
+            }
+            .accessibilityIdentifier("hs.legacy.details")
             if career.usesSignatureLegacyRules {
                 let signatureCount = selectedSignatureLegacy == nil ? 0 : 1
                 BaseballCard(
@@ -409,8 +412,6 @@ struct LegacyCard: View {
                                     .font(.subheadline.weight(.heavy))
                                     .foregroundStyle(BaseballTheme.textPrimary)
                                 // localization-safe: resolved-copy
-                                Text(copy.detail)
-                                    .detailStyle()
                                 // localization-safe: resolved-copy
                                 Text(copy.evidence)
                                     .font(.caption)
@@ -529,6 +530,7 @@ struct LegacyCard: View {
                     Button(copyResolver.resolve(AppCopyKey.conclusionConfirmationConfirm)) {
                         career.confirmLegacy()
                     }
+                    .accessibilityIdentifier("hs.legacy.finalize")
                     Button(copyResolver.resolve(AppCopyKey.conclusionConfirmationCancel)) {
                         confirmingLegacy = false
                     }
@@ -797,6 +799,7 @@ struct CompletionCard: View {
                     isPresented: $confirmingFold
                 ) {
                     Button(copyResolver.resolve(AppCopyKey.conclusionFoldAction), role: .destructive) { career.openLegacy() }
+                        .accessibilityIdentifier("hs.fold.confirm")
                     // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
                     Button(copyResolver.resolve(AppCopyKey.conclusionFoldCancel)) { confirmingFold = false }
                 } message: {

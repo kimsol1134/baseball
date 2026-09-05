@@ -16,6 +16,18 @@ struct HighSchoolCareerView: View {
     var weekly: WeeklyProgramStore = .shared
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var growthSpotlightID: String?
+    @State private var growthSpotlightRevision: UInt64?
+    private var trainingReceiptID: String? {
+        guard career.trainingReceipt != nil, let state = career.state else { return nil }
+        return "\(state.careerID):training:\(state.totalTrainingsCompleted)"
+    }
+    private func trainingResultIsCompactNow(_ phase: HighSchoolCareerPhase) -> Bool {
+        guard let id = trainingReceiptID else { return false }
+        return Self.trainingResultIsCompact(receiptID: id, spotlightID: growthSpotlightID,
+            currentRevision: career.state?.revision, spotlightRevision: growthSpotlightRevision)
+    }
+
     @State private var achievements = AchievementStore.shared
     /// 오프닝을 넘겼는가. 저장하지 않는다 — 커리어를 지우면 다시 보는 것이 맞다.
     @State private var openingDismissed = false
@@ -30,9 +42,9 @@ struct HighSchoolCareerView: View {
     @Environment(\.requestReview) private var requestReview
     @Environment(\.gameCopyResolver) private var copyResolver
 
-    /// 훈련 국면이 아니면 결과 카드를 한 줄로 접는다. 관계·토너먼트 선택을 덮지 않기 위함이다.
-    static func trainingResultIsCompact(phase: HighSchoolCareerPhase) -> Bool {
-        phase != .training
+    /// 첫 노출은 국면에 관계없이 충분히 보여 주고, 다음 실제 행동 뒤에 접는다.
+    nonisolated static func trainingResultIsCompact(receiptID: String, spotlightID: String?, currentRevision: UInt64?, spotlightRevision: UInt64?) -> Bool {
+        receiptID == spotlightID && spotlightRevision != nil && currentRevision != spotlightRevision
     }
 
     /// A chapter goal is only honest when the chapter gives the player an official game in
@@ -225,8 +237,13 @@ struct HighSchoolCareerView: View {
                 },
                 onSaveIntent: { intent in
                     _ = career.saveNextRunIntent(intent)
-                }
+                },
+                previewProvider: { career.quickRebirthPreview() }
             )
+        }
+        .onChange(of: trainingReceiptID, initial: true) { _, id in
+            growthSpotlightID = id
+            growthSpotlightRevision = career.state?.revision
         }
         .sensoryFeedback(trigger: career.feedbackTrigger) { _, _ in
             switch career.feedbackCue {
@@ -389,6 +406,16 @@ struct HighSchoolCareerView: View {
                                 .id(Self.phaseAnchor)
                         }
 
+                        Color.clear.frame(height: 0).id(Self.celebrationAnchor)
+                        if !showingPeakResult(state) {
+                            highSchoolNotice(state: state)
+                        }
+                        if !Self.climaxPhase(state.phase) {
+                            phaseBody(state: state)
+                                .id(Self.phaseAnchor)
+                        }
+                        // 관계 선택지 아래로 내려온 소식. 대사와 선택지가 먼저 읽힌다.
+                        DisclosureGroup(copyResolver.resolve(.localizable("mobile.core.career-details"))) {
                         if !achievements.freshlyUnlocked.isEmpty {
                             AchievementBanner(achievements: achievements.freshlyUnlocked) {
                                 achievements.acknowledge()
@@ -396,10 +423,6 @@ struct HighSchoolCareerView: View {
                             .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                         }
 
-                        Color.clear.frame(height: 0).id(Self.celebrationAnchor)
-                        if !showingPeakResult(state) {
-                            highSchoolNotice(state: state)
-                        }
                         // 3년에 세 번뿐인 각성 앞에서는 주변 소음을 접는다(QA P2-2) —
                         // 되돌릴 수 없는 선택이 목록 한 줄로 보이면 무게가 사라진다.
                         if !Self.newsSitsBelowPhaseBody(phase: state.phase) {
@@ -497,11 +520,7 @@ struct HighSchoolCareerView: View {
                         // 이 목록의 맨 아래가 "훈련하기"다. 결과를 주 행동 바로 위에 두고
                         // 명시적 앵커로 이동하면, 국면이 바뀌어 카드 높이가 줄어도 결과와
                         // 다음 행동이 같은 흐름에 이어진다.
-                        if !Self.climaxPhase(state.phase) {
-                            phaseBody(state: state)
-                                .id(Self.phaseAnchor)
-                        }
-                        // 관계 선택지 아래로 내려온 소식. 대사와 선택지가 먼저 읽힌다.
+
                         if Self.newsSitsBelowPhaseBody(phase: state.phase), !showingPeakResult(state) {
                             newsCards(state: state)
                         }
@@ -520,6 +539,9 @@ struct HighSchoolCareerView: View {
                         }
                         // 접근성 큰 글씨에서는 고정 바가 화면의 절반을 먹어(4차 D3 XXXL 캡처)
                         // 스크롤 안, 본문 맨 아래에 둔다. 표준 크기에서는 아래 safeAreaInset이 맡는다.
+                        }
+                        .accessibilityIdentifier("career.storyDetails")
+
                         if state.phase == .training, typeSize.isAccessibilitySize {
                             trainingCommitBar(state: state)
                         }
@@ -541,6 +563,12 @@ struct HighSchoolCareerView: View {
                 .safeAreaInset(edge: .bottom) {
                     if state.phase == .training, !typeSize.isAccessibilitySize {
                         trainingCommitBar(state: state)
+                    } else if state.phase == .importantGame {
+                        PrimaryButton(title: HighSchoolPresentation.localizedImportantGameStartAction(resolver: copyResolver),
+                            identifier: "hs.game.start", action: career.beginImportantGame)
+                            .padding(.horizontal, BaseballMetrics.gutter)
+                            .padding(.vertical, 8)
+                            .background(BaseballTheme.canvas)
                     }
                 }
                 .background(BaseballTheme.canvas)
@@ -643,12 +671,17 @@ struct HighSchoolCareerView: View {
             if let armHealth = career.result?.armHealthReceipt {
                 HighSchoolArmHealthResultCard(receipt: armHealth)
                     .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                if let receipt = career.trainingReceipt {
+                    TrainingResultPanel(receipt: receipt, compact: trainingResultIsCompactNow(state.phase),
+                        onDismiss: career.acknowledgeTrainingReceipt)
+                        .id(Self.trainingResultAnchor)
+                }
             }
         case .trainingResult:
             if let receipt = career.trainingReceipt {
                 TrainingResultPanel(
                     receipt: receipt,
-                    compact: Self.trainingResultIsCompact(phase: state.phase),
+                    compact: trainingResultIsCompactNow(state.phase),
                     onDismiss: career.acknowledgeTrainingReceipt
                 )
                 .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
@@ -781,7 +814,7 @@ struct HighSchoolCareerView: View {
             RelationshipCard(state: state, onRespond: career.resolveRelationship)
         case .importantGame:
             ImportantGameCard(state: state, rivalLedger: career.rivalLedger,
-                              onStart: career.beginImportantGame)
+                              showsStartAction: false, onStart: career.beginImportantGame)
         case .awakening:
             AwakeningCard(options: state.awakeningOptions, sparks: state.awakeningSparks,
                           beforeFirstGame: state.performance.importantGamesCompleted == 0,

@@ -239,6 +239,7 @@ struct ImportantGameCard: View {
     /// Structured counts are formatted at the presentation boundary. The persisted ledger and
     /// its Codable shape remain unchanged.
     let rivalLedger: RivalLedger
+    var showsStartAction = true
     let onStart: () -> Void
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -335,11 +336,13 @@ struct ImportantGameCard: View {
                     }
                 }
             }
+            if showsStartAction {
             PrimaryButton(
                 title: HighSchoolPresentation.localizedImportantGameStartAction(resolver: copyResolver),
                 identifier: "hs.game.start",
                 action: onStart
             )
+            }
         }
     }
 }

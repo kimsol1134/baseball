@@ -27,6 +27,15 @@ struct PitchView: View {
     @Environment(\.gameCopyResolver) private var copyResolver
     @AppStorage(CopyDensity.storageKey) private var densityRaw = CopyDensity.automatic.rawValue
     @State private var pitchChromeExpanded = false
+    @State private var coreDetail: CorePitchDetail?
+    @State private var showsLastPitch = false
+    @State private var isWindingUp = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private enum CorePitchDetail: String, Identifiable {
+        case strategy, result
+        var id: String { rawValue }
+    }
     /// 승부 장면 높이. 고정 320은 접근성 글자 크기에서 판정 텍스트가 잘린다(3차 패널 P1).
     @ScaledMetric(relativeTo: .body) private var dramaHeight: CGFloat = 320
     @State private var replayProgress: Double = 1
@@ -313,14 +322,11 @@ struct PitchView: View {
                         .foregroundStyle(BaseballTheme.textPrimary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(verbatim: PitchPresentation.scenarioDetail(session.scenario, resolver: copyResolver))
-                        .detailStyle()
-                        .lineLimit(2)
+
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier("pitch.scenario")
                 Spacer(minLength: 8)
-                StakesBadge(leverage: session.context.leverage)
                 // 탈출구 없는 전체 화면은 함정이다. 파기는 확인을 거친다.
                 if onAbort != nil {
                     Button(copyResolver.resolve(.abort)) { confirmingAbort = true }
@@ -336,6 +342,7 @@ struct PitchView: View {
             ) {
                 Button(copyResolver.resolve(isPractice ? .abortPracticeConfirm : .abortGameConfirm),
                        role: isPractice ? nil : .destructive) { onAbort?() }
+                    .accessibilityIdentifier(isPractice ? "pitch.abort.practice.confirm" : "pitch.abort.confirm")
                 // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
                 Button(copyResolver.resolve(.abortContinue)) { confirmingAbort = false }
             } message: {
@@ -346,62 +353,51 @@ struct PitchView: View {
             .padding(.bottom, 2)
             .background(BaseballTheme.surface)
             ScoreboardBar(session: session)
-            if usesCompactPitchChrome, session.stage == .ready {
-                compactMatchupHeader
-                    .padding(.horizontal, BaseballMetrics.gutter)
-            }
-            // 코치 스트립은 스크롤 밖 고정이다. 스크롤 콘텐츠에 넣었더니 투구 직후
-            // 자동 스크롤이 화면 밖으로 밀어내 3구 스크립트가 1행짜리가 됐다(3차 패널 P0).
-            if isPractice, session.stage == .ready, showsCoachTip {
-                bullpenCoachStrip
-            }
-            // 던진 뒤 결과로 저절로 올라간다.
-            //
-            // 와인드업 패드는 화면 맨 아래에 있고 승부 장면은 그 위에 있다. 손을 떼는
-            // 순간 결과가 화면 밖에서 재생돼서, 스크롤을 직접 올려야 무슨 일이 있었는지
-            // 볼 수 있었다. 던지는 자리와 보는 자리가 다르면 손맛이 성립하지 않는다.
-            ScrollViewReader { proxy in
+            GeometryReader { geometry in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-                        if usesCompactPitchChrome {
-                            if pitchChromeExpanded {
-                                matchupCard
-                            }
-                        } else {
-                            matchupCard
-                        }
-                        stage
+                    VStack(alignment: .leading, spacing: 8) {
+                        corePitchSurface(arenaHeight: max(150, min(260, geometry.size.height - 180)))
                     }
-                    .padding(BaseballMetrics.gutter)
-                }
-                .onChange(of: session.pitchLog.count) { _, count in
-                    guard count > 0 else { return }
-                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.28)) {
-                        proxy.scrollTo(Self.dramaAnchor, anchor: .top)
-                    }
-                    // 결과를 본 다음에는 **결정하는 자리로 되돌린다.**
-                    //
-                    // 예전에는 승부 장면에서 멈췄다. 배합을 바꾸려면 매번 스크롤을 내려야
-                    // 했고, 그래서 적응 경고("같은 공이 읽히고 있습니다")를 보고도 그 자리에서
-                    // 손을 쓸 수 없었다 — 경고를 보고 배합을 바꾸는 것이 이 게임의 학습
-                    // 루프인데 그 두 동작 사이에 스크롤이 끼어 있었다.
-                    // 승부구 슬로모(2.6초)는 연출이 끝난 뒤에 되돌아간다. 모션 축소도
-                    // 결과를 읽을 1.2초는 남긴다 — 접근성 설정이 피드백을 삭제하면 안 된다.
-                    let delay = PitchFeedbackTimeline.heartbeatResumeDelay(
-                        reduceMotion: reduceMotion,
-                        isClutch: wasClutch
-                    )
-                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                        guard case .ready = session.stage else { return }
-                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
-                            proxy.scrollTo(Self.controlsAnchor, anchor: .top)
-                        }
-                    }
+                        .padding(.horizontal, BaseballMetrics.gutter)
+                        .padding(.vertical, 6)
                 }
             }
             footer
         }
         .background(BaseballTheme.canvas)
+        .sheet(item: $coreDetail) { detail in
+            CorePitchDetailSheet(title: copyResolver.resolve(.localizable(
+                detail == .strategy ? "mobile.core.strategy" : "mobile.core.details"
+            ))) {
+                if detail == .strategy {
+                    matchupCard
+                    if isPractice { bullpenCoachStrip }
+                    if let preparation = session.preparation {
+                        CatcherCard(preparation: preparation, session: session)
+                        controls(preparation: preparation)
+                    }
+                    Toggle(isOn: $autoRelease) {
+                        Text(verbatim: copyResolver.resolve(.autoRelease))
+                    }
+                    .accessibilityIdentifier("pitch.autoRelease")
+                    if canFastForwardCurrentBatter {
+                        Button(copyResolver.resolve(.fastForwardTitle)) {
+                            coreDetail = nil
+                            cancelScheduledPitchFeedback()
+                            stopMoundHeartbeat()
+                            _ = session.fastForwardCurrentBatter()
+                        }
+                        .accessibilityIdentifier("pitch.fastForwardBatter")
+                    }
+                } else {
+                    lastPitchPanel
+                    if session.stage == .finished {
+                        resultSummary
+                        outingDetail
+                    }
+                }
+            }
+        }
         // 화면 단위 축하 레이어. footer의 stage 교체와 독립되어 다음 공 안내에 잔상이 붙지 않는다.
         .overlay {
             if let celebrationID = perfectReleaseCelebrationID {
@@ -431,6 +427,8 @@ struct PitchView: View {
             } else {
                 wasVelocityRecord = false
             }
+            showsLastPitch = true
+            isWindingUp = false
             replay()
             // 결과는 공이 도착한 순간에, 다음 심박은 리플레이가 끝난 뒤에 온다. 즉시 연달아
             // 울리면 릴리스·결과·심박이 한 덩어리 진동이 되어 무엇을 잘했는지 읽히지 않는다.
@@ -477,6 +475,156 @@ struct PitchView: View {
                 stopMoundHeartbeat()
             }
         }
+    }
+
+
+    @ViewBuilder private func corePitchSurface(arenaHeight: CGFloat) -> some View {
+        HStack(spacing: 8) {
+            Text(verbatim: PitchPresentation.batterName(session.batter, resolver: copyResolver))
+                .font(BaseballType.detail.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textSecondary)
+            Spacer(minLength: 8)
+            Button(copyResolver.resolve(.localizable("mobile.core.strategy"))) { coreDetail = .strategy }
+                .font(BaseballType.detail.weight(.bold))
+                .foregroundStyle(BaseballTheme.action)
+                .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                .disabled(isWindingUp || session.stage != .ready)
+                .accessibilityIdentifier("pitch.strategy")
+        }
+        ZStack {
+            if let result = session.lastResult,
+               showsLastPitch || session.stage != .ready {
+                PitchDramaView(
+                    execution: result.snapshot.execution,
+                    outcome: result.snapshot.outcome,
+                    battedBall: result.snapshot.battedBall,
+                    fielding: result.snapshot.fieldingResolution,
+                    sequenceMoment: session.lastSequenceMoment,
+                    batSide: session.batter.batSide,
+                    progress: replayProgress
+                )
+                .accessibilityIdentifier("pitch.drama")
+            } else if let preparation = session.preparation {
+                CorePitchTarget(
+                    selected: session.selectedZone,
+                    recommended: preparation.primaryRecommendation.call.zone,
+                    hotZone: preparation.scoutingReport?.estimatedHotZone,
+                    coldZone: preparation.scoutingReport?.estimatedColdZone,
+                    batSide: session.batter.batSide
+                ) { zone in
+                    guard !isWindingUp else { return }
+                    showsLastPitch = false
+                    session.chooseZone(zone)
+                }
+            } else {
+                ProgressView().accessibilityLabel(copyResolver.resolve(.statePreparing))
+            }
+        }
+        .frame(height: arenaHeight)
+        .frame(maxWidth: .infinity)
+        .background(BaseballTheme.fieldNight, in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
+        .clipped()
+
+        if let result = session.lastResult, showsLastPitch || session.stage != .ready {
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(verbatim: PitchCopy.localized(result.snapshot.outcome,
+                        battedBall: result.snapshot.battedBall, resolver: copyResolver))
+                        .font(.title3.weight(.bold))
+                    if let verdict = session.lastDelivery.flatMap({ DeliveryControl.localizedVerdict($0, resolver: copyResolver) }) {
+                        EffectChip(text: verdict.text, tone: chipTone(for: verdict.tone))
+                    }
+                }
+                Spacer(minLength: 4)
+                Button(copyResolver.resolve(.localizable("mobile.core.details"))) { coreDetail = .result }
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .accessibilityIdentifier("pitch.resultDetails")
+            }
+            .foregroundStyle(BaseballTheme.textPrimary)
+        }
+        if session.stage == .ready {
+            OptionRow(items: session.repertoire, selection: session.selectedPitchType) { type in
+                guard !isWindingUp else { return }
+                showsLastPitch = false
+                session.choosePitchType(type)
+            } label: { PitchCopy.localized($0, resolver: copyResolver) }
+              itemIdentifier: { "pitch.option.\($0.rawValue)" }
+            .disabled(isWindingUp)
+            if !showsLastPitch {
+            Text(verbatim: PitchCopy.localized(session.selectedZone, batSide: session.batter.batSide, resolver: copyResolver))
+                .font(BaseballType.annotation.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textSecondary)
+            PitchBuildCompactReadoutView(readout: session.selectedAbilityReadout)
+            }
+        } else if session.stage == .finished {
+            Text(verbatim: copyResolver.resolve(.inningLine, arguments: [
+                .integer(session.pitches), .integer(session.strikeouts),
+                .integer(session.walks), .integer(session.runsAllowed)
+            ]))
+            .font(BaseballType.detail.weight(.semibold))
+            if isPractice, let onRetry {
+                Button(copyResolver.resolve(.practiceRetry), action: onRetry)
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .accessibilityIdentifier("pitch.retry")
+            }
+        } else if case .failed = session.stage {
+            Text(verbatim: copyResolver.resolve(.stateFailedBody)).proseStyle()
+        }
+    }
+
+    @ViewBuilder private var outingDetail: some View {
+                // 이 등판에서 손이 얼마나 정확했는가. 연습(불펜)에서도 보여 준다 —
+                // 배우는 자리야말로 나아지는 것이 보여야 한다.
+                // 오늘 이 선수가 무엇을 해냈는가 — 키운 능력이 숫자로 돌아오는 자리.
+                if let records = outingRecords, records.whiffs > 0 || session.strikeouts > 0 {
+                    let whiffs = records.whiffs
+                    let isWhiffRecord = records.isWhiffRecord
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        outingStat(copyResolver.resolve(.statWhiffs), "\(whiffs)", highlight: isWhiffRecord)
+                        outingStat(copyResolver.resolve(.statStrikeouts), "\(session.strikeouts)", highlight: false)
+                        if bestVelocityTenths > 0 {
+                            outingStat(copyResolver.resolve(.statTopVelocity),
+                                       GameFormatters.velocity(tenthsKPH: bestVelocityTenths, language: copyResolver.language),
+                                       highlight: wasVelocityRecord)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("pitch.outingStats")
+                    if isWhiffRecord {
+                        Text(verbatim: copyResolver.resolve(.statWhiffRecord))
+                            .detailStyle(BaseballTheme.textPrimary)
+                    }
+                }
+                if let records = outingRecords, let average = records.deliveryAverage {
+                    let isRecord = records.isDeliveryRecord
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text(verbatim: copyResolver.resolve(.statReleaseTitle))
+                                .font(BaseballType.annotation)
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                            Text("\(average)")
+                                .font(.title3.weight(.heavy).monospacedDigit())
+                                .foregroundStyle(isRecord ? BaseballTheme.milestone : BaseballTheme.textPrimary)
+                            if isRecord {
+                                Text(verbatim: copyResolver.resolve(.statPersonalBest))
+                                    .font(.caption2.weight(.heavy))
+                                    .foregroundStyle(BaseballTheme.canvas)
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(BaseballTheme.milestone, in: Capsule())
+                            }
+                        }
+                        Text(verbatim: isRecord
+                             ? copyResolver.resolve(.statReleaseBest, arguments: [.integer(session.deliveryScores.count)])
+                             : copyResolver.resolve(.statReleaseCompare, arguments: [
+                                .integer(session.deliveryScores.count), .integer(records.previousDeliveryBest),
+                             ]))
+                            .detailStyle()
+                            .monospacedDigit()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("pitch.deliveryAverage")
+                }
     }
 
     // MARK: - 구성
@@ -924,100 +1072,25 @@ struct PitchView: View {
                             perfectReleaseCelebrationID = UUID()
                         }
                     },
-                    onWindUp: { cancelScheduledPitchFeedback() },
+                    commandRating: session.releaseCommandRating,
+                    onWindUp: {
+                        isWindingUp = true
+                        showsLastPitch = false
+                        cancelScheduledPitchFeedback()
+                    },
                     onRelease: {
+                        isWindingUp = false
                         cancelScheduledPitchFeedback()
                         stopMoundHeartbeat()
                     },
                     onMeterEdge: { audio.play(.uiSelect) }
                 )
-                // 미터 제스처가 버거운 손을 위한 출구가 설정 화면에만 있으면
-                // 정작 미터 앞에서 막힌 사람이 못 찾는다 — 그 자리에서 켠다.
-                Toggle(isOn: $autoRelease) {
-                    Text(verbatim: copyResolver.resolve(.autoRelease))
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textTertiary)
-                }
-                .controlSize(.mini)
-                .tint(BaseballTheme.action)
-                .accessibilityIdentifier("pitch.autoRelease")
-                if canFastForwardCurrentBatter {
-                    Button {
-                        cancelScheduledPitchFeedback()
-                        stopMoundHeartbeat()
-                        wasClutch = false
-                        _ = session.fastForwardCurrentBatter()
-                    } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(verbatim: copyResolver.resolve(.fastForwardTitle))
-                                .font(BaseballType.detail.weight(.semibold))
-                            Text(verbatim: copyResolver.resolve(.fastForwardBody))
-                                .detailStyle()
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.bordered)
-                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
-                    .accessibilityIdentifier("pitch.fastForwardBatter")
-                }
             case .betweenBatters:
                 PrimaryPill(title: copyResolver.resolve(.nextBatter), identifier: "pitch.nextBatter") {
                     cancelScheduledPitchFeedback()
                     session.advanceToNextBatter()
                 }
             case .finished, .failed:
-                // 이 등판에서 손이 얼마나 정확했는가. 연습(불펜)에서도 보여 준다 —
-                // 배우는 자리야말로 나아지는 것이 보여야 한다.
-                // 오늘 이 선수가 무엇을 해냈는가 — 키운 능력이 숫자로 돌아오는 자리.
-                if let records = outingRecords, records.whiffs > 0 || session.strikeouts > 0 {
-                    let whiffs = records.whiffs
-                    let isWhiffRecord = records.isWhiffRecord
-                    HStack(alignment: .firstTextBaseline, spacing: 10) {
-                        outingStat(copyResolver.resolve(.statWhiffs), "\(whiffs)", highlight: isWhiffRecord)
-                        outingStat(copyResolver.resolve(.statStrikeouts), "\(session.strikeouts)", highlight: false)
-                        if bestVelocityTenths > 0 {
-                            outingStat(copyResolver.resolve(.statTopVelocity),
-                                       GameFormatters.velocity(tenthsKPH: bestVelocityTenths, language: copyResolver.language),
-                                       highlight: wasVelocityRecord)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("pitch.outingStats")
-                    if isWhiffRecord {
-                        Text(verbatim: copyResolver.resolve(.statWhiffRecord))
-                            .detailStyle(BaseballTheme.textPrimary)
-                    }
-                }
-                if let records = outingRecords, let average = records.deliveryAverage {
-                    let isRecord = records.isDeliveryRecord
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text(verbatim: copyResolver.resolve(.statReleaseTitle))
-                                .font(BaseballType.annotation)
-                                .foregroundStyle(BaseballTheme.textTertiary)
-                            Text("\(average)")
-                                .font(.title3.weight(.heavy).monospacedDigit())
-                                .foregroundStyle(isRecord ? BaseballTheme.milestone : BaseballTheme.textPrimary)
-                            if isRecord {
-                                Text(verbatim: copyResolver.resolve(.statPersonalBest))
-                                    .font(.caption2.weight(.heavy))
-                                    .foregroundStyle(BaseballTheme.canvas)
-                                    .padding(.horizontal, 6).padding(.vertical, 2)
-                                    .background(BaseballTheme.milestone, in: Capsule())
-                            }
-                        }
-                        Text(verbatim: isRecord
-                             ? copyResolver.resolve(.statReleaseBest, arguments: [.integer(session.deliveryScores.count)])
-                             : copyResolver.resolve(.statReleaseCompare, arguments: [
-                                .integer(session.deliveryScores.count), .integer(records.previousDeliveryBest),
-                             ]))
-                            .detailStyle()
-                            .monospacedDigit()
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("pitch.deliveryAverage")
-                }
                 PrimaryPill(title: copyResolver.resolve(isPractice ? .startCareer : .finishOuting),
                             identifier: "pitch.finish", action: onFinish)
             }

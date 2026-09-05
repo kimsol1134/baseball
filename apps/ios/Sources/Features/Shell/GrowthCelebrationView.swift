@@ -19,6 +19,11 @@ struct GrowthCelebrationView: View {
     @Environment(\.gameCopyResolver) private var copyResolver
     @State private var appeared = false
 
+    private var orderedGains: [AbilityGain] {
+        gains.sorted { AbilityDisplayScale.displayDelta(before: $0.before, after: $0.after)
+            > AbilityDisplayScale.displayDelta(before: $1.before, after: $1.after) }
+    }
+
     private var accent: Color { jackpot ? BaseballTheme.milestone : BaseballTheme.action }
 
     var body: some View {
@@ -41,7 +46,7 @@ struct GrowthCelebrationView: View {
             // 게이지는 그 아래에서 사다리 위 위치를 보충한다.
             // 같은 값을 큰 숫자와 게이지로 두 번 적으면 축하가 아니라 오류로 보인다
             // (QA P2-1). 큰 숫자 + "다음 단계까지"만 남긴다.
-            ForEach(gains) { gain in
+            ForEach(Array(orderedGains.prefix(1))) { gain in
                 StatTile(
                     label: copyResolver.resolve(gain.ability.displayCopyToken),
                     value: "\(AbilityDisplayScale.displayRating(gain.after))",
@@ -65,6 +70,18 @@ struct GrowthCelebrationView: View {
                     },
                     tone: accent
                 )
+            }
+            if let commandGain = gains.first(where: { $0.ability == .command }), commandGain.after != commandGain.before {
+                ControlWindowPreview(command: commandGain.after, beforeCommand: commandGain.before)
+            }
+            if orderedGains.count > 1 {
+                DisclosureGroup(copyResolver.resolve(.localizable("mobile.core.growth-details"))) {
+                    ForEach(Array(orderedGains.dropFirst())) { gain in
+                        StatTile(label: copyResolver.resolve(gain.ability.displayCopyToken),
+                            value: "\(AbilityDisplayScale.displayRating(gain.after))",
+                            previousValue: "\(AbilityDisplayScale.displayRating(gain.before))", tone: accent)
+                    }
+                }
             }
             if jackpot {
                 Text(verbatim: copyResolver.resolve(.growthJackpotBody))

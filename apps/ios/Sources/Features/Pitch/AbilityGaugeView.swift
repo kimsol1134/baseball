@@ -198,3 +198,50 @@ struct AbilityGaugeView: View {
         )
     }
 }
+
+/// The same release window used on the mound, including the fixed perfect center.
+struct ControlWindowPreview: View {
+    let command: Int
+    var beforeCommand: Int? = nil
+    var compact = false
+    @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var revealed = false
+    private var current: Double { PitchReleaseWindow.width(command: command) }
+    private var previous: Double? { beforeCommand.map { PitchReleaseWindow.width(command: $0) } }
+    private var expanded: Bool { previous.map { current > $0 } ?? false }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(verbatim: copyResolver.resolve(.localizable(expanded ? "control.window.expanded" : "control.window.short")))
+                .font(compact ? BaseballType.annotation : BaseballType.detail.weight(.semibold))
+                .foregroundStyle(expanded ? BaseballTheme.action : BaseballTheme.textSecondary)
+            GeometryReader { proxy in
+                let width = revealed || reduceMotion ? current : previous ?? current
+                ZStack(alignment: .leading) {
+                    Capsule().fill(BaseballTheme.surfaceRaised)
+                    RoundedRectangle(cornerRadius: 3).fill(BaseballTheme.action.opacity(0.6))
+                        .frame(width: proxy.size.width * width).offset(x: proxy.size.width * (0.5 - width / 2))
+                    if let previous, previous != current {
+                        Rectangle().fill(BaseballTheme.textSecondary).frame(width: 1, height: 22)
+                            .offset(x: proxy.size.width * (0.5 - previous / 2))
+                        Rectangle().fill(BaseballTheme.textSecondary).frame(width: 1, height: 22)
+                            .offset(x: proxy.size.width * (0.5 + previous / 2))
+                    }
+                    Rectangle().fill(BaseballTheme.milestone)
+                        .frame(width: max(2, proxy.size.width * 0.025))
+                        .offset(x: proxy.size.width * 0.4875)
+                }
+            }.frame(height: compact ? 12 : 18)
+            if previous != nil, !compact {
+                Text(verbatim: copyResolver.resolve(.localizable("control.window.legend")))
+                    .font(BaseballType.annotation).foregroundStyle(BaseballTheme.textSecondary)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(copyResolver.resolve(.localizable(previous == nil ? "control.window.accessibility" : "control.window.comparison"),
+            arguments: previous.map { [.decimal($0 * 100), .decimal(current * 100)] } ?? [.decimal(current * 100)]))
+        .accessibilityIdentifier("growth.controlWindow")
+        .onAppear { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.45)) { revealed = true } }
+        .onChange(of: command) { _, _ in revealed = true }
+    }
+}

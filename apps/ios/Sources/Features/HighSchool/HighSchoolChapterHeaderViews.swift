@@ -17,6 +17,7 @@ struct ChapterHeader: View {
     var onForecastTap: (() -> Void)? = nil
     var onSkillTreeTap: (() -> Void)? = nil
     @State private var windExpanded = false
+    @State private var showsPlayerDetails = false
     @Environment(\.gameCopyResolver) private var copyResolver
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -55,6 +56,83 @@ struct ChapterHeader: View {
     }
 
     var body: some View {
+        Group {
+            if [.training, .relationship, .importantGame, .awakening, .chapterReview, .schoolSelection].contains(state.phase) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Button { showsPlayerDetails = true } label: {
+                        HStack(spacing: 10) {
+                            PortraitView(seed: state.identity.portraitSeed, role: .player, size: 34,
+                                playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
+                            Text(verbatim: state.identity.name).font(.headline)
+                                .accessibilityIdentifier("career.playerName")
+                            Text(verbatim: copyResolver.resolve(.localizable("mobile.core.life"), arguments: [.integer(lifeNumber)]))
+                                .font(BaseballType.annotation).foregroundStyle(BaseballTheme.textSecondary)
+                            Spacer(minLength: 4)
+                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(BaseballTheme.action)
+                        }
+                        .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(copyResolver.resolve(.localizable("mobile.core.stats")))
+                    .accessibilityIdentifier("career.playerDetails")
+                    if let cue = NextAppearanceCue.resolve(state) { NextAppearanceCueView(cue: cue) }
+                }
+            } else if compact || peakResult {
+                fullHeader
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    Image(Self.art(for: state).rawValue)
+                        .resizable().scaledToFill().frame(height: 64).clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .accessibilityHidden(true)
+                    HStack(spacing: 16) {
+                        PortraitView(seed: state.identity.portraitSeed, role: .player, size: 72,
+                            playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(verbatim: state.identity.name).font(.title2.weight(.bold)).accessibilityIdentifier("career.playerName")
+                            Text(verbatim: copyResolver.resolve(.localizable("mobile.core.life"), arguments: [.integer(lifeNumber)]))
+                                .foregroundStyle(BaseballTheme.action).font(BaseballType.detail.weight(.semibold))
+                            Text(verbatim: copyResolver.resolve(state.chapter.copyDescriptor.titleToken))
+                                .detailStyle()
+                        }
+                    }
+                    HStack(alignment: .top, spacing: 12) {
+                        CorePlayerStat(title: copyResolver.resolve(.localizable("mobile.core.velocity")),
+                            value: state.pitcher.profile(for: .fourSeam).map {
+                                GameFormatters.velocity(tenthsKPH: $0.velocityTenthsKPH, language: copyResolver.language)
+                            } ?? "—")
+                        CorePlayerStat(title: copyResolver.resolve(TalentAbility.command.displayCopyToken),
+                            value: "\(AbilityDisplayScale.displayRating(state.pitcher.command))", commandRating: state.pitcher.command)
+                        CorePlayerStat(title: copyResolver.resolve(TalentAbility.stamina.displayCopyToken),
+                            value: "\(AbilityDisplayScale.displayRating(state.pitcher.stamina))")
+                    }
+                    Button(copyResolver.resolve(.localizable("mobile.core.stats"))) { showsPlayerDetails = true }
+                        .font(BaseballType.detail.weight(.semibold))
+                        .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                        .accessibilityIdentifier("career.playerDetails")
+                }
+            }
+        }
+        .sheet(isPresented: $showsPlayerDetails) {
+            CorePitchDetailSheet(title: copyResolver.resolve(.localizable("mobile.core.stats"))) {
+                HStack(spacing: 14) {
+                    PortraitView(seed: state.identity.portraitSeed, role: .player, size: 72,
+                        playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
+                    Text(verbatim: state.identity.name).font(.title2.weight(.bold))
+                }
+                AbilityGaugeView(label: copyResolver.resolve(TalentAbility.stuff.displayCopyToken), value: state.pitcher.stuff)
+                AbilityGaugeView(label: copyResolver.resolve(TalentAbility.command.displayCopyToken), value: state.pitcher.command)
+                ControlWindowPreview(command: state.pitcher.command)
+                Text(verbatim: copyResolver.resolve(.localizable("control.window.explanation"))).detailStyle()
+                AbilityGaugeView(label: copyResolver.resolve(TalentAbility.movement.displayCopyToken), value: state.pitcher.movement)
+                AbilityGaugeView(label: copyResolver.resolve(TalentAbility.stamina.displayCopyToken), value: state.pitcher.stamina)
+                DisclosureGroup(copyResolver.resolve(.localizable("mobile.core.career-details"))) { fullHeader }
+            }
+        }
+    }
+
+    private var fullHeader: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.tightSpacing) {
             let chapterCopy = state.chapter.copyDescriptor
             let actTitle = copyResolver.resolve(chapterCopy.actTitleToken)
@@ -329,5 +407,87 @@ struct SummaryBanner: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label). \(summary)")
+    }
+}
+
+
+struct CorePlayerStat: View {
+    let title: String
+    let value: String
+    var commandRating: Int? = nil
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(verbatim: title).font(BaseballType.annotation).foregroundStyle(BaseballTheme.textSecondary)
+            if let commandRating { ControlWindowPreview(command: commandRating, compact: true) }
+            Text(verbatim: value.hasSuffix(" km/h") ? String(value.dropLast(5)) : value)
+                .font(commandRating == nil ? .title3.weight(.bold).monospacedDigit() : .subheadline.monospacedDigit())
+                .foregroundStyle(BaseballTheme.textPrimary)
+            if value.hasSuffix(" km/h") {
+                Text(verbatim: "km/h").font(BaseballType.annotation).foregroundStyle(BaseballTheme.textSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+
+/// Reads the existing schedule; never predicts an opponent or skips a required decision.
+struct NextAppearanceCue: Equatable {
+    let trainings: Int
+    let choices: Int
+
+    static func resolve(_ state: HighSchoolCareerSnapshot) -> Self? {
+        guard state.school != nil,
+              ![.prologue, .schoolSelection, .draft, .legacy, .completed].contains(state.phase) else { return nil }
+        if state.phase == .importantGame { return .init(trainings: 0, choices: 0) }
+        let schedule = state.schedule ?? .fixedDefault
+        let current = state.chapter.number - 1
+        guard schedule.trainingsByChapter.indices.contains(current) else { return nil }
+        var trainings = 0
+        var choices = 0
+        for chapter in current..<schedule.trainingsByChapter.count {
+            let milestones = schedule.milestonesByChapter[chapter]
+            if chapter > current { trainings += schedule.trainingsByChapter[chapter] }
+            else if state.phase == .training {
+                trainings += max(0, schedule.trainingsByChapter[chapter] - state.chapterTrainingCount)
+            }
+            let start = chapter > current || state.phase == .training ? 0
+                : state.phase == .chapterReview ? milestones.count : state.milestoneIndex
+            for milestone in milestones.dropFirst(max(0, start)) {
+                if milestone == .importantGame { return .init(trainings: trainings, choices: choices) }
+                choices += 1
+            }
+            if chapter + 1 < schedule.trainingsByChapter.count { choices += 1 }
+        }
+        return nil
+    }
+}
+
+struct NextAppearanceCueView: View {
+    let cue: NextAppearanceCue
+    @Environment(\.gameCopyResolver) private var copyResolver
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "baseball").foregroundStyle(BaseballTheme.action)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(verbatim: copyResolver.resolve(.localizable(
+                    cue.trainings == 0 && cue.choices == 0 ? "mobile.polish.game-ready" : "mobile.polish.next-game"
+                ))).font(BaseballType.detail.weight(.bold))
+                if cue.trainings > 0 || cue.choices > 0 {
+                    Text(verbatim: detail).font(BaseballType.annotation).foregroundStyle(BaseballTheme.textSecondary)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(BaseballTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("career.nextAppearance")
+    }
+    private var detail: String {
+        if cue.choices == 0 { return copyResolver.resolve(.localizable("mobile.polish.training-count"), arguments: [.integer(cue.trainings)]) }
+        if cue.trainings == 0 { return copyResolver.resolve(.localizable("mobile.polish.choice-count"), arguments: [.integer(cue.choices)]) }
+        return copyResolver.resolve(.localizable("mobile.polish.preparation-counts"), arguments: [.integer(cue.trainings), .integer(cue.choices)])
     }
 }

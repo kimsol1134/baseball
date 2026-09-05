@@ -58,8 +58,8 @@ struct HighSchoolArmHealthResultCard: View {
 /// 버튼을 못 찾고 회차가 그 자리에서 멈췄다. 흐름 안의 카드면 결과와 다음 행동이 세로로
 /// 이어져, 스크롤 없이 읽고 그대로 다음 훈련을 누른다.
 ///
-/// 국면이 관계·토너먼트로 바뀐 뒤에는 `compact`로 한 줄만 남긴다. 전체 카드가 다음
-/// 선택의 위를 계속 덮지 않게 하려는 것이다. 닫기 버튼은 어느 쪽이든 유지한다.
+/// 첫 도착 화면에서 성장의 전후를 강조하고 다음 행동 뒤에는 `compact`로 접는다.
+/// 닫기 버튼은 어느 쪽이든 유지한다.
 ///
 /// 성장이 0인 훈련도 여기 뜬다. 안 오른 것도 결과이고, 아무것도 안 뜨는 것이 가장 나쁘다.
 struct TrainingResultPanel: View {
@@ -99,7 +99,7 @@ struct TrainingResultPanel: View {
 
             // 오른 값이 주인공이다. 큰 글자 한 줄이면 스치듯 봐도 읽힌다.
             Text(HighSchoolPresentation.localizedTrainingResultHeadline(receipt, resolver: copyResolver))
-                .font(compact ? .title3.weight(.heavy) : BaseballType.scoreboard)
+                .font(.title3.weight(.heavy))
                 .foregroundStyle(grew ? accent : BaseballTheme.textSecondary)
                 .accessibilityIdentifier("hs.training.result.headline")
 
@@ -115,14 +115,19 @@ struct TrainingResultPanel: View {
                 } else {
                     HStack(alignment: .top, spacing: 10) {
                         ForEach(risen) { gain in
+                            if gain.ability == .command {
+                                Text(verbatim: HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver))
+                                    .font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(accent)
+                            } else {
                             StatTile(
                                 label: copyResolver.resolve(gain.ability.displayCopyToken),
                                 value: "\(AbilityDisplayScale.displayRating(gain.after))",
                                 previousValue: "\(AbilityDisplayScale.displayRating(gain.before))",
-                                caption: HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver),
+                                caption: nil,
                                 tone: accent,
                                 animatesChange: true
                             )
+                            }
                         }
                     }
                 }
@@ -133,6 +138,9 @@ struct TrainingResultPanel: View {
                 }
             }
 
+            if let commandGain = receipt.gains.first(where: { $0.ability == .command }), commandGain.after != commandGain.before {
+                ControlWindowPreview(command: commandGain.after, beforeCommand: commandGain.before, compact: compact)
+            }
             if let learning = receipt.pitchLearning {
                 GameCopyText(
                     AppCopyKey.trainingResultPitchLearning,
@@ -152,8 +160,18 @@ struct TrainingResultPanel: View {
             }
 
             if !compact {
-                Text(HighSchoolPresentation.localizedTrainingResultDetail(receipt, resolver: copyResolver))
-                    .detailStyle()
+                if let primary = receipt.gains.filter({ $0.after > $0.before }).max(by: { ($0.after - $0.before) < ($1.after - $1.before) }) {
+                    let key: String = switch primary.ability {
+                    case .stuff: "mobile.polish.growth-stuff"
+                    case .command: "mobile.polish.growth-command"
+                    case .movement: "mobile.polish.growth-movement"
+                    case .stamina: "mobile.polish.growth-stamina"
+                    }
+                    Text(verbatim: copyResolver.resolve(.localizable(key))).font(BaseballType.detail.weight(.semibold))
+                }
+                DisclosureGroup(copyResolver.resolve(.localizable("mobile.polish.training-details"))) {
+                    Text(HighSchoolPresentation.localizedTrainingResultDetail(receipt, resolver: copyResolver)).detailStyle()
+                }
 
                 // 피로는 훈련의 가격이다. 결과와 같은 자리에서 보여야 다음 강도를 고를 수 있다.
                 EffectChip(

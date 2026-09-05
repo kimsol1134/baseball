@@ -201,22 +201,22 @@
     },
     "app.tab.career": {
       "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내 투수"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Career"
+            "value": "My pitcher"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "キャリア"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "커리어"
+            "value": "マイ投手"
           }
         }
       }
@@ -10544,13 +10544,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Change the Setup First"
+            "value": "Change setup and restart"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "まず設定を変更してください"
+            "value": "設定を変えて始める"
           }
         },
         "ko": {
@@ -10764,19 +10764,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Balance %1$lldP · Next-player starting bonus +%2$lld"
+            "value": "Balance %1$lldP · Next-life starting bonus +%2$lld"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "残高%1$lldP・次プレイヤースタートボーナス+%2$lld"
+            "value": "残高%1$lldP・次の人生の開始ボーナス+%2$lld"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "잔액 %1$lldP · 새 선수 시작 보너스 +%2$lld"
+            "value": "잔액 %1$lldP · 다음 생 시작 보너스 +%2$lld"
           }
         }
       }
@@ -15626,19 +15626,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "HOLD TO WIND UP"
+            "value": "Hold, release in green"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "長押しでワインドアップ"
+            "value": "長押しして緑で離す"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "길게 눌러 와인드업"
+            "value": "누르고, 초록에서 놓기"
           }
         }
       }
@@ -42611,6 +42611,1592 @@
           "stringUnit": {
             "state": "translated",
             "value": "훈련 결과 · 이번엔 오르지 않았습니다"
+          }
+        }
+      }
+    },
+    "mobile.core.strategy": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "작전"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strategy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作戦"
+          }
+        }
+      }
+    },
+    "mobile.core.details": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자세히"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "詳しく"
+          }
+        }
+      }
+    },
+    "mobile.core.player": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내 투수"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My pitcher"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイ投手"
+          }
+        }
+      }
+    },
+    "mobile.core.next": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 행동"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up next"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の行動"
+          }
+        }
+      }
+    },
+    "mobile.core.inherited": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이어지는 힘"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carried forward"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "引き継ぐ力"
+          }
+        }
+      }
+    },
+    "mobile.core.restart": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다시 시작"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A new start"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新たなスタート"
+          }
+        }
+      }
+    },
+    "mobile.core.stats": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "능력 자세히"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pitcher details"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "能力の詳細"
+          }
+        }
+      }
+    },
+    "mobile.core.life": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld번째 생"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Life %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld回目の人生"
+          }
+        }
+      }
+    },
+    "mobile.core.pro-season": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프로 %lld시즌"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro season %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロ%lldシーズン目"
+          }
+        }
+      }
+    },
+    "mobile.core.velocity": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구속"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Velocity"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "球速"
+          }
+        }
+      }
+    },
+    "mobile.core.career-details": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기록과 이야기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Records and story"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録と物語"
+          }
+        }
+      }
+    },
+    "mobile.core.change-training": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 훈련 고르기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change training"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "別の練習を選ぶ"
+          }
+        }
+      }
+    },
+    "mobile.core.no-growth": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "능력 변화 없음"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No ability change"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "能力の変化なし"
+          }
+        }
+      }
+    },
+    "mobile.core.new-start": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "고교 1학년부터 다시 시작"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start again in the first year of high school"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "高校1年生から再スタート"
+          }
+        }
+      }
+    },
+    "mobile.core.rebirth-title": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 생에도, 나의 공"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My pitch, another life"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の人生も、自分の球で"
+          }
+        }
+      }
+    },
+    "mobile.core.rebirth-action": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 힘으로 환생하기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rebirth with this strength"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この力で生まれ変わる"
+          }
+        }
+      }
+    },
+    "mobile.core.growth-details": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "성장 내역"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Growth details"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長の詳細"
+          }
+        }
+      }
+    },
+    "mobile.core.continue": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계속하기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "続ける"
+          }
+        }
+      }
+    },
+    "mobile.core.legacy-primary": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 중심"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main boost: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主な強化：%@"
+          }
+        }
+      }
+    },
+    "mobile.core.legacy-secondary": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 보조"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minor boost: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "補助強化：%@"
+          }
+        }
+      }
+    },
+    "mobile.core.legacy-balanced": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 강화"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boost: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "強化：%@"
+          }
+        }
+      }
+    },
+    "mobile.polish.life-transition": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld번째 생 → %lld번째 생"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Life %lld → Life %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld回目 → %lld回目の人生"
+          }
+        }
+      }
+    },
+    "mobile.polish.next-game": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 등판 준비"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next appearance"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の登板に向けて"
+          }
+        }
+      }
+    },
+    "mobile.polish.game-ready": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마운드에 오를 시간"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready for the mound"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マウンドへ"
+          }
+        }
+      }
+    },
+    "mobile.polish.preparation-counts": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "훈련 %lld회 · 선택 %lld번 남음"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld training sessions · %lld decisions to go"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "練習あと%lld回・選択あと%lld回"
+          }
+        }
+      }
+    },
+    "mobile.polish.training-count": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "훈련 %lld회 남음"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld training sessions to go"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "練習あと%lld回"
+          }
+        }
+      }
+    },
+    "mobile.polish.choice-count": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택 %lld번 후 등판"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld decisions before pitching"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択あと%lld回で登板"
+          }
+        }
+      }
+    },
+    "mobile.polish.no-bonus": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "추가 능력 보너스 없음"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No additional ability bonus"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追加能力ボーナスなし"
+          }
+        }
+      }
+    },
+    "mobile.polish.start-comparison": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "어떻게 달라질까요?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your next starting point"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の人生のスタート"
+          }
+        }
+      }
+    },
+    "mobile.polish.previous-start": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 생 시작"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This life’s start"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今回の開始時"
+          }
+        }
+      }
+    },
+    "mobile.polish.next-start": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 생 시작"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next life’s start"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の開始時"
+          }
+        }
+      }
+    },
+    "mobile.polish.preview-explanation": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계승과 능력 한도가 반영된 시작값이에요."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting abilities include inheritance and ability caps."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "継承と能力上限を反映した開始時の値です。"
+          }
+        }
+      }
+    },
+    "mobile.polish.preview-unavailable": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설정을 고르면 시작 능력을 확인할 수 있어요."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose your setup to see starting abilities."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定を選ぶと開始時の能力を確認できます。"
+          }
+        }
+      }
+    },
+    "mobile.polish.growth-stuff": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "타자와 승부할 구위가 올랐어요."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More power to challenge hitters."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打者と勝負する球威が上がりました。"
+          }
+        }
+      }
+    },
+    "mobile.polish.growth-command": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "노린 코스로 던질 힘을 키웠어요."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More control over your intended location."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "狙ったコースに投げる力が上がりました。"
+          }
+        }
+      }
+    },
+    "mobile.polish.growth-movement": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "변화구의 움직임을 키웠어요."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More movement on your breaking pitches."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "変化球のキレが増しました。"
+          }
+        }
+      }
+    },
+    "mobile.polish.growth-stamina": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "긴 승부를 버틸 힘을 키웠어요."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More stamina for longer appearances."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "長い勝負を支えるスタミナが増しました。"
+          }
+        }
+      }
+    },
+    "mobile.polish.focus-recommended": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "추천 훈련"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended focus"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おすすめの練習"
+          }
+        }
+      }
+    },
+    "mobile.polish.intensity": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "훈련 강도"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training intensity"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "練習の強度"
+          }
+        }
+      }
+    },
+    "mobile.polish.training-details": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "훈련 효과 자세히"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training details"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "練習の効果"
+          }
+        }
+      }
+    },
+    "mobile.polish.pitch-project": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구종 성장"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pitch development"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "球種の育成"
+          }
+        }
+      }
+    },
+    "mobile.polish.next-challenge": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 생의 도전"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next life’s challenge"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の人生の挑戦"
+          }
+        }
+      }
+    },
+    "mobile.polish.personal-best-goal": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 생의 %lld탈삼진을 넘어보세요."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beat your previous life’s %lld strikeouts."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の人生の%lld奪三振を超えましょう。"
+          }
+        }
+      }
+    },
+    "mobile.polish.first-outing-goal": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "첫 공식 등판에서 내 공을 증명하세요."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prove your pitch in your first official appearance."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最初の公式登板で自分の球を証明しましょう。"
+          }
+        }
+      }
+    },
+    "mobile.polish.changed-setup": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설정을 바꾸면 시작 능력도 달라져요."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changing your setup changes these starting abilities."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定を変えると開始時の能力も変わります。"
+          }
+        }
+      }
+    },
+    "mobile.polish.unknown-start": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이전 시작 기록 없음"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous starting record unavailable"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前回の開始時の記録なし"
+          }
+        }
+      }
+    },
+    "mobile.polish.first-growth": {
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "방금 성장한 내 투수"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your pitcher just grew"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長したマイ投手"
+          }
+        }
+      }
+    },
+    "mobile.polish.full-tree": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체 성장 트리 보기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View full growth tree"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長ツリーをすべて見る"
+          }
+        }
+      }
+    },
+    "mobile.polish.available-awakenings": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금 배울 각성 고르기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose an awakening to learn"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今覚える覚醒を選ぶ"
+          }
+        }
+      }
+    },
+    "mobile.polish.repeat-help": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "연속 훈련 안내"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About repeat training"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連続練習について"
+          }
+        }
+      }
+    },
+    "mobile.polish.evidence-default": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이전 생에서 발견한 대표 유산이에요."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A signature legacy discovered in a previous life."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の人生で見つけた代表遺産です。"
+          }
+        }
+      }
+    },
+    "mobile.polish.evidence-growth": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "능력 성장 +%lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rating growth +%lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "能力成長 +%lld"
+          }
+        }
+      }
+    },
+    "mobile.polish.evidence-hs-games": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "고교 %lld경기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld high-school games"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "高校 %lld試合"
+          }
+        }
+      }
+    },
+    "mobile.polish.evidence-strikeouts": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld탈삼진"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld strikeouts"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld奪三振"
+          }
+        }
+      }
+    },
+    "mobile.polish.evidence-walks": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld볼넷"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld walks"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld四球"
+          }
+        }
+      }
+    },
+    "mobile.polish.evidence-runs": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld실점"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld runs allowed"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld失点"
+          }
+        }
+      }
+    },
+    "mobile.polish.evidence-awakenings": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "관련 각성 %lld개"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld matching awakenings"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "関連する覚醒 %lld個"
+          }
+        }
+      }
+    },
+    "mobile.polish.evidence-trust": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 신뢰 %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ trust %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の信頼 %lld"
+          }
+        }
+      }
+    },
+    "mobile.polish.evidence-pro-seasons": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프로 %lld시즌"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld pro seasons"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロ %lldシーズン"
+          }
+        }
+      }
+    },
+    "mobile.polish.evidence-games": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld경기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld games"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld試合"
+          }
+        }
+      }
+    },
+    "control.window.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제구 · 안정 구간"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control · stable window"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "制球・安定ゾーン"
+          }
+        }
+      }
+    },
+    "control.window.short": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "슬라이더 여유"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timing margin"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タイミングの余裕"
+          }
+        }
+      }
+    },
+    "control.window.expanded": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안정 구간이 넓어졌어요"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your stable window is wider"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安定ゾーンが広がりました"
+          }
+        }
+      }
+    },
+    "control.window.legend": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이전 표시선 → 현재 초록 구간"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous marks → current green window"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以前の目印 → 今の緑のゾーン"
+          }
+        }
+      }
+    },
+    "control.window.accessibility": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안정 릴리스 구간 %.1f%%. 정중앙 퍼펙트는 2.5%%로 같습니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stable release window %.1f%%. The central perfect window stays at 2.5%%."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安定リリースの範囲は%.1f%%。中央のパーフェクトは2.5%%で変わりません。"
+          }
+        }
+      }
+    },
+    "control.window.comparison": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안정 구간 %.1f%%에서 %.1f%%로. 퍼펙트 구간은 같습니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stable window from %.1f%% to %.1f%%. The perfect window is unchanged."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安定ゾーンが%.1f%%から%.1f%%に。パーフェクトの範囲は変わりません。"
+          }
+        }
+      }
+    },
+    "control.window.explanation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제구가 자라면 초록 구간에서 놓기 쉬워져요. 정중앙 퍼펙트와 직접 조준은 계속 내 손으로 맞춥니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More control gives you more room to release in green. Hitting the perfect center and keeping your aim steady still take your skill."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "制球が育つと緑のゾーンで指を離しやすくなります。中央のパーフェクトと照準合わせは引き続き自分の腕で狙います。"
+          }
+        }
+      }
+    },
+    "control.release.stable": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안정 릴리스"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stable release"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安定リリース"
+          }
+        }
+      }
+    },
+    "control.release.aim-shaky": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안정 릴리스 · 조준은 흔들렸어요"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stable release · aim was unsteady"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安定リリース・照準はぶれました"
+          }
+        }
+      }
+    },
+    "control.release.near": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안정 구간에 가까웠어요"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close to the stable window"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安定ゾーンまでもう少し"
+          }
+        }
+      }
+    },
+    "control.release.missed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "타이밍을 놓쳤어요"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Missed the timing"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タイミングを逃しました"
           }
         }
       }

@@ -144,6 +144,17 @@ if (/overlay\(alignment:\s*\.leading\)/.test(cardBlock.slice(0, cardBlock.indexO
   failures.push(`${iosSourceLabel("DesignSystem.swift")}: 카드 기본값에 좌측 강조 레일이 있음`);
 }
 
+const keyArtHeaderBlock = designSystemSwift.slice(designSystemSwift.indexOf("struct KeyArtHeader"));
+const keyArtHeaderBody = keyArtHeaderBlock.slice(0, keyArtHeaderBlock.indexOf("struct ArtThumb"));
+if (/\.clipped\(\)\s*\n\s*\.accessibilityElement/.test(keyArtHeaderBody)) {
+  failures.push(
+    `${iosSourceLabel("DesignSystem.swift")}: KeyArtHeader 바깥 clipped가 한글 제목 획을 자른다. 그림만 자른다`
+  );
+}
+if (!keyArtHeaderBody.includes("titleLeadingClearance") || !keyArtHeaderBody.includes("titleAscentClearance")) {
+  failures.push(`${iosSourceLabel("DesignSystem.swift")}: KeyArtHeader가 한글 제목 여백 계약을 쓰지 않음`);
+}
+
 // 레일은 `BaseballCard` 밖에서도 되살아난다. 실제로 `SummaryBanner`가 HStack 왼쪽에 2pt
 // 사각형을 세워 매 단계 화면마다 반복되고 있었다 — 카드가 아니어서 위 검사에 걸리지 않았다.
 // 그래서 얇은 세로 막대 자체를 금지하고, 정당한 곳만 이름으로 열어 둔다. 새로 필요하면
@@ -183,6 +194,11 @@ const contractChecks = [
   [iosSourceLabel("PitchSession.swift"), "engine.submitPitch"],
   [iosSourceLabel("CareerFlowView.swift"), "PitchView(session: session"],
   [iosSourceLabel("DesignSystem.swift"), "minimumTapTarget"],
+  [iosSourceLabel("DesignSystem.swift"), "titleAscentClearance"],
+  [iosSourceLabel("DesignSystem.swift"), "titleLeadingClearance"],
+  [iosSourceLabel("HighSchoolSetupView.swift"), "setup-step-"],
+  [iosSourceLabel("HighSchoolSetupView.swift"), "setupQuestionStyle"],
+  [iosSourceLabel("AppShell.swift"), "topStatusScrim()"],
   ["apps/ios/project.yml", "UILaunchScreen"],
   ["apps/ios/project.yml", "UISupportedInterfaceOrientations"],
   // 5위권 작업(DOC-IOS-TOP)의 계약. 되돌아가면 손맛·소리·환생 루프가 조용히 사라진다.

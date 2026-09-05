@@ -436,7 +436,9 @@ struct AppShell: View {
                     .toolbar(hidesCareerTabBar ? .hidden : .visible, for: .tabBar)
                     .id(firstLaunchToken)
                     // 커리어 탭은 내비게이션 바가 없어 스크롤한 글이 시계 뒤로 올라왔다(4차 검수).
-                    .overlay(alignment: .top) { StatusBarScrim() }
+                    // overlay GeometryReader는 세이프 에어리어 안에서 top inset이 0이라
+                    // 띠가 안 그려졌다. TopStatusScrim이 본문에서 inset을 읽는다.
+                    .topStatusScrim()
             }
             .tabItem {
                 Label(copyResolver.resolve(AppTab.career.titleKey), systemImage: AppTab.career.icon)

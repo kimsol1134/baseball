@@ -7,6 +7,75 @@ import BaseballIOSPersistence
 
 @MainActor
 final class SignatureLegacyIntegrationTests: XCTestCase {
+    func testQuickRebirthPreviewMatchesActualStartAndNeverChangesCurrentCareer() throws {
+        let defaults = UserDefaults.standard
+        let keys = ["baseball.lastSetup", "baseball.quickRebirth.seedReservation"]
+        let savedDefaults = keys.map { defaults.object(forKey: $0) }
+        defer { for (key, value) in zip(keys, savedDefaults) { defaults.set(value, forKey: key) } }
+        let source = try Self.completedDraftedCareer()
+        for total in [18, 10_000] {
+            let sync = SaveSync(key: "premium-preview-\(total)-\(UUID().uuidString).json")
+            defer { sync.clear() }
+            let legacy = CareerSignatureLegacy.definition(for: .commandMap)
+            var inherited = HighSchoolCareerStore.nextInheritance(from: source.result.snapshot, memories: [], previous: .firstLife,
+                signatureLegacy: legacy, discoveredSignatureLegacies: [legacy])
+            inherited.automaticSoulEarned = total
+            let record = HighSchoolCareerStore.lifeRecord(from: source.result.snapshot, memories: [], previous: .firstLife,
+                signatureLegacy: legacy, startingPitcher: source.startingPitcher)
+            XCTAssertTrue(sync.write(try JSONEncoder().encode(HighSchoolCareerStore.SaveRecord(result: nil,
+                inheritance: inherited, archive: [record], revision: source.result.snapshot.revision))))
+            let store = HighSchoolCareerStore(sync: sync)
+            store.restoreOrCreate()
+            store.lastSetup = .init(presetID: "power_prospect", playerName: record.playerName, region: "서울", harshness: "standard", karmas: [], soulDomain: nil,
+                startingRepertoire: PitchLearningRules.recommendedSelection(presetID: "power_prospect"), throwingHand: nil)
+            let before = store.inheritance
+            let preview = try XCTUnwrap(store.quickRebirthPreview())
+            XCTAssertEqual(preview, store.quickRebirthPreview())
+            XCTAssertEqual(store.inheritance, before)
+            XCTAssertEqual(store.archive, [record])
+            XCTAssertNil(store.state)
+            XCTAssertEqual(preview.previous, [source.startingPitcher.stuff, source.startingPitcher.command, source.startingPitcher.movement, source.startingPitcher.stamina])
+            let seed = store.quickRebirthSeed()
+            store.startQuickRebirth(entryPoint: "test")
+            let next = try XCTUnwrap(store.state)
+            XCTAssertEqual(preview.next, [next.pitcher.stuff, next.pitcher.command, next.pitcher.movement, next.pitcher.stamina])
+            XCTAssertEqual(preview.nextLife, next.lifeNumber)
+            XCTAssertTrue(next.careerID.contains(try XCTUnwrap(seed)))
+            XCTAssertEqual(next.identity.portraitSeed, record.portraitSeed)
+        }
+    }
+
+    func testSignatureDefinitionWithoutEvidenceResolvesStrictlyInAllLanguages() throws {
+        for language in [AppLanguage.korean, .english, .japanese] {
+            let resolver = GameCopyResolver(language: language, policy: .strict)
+            for id in CareerSignatureLegacyID.allCases {
+                let copy = HighSchoolConclusionPresentation.localizedSignature(CareerSignatureLegacy.definition(for: id), resolver: resolver)
+                XCTAssertFalse(copy.title.isEmpty)
+                XCTAssertFalse(copy.evidence.isEmpty)
+                XCTAssertFalse(copy.evidence.contains("%@"))
+            }
+        }
+        let career = try Self.completedDraftedCareer()
+        let resolver = GameCopyResolver(language: .japanese, policy: .strict)
+        for legacy in CareerSignatureLegacy.candidates(startingPitcher: career.startingPitcher, finalState: career.result.snapshot) {
+            let evidence = HighSchoolConclusionPresentation.localizedSignature(legacy, resolver: resolver).evidence
+            for english in ["rating growth", "games", "strikeouts", "walks", "trust", "matching awakenings"] {
+                XCTAssertFalse(evidence.contains(english), evidence)
+            }
+        }
+    }
+
+    func testJapaneseSignatureEffectUsesJapaneseAbilityLabels() {
+        let resolver = GameCopyResolver(language: .japanese, policy: .releaseSafe)
+        let effect = CareerSignatureLegacyEffect(stuff: 1, command: 2, movement: 1)
+        let copy = HighSchoolConclusionPresentation.localizedSignatureEffect(effect, resolver: resolver)
+        for ability in [TalentAbility.stuff, .command, .movement] {
+            XCTAssertTrue(copy.contains(resolver.resolve(ability.displayCopyToken)))
+        }
+        for english in ["Stuff", "Control", "Breaking", "Stamina"] { XCTAssertFalse(copy.contains(english)) }
+        XCTAssertFalse(copy.contains("+0"))
+    }
+
     func testPreFeatureInheritanceJSONDecodesWithoutSignatureLegacy() throws {
         let data = Data(
             #"{"lifeNumber":2,"memories":[],"soulPoints":18,"karmas":[]}"#.utf8
@@ -33,6 +102,16 @@ final class SignatureLegacyIntegrationTests: XCTestCase {
         XCTAssertNil(decoded.signatureLegacy)
         XCTAssertNil(decoded.signatureLegacyCandidates)
         XCTAssertEqual(decoded.playerName, "민서준")
+    }
+
+    func testContinuingNamedPitcherPreservesPortraitAndDoesNotRewriteArchive() throws {
+        let data = Data(#"{"lifeNumber":1,"playerName":"민서준","appearanceSeed":"original-face","schoolName":"한빛고","drafted":false,"evaluationScore":58,"teamName":null,"memories":[],"games":5,"strikeouts":12,"walks":3,"runsAllowed":4,"soulPoints":20}"#.utf8)
+        let previous = try JSONDecoder().decode(HighSchoolCareerStore.LifeRecord.self, from: data)
+        let before = try JSONEncoder().encode(previous)
+        XCTAssertEqual(HighSchoolCareerStore.continuedPortraitSeed(playerName: "민서준", previous: previous), "original-face")
+        XCTAssertNil(HighSchoolCareerStore.continuedPortraitSeed(playerName: "다른 투수", previous: previous))
+        XCTAssertNil(HighSchoolCareerStore.continuedPortraitSeed(playerName: "민서준", previous: nil))
+        XCTAssertEqual(try JSONDecoder().decode(HighSchoolCareerStore.LifeRecord.self, from: before), previous)
     }
 
     func testCompletingLifeEquipsOneLegacyAndPermanentlyDiscoversAllCandidates() throws {

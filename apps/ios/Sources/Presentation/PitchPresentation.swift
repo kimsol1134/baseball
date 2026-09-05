@@ -271,8 +271,8 @@ enum PitchPresentation {
             .abilitySummary,
             arguments: [
                 .userText(GameFormatters.velocity(tenthsKPH: readout.nominalVelocityTenthsKPH, language: resolver.language)),
-                .integer(readout.commandRating), .integer(readout.movementRating),
-                .integer(readout.staminaRating), .integer(readout.rawFatigue),
+                .integer(AbilityDisplayScale.displayRating(readout.commandRating)), .integer(AbilityDisplayScale.displayRating(readout.movementRating)),
+                .integer(AbilityDisplayScale.displayRating(readout.staminaRating)), .integer(readout.rawFatigue),
                 .integer(readout.effectiveFatigue), .integer(readout.fatigueCost),
                 .userText(buildSynergy(readout, resolver: resolver)),
             ]

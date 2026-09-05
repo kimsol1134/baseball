@@ -6,9 +6,7 @@ extension HighSchoolSetupView {
     var nameStep: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             GameCopyText(isRebirth ? AppCopyKey.setupNameTitleRebirth : AppCopyKey.setupNameTitleFirst)
-                .font(.title.bold())
-                .foregroundStyle(BaseballTheme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+                .setupQuestionStyle()
 
             if showOnboardingNameCTA {
                 Text(verbatim: copyResolver.resolve(AppCopyKey.onboardingBullpenNameCTA))

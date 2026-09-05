@@ -20,6 +20,7 @@ struct AwakeningCard: View {
     static let totalAwakenings = 3
 
     @State private var pending: AwakeningID?
+    @State private var showsEntireTree = false
     @Environment(\.gameCopyResolver) private var copyResolver
 
     private var availableSet: Set<AwakeningID> { Set(options) }
@@ -57,13 +58,8 @@ struct AwakeningCard: View {
                         .detailStyle()
                 }
             } else {
-                // 회차당 세 번뿐인 순간 — 목록이 아니라 무대를 준다(QA P2-2).
-                KeyArtHeader(
-                    art: .awakening,
-                    eyebrow: copyResolver.resolve(AppCopyKey.awakeningEyebrow),
-                    title: copyResolver.resolve(AppCopyKey.awakeningKeyArtTitle),
-                    accent: BaseballTheme.milestone
-                )
+                Label(copyResolver.resolve(AppCopyKey.awakeningKeyArtTitle), systemImage: "sparkles")
+                    .font(.title2.weight(.bold)).foregroundStyle(BaseballTheme.milestone)
                 Text(verbatim: HighSchoolPresentation.localizedAwakeningCounter(
                     total: Self.totalAwakenings,
                     current: selected.count + 1,
@@ -78,7 +74,8 @@ struct AwakeningCard: View {
                     summary: copyResolver.resolve(
                         AppCopyKey.awakeningSelectionSummary,
                         arguments: [.integer(max(0, Self.totalAwakenings - selected.count - 1))]
-                    )
+                    ),
+                    startsCollapsed: true
                 ) {
                     Text(verbatim: HighSchoolPresentation.localizedAwakeningSelectionGuidance(
                         total: Self.totalAwakenings,
@@ -92,6 +89,11 @@ struct AwakeningCard: View {
             Text(verbatim: sparkLine.text)
                 .detailStyle(sparkLine.tone)
 
+            if !readOnly {
+                Button(copyResolver.resolve(.localizable(showsEntireTree ? "mobile.polish.available-awakenings" : "mobile.polish.full-tree"))) {
+                    showsEntireTree.toggle()
+                }.frame(minHeight: BaseballMetrics.minimumTapTarget).accessibilityIdentifier("hs.skillTree.fullTree")
+            }
             ForEach(AwakeningTree.Branch.allCases, id: \.self) { branch in
                 branchSection(branch)
             }
@@ -130,8 +132,9 @@ struct AwakeningCard: View {
     }
 
     @ViewBuilder private func branchSection(_ branch: AwakeningTree.Branch) -> some View {
-        let branchNodes = AwakeningTree.nodes.filter { $0.branch == branch }
+        let branchNodes = AwakeningTree.nodes.filter { $0.branch == branch && (readOnly || showsEntireTree || availableSet.contains($0.id)) }
         let ownedCount = branchNodes.filter { takenSet.contains($0.id) }.count
+        if !branchNodes.isEmpty {
         BaseballCard(
             title: HighSchoolPresentation.localizedAwakeningBranchCardTitle(
                 branch,
@@ -140,6 +143,7 @@ struct AwakeningCard: View {
             tone: ownedCount > 0 ? .milestone : .standard
         ) {
             VStack(alignment: .leading, spacing: 8) {
+                if readOnly || showsEntireTree {
                 HStack(spacing: 6) {
                     Image(systemName: branch.symbol).foregroundStyle(BaseballTheme.milestone)
                     Text(verbatim: HighSchoolPresentation.localizedAwakeningBranchDetail(
@@ -157,11 +161,14 @@ struct AwakeningCard: View {
                             .foregroundStyle(BaseballTheme.milestone)
                     }
                 }
+                }
                 ForEach(branchNodes, id: \.id) { node in
                     nodeRow(node)
                 }
             }
         }
+    }
+
     }
 
     @ViewBuilder private func nodeRow(_ node: AwakeningTree.Node) -> some View {

@@ -230,15 +230,17 @@ struct HighSchoolSetupView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            ScrollView {
-                VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-                    // 원버튼 환생 — 반복 회차의 첫 마찰(설정 4단계)을 한 탭으로 접는다.
-                    if step == .name {
-                        quickRebirthCard
-                    }
-                    // 크로스페이드는 전환 중 두 단계의 한글이 겹쳐 보인다 — 첫 30초에
-                    // "고장난 앱"으로 읽히는 P0(QA 문서). 밀어내기는 겹치지 않는다.
-                    Group {
+            // 전환은 스크롤 영역 전체에서만 일어난다. 예전에는 스크롤 *안* 콘텐츠가
+            // 왼쪽으로 밀려 나가며 새 단계 제목이 머리 밑에 그려졌다 — 한글 윗획이
+            // 잘려 "왼쪽 화면의 글씨가 안 보인다"로 읽혔다(페르소나 05-setup-repertoire,
+            // 1.0.2 리뷰 "글씨가 화면 밖으로").
+            ZStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                        // 원버튼 환생 — 반복 회차의 첫 마찰(설정 4단계)을 한 탭으로 접는다.
+                        if step == .name {
+                            quickRebirthCard
+                        }
                         switch step {
                         case .name: nameStep
                         case .region: regionStep
@@ -247,17 +249,15 @@ struct HighSchoolSetupView: View {
                         case .handicap: handicapStep
                         }
                     }
-                    .id(step)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)
-                    ))
+                    .padding(BaseballMetrics.gutter)
                 }
-                .padding(BaseballMetrics.gutter)
+                .id("setup-step-\(step)")
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                ))
             }
-            // 단계가 바뀌어도 이전 단계의 스크롤 위치가 남아 새 단계 제목이 머리 밑으로
-            // 들어갔다(페르소나 플레이테스트 05-setup-repertoire). 단계마다 새 스크롤뷰로 시작한다.
-            .id("setup-step-\(step)")
+            .clipped()
             footer
         }
         .background(BaseballTheme.canvas)
@@ -328,6 +328,8 @@ struct HighSchoolSetupView: View {
         .padding(.top, 8)
         .padding(.bottom, 10)
         .background(BaseballTheme.surface)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hs.setup.header")
     }
 
     // MARK: - 발
@@ -581,5 +583,16 @@ struct HighSchoolSetupView: View {
         case .noLastChance: (AppCopyKey.setupKarmaNoLastChanceTitle, AppCopyKey.setupKarmaNoLastChanceDetail)
         }
         return (resolver.resolve(keys.title), resolver.resolve(keys.detail))
+    }
+}
+
+extension View {
+    /// 설정 단계 질문. `title.bold()` 한글 윗획이 ScrollView 클립에 먹히지 않게 위를 비운다.
+    func setupQuestionStyle() -> some View {
+        font(.title.bold())
+            .foregroundStyle(BaseballTheme.textPrimary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, BaseballMetrics.titleAscentClearance)
+            .accessibilityIdentifier("hs.setup.question")
     }
 }

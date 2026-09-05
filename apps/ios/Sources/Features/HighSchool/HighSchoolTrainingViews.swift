@@ -175,15 +175,12 @@ struct TrainingCommitBar: View {
             HStack(spacing: 8) {
                 PrimaryButton(
                     title: copyResolver.resolve(
-                        pendingNotice ? AppCopyKey.noticeConfirmAndContinue : AppCopyKey.trainingCommit
+                        AppCopyKey.trainingCommit
                     ),
                     identifier: "hs.training.commit"
                 ) {
-                    if pendingNotice {
-                        onAcknowledgeNotice?()
-                    } else {
-                        onCommit(selection.focus, selection.intensity, selection.selectedTarget)
-                    }
+                    if pendingNotice { onAcknowledgeNotice?() }
+                    onCommit(selection.focus, selection.intensity, selection.selectedTarget)
                 }
                 Button {
                     onCommitBlock(selection.focus, selection.intensity, selection.selectedTarget)
@@ -242,6 +239,8 @@ struct TrainingCard: View {
     /// 고르기의 결과. 커밋은 `TrainingCommitBar`가 같은 값으로 한다.
     @Binding var selection: TrainingSelection
     @Environment(\.gameCopyResolver) private var copyResolver
+
+    @State private var trainingChoicesExpanded = false
 
     private var focus: TrainingFocus { selection.focus }
     private var intensity: TrainingIntensity { selection.intensity }
@@ -401,7 +400,7 @@ struct TrainingCard: View {
             isOpportunity: state.trainingOpportunity?.focus == option,
             isSchoolStrength: state.school?.strength == option,
             isRecommended: HighSchoolCareerStore.recommendedTraining(state: state) == option,
-            recommendedBadge: copyResolver.resolve(AppCopyKey.trainingBadgeRecommended),
+            recommendedBadge: copyResolver.resolve(.localizable("mobile.polish.focus-recommended")),
             selection: $selection.focus,
             extras: { expandedExtras }
         )
@@ -441,15 +440,25 @@ struct TrainingCard: View {
             }
 
             Text(copyResolver.resolve(AppCopyKey.trainingPrompt)).font(.headline)
-            // 열거형은 고정 여섯 개다. 명시적 행은 SwiftUICore의 지연 item closure를
-            // 만들지 않으면서 CaseIterable 선언 순서와 같은 화면 순서를 보존한다.
-            focusOptionButton(.velocity)
-            focusOptionButton(.command)
-            focusOptionButton(.breakingBall)
-            focusOptionButton(.stamina)
-            focusOptionButton(.recovery)
-                .id("hs.training.recovery")
-            focusOptionButton(.gamePlanning)
+            Button(copyResolver.resolve(.localizable("mobile.core.change-training"))) { trainingChoicesExpanded.toggle() }
+                .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                .accessibilityIdentifier("training.change")
+            focusOptionButton(focus)
+            Text(verbatim: copyResolver.resolve(.localizable("mobile.polish.intensity")))
+                .font(BaseballType.detail.weight(.semibold))
+            HStack(spacing: 6) {
+                intensityOptionButton(.light)
+                intensityOptionButton(.standard)
+                intensityOptionButton(.intensive)
+            }
+            if trainingChoicesExpanded {
+                if focus != .velocity { focusOptionButton(.velocity) }
+                if focus != .command { focusOptionButton(.command) }
+                if focus != .breakingBall { focusOptionButton(.breakingBall) }
+                if focus != .stamina { focusOptionButton(.stamina) }
+                if focus != .recovery { focusOptionButton(.recovery) }
+                if focus != .gamePlanning { focusOptionButton(.gamePlanning) }
+            }
 
             // 강도·전망은 펼쳐진 추천 카드 안으로 들어간다.
         }
@@ -490,11 +499,7 @@ struct TrainingCard: View {
             }
         }
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
-                intensityOptionButton(.light)
-                intensityOptionButton(.standard)
-                intensityOptionButton(.intensive)
-            }
+
             if doubleBonus {
                 Text(copyResolver.resolve(AppCopyKey.trainingDoubleBonus))
                     .detailStyle(BaseballTheme.textPrimary)
@@ -549,7 +554,7 @@ struct TrainingFocusOptionButton<Extras: View>: View {
                         .frame(width: 28)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
+                        EffectChipFlow(spacing: 6) {
                             // localization-safe: resolved-copy
                             Text(title).font(.subheadline.weight(.bold))
                             if isOpportunity {

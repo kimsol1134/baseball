@@ -6,9 +6,7 @@ extension HighSchoolSetupView {
     var regionStep: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             GameCopyText(AppCopyKey.setupRegionTitle)
-                .font(.title.bold())
-                .foregroundStyle(BaseballTheme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+                .setupQuestionStyle()
 
             GameCopyText(AppCopyKey.setupRegionDescription)
                 .font(.subheadline)

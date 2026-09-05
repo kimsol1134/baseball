@@ -17,9 +17,7 @@ extension HighSchoolSetupView {
     var repertoireStep: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             GameCopyText(AppCopyKey.setupRepertoireTitle)
-                .font(.title.bold())
-                .foregroundStyle(BaseballTheme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+                .setupQuestionStyle()
             GameCopyText(AppCopyKey.setupRepertoireDescription)
                 .font(.subheadline)
                 .foregroundStyle(BaseballTheme.textSecondary)

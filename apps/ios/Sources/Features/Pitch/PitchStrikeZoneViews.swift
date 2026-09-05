@@ -11,6 +11,7 @@ struct StrikeZoneGrid: View {
     var coldZone: PitchZone? = nil
     /// 코스 이름을 읽어 줄 기준. 좌타자면 몸쪽·바깥쪽이 뒤집힌다.
     var batSide: BatSide = .right
+    var showsLegend = true
     let onSelect: (PitchZone) -> Void
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -26,6 +27,7 @@ struct StrikeZoneGrid: View {
                 }
             }
             // 표적 기호가 무엇을 뜻하는지 한 줄로 못 박는다. 아이콘만으로는 읽히지 않는다.
+            if showsLegend {
             Label(copyResolver.resolve(.zoneRecommended), systemImage: "target")
                 .font(.caption)
                 .foregroundStyle(BaseballTheme.information)
@@ -39,6 +41,7 @@ struct StrikeZoneGrid: View {
                 .font(.caption2)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(copyResolver.resolve(.zoneLegendAccessibility))
+            }
             }
         }
     }
@@ -74,12 +77,66 @@ struct StrikeZoneGrid: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("pitch.zone.\(row).\(column)")
         .accessibilityLabel(
             PitchCopy.localized(zone, batSide: batSide, resolver: copyResolver)
                 + (isRecommended ? copyResolver.resolve(.zoneCellRecommended) : "")
                 + (isHot ? copyResolver.resolve(.zoneCellHot) : isCold ? copyResolver.resolve(.zoneCellCold) : "")
         )
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+/// The existing 2D assets frame a directly selectable zone; no simulation is run to draw it.
+struct CorePitchTarget: View {
+    let selected: PitchZone
+    let recommended: PitchZone
+    let hotZone: PitchZone?
+    let coldZone: PitchZone?
+    let batSide: BatSide
+    let onSelect: (PitchZone) -> Void
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: batSide == .left ? .trailing : .leading) {
+                Image("BatterStance")
+                    .resizable().scaledToFit()
+                    .scaleEffect(x: batSide == .left ? -1 : 1, y: 1)
+                    .opacity(0.32)
+                    .frame(width: geometry.size.width * 0.35)
+                    .accessibilityHidden(true)
+                StrikeZoneGrid(selected: selected, recommended: recommended,
+                    hotZone: hotZone, coldZone: coldZone, batSide: batSide,
+                    showsLegend: false, onSelect: onSelect)
+                    .frame(width: min(220, geometry.size.width * 0.68))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .padding(8)
+    }
+}
+
+struct CorePitchDetailSheet<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: () -> Content
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing, content: content)
+                    .padding(BaseballMetrics.gutter)
+            }
+            .background(BaseballTheme.canvas)
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(copyResolver.resolve(.actionClose)) { dismiss() }
+                }
+            }
+        }
     }
 }
 

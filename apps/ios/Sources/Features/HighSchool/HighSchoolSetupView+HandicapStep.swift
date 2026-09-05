@@ -6,9 +6,7 @@ extension HighSchoolSetupView {
     var handicapStep: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             GameCopyText(AppCopyKey.setupHandicapTitle)
-                .font(.title.bold())
-                .foregroundStyle(BaseballTheme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+                .setupQuestionStyle()
 
             BaseballCard(title: copyResolver.resolve(AppCopyKey.setupDifficultyTitle)) {
                 HStack(spacing: 6) {

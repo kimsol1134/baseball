@@ -207,30 +207,32 @@ enum HighSchoolConclusionPresentation {
         resolver: GameCopyResolver
     ) -> String {
         let evidence = legacy.evidence
-        var facts: [String] = []
-        if let growth = evidence.ratingGrowth {
-            facts.append("rating growth +\(growth)")
+        func fact(_ key: String, _ value: Int) -> String {
+            resolver.resolve(.localizable("mobile.polish.\(key)"), arguments: [.integer(value)])
         }
+        var facts: [String] = []
+        if let growth = evidence.ratingGrowth { facts.append(fact("evidence-growth", growth)) }
         if let performance = evidence.performance {
-            facts.append("\(performance.importantGamesCompleted) high-school games")
-            facts.append("\(performance.strikeouts) strikeouts")
-            facts.append("\(performance.walks) walks")
-            facts.append("\(performance.runsAllowed) runs allowed")
+            facts.append(fact("evidence-hs-games", performance.importantGamesCompleted))
+            facts.append(fact("evidence-strikeouts", performance.strikeouts))
+            facts.append(fact("evidence-walks", performance.walks))
+            facts.append(fact("evidence-runs", performance.runsAllowed))
         }
         if !evidence.matchedAwakenings.isEmpty {
-            facts.append("\(evidence.matchedAwakenings.count) matching awakenings")
+            facts.append(fact("evidence-awakenings", evidence.matchedAwakenings.count))
         }
         if let target = evidence.relationshipTarget, let trust = evidence.relationshipTrust {
-            facts.append("\(resolver.resolve(target.displayCopyToken)) trust \(trust)")
+            facts.append(resolver.resolve(.localizable("mobile.polish.evidence-trust"),
+                arguments: [.userText(resolver.resolve(target.displayCopyToken)), .integer(trust)]))
         }
         if let pro = evidence.proPerformance {
-            facts.append("\(pro.seasons) pro seasons")
-            facts.append("\(pro.games) games")
-            facts.append("\(pro.strikeouts) strikeouts")
-            facts.append("\(pro.walks) walks")
+            facts.append(fact("evidence-pro-seasons", pro.seasons))
+            facts.append(fact("evidence-games", pro.games))
+            facts.append(fact("evidence-strikeouts", pro.strikeouts))
+            facts.append(fact("evidence-walks", pro.walks))
         }
         guard !facts.isEmpty else {
-            return resolver.resolve(AppCopyKey.conclusionSignatureEvidenceDynamic)
+            return resolver.resolve(.localizable("mobile.polish.evidence-default"))
         }
         return resolver.resolve(
             AppCopyKey.conclusionSignatureEvidenceDynamic,
@@ -243,15 +245,14 @@ enum HighSchoolConclusionPresentation {
         _ effect: CareerSignatureLegacyEffect,
         resolver: GameCopyResolver
     ) -> String {
-        // The existing setup formatter owns this wording and its exact Korean particle behavior.
-        if resolver.language == .korean {
-            return HighSchoolSetupView.signatureLegacyEffectLine(effect)
+        let fields: [(TalentAbility, Int)] = [
+            (.stuff, effect.stuff), (.command, effect.command),
+            (.movement, effect.movement), (.stamina, effect.stamina),
+        ]
+        let values = fields.filter { $0.1 != 0 }.map { ability, amount in
+            "\(resolver.resolve(ability.displayCopyToken)) \(amount > 0 ? "+" : "")\(amount)"
         }
-        let fields = [
-            ("Stuff", effect.stuff), ("Control", effect.command),
-            ("Breaking", effect.movement), ("Stamina", effect.stamina),
-        ].filter { $0.1 != 0 }.map { "\($0.0) +\($0.1)" }
-        return fields.isEmpty ? GameCopyResolver.unavailableText : fields.joined(separator: " · ")
+        return values.isEmpty ? resolver.resolve(.localizable("mobile.polish.no-bonus")) : values.joined(separator: " · ")
     }
 
     static func localizedWind(

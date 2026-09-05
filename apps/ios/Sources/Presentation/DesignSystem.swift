@@ -187,16 +187,21 @@ extension View {
 
 /// 내비게이션 바를 숨긴 화면에서 스크롤 콘텐츠가 시계·배터리 뒤로 올라올 때 글자가
 /// 겹치지 않게 상태 막대 높이만큼 캔버스색을 얹는다. 탭·스크롤은 통과시킨다.
+///
+/// overlay 안의 GeometryReader는 이미 세이프 에어리어 *안*에 놓여 `safeAreaInsets.top`이
+/// 0이 된다. 높이 0 띠는 시계 왼쪽의 글자를 그대로 통과시켜, "왼쪽 화면이 잘려 글씨가
+/// 안 보인다"로 읽혔다. 세이프 에어리어를 무시하는 배경으로 상태 막대 자리를 채운다.
 struct StatusBarScrim: View {
     var body: some View {
-        GeometryReader { proxy in
-            BaseballTheme.canvas.opacity(0.94)
-                .frame(height: proxy.safeAreaInsets.top)
-                .frame(maxWidth: .infinity, alignment: .top)
-                .ignoresSafeArea(edges: .top)
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+        Color.clear
+            .frame(height: 0)
+            .frame(maxWidth: .infinity)
+            .background(alignment: .top) {
+                BaseballTheme.canvas.opacity(0.94)
+                    .ignoresSafeArea(edges: .top)
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 }
 
@@ -321,6 +326,11 @@ enum BaseballMetrics {
     static let proseLineSpacing: CGFloat = 6
     /// 15pt 보조 설명의 행간 보정.
     static let detailLineSpacing: CGFloat = 4
+    /// 큰 한글 제목의 윗획이 ScrollView·clip 경계에 먹히지 않게 비우는 높이.
+    /// `title.bold()` / `largeTitle.heavy` 한글은 타이포 박스보다 위로 나간다.
+    static let titleAscentClearance: CGFloat = 6
+    /// 큰 한글 제목 첫째 글자의 왼쪽 획이 clip 경계에 먹히지 않게 비우는 너비.
+    static let titleLeadingClearance: CGFloat = 8
 }
 
 enum BaseballCardTone {
@@ -668,35 +678,40 @@ struct KeyArtHeader: View {
                     .foregroundStyle(BaseballTheme.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, 2)
+            // heavy 한글 첫째 글자의 왼쪽 획이 clip 경계에 먹히지 않게 안쪽으로 들인다.
+            .padding(.horizontal, BaseballMetrics.titleLeadingClearance)
+            .padding(.top, BaseballMetrics.titleAscentClearance)
             .padding(.bottom, 2)
         }
         .frame(maxWidth: .infinity)
         .background {
             if contrast == .standard {
-                Image(art.rawValue)
-                    .resizable()
-                    .scaledToFill()
-                    .accessibilityHidden(true)
-                    .overlay {
-                        // 캔버스와 같은 색으로 아래를 덮어 이미지가 화면에 녹아들게 한다.
-                        // 밝은 카드 위에 사진을 얹으면 배너처럼 떠 보인다.
-                        LinearGradient(
-                            colors: [
-                                BaseballTheme.canvas.opacity(0.1),
-                                BaseballTheme.canvas.opacity(0.72),
-                                BaseballTheme.canvas
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    }
-                    .clipped()
+                GeometryReader { proxy in
+                    Image(art.rawValue)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                        .clipped()
+                        .accessibilityHidden(true)
+                        .overlay {
+                            // 캔버스와 같은 색으로 아래를 덮어 이미지가 화면에 녹아들게 한다.
+                            // 밝은 카드 위에 사진을 얹으면 배너처럼 떠 보인다.
+                            LinearGradient(
+                                colors: [
+                                    BaseballTheme.canvas.opacity(0.1),
+                                    BaseballTheme.canvas.opacity(0.72),
+                                    BaseballTheme.canvas
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        }
+                }
+                .allowsHitTesting(false)
             } else {
                 Rectangle().fill(BaseballTheme.surfaceRaised)
             }
         }
-        .clipped()
         .accessibilityElement(children: .combine)
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import SimulationCore
 import BaseballIOSDomain
 
 /// 고교 3년 돌아보기 — 한 선수가 학교를 떠나는 순간의 폭발.
@@ -18,6 +19,8 @@ struct RunRecapView: View {
     /// 예전처럼 완료 화면을 거친다.
     var onQuickRebirth: (() -> Void)?
     var onSaveIntent: ((NextRunIntent) -> Void)? = nil
+    var previewProvider: (() -> RebirthStartPreview?)? = nil
+    @State private var startPreview: RebirthStartPreview?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.gameCopyResolver) private var copyResolver
@@ -27,6 +30,7 @@ struct RunRecapView: View {
     @State private var intentSaved = false
     @State private var legacyExposureLogged = false
     @State private var continueTapped = false
+    @State private var showsRecapDetails = false
 
     static func legacyIsVisible(revealed: Int, stampCount: Int) -> Bool {
         revealed >= stampCount
@@ -119,6 +123,48 @@ struct RunRecapView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                    HStack(spacing: 16) {
+                        PortraitView(seed: recap.record.portraitSeed, role: .player, size: 44)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(verbatim: recap.record.playerName).font(.title2.weight(.bold)).accessibilityIdentifier("career.playerName")
+                            Text(verbatim: copyResolver.resolve(.localizable("mobile.polish.life-transition"),
+                                arguments: [.integer(recap.record.lifeNumber), .integer(recap.record.lifeNumber + 1)]))
+                                .foregroundStyle(BaseballTheme.action)
+                        }
+                    }
+                    Text(verbatim: copyResolver.resolve(.localizable("mobile.core.rebirth-title")))
+                        .font(.title2.weight(.bold))
+                    if let highlight = stamps.first {
+                        Text(verbatim: highlight.text).font(BaseballType.detail.weight(.semibold))
+                    }
+                    BaseballCard(title: copyResolver.resolve(.localizable("mobile.core.inherited"))) {
+                        if let signature = recap.record.signatureLegacy {
+                            Text(verbatim: HighSchoolConclusionPresentation.localizedSignature(signature, resolver: copyResolver).title)
+                                .font(.title3.weight(.bold))
+                            Text(verbatim: HighSchoolConclusionPresentation.localizedSignatureEffect(signature.effect, resolver: copyResolver))
+                                .foregroundStyle(BaseballTheme.milestone)
+                        }
+                        Text(verbatim: copyResolver.resolve(.recapPointsReceipt,
+                            arguments: [.integer(recap.soulBalance), .integer(recap.soulAutoApplied)]))
+                            .detailStyle()
+                    }
+                    if let startPreview { RebirthStartComparisonView(preview: startPreview) }
+                    BaseballCard(title: copyResolver.resolve(.localizable("mobile.core.restart"))) {
+                        Text(verbatim: copyResolver.resolve(.localizable("mobile.core.new-start")))
+                            .font(BaseballType.detail.weight(.semibold))
+                    }
+                    if onQuickRebirth != nil {
+                        Text(verbatim: copyResolver.resolve(.localizable(
+                            recap.record.strikeouts > 0 ? "mobile.polish.personal-best-goal" : "mobile.polish.first-outing-goal"
+                        ), arguments: recap.record.strikeouts > 0 ? [.integer(recap.record.strikeouts)] : []))
+                            .font(BaseballType.detail.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.action)
+                            .accessibilityIdentifier("hs.recap.nextChallenge")
+                    }
+                    Button(copyResolver.resolve(.localizable("mobile.core.career-details"))) { showsRecapDetails.toggle() }
+                        .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                        .accessibilityIdentifier("hs.recap.details")
+                    if showsRecapDetails {
                     Text(
                         verbatim: copyResolver.resolve(
                             .recapTitle,
@@ -275,6 +321,7 @@ struct RunRecapView: View {
                         }
                         .opacity(soulDone ? 1 : 0)
                     }
+                    }
                 }
                 .padding(.horizontal, BaseballMetrics.gutter)
                 .padding(.top, BaseballMetrics.gutter)
@@ -287,18 +334,16 @@ struct RunRecapView: View {
                 HStack(spacing: 10) {
                     // 감정이 가장 높은 순간에 공유가 있어야 한다 — 아카이브 탭은 감정이 식은 뒤다.
                     LifeCardShareButton(record: recap.record)
-                        .opacity(soulDone ? 1 : 0.25)
-                        .disabled(!soulDone)
+                        .opacity(continueTapped ? 0.5 : 1)
+                        .disabled(continueTapped)
                     // 야구혼이 다 차오른 **바로 그 순간**이 다음 판을 시작하는 자리다.
                     // 예전에는 여기서 완료 화면으로 나가 "다시 태어나기"를 한 번 더 누르고,
                     // 스탬프를 지나, 설정 4단계를 다시 통과해야 했다. 로그라이트의 "한 판 더"가
                     // 다섯 걸음이면 그건 루프가 아니라 출구다.
                     PrimaryButton(
                         title: onQuickRebirth != nil
-                            ? copyResolver.resolve(
-                                .recapQuickStart,
-                                arguments: [.integer(recap.record.lifeNumber + 1)]
-                            ) : copyResolver.resolve(.recapContinue),
+                            ? copyResolver.resolve(.localizable("mobile.core.rebirth-action"))
+                            : copyResolver.resolve(.recapContinue),
                         identifier: "hs.recap.continue"
                     ) {
                         continueFromRecap(
@@ -307,8 +352,8 @@ struct RunRecapView: View {
                             if let onQuickRebirth { onQuickRebirth() } else { onDismiss() }
                         }
                     }
-                    .opacity(soulDone ? 1 : 0.25)
-                    .disabled(!soulDone)
+                    .opacity(continueTapped ? 0.5 : 1)
+                    .disabled(continueTapped)
                 }
                 // 설정을 바꿔서 시작하는 길은 그대로 둔다 — 영혼 상점·핸디캡·지역은
                 // 회차마다 바꾸는 것이 이 게임의 메타다.
@@ -321,8 +366,8 @@ struct RunRecapView: View {
                         .font(BaseballType.detail.weight(.semibold))
                         .foregroundStyle(BaseballTheme.textSecondary)
                         .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
-                        .opacity(soulDone ? 1 : 0.25)
-                        .disabled(!soulDone)
+                        .opacity(continueTapped ? 0.5 : 1)
+                        .disabled(continueTapped)
                         .accessibilityIdentifier("hs.recap.customize")
                 }
             }
@@ -347,6 +392,10 @@ struct RunRecapView: View {
             }
         }
         .onAppear(perform: run)
+        .task(id: recap.id) { startPreview = previewProvider?() }
+        .onChange(of: showsRecapDetails) { _, visible in
+            if visible { logLegacyIfVisible(revealed: revealed) }
+        }
         .accessibilityElement(children: .contain)
     }
 
@@ -386,6 +435,7 @@ struct RunRecapView: View {
     }
 
     private func logLegacyIfVisible(revealed: Int) {
+        guard showsRecapDetails else { return }
         guard Self.shouldLogLegacy(
             alreadyLogged: legacyExposureLogged,
             revealed: revealed,
@@ -418,5 +468,39 @@ struct RunRecapView: View {
             )
         )
         action()
+    }
+}
+
+
+struct RebirthStartComparisonView: View {
+    let preview: RebirthStartPreview
+    @Environment(\.gameCopyResolver) private var copyResolver
+    private let abilities: [TalentAbility] = [.stuff, .command, .movement, .stamina]
+    var body: some View {
+        BaseballCard(title: copyResolver.resolve(.localizable("mobile.polish.start-comparison")), tone: .raised) {
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
+                GridRow {
+                    Color.clear.frame(width: 0, height: 0).accessibilityHidden(true)
+                    Text(verbatim: copyResolver.resolve(.localizable("mobile.polish.previous-start"))).font(BaseballType.annotation)
+                    Text(verbatim: copyResolver.resolve(.localizable("mobile.polish.next-start"))).font(BaseballType.annotation)
+                }
+                ForEach(abilities.indices, id: \.self) { index in
+                    GridRow {
+                        Text(verbatim: copyResolver.resolve(abilities[index].displayCopyToken)).font(BaseballType.detail)
+                        Text(verbatim: preview.previous.map { "\(AbilityDisplayScale.displayRating($0[index]))" } ?? "—")
+                            .foregroundStyle(BaseballTheme.textSecondary).monospacedDigit()
+                        Text(verbatim: "\(AbilityDisplayScale.displayRating(preview.next[index]))")
+                            .font(.title3.weight(.bold).monospacedDigit())
+                            .foregroundStyle(preview.previous.map { preview.next[index] < $0[index] } == true ? BaseballTheme.warning : BaseballTheme.action)
+                            .accessibilityIdentifier("rebirth.start.\(index)")
+                    }
+                }
+            }
+            ControlWindowPreview(command: preview.next[1], beforeCommand: preview.previous?[1])
+            Text(verbatim: copyResolver.resolve(.localizable(preview.previous == nil ? "mobile.polish.unknown-start" : "mobile.polish.preview-explanation")))
+                .detailStyle()
+            Text(verbatim: copyResolver.resolve(.localizable("mobile.polish.changed-setup"))).detailStyle()
+        }
+        .accessibilityIdentifier("hs.recap.startComparison")
     }
 }

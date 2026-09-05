@@ -43,7 +43,8 @@ extension HighSchoolCareerStore {
     }
 
     nonisolated static func recommendedTrainingIntensity(state: HighSchoolCareerSnapshot) -> TrainingIntensity {
-        HighSchoolCareerEngine.recommendedTrainingIntensity(state: state)
+        let suggested = HighSchoolCareerEngine.recommendedTrainingIntensity(state: state)
+        return state.lastTraining == nil && suggested == .intensive ? .standard : suggested
     }
 
     var draftForecast: DraftForecastSnapshot? {

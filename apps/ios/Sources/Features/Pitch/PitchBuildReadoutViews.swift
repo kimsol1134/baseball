@@ -22,11 +22,11 @@ struct PitchBuildCompactReadoutView: View {
                     systemImage: "gauge.with.needle"
                 )
                 EffectChip(
-                    text: copyResolver.resolve(.buildChipMovement, arguments: [.integer(readout.movementRating)]),
+                    text: copyResolver.resolve(.buildChipMovement, arguments: [.integer(AbilityDisplayScale.displayRating(readout.movementRating))]),
                     tone: .neutral
                 )
                 EffectChip(
-                    text: copyResolver.resolve(.buildChipCommand, arguments: [.integer(readout.commandRating)]),
+                    text: copyResolver.resolve(.buildChipCommand, arguments: [.integer(AbilityDisplayScale.displayRating(readout.commandRating))]),
                     tone: .neutral
                 )
                 EffectChip(
@@ -57,11 +57,11 @@ struct PitchBuildReadoutView: View {
                         tenthsKPH: readout.nominalVelocityTenthsKPH,
                         language: copyResolver.language
                     ))
-                    metric(copyResolver.resolve(.buildCommandMetric), "\(readout.commandRating)")
+                    metric(copyResolver.resolve(.buildCommandMetric), "\(AbilityDisplayScale.displayRating(readout.commandRating))")
                 }
                 GridRow {
-                    metric(copyResolver.resolve(.buildMovementMetric), "\(readout.movementRating)")
-                    metric(copyResolver.resolve(.buildStaminaMetric), "\(readout.staminaRating) · \(readout.effectiveFatigue)")
+                    metric(copyResolver.resolve(.buildMovementMetric), "\(AbilityDisplayScale.displayRating(readout.movementRating))")
+                    metric(copyResolver.resolve(.buildStaminaMetric), "\(AbilityDisplayScale.displayRating(readout.staminaRating)) · \(readout.effectiveFatigue)")
                 }
             }
             Text(verbatim: copyResolver.resolve(.buildFatigueCost, arguments: [

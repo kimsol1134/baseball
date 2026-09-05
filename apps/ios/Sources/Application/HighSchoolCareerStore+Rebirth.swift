@@ -320,6 +320,65 @@ extension HighSchoolCareerStore {
     /// → 설정 4단계였다. 2026-08 데이터에서 드래프트를 본 42명 중 27명만 다음 회차를
     /// 시작했다. 로그라이트에서 "다시 한 판"은 마찰이 0에 가까워야 하는 행동이다.
     /// 영혼 상점을 쓰려면 여전히 단계대로 갈 수 있다 — 그 길을 없애지는 않는다.
+    /// Reuse the existing saved identity only when the player continues the same named pitcher.
+    /// This runs at new-life creation; existing lives and archived faces are never rewritten.
+    nonisolated static func continuedPortraitSeed(playerName: String, previous: LifeRecord?) -> String? {
+        guard let previous,
+              previous.playerName.trimmingCharacters(in: .whitespacesAndNewlines) == playerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        else { return nil }
+        return previous.portraitSeed
+    }
+
+    private struct RebirthSeedReservation: Codable {
+        let source: String
+        let lifeNumber: Int
+        let seed: String
+    }
+
+    /// One future seed is reserved for preview/confirmation. The active career RNG is untouched.
+    func quickRebirthSeed() -> String? {
+        guard let previous = archive.first, previous.lifeNumber < inheritance.lifeNumber else { return nil }
+        let source = previous.careerID ?? "legacy-life-\(previous.lifeNumber)"
+        let key = "baseball.quickRebirth.seedReservation"
+        if let data = UserDefaults.standard.data(forKey: key),
+           let saved = try? JSONDecoder().decode(RebirthSeedReservation.self, from: data),
+           saved.source == source, saved.lifeNumber == inheritance.lifeNumber,
+           UInt64(saved.seed) != nil { return saved.seed }
+        let saved = RebirthSeedReservation(source: source, lifeNumber: inheritance.lifeNumber,
+            seed: String(UInt64.random(in: 1...UInt64.max)))
+        if let data = try? JSONEncoder().encode(saved) { UserDefaults.standard.set(data, forKey: key) }
+        return saved.seed
+    }
+
+    func quickRebirthPreview() -> RebirthStartPreview? {
+        guard let preset = quickRebirthPreset, let setup = lastSetup,
+              let previous = archive.first, let seed = quickRebirthSeed() else { return nil }
+        let name = setup.playerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let playerName = name.isEmpty ? preset.pitcher.name : name
+        let unlocked = Set((inheritance.unlockedSignatureLegacies ?? []).map(\.id))
+        let legacy = inheritance.equippedSignatureLegacyID.flatMap { unlocked.contains($0) ? $0 : nil }
+        let identity = PlayerIdentitySnapshot(name: playerName,
+            throwingHand: setup.throwingHand ?? preset.pitcher.throwingHand, bodyType: .balanced,
+            region: HighSchoolCareerEngine.regions.contains(setup.region) ? setup.region : "서울",
+            appearanceSeed: Self.continuedPortraitSeed(playerName: playerName, previous: previous)
+                ?? PlayerAppearanceSeed.make(careerSeed: seed, lifeNumber: inheritance.lifeNumber))
+        let params = StartHighSchoolCareerParams(seed: seed, presetID: preset.id,
+            lifeNumber: inheritance.lifeNumber,
+            inheritedSoulPoints: inheritance.automaticSoulTotal,
+            inheritedSoulDomain: inheritance.automaticSoulTotal == 0 ? nil : setup.soulDomain,
+            inheritedMemories: inheritance.memories, identity: identity,
+            difficulty: CareerDifficultySnapshot(careerHarshness: DifficultyLevel(rawValue: setup.harshness) ?? .standard),
+            karmas: setup.karmas, inheritedSoulTotal: inheritance.automaticSoulTotal,
+            signatureLegacyID: legacy, inheritanceRulesVersion: inheritance.inheritanceRulesVersion,
+            lineageLoadout: Self.lineageLoadout(equippedLegacyID: legacy, archive: archive),
+            startingRepertoire: setup.startingRepertoire ?? PitchLearningRules.recommendedSelection(presetID: preset.id))
+        guard let next = try? engine.start(params).snapshot.pitcher else { return nil }
+        let before = previous.abilityStart.map { [$0.stuff, $0.command, $0.movement, $0.stamina] }
+        return RebirthStartPreview(previous: before, next: [next.stuff, next.command, next.movement, next.stamina],
+            previousLife: previous.lifeNumber, nextLife: inheritance.lifeNumber,
+            previousStrikeouts: previous.strikeouts)
+    }
+
     var quickRebirthPreset: PitcherPresetSnapshot? {
         guard !isChallengeRun, let last = lastSetup else { return nil }
         return PitcherPresetCatalog.all.first { $0.id == last.presetID }
@@ -327,7 +386,7 @@ extension HighSchoolCareerStore {
 
     /// 위 프리셋으로 즉시 시작한다. 부스트는 회차마다 다시 고르는 소비라 싣지 않는다.
     func startQuickRebirth(entryPoint: String) {
-        guard let preset = quickRebirthPreset, let last = lastSetup else { return }
+        guard let preset = quickRebirthPreset, let last = lastSetup, let seed = quickRebirthSeed() else { return }
         startCareer(
             preset: preset,
             playerName: last.playerName,
@@ -339,6 +398,7 @@ extension HighSchoolCareerStore {
             startingRepertoire: last.startingRepertoire
                 ?? PitchLearningRules.recommendedSelection(presetID: preset.id),
             throwingHand: last.throwingHand,
+            seedOverride: seed,
             entryPoint: entryPoint
         )
     }
@@ -566,4 +626,13 @@ extension HighSchoolCareerStore {
         return next
     }
 
+}
+
+
+struct RebirthStartPreview: Equatable {
+    let previous: [Int]?
+    let next: [Int]
+    let previousLife: Int
+    let nextLife: Int
+    let previousStrikeouts: Int
 }

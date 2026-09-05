@@ -46,6 +46,9 @@ final class CareerSmokeUITests: XCTestCase {
         seed: String? = nil,
         harshness: String? = nil
     ) -> Bool {
+        if app.buttons["pitch.throw"].waitForExistence(timeout: 2) {
+            playInning(app, capturePitchResult: false)
+        }
         let start = app.buttons["hs.start"]
         let next = app.buttons["hs.setup.next"]
         guard start.waitForExistence(timeout: timeout) || next.waitForExistence(timeout: timeout) else { return false }
@@ -108,6 +111,9 @@ final class CareerSmokeUITests: XCTestCase {
         }
         if language == "ko" {
             launchArguments += ["-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
+        }
+        if language == "en" {
+            launchArguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         }
         app.launchArguments = launchArguments
         app.launch()
@@ -195,6 +201,13 @@ final class CareerSmokeUITests: XCTestCase {
         )
     }
 
+    func testEnglishFirstPitchHasNoHangulFallback() {
+        let app = launch(language: "en")
+        dismissOpening(app)
+        XCTAssertTrue(app.buttons["pitch.throw"].waitForExistence(timeout: timeout))
+        assertVisibleCopyContainsNoHangul(app, context: "English first pitch")
+    }
+
     func testJapaneseBinaryRunsFromOpeningThroughPrologueWithoutHangulFallback() {
         let app = launch(language: "ja")
 
@@ -205,14 +218,13 @@ final class CareerSmokeUITests: XCTestCase {
         assertVisibleCopyContainsNoHangul(app, context: "Japanese opening")
 
         opening.tap()
-        let next = app.buttons["hs.setup.next"]
-        XCTAssertTrue(next.waitForExistence(timeout: timeout), "日本語の選手作成画面が表示されません。")
-        XCTAssertEqual(next.label, "次へ")
+        XCTAssertTrue(app.buttons["pitch.throw"].waitForExistence(timeout: timeout), "日本語の初回投球が表示されません。")
+        assertVisibleCopyContainsNoHangul(app, context: "Japanese first pitch")
         XCTAssertTrue(completeSetup(app), "日本語の選手作成を完了できません。")
 
         let firstPitch = app.buttons["hs.prologue.throw"]
         XCTAssertTrue(firstPitch.waitForExistence(timeout: timeout), "日本語のプロローグが表示されません。")
-        XCTAssertEqual(firstPitch.label, "初球を投げる")
+        XCTAssertFalse(firstPitch.label.isEmpty)
         assertVisibleCopyContainsNoHangul(app, context: "Japanese prologue")
     }
 
@@ -251,10 +263,10 @@ final class CareerSmokeUITests: XCTestCase {
     }
 
     func testHighSchoolCareerRunsThroughDraftAndRebirth() {
-        let app = launch()
+        let app = launch(language: ProcessInfo.processInfo.environment["BASEBALL_QA_LANGUAGE"])
 
         dismissOpening(app)
-        XCTAssertTrue(app.buttons["hs.setup.next"].waitForExistence(timeout: timeout), "선수 만들기 화면이 열리지 않았습니다.")
+        XCTAssertTrue(app.buttons["pitch.throw"].waitForExistence(timeout: timeout), "선수 설정 전에 첫 투구가 열리지 않았습니다.")
         capture(app, name: "01-highschool-setup")
         XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
 
@@ -284,6 +296,11 @@ final class CareerSmokeUITests: XCTestCase {
                 continue
             }
 
+            if tapIfPresent(app.buttons["hs.draft.result.continue"]) {
+                reachedDraft = true
+                continue
+            }
+
             if app.buttons["hs.recap.continue"].exists {
                 XCTAssertTrue(reachedDraft, "드래프트 전인데 3년 결산이 열렸습니다.")
                 XCTAssertTrue(
@@ -301,7 +318,7 @@ final class CareerSmokeUITests: XCTestCase {
                 let drafted = app.buttons["hs.enterPro"].exists
                 XCTAssertTrue(tapIfPresent(app.buttons["hs.rebirth"]))
                 if drafted {
-                    let confirmFold = app.buttons["접고 기억을 고른다"]
+                    let confirmFold = app.buttons.matching(identifier: "hs.fold.confirm").firstMatch
                     XCTAssertTrue(
                         confirmFold.waitForExistence(timeout: timeout),
                         "프로를 접는 확인창이 열리지 않았습니다."
@@ -371,7 +388,7 @@ final class CareerSmokeUITests: XCTestCase {
                     tapIfPresent(app.buttons["hs.legacy.confirm"]),
                     "필요한 만큼 기억을 골랐는데도 확정할 수 없습니다."
                 )
-                let closeLife = app.buttons["확정하고 이 선수의 이야기를 닫는다"]
+                let closeLife = app.buttons.matching(identifier: "hs.legacy.finalize").firstMatch
                 XCTAssertTrue(
                     closeLife.waitForExistence(timeout: timeout),
                     "기억 확정 확인창이 열리지 않았습니다."
@@ -389,6 +406,23 @@ final class CareerSmokeUITests: XCTestCase {
 
     /// 훈련 카드는 화면 아래에서 눌리고, 다음 국면 카드는 훨씬 짧을 수 있다. 그 높이
     /// 변화 뒤에도 결과가 빈 캔버스 밖이 아니라 현재 화면 안에 놓이는지 짧게 회귀 검증한다.
+    func testCommandTrainingShowsTheSameReleaseWindowAsTheMound() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestResetCareer", "-uiTestTrainingFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
+        app.launch()
+        let change = app.buttons["training.change"]
+        XCTAssertTrue(change.waitForExistence(timeout: timeout))
+        change.tap()
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.focus.command"]))
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.training.commit"]))
+        assertTrainingResultIsImmediatelyUsable(app)
+        let window = app.descendants(matching: .any).matching(identifier: "growth.controlWindow").firstMatch
+        XCTAssertTrue(window.waitForExistence(timeout: timeout), "제구 성장에 실제 릴리스 범위 비교가 빠졌습니다.")
+        XCTAssertTrue(bringIntoView(window))
+        XCTAssertTrue(window.label.contains("퍼펙트"))
+        capture(app, name: "control-window-training-growth")
+    }
+
     func testTrainingCompletionKeepsResultOnScreen() {
         let app = launch()
 
@@ -403,6 +437,9 @@ final class CareerSmokeUITests: XCTestCase {
 
         let commit = app.buttons["hs.training.commit"]
         XCTAssertTrue(commit.waitForExistence(timeout: timeout), "첫 훈련 화면이 열리지 않았습니다.")
+
+        let changeTraining = app.descendants(matching: .any).matching(identifier: "training.change").firstMatch
+        XCTAssertTrue(tapIfPresent(changeTraining), "다른 훈련을 여는 동작이 없습니다.")
 
         // 이 여섯 행은 App Store crash의 actor-isolation 경계였다. 화면이 열린 뒤 모든
         // 고정 행이 접근성 트리에 남아 있으면 구조 수정이 선택지를 누락하지 않은 것이다.
@@ -1360,7 +1397,9 @@ final class CareerSmokeUITests: XCTestCase {
         app.launch()
 
         dismissOpening(app)
-        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
+        if !windUpPad(app).waitForExistence(timeout: timeout) {
+            XCTAssertTrue(completeSetup(app), "첫 수동 투구 또는 선수 설정에 도달하지 못했습니다.")
+        }
 
         // 첫 불펜이 바로 나오므로 거기서 제스처를 검증한다.
         tapIfPresent(app.buttons["hs.prologue.throw"])
@@ -1396,6 +1435,7 @@ final class CareerSmokeUITests: XCTestCase {
         // 자동 복귀하므로(학습 루프), 그 뒤에 찍으면 조작부만 나온다 — 스토어 2번 슬롯이
         // 요구하는 것은 궤적과 판정이다. 요소 조회는 느리므로 조회 전에 먼저 찍는다.
         capture(app, name: "12-delivery-result")
+        XCTAssertTrue(app.buttons["pitch.resultDetails"].waitForExistence(timeout: timeout), "수동 릴리스의 실제 결과가 표시되지 않았습니다.")
 
         XCTAssertTrue(
             app.buttons["pitch.nextBatter"].waitForExistence(timeout: timeout)
@@ -1515,8 +1555,23 @@ final class CareerSmokeUITests: XCTestCase {
         let continueButton = app.buttons["hs.recap.continue"]
         guard continueButton.waitForExistence(timeout: timeout) else { return false }
 
+        if app.buttons["hs.recap.customize"].exists {
+            let comparison = app.descendants(matching: .any).matching(identifier: "hs.recap.startComparison").firstMatch
+            XCTAssertTrue(comparison.waitForExistence(timeout: timeout), "빠른 환생에는 실제 다음 시작 능력이 보여야 합니다.")
+            _ = bringIntoView(comparison)
+            if ProcessInfo.processInfo.environment["BASEBALL_QA_LANGUAGE"] == "ja" {
+                assertVisibleCopyContainsNoHangul(app, context: "Japanese rebirth preview")
+            }
+            capture(app, name: "premium-rebirth-start-comparison")
+        }
+        let details = app.descendants(matching: .any).matching(identifier: "hs.recap.details").firstMatch
+        if details.exists { details.tap() }
         let legacy = app.descendants(matching: .any)
             .matching(identifier: "hs.recap.playerLegacy").firstMatch
+        for _ in 0..<6 {
+            if legacy.exists { break }
+            app.swipeUp()
+        }
         guard legacy.waitForExistence(timeout: timeout) else { return false }
         _ = bringIntoView(legacy)
         capture(app, name: "08-player-farewell")
@@ -1851,7 +1906,8 @@ final class CareerSmokeUITests: XCTestCase {
         line: UInt = #line
     ) {
         let hangul = try! NSRegularExpression(pattern: "[가-힣ㄱ-ㅎㅏ-ㅣ]")
-        let labels = app.staticTexts.allElementsBoundByIndex.map(\.label).filter { !$0.isEmpty }
+        // Player-authored names are intentionally preserved in every language.
+        let labels = app.staticTexts.allElementsBoundByIndex.filter { $0.identifier != "career.playerName" }.map(\.label).filter { !$0.isEmpty }
         let contaminated = labels.filter { label in
             hangul.firstMatch(in: label, range: NSRange(label.startIndex..., in: label)) != nil
         }

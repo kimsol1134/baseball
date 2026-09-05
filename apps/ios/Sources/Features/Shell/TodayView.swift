@@ -326,7 +326,72 @@ struct ProCareerStatusHeader: View {
     let state: ProCareerSnapshot
     @Environment(\.gameCopyResolver) private var copyResolver
 
+    @State private var showsDetails = false
+
     var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+        Button { showsDetails = true } label: {
+            HStack(spacing: 10) {
+                PortraitView(seed: state.identity.portraitSeed, role: .player, size: 34, playerStage: .pro)
+                Text(verbatim: state.identity.name).font(.headline).accessibilityIdentifier("career.playerName")
+                Spacer(minLength: 4)
+                Text(verbatim: copyResolver.resolve(.localizable("mobile.core.pro-season"), arguments: [.integer(state.season)]))
+                    .font(BaseballType.annotation).foregroundStyle(BaseballTheme.textSecondary)
+                Image(systemName: "chevron.right").font(.caption).foregroundStyle(BaseballTheme.action)
+            }.frame(minHeight: BaseballMetrics.minimumTapTarget).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("pro.playerDetails")
+        if CareerDisplayRules.proFatigueBand(fatigue: state.fatigue) != .normal || state.injuryWeeks > 0 {
+            HStack {
+                Text(verbatim: "\(copyResolver.resolve(AppCopyKey.proFatigueLabel)) \(state.fatigue)")
+                if state.injuryWeeks > 0 {
+                    Text(verbatim: copyResolver.resolve(AppCopyKey.proInjuryWeeks, arguments: [.integer(state.injuryWeeks)]))
+                }
+            }.font(.subheadline).foregroundStyle(BaseballTheme.warning)
+        }
+        }
+        .sheet(isPresented: $showsDetails) {
+            CorePitchDetailSheet(title: copyResolver.resolve(.localizable("mobile.core.stats"))) {
+                playerSummary
+                DisclosureGroup(copyResolver.resolve(.localizable("mobile.core.career-details"))) { fullHeader }
+            }
+        }
+    }
+
+    private var playerSummary: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 16) {
+                PortraitView(seed: state.identity.portraitSeed, role: .player, size: 72, playerStage: .pro)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(verbatim: state.identity.name).font(.title2.weight(.bold)).accessibilityIdentifier("career.playerName")
+                    Text(verbatim: copyResolver.resolve(.localizable("mobile.core.pro-season"), arguments: [.integer(state.season)]))
+                        .foregroundStyle(BaseballTheme.action)
+                    Text(verbatim: ProCareerPresentation.teamName(state.team, resolver: copyResolver)).detailStyle()
+                }
+            }
+            HStack(alignment: .top, spacing: 12) {
+                CorePlayerStat(title: copyResolver.resolve(.localizable("mobile.core.velocity")),
+                    value: state.pitcher.profile(for: .fourSeam).map { GameFormatters.velocity(tenthsKPH: $0.velocityTenthsKPH, language: copyResolver.language) } ?? "—")
+                CorePlayerStat(title: copyResolver.resolve(TalentAbility.command.displayCopyToken), value: "\(AbilityDisplayScale.displayRating(state.pitcher.command))", commandRating: state.pitcher.command)
+                CorePlayerStat(title: copyResolver.resolve(TalentAbility.stamina.displayCopyToken), value: "\(AbilityDisplayScale.displayRating(state.pitcher.stamina))")
+            }
+            if CareerDisplayRules.proFatigueBand(fatigue: state.fatigue) != .normal || state.injuryWeeks > 0 {
+                HStack {
+                    Metric(title: copyResolver.resolve(AppCopyKey.proFatigueLabel), value: "\(state.fatigue)", tone: .warning)
+                    if state.injuryWeeks > 0 {
+                        Text(verbatim: copyResolver.resolve(AppCopyKey.proInjuryWeeks, arguments: [.integer(state.injuryWeeks)]))
+                            .foregroundStyle(BaseballTheme.warning)
+                    }
+                }
+            }
+            Button(copyResolver.resolve(.localizable("mobile.core.stats"))) { showsDetails = true }
+                .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                .accessibilityIdentifier("pro.playerDetails")
+        }
+    }
+
+    private var fullHeader: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             KeyArtHeader(
                 art: Self.art(for: state),

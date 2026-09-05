@@ -428,10 +428,10 @@ extension HighSchoolCareerStore {
             // 코어가 모르는 지역이 오면 서울로 받는다 — 학교 이름이 조용히 서울로 바뀌는
             // 것보다, 여기서 한 번 거르는 쪽이 원인을 찾기 쉽다.
             region: HighSchoolCareerEngine.regions.contains(region) ? region : "서울",
-            appearanceSeed: PlayerAppearanceSeed.make(
-                careerSeed: careerSeed,
-                lifeNumber: lifeNumber
-            )
+            appearanceSeed: (isChallenge ? nil : Self.continuedPortraitSeed(
+                playerName: name,
+                previous: archive.filter { $0.lifeNumber < lifeNumber }.max { $0.lifeNumber < $1.lifeNumber }
+            )) ?? PlayerAppearanceSeed.make(careerSeed: careerSeed, lifeNumber: lifeNumber)
         )
         var carried = inheritance
         // 직전 프로 커리어 영수증은 그 선수의 결말을 프로 tombstone 삭제까지 멱등하게
