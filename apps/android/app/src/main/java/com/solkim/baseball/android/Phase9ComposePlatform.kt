@@ -10,7 +10,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
+import com.solkim.baseball.android.LocalizedGameText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -65,7 +65,6 @@ public fun Phase9PlatformSurface(
             onSelectedLifeCardCareerIdChanged,
             onAction,
         )
-        Phase8ScreenId.P030_REVIEW -> Phase9ReviewSurface(state, model.id, platformState)
         else -> Unit
     }
 }
@@ -128,7 +127,7 @@ private fun Phase9SettingsSurface(
             OutlinedButton(
                 onClick = { onAction(capturePlatformAction(state, screen, action)) },
                 enabled = platformState.notificationTruth != NotificationPermissionTruth.UNAVAILABLE,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics { contentDescription = "기기 알림 설정. $truthText" },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).gameDescription("기기 알림 설정. $truthText"),
             ) { Text(if (action == PlatformAction.REQUEST_NOTIFICATION_PERMISSION) "알림 권한 요청" else "알림 설정 열기") }
         }
     }
@@ -146,7 +145,7 @@ private fun Phase9ShareSurface(
     val card = Phase9LifeCardProjection.selected(state, selectedId)
     val sharePayload = card?.let {
         LifeCardSharePayload(
-            title = "마운드의 계절 · 라이프 카드",
+                        title = com.solkim.baseball.application.CareerShareCopy.LIFE_CARD_TITLE,
             text = it.text,
             lines = it.lines,
             careerId = it.careerId,
@@ -157,7 +156,7 @@ private fun Phase9ShareSurface(
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("라이프 카드 공유", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("카드 이미지와 한국어 글을 함께 기기의 공유 화면으로 보냅니다.", style = MaterialTheme.typography.bodyLarge)
+            Text("카드 이미지와 글을 함께 공유합니다.", style = MaterialTheme.typography.bodyLarge)
             selectedId?.let { LifeCardVisual(state, it) }
             state.highSchool?.archive.orEmpty().asReversed().forEach { record ->
                 OutlinedButton(
@@ -170,39 +169,10 @@ private fun Phase9ShareSurface(
             Button(
                 onClick = { sharePayload?.let { onAction(capturePlatformAction(state, model.id, PlatformAction.SHARE_LIFE_CARD, sharePayload = it)) } },
                 enabled = shareAllowed,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics {
-                    contentDescription = if (shareAllowed) "라이프 카드 공유. 이미지와 한국어 글을 함께 준비합니다." else "보관된 생이 없어 공유할 수 없음"
-                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).gameDescription(if (shareAllowed) "인생 카드 공유. 이미지와 글을 함께 준비합니다." else "보관된 생이 없어 공유할 수 없음"),
             ) { Text("라이프 카드 공유") }
         }
     }
-}
-
-@Composable
-private fun Phase9ReviewSurface(
-    state: GameAggregateState,
-    screen: Phase8ScreenId,
-    platformState: Phase9PlatformUiState,
-) {
-    val reason = Phase8ScreenProjection.reviewTrigger(state)?.let(::reviewReason)
-    val decision = platformState.reviewDecision
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("리뷰 안내", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(reason?.label ?: "아직 리뷰를 묻는 장면이 아닙니다.", style = MaterialTheme.typography.bodyLarge)
-            Text(if (decision?.eligible == true) "이유별 한 번, 요청 사이 24시간 간격을 지킵니다." else "같은 이유로 반복해서 묻지 않습니다.", style = MaterialTheme.typography.bodyMedium)
-            Text("리뷰 요청은 실제 결산 확인 또는 새 생 시작 직후에만 표시됩니다.", style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
-
-private data class ReviewReasonUi(val reason: ReviewReason, val label: String)
-
-private fun reviewReason(trigger: String): ReviewReasonUi? = when (trigger) {
-    "third-life" -> ReviewReasonUi(ReviewReason.THIRD_LIFE, "세 번째 생의 결산을 마쳤습니다.")
-    "good-recap" -> ReviewReasonUi(ReviewReason.GOOD_RECAP, "좋은 결산을 확인했습니다.")
-    "drafted-reveal-confirmed" -> ReviewReasonUi(ReviewReason.DRAFTED_REVEAL_CONFIRMED, "드래프트 결과를 확인했습니다.")
-    else -> null
 }
 
 private fun capturePlatformAction(

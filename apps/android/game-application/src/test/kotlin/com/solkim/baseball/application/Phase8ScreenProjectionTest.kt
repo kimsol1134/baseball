@@ -1,5 +1,6 @@
 package com.solkim.baseball.application
 
+import com.solkim.baseball.core.highschool.HighSchoolAchievementRules
 import com.solkim.baseball.core.highschool.HighSchoolPhase
 import com.solkim.baseball.core.highschool.HighSchoolPhase4Command
 import com.solkim.baseball.core.pitch.PitchDelivery
@@ -12,7 +13,11 @@ import com.solkim.baseball.core.pro.ProHighSchoolLegacyContext
 import com.solkim.baseball.core.pro.ProKernel
 import com.solkim.baseball.core.pro.ProLegacyCandidate
 import com.solkim.baseball.core.pro.ProStartLinkedRequest
+import com.solkim.baseball.core.pro.ProStartDirectRequest
 import com.solkim.baseball.core.pro.ProCatalog
+import com.solkim.baseball.core.pro.ProJourneyKernel
+import com.solkim.baseball.core.pro.ProOffseasonTransition
+import com.solkim.baseball.core.pro.ProOffseasonTransitionRoute
 import com.solkim.baseball.core.highschool.HighSchoolPerformance
 import com.solkim.baseball.core.highschool.HighSchoolNextRunIntent
 import com.solkim.baseball.core.highschool.HighSchoolPledgeRules
@@ -41,6 +46,132 @@ class Phase8ScreenProjectionTest {
             Phase8ScreenProjection.project(initial, Phase8ScreenId.P005_SCHOOL_SELECTION, context)
         }
         assertEquals(Phase8ScreenId.P001_OPENING, Phase8ScreenProjection.preferredScreen(initial))
+    }
+
+    @Test
+    fun openingProjectsReincarnationSliderCopyAndDefaultThrowIsNotAutoRelease() {
+        val initial = GameAggregateState.initial("opening-slider")
+        assertFalse(initial.settings.autoReleaseEnabled)
+        assertEquals(Phase8ScreenId.P001_OPENING, Phase8ScreenProjection.preferredScreen(initial))
+        val model = Phase8ScreenProjection.project(initial, Phase8ScreenId.P001_OPENING, context)
+        Phase8AccessibilityContract.validate(model)
+        val copy = buildString {
+            append(model.title)
+            append(' ')
+            append(model.subtitle)
+            model.sections.forEach { section ->
+                append(' ')
+                append(section.title)
+                section.rows.forEach { row ->
+                    append(' ')
+                    append(row.label)
+                    append(' ')
+                    append(row.value)
+                    append(' ')
+                    append(row.detail)
+                }
+            }
+            model.actions.forEach { action ->
+                append(' ')
+                append(action.label)
+                append(' ')
+                append(action.description)
+            }
+        }
+        assertTrue("투구 슬라이더" in copy || "길게 눌러 와인드업" in copy, copy)
+        assertTrue("환생" in copy, copy)
+    }
+
+    @Test
+    fun achievementsShowPlayerGoalsAndPreserveEarnedLegacyAwards() = runBlocking {
+        val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("achievements-catalog"))
+        val controller = Phase8Controller(store, context)
+        executeFirst(controller, Phase8ScreenId.P001_OPENING)
+        executeFirst(controller, Phase8ScreenId.P002_SETUP)
+        val highSchool = requireNotNull(store.current.highSchool)
+        assertTrue(highSchool.achievements.isEmpty())
+        val locked = controller.projection(Phase8ScreenId.P026_ACHIEVEMENTS)
+        Phase8AccessibilityContract.validate(locked)
+        val lockedRows = locked.sections.single { it.id == "achievements" }.rows
+        assertEquals(12, lockedRows.size)
+        lockedRows.forEach { row ->
+            assertEquals("잠김", row.value)
+            assertTrue(row.detail.isNotBlank())
+            assertFalse(row.detail in HighSchoolAchievementRules.all)
+        }
+
+        val earned = HighSchoolAchievementRules.FIRST_STRIKEOUT
+        val unlockedState = store.current.copy(
+            highSchool = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel().commitShadowState(
+                highSchool.copy(achievements = listOf(earned, HighSchoolAchievementRules.MAJOR_DEBUT)),
+            ),
+        ).committed()
+        unlockedState.validate()
+        val unlocked = Phase8ScreenProjection.project(unlockedState, Phase8ScreenId.P026_ACHIEVEMENTS, context)
+        Phase8AccessibilityContract.validate(unlocked)
+        val unlockedRows = unlocked.sections.single { it.id == "achievements" }.rows
+        assertEquals(13, unlockedRows.size)
+        assertEquals("확인함", unlockedRows.single { it.label == "첫 탈삼진" }.value)
+        assertEquals("확인함", unlockedRows.single { it.label == "첫 큰 무대" }.value)
+        unlockedRows.filterNot { it.label in setOf("첫 탈삼진", "첫 큰 무대") }.forEach { row ->
+            assertEquals("잠김", row.value)
+        }
+    }
+
+    @Test
+    fun glossaryHasTwentyNineTermsAndContractMarketProjectsRenewalOffers() {
+        val settings = Phase8ScreenProjection.project(
+            GameAggregateState.initial("phase8-glossary"),
+            Phase8ScreenId.P027_SETTINGS,
+            context,
+        )
+        Phase8AccessibilityContract.validate(settings)
+        assertEquals(29, BaseballGlossary.terms.size)
+        assertEquals(29, settings.sections.single { it.id == "glossary" }.rows.size)
+
+        val kernel = ProKernel()
+        val started = kernel.startDirect(ProStartDirectRequest("501", "power_prospect", "시장투수"))
+        val journey = requireNotNull(started.state.journeyState)
+        val market = ProJourneyKernel.playerMarket(
+            started.state.careerId,
+            started.state.team.id,
+            2,
+            false,
+            journey,
+            started.state.role,
+        )
+        val offering = signedPro(
+            kernel,
+            started.state.copy(
+                phase = ProCareerPhase.CONTRACT_OFFER,
+                contract = null,
+                standings = emptyList(),
+                leaderboards = emptyList(),
+                journeyState = journey.copy(
+                    pendingContractMarket = market,
+                    offseasonTransition = ProOffseasonTransition(
+                        afterSeason = 1,
+                        nextSeason = 2,
+                        ageAdvanceYears = 1,
+                        includesMilitaryService = false,
+                        route = ProOffseasonTransitionRoute.RENEWAL_MARKET,
+                    ),
+                ),
+                commitment = "",
+            ),
+        )
+        val model = Phase8ScreenProjection.project(
+            aggregateWithPro("phase8-contract-market", offering),
+            Phase8ScreenId.P016_PRO_CONTRACT,
+            context,
+        )
+        Phase8AccessibilityContract.validate(model)
+        assertEquals(6, model.actions.count { it.id.startsWith("acceptOffer:") && it.enabled })
+        assertTrue(model.sections.any { it.title.contains("재계약") })
+        assertTrue(model.sections.flatMap { it.rows }.any { it.detail.contains("장기 재계약") || it.detail.contains("증명 계약") })
+        model.actions.filter { it.enabled }.flatMap { it.payloads }.forEach { payload ->
+            assertEquals(payload.envelope, GameCommandCodec.decode(payload.encoded))
+        }
     }
 
     @Test
@@ -145,7 +276,9 @@ class Phase8ScreenProjectionTest {
         assertTrue(frozen.lines.any { it.contains(archived.playerName) })
         assertTrue(frozen.lines.any { it.contains(archived.importantGames.toString()) })
         assertTrue(frozen.lines.any { it.contains(archived.pitches.toString()) })
-        assertTrue(frozen.lines.any { it.contains(archived.selectedSignatureLegacyId ?: "선택 없음") })
+        val legacyTitle = archived.selectedSignatureLegacyId?.let { com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules.definition(it).title } ?: "선택 없음"
+        assertTrue(frozen.lines.any { it.contains(legacyTitle) })
+        archived.selectedSignatureLegacyId?.let { assertTrue(!frozen.text.contains(it), "Internal legacy IDs must not be shown on a player's card") }
         assertTrue(frozen.text.contains(archived.soulEarned.toString()))
 
         val expected = setOf(
@@ -373,6 +506,15 @@ class Phase8ScreenProjectionTest {
             val action = model.actions.single { it.id == actionId }
             controller.execute(Phase8ScreenId.P015_REBIRTH, action.id, action.payloads)
 
+            if (actionId == "customizeRebirth") {
+                assertEquals(GameStage.SETUP, store.current.stage)
+                assertEquals(run.careerId, store.current.highSchool?.run?.careerId)
+                assertEquals(Phase8ScreenId.P002_SETUP, Phase8ScreenProjection.preferredScreen(store.current))
+                assertTrue(store.current.analytics.receipts.none { it.eventName == "rebirth_started" })
+                val setup = controller.projection(Phase8ScreenId.P002_SETUP).actions.single { it.id == "startHighSchool" }
+                controller.execute(Phase8ScreenId.P002_SETUP, setup.id, setup.payloads)
+            }
+
             val after = store.current
             val rebirth = after.analytics.receipts.last { it.eventName == "rebirth_started" }
             assertEquals(
@@ -475,7 +617,7 @@ class Phase8ScreenProjectionTest {
     }
 
     @Test
-    fun preferredNextLifeSurfaceArchivesThenOpensLinkedProWithoutLeavingEnding() = runBlocking {
+    fun preferredNextLifeSurfacePreservesArchiveAndOffersOnlyEarnedLinkedEntry() = runBlocking {
         val (store, controller) = completedHighSchoolFixture("phase8-ending-entry", archive = false)
         assertEquals(Phase8ScreenId.P015_REBIRTH, controller.preferredScreen())
         assertFalse(store.current.settings.autoReleaseEnabled)
@@ -488,7 +630,8 @@ class Phase8ScreenProjectionTest {
         assertTrue(beforeArchive.actions.single { it.id == "finalizeArchive" }.enabled)
         assertFalse(beforeArchive.actions.single { it.id == "quickRebirth" }.enabled)
         assertFalse(beforeArchive.actions.single { it.id == "customizeRebirth" }.enabled)
-        assertTrue(beforeArchive.actions.single { it.id == "startLinked" }.enabled)
+        val drafted = highSchool.run.draftResult?.outcome?.wire == "drafted"
+        assertEquals(drafted, beforeArchive.actions.any { it.id == "startLinked" && it.enabled })
         assertTrue(beforeArchive.actions.single { it.id == "startDirect" }.enabled)
 
         executeFirst(controller, Phase8ScreenId.P015_REBIRTH, "finalizeArchive")
@@ -498,13 +641,13 @@ class Phase8ScreenProjectionTest {
         val afterArchive = controller.projection(Phase8ScreenId.P015_REBIRTH)
         assertFalse(afterArchive.actions.single { it.id == "finalizeArchive" }.enabled)
         assertTrue(afterArchive.actions.single { it.id == "quickRebirth" }.enabled)
-        assertTrue(afterArchive.actions.single { it.id == "startLinked" }.enabled)
+        assertEquals(drafted, afterArchive.actions.any { it.id == "startLinked" && it.enabled })
         assertTrue(afterArchive.actions.single { it.id == "startDirect" }.enabled)
 
-        executeFirst(controller, Phase8ScreenId.P015_REBIRTH, "startLinked")
-        assertEquals(Phase8ScreenId.P016_PRO_CONTRACT, controller.preferredScreen())
+        executeFirst(controller, Phase8ScreenId.P015_REBIRTH, if (drafted) "startLinked" else "startDirect")
+        assertEquals(if (drafted) Phase8ScreenId.P016_PRO_CONTRACT else Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
         assertNotNull(store.current.pro)
-        executeFirst(controller, Phase8ScreenId.P016_PRO_CONTRACT, "signContract")
+        if (store.current.pro?.phase == ProCareerPhase.CONTRACT_OFFER) executeFirst(controller, Phase8ScreenId.P016_PRO_CONTRACT) { it.id.startsWith("acceptOffer:") || it.id == "signContract" }
         assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
         assertEquals(ProCareerPhase.WEEKLY_PLAN, store.current.pro?.phase)
         assertFalse(store.current.settings.autoReleaseEnabled)

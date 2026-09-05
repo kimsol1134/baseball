@@ -32,6 +32,7 @@ class FirstUserEmulatorE2ETest {
         val inst = InstrumentationRegistry.getInstrumentation()
         val device = UiDevice.getInstance(inst)
         val app = inst.targetContext
+        val smokeOnly = InstrumentationRegistry.getArguments().getString("launchSmokeOnly") == "true"
         val launch = app.packageManager.getLaunchIntentForPackage(app.packageName)
             ?: error("missing launch intent")
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -41,8 +42,9 @@ class FirstUserEmulatorE2ETest {
                 device.wait(Until.hasObject(By.textContains(text)), timeoutMs)
 
             fun tapText(text: String) {
-                assertTrue("missing $text", waitText(text, 15_000))
-                device.findObject(By.text(text)).click()
+                val node = device.wait(Until.findObject(By.text(text)), 15_000)
+                assertTrue("missing exact action $text", node != null)
+                requireNotNull(node).click()
             }
 
             fun hierarchyXml(): String = runCatching {
@@ -161,7 +163,7 @@ class FirstUserEmulatorE2ETest {
                     return true
                 }
                 waitNotBusy()
-                val training = device.findObjects(By.descContains("중심으로 한 블록 훈련")).filterNot(::isBlocked)
+                val training = device.findObjects(By.res("training.commit")).filterNot(::isBlocked)
                 if (training.isNotEmpty()) {
                     training.first().click()
                     Log.i(TAG, "step=$step tap=training")
@@ -169,12 +171,16 @@ class FirstUserEmulatorE2ETest {
                 }
                 val actions = listOf(
                     "다음 공 던지기",
+                    "평소 간격을 지킨다",
+                    "불펜에서만 연습한다",
+                    "2군에서 재정비한다",
+                    "내 방식을 지킨다",
                     "결과 화면으로",
                     "기록 보관하기",
-                    "고교에서 연결",
+                    "프로 무대로 가기",
                     "계약 서명",
                     "구간 건너뛰기",
-                    "프로 승부처 열기",
+                    "등판하기",
                     "경기 결과 확인",
                     "시즌 결산 보기",
                     "계속하기",
@@ -215,12 +221,12 @@ class FirstUserEmulatorE2ETest {
                     "선발을 지킨다",
                     "불펜으로 옮긴다",
                     "회복 연도를 택한다",
-                    "첫 사인 익히기",
-                    "첫 투구 열기",
-                    "튜토리얼 마치기",
+                    "투구 연습하기",
+                    "연습 시작",
+                    "학교 선택하기",
                     "투구 결과 확인하기",
-                    "승부처에 오르기",
-                    "다음 타석 열기",
+                    "등판하기",
+                    "다음 타자 상대하기",
                     "투구 이어 하기",
                     "다음 장으로",
                     "드래프트 결과 확인",
@@ -230,7 +236,7 @@ class FirstUserEmulatorE2ETest {
                     "결산 확인 완료",
                     "끝까지 듣기",
                     "내 뜻 설명하기",
-                    "정면으로 부딪치기",
+                    "정면 승부하기",
                     "폭발적인 직구",
                     "떠오르는 포심",
                     "강철 어깨",
@@ -266,15 +272,15 @@ class FirstUserEmulatorE2ETest {
                     if (tapLast(label)) {
                         Log.i(TAG, "step=$step tap=$label")
                         when (label) {
-                            "고교에서 연결", "계약 서명" -> {
+                            "프로 무대로 가기", "계약 서명" -> {
                                 device.wait(Until.hasObject(By.text("구간 건너뛰기")), 15_000) ||
                                     device.wait(Until.hasObject(By.text("계약 서명")), 3_000) ||
-                                    device.wait(Until.hasObject(By.text("프로 주간")), 3_000)
+                                    device.wait(Until.hasObject(By.text("이번 주")), 3_000)
                             }
                             "결과 화면으로", "잠시 나가기" -> {
                                 val deadline = System.currentTimeMillis() + 15_000
                                 while (System.currentTimeMillis() < deadline) {
-                                    if (listOf("다음 선택", "이번 주 선택", "도착한 편지", "성장 신호", "학교 후보", "승부처", "장 결산", "드래프트", "이번 생", "다음 생", "새로운 감각")
+                                    if (listOf("다음 선택", "이번 주 선택", "도착한 편지", "성장 신호", "학교 후보", "승부처", "이 장의 기록", "드래프트", "이번 생", "다음 생", "새로운 감각")
                                             .any { hasText(it) || hasContains(it) }
                                     ) {
                                         break
@@ -282,7 +288,7 @@ class FirstUserEmulatorE2ETest {
                                     Thread.sleep(200)
                                 }
                             }
-                            "첫 투구 열기", "승부처에 오르기", "프로 승부처 열기", "다음 타석 열기", "투구 이어 하기", "투구 결과 확인하기" -> {
+                            "연습 시작", "등판하기", "등판하기", "다음 타자 상대하기", "투구 이어 하기", "투구 결과 확인하기" -> {
                                 device.wait(Until.hasObject(By.text("누르고 있다가 놓기")), 20_000) ||
                                     device.wait(Until.hasObject(By.descContains("투구 슬라이더")), 2_000)
                             }
@@ -307,25 +313,30 @@ class FirstUserEmulatorE2ETest {
                 return false
             }
 
-            assertTrue("product name", waitText("야구 못하면 또 환생함"))
-            if (hasText("선수 준비하기")) {
-                tapText("선수 준비하기")
+            assertTrue("opening or player setup", waitText("다시 도전하는 야구 인생") || waitText("선수 이름"))
+            if (hasText("시작하기")) {
+                tapText("시작하기")
             }
             assertTrue("setup", waitText("선수 이름"))
 
             val name = device.findObject(UiSelector().className(EditText::class.java.name).instance(0))
             name.click()
             name.setText("민서준")
+            repeat(2) {
+                if (!hasText("다음")) UiScrollable(UiSelector().scrollable(true)).scrollIntoView(UiSelector().text("다음"))
+                tapText("다음")
+                device.waitForIdle()
+            }
             if (hasText("힘으로 승부하는 투수")) {
                 device.findObject(By.text("힘으로 승부하는 투수")).click()
             }
-            if (!hasText("고교 이야기 시작")) {
-                UiScrollable(UiSelector().scrollable(true)).scrollIntoView(UiSelector().text("고교 이야기 시작"))
+            if (!hasText("이 투수로 시작하기")) {
+                UiScrollable(UiSelector().scrollable(true)).scrollIntoView(UiSelector().text("이 투수로 시작하기"))
             }
-            tapText("고교 이야기 시작")
+            tapText("이 투수로 시작하기")
             assertTrue(
                 "prologue or tutorial",
-                waitText("첫 사인 익히기") || waitText("첫 투구 열기") || waitText("도착한 편지"),
+                waitText("투구 연습하기") || waitText("연습 시작") || waitText("도착한 편지"),
             )
 
             fun storyFingerprint(): String =
@@ -350,6 +361,10 @@ class FirstUserEmulatorE2ETest {
                 Thread.sleep(400)
                 waitNotBusy()
                 val after = storyFingerprint()
+                if (smokeOnly && hasText("투구 다시 보기")) {
+                    dump("first-slider-result")
+                    return@run
+                }
                 if (!moved || before == after) {
                     scrollDown()
                     idle += 1

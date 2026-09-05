@@ -23,6 +23,16 @@ import com.solkim.baseball.application.Phase8ScreenId
 import com.solkim.baseball.application.Phase8ScreenProjection
 import com.solkim.baseball.application.Phase9LifeCardProjection
 import com.solkim.baseball.application.GameCommand
+import com.solkim.baseball.application.GameCommandEnvelope
+import com.solkim.baseball.application.SeedChallengeCode
+import com.solkim.baseball.application.SeedChallengeRules
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.solkim.baseball.application.Phase9AnalyticsProjector
 import com.solkim.baseball.design.BaseballMigrationTheme
 import com.solkim.baseball.platform.LifeCardSharePayload
@@ -55,12 +65,18 @@ private const val PHASE10_PLATFORM_INSPECT_ACTION =
     "com.solkim.baseball.android.action.PHASE10_PLATFORM_INSPECT"
 
 /** The product launcher: route is always derived from the committed Kotlin aggregate. */
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 public class MainActivity : ComponentActivity() {
     private lateinit var phase8Controller: Phase8Controller
     private lateinit var platform: com.solkim.baseball.platform.NativePhase9Platform
     private val commandContext = Phase8CommandContext()
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var pendingSeedCode by mutableStateOf<SeedChallengeCode?>(null)
+    private var showSeedDialog by mutableStateOf(false)
+    private var showSeedExitDialog by mutableStateOf(false)
+    private var invalidSeedLink by mutableStateOf(false)
     private var actionError by mutableStateOf<String?>(null)
+    private var restoringProgress by mutableStateOf(false)
     private var selectedScreen by mutableStateOf<Phase8ScreenId?>(null)
     private var platformUiState by mutableStateOf(
         Phase9PlatformUiState(NotificationPermissionTruth.UNAVAILABLE, null),
@@ -97,13 +113,15 @@ public class MainActivity : ComponentActivity() {
         phase8Controller = Phase8Controller(store, commandContext)
         sessionStartedElapsed = SystemClock.elapsedRealtime()
         sessionStartedCompletedGames = store.current.meta.completedGameCount
+        pendingSeedCode = getSharedPreferences("seed-link", MODE_PRIVATE).getString("pending", null)?.let(SeedChallengeCode::parse)
+        acceptSeedIntent(intent)
         acceptNotificationIntent(intent)
         inspectPhase10PlatformIntent(intent)
         recordReturnPlanOpenAnalytics("cold")
         refreshPlatformUiState()
         setContent {
-            BaseballMigrationTheme {
-                val state by store.state.collectAsState()
+            val state by store.state.collectAsState()
+            BaseballMigrationTheme(highContrast = state.settings.highContrastEnabled) {
                 val busy by store.busy.collectAsState()
                 val preferred = phase8Controller.preferredScreen()
                 val current = selectedScreen?.takeIf {
@@ -114,7 +132,7 @@ public class MainActivity : ComponentActivity() {
                 }
                 Phase8Shell(
                     state = state,
-                    busy = busy,
+                    busy = busy || restoringProgress,
                     actionError = actionError,
                     currentScreen = current,
                     commandContext = commandContext,
@@ -126,7 +144,33 @@ public class MainActivity : ComponentActivity() {
                     onAction = ::performPhase8,
                     onPlatformAction = ::performPlatformAction,
                     onViewportExposure = ::recordViewportExposure,
+                    pendingSeedCode = pendingSeedCode,
+                    onSeedChallenge = { showSeedDialog = true },
+                    onExitSeedChallenge = { showSeedExitDialog = true },
                 )
+                val copy = rememberGameCopy()
+                if (showSeedDialog) SeedChallengeDialog(pendingSeedCode, SeedChallengeRules.canStart(state) && !busy,
+                    onStart = { code, preset ->
+                        rememberSeed(code)
+                        showSeedDialog = false
+                        performSeedCommand(SeedChallengeRules.startCommand(code, preset)) {
+                            if (pendingSeedCode == code) {
+                                pendingSeedCode = null
+                                getSharedPreferences("seed-link", MODE_PRIVATE).edit().remove("pending").apply()
+                            }
+                        }
+                    },
+                    onRemember = ::rememberSeed,
+                    onDismiss = { showSeedDialog = false })
+                if (showSeedExitDialog) AlertDialog(modifier = Modifier.semantics { testTagsAsResourceId = true }, onDismissRequest = { showSeedExitDialog = false },
+                    title = { Text(copy.resolve("android.challenge.exit-title")) },
+                    text = { Text(copy.resolve("android.challenge.exit-body")) },
+                    confirmButton = { TextButton(enabled = !busy, modifier = Modifier.testTag("challenge.confirm-exit"), onClick = { showSeedExitDialog = false; performSeedCommand(SeedChallengeRules.endCommand()) }) { Text(copy.resolve("android.challenge.exit")) } },
+                    dismissButton = { TextButton(onClick = { showSeedExitDialog = false }) { Text(copy.resolve("android.challenge.keep-playing")) } })
+                if (invalidSeedLink) AlertDialog(onDismissRequest = { invalidSeedLink = false },
+                    title = { Text(copy.resolve("android.challenge.invalid-title")) },
+                    text = { Text(copy.resolve("android.challenge.invalid-body")) },
+                    confirmButton = { TextButton(onClick = { invalidSeedLink = false }) { Text(copy.resolve("android.challenge.ok")) } })
                 LaunchedEffect(pendingNotificationToken, state.revision, current, busy) {
                     val token = pendingNotificationToken
                     val rendered = Phase8ScreenProjection.isReachable(state, current) || current == preferred
@@ -147,6 +191,7 @@ public class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        acceptSeedIntent(intent)
         acceptNotificationIntent(intent)
         inspectPhase10PlatformIntent(intent)
     }
@@ -154,6 +199,19 @@ public class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (::platform.isInitialized) {
+            restoringProgress = true
+            activityScope.launch {
+                try {
+                    (application as BaseballApplication).gameStore.reconcilePersistedRevision()
+                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    Log.e("MainActivity", "Progress reconciliation failed", error)
+                    withContext(Dispatchers.Main) { actionError = "진행 기록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요." }
+                } finally {
+                    withContext(kotlinx.coroutines.NonCancellable + Dispatchers.Main) { restoringProgress = false }
+                }
+            }
             // A previously durable native outbox may become deliverable after process restart or
             // an SDK/network transition. Retry it independently of aggregate command receipts.
             platform.analytics.retryOutbox()
@@ -186,6 +244,45 @@ public class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
+    private fun rememberSeed(code: SeedChallengeCode) {
+        pendingSeedCode = code
+        getSharedPreferences("seed-link", MODE_PRIVATE).edit().putString("pending", code.token).apply()
+    }
+
+    private fun acceptSeedIntent(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_VIEW) return
+        val uri = intent.data ?: return
+        val candidate = (uri.scheme.equals("yagurebirth", true) && uri.host.equals("challenge", true)) ||
+            (uri.scheme.equals("https", true) && uri.host.equals("baseball-reincarnation.vercel.app", true) && uri.path.orEmpty().startsWith("/challenge/", true))
+        if (!candidate) return
+        val code = SeedChallengeCode.parse(uri.toString())
+        if (code == null) { invalidSeedLink = true; return }
+        if ((application as BaseballApplication).gameStore.current.meta.seedChallenge?.code == code) return
+        rememberSeed(code)
+        showSeedDialog = true
+    }
+
+    private fun performSeedCommand(command: GameCommand, onCommitted: () -> Unit = {}) {
+        actionError = null
+        activityScope.launch {
+            try {
+                val store = (application as BaseballApplication).gameStore
+                val current = store.current
+                store.dispatch(GameCommandEnvelope("seed-action-${current.revision}", "phase8-ui", current.revision, command))
+                withContext(Dispatchers.Main) {
+                    selectedScreen = null
+                    onCommitted()
+                    applyNativeSettings()
+                    (application as BaseballApplication).updateCrashContext()
+                    refreshPlatformUiState()
+                }
+            } catch (error: Exception) {
+                Log.e("MainActivity", "Seed challenge command failed", error)
+                withContext(Dispatchers.Main) { actionError = "저장하지 못했습니다. 잠시 후 다시 시도해 주세요." }
+            }
+        }
+    }
+
     private fun performPhase8(action: Phase8UiAction) {
         actionError = null
         val completedGamesBefore = (application as BaseballApplication).gameStore.current.meta.completedGameCount
@@ -201,7 +298,7 @@ public class MainActivity : ComponentActivity() {
                     // recomposition now chooses the route from the newly committed state.
                     selectedScreen = null
                     execution.launch?.let { launch ->
-                        startActivity(PitchUnityActivity.intent(this@MainActivity, launch.sessionId, launch.expectedRevision.toString()))
+                        startActivity(PitchActivity.intent(this@MainActivity, launch.sessionId, launch.expectedRevision.toString()))
                     }
                     applyNativeSettings()
                     (application as BaseballApplication).updateCrashContext()
@@ -216,10 +313,16 @@ public class MainActivity : ComponentActivity() {
                     reconcileNotificationTruth(if (completedGamesBefore == 0UL && completedGamesAfter > 0UL) "after_first_game" else "system")
                     retryPendingMatrixEvents()
                 }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
             } catch (error: Throwable) {
                 android.util.Log.e("MainActivity", "performPhase8 failed", error)
+                // Refresh an uncertain earlier commit before allowing another choice.
+                val refreshed = runCatching { (application as BaseballApplication).gameStore.reconcilePersistedRevision() }.isSuccess
                 withContext(Dispatchers.Main) {
-                    actionError = "저장하지 못했습니다. 잠시 후 다시 시도해 주세요."
+                    actionError = if (error.message == "game.command.stale_revision" && refreshed)
+                        "진행 기록을 다시 불러왔어요. 원하는 행동을 다시 눌러 주세요."
+                    else "진행 상황을 저장하지 못했어요. 잠시 후 다시 시도해 주세요."
                 }
             }
         }
@@ -278,7 +381,7 @@ public class MainActivity : ComponentActivity() {
                 val selected = Phase9LifeCardProjection.selected(state, payload.careerId)
                 val expectedPayload = selected?.let {
                     LifeCardSharePayload(
-                        title = "마운드의 계절 · 라이프 카드",
+                        title = com.solkim.baseball.application.CareerShareCopy.LIFE_CARD_TITLE,
                         text = it.text,
                         lines = it.lines,
                         careerId = it.careerId,
@@ -289,7 +392,11 @@ public class MainActivity : ComponentActivity() {
                     actionError = "보관된 카드가 바뀌었습니다. 다시 열어 주세요."
                     return
                 }
-                val result = platform.share.share(payload)
+                val copy = com.solkim.baseball.application.GameCopy(com.solkim.baseball.application.GameLanguage.fromTag(resources.configuration.locales[0].toLanguageTag()))
+                val playerName = state.highSchool?.archive?.firstOrNull { it.careerId == payload.careerId }?.playerName
+                val names = listOfNotNull(playerName).toSet()
+                val lines = payload.lines.map { copy.legacy(it, names) }
+                val result = platform.share.share(payload.copy(title = copy.legacy(payload.title), text = lines.joinToString("\n"), lines = lines))
                 if (result is com.solkim.baseball.platform.ShareResult.ChooserOpened || result is com.solkim.baseball.platform.ShareResult.TextFallbackChooserOpened) {
                     // The chooser receipt belongs to the exact frozen record captured by the
                     // payload. Never substitute the active player or a later archive entry if a
@@ -380,7 +487,7 @@ public class MainActivity : ComponentActivity() {
 
     /** Read-only internal rehearsal probe; it is unavailable in the debug shadow package. */
     private fun inspectPhase10PlatformIntent(intent: Intent?) {
-        if (!BuildConfig.PHASE10_PRODUCTION_BUILD || intent?.action != PHASE10_PLATFORM_INSPECT_ACTION) return
+        if (!BuildConfig.PHASE10_PRODUCTION_BUILD || BuildConfig.RELEASE_DISTRIBUTION == "production" || intent?.action != PHASE10_PLATFORM_INSPECT_ACTION) return
         val state = platform.stateStore.read()
         Log.i(
             "BASEBALL_PHASE10",
@@ -428,7 +535,7 @@ public class MainActivity : ComponentActivity() {
             "confirmDraftResult" -> ReviewReason.DRAFTED_REVEAL_CONFIRMED
             "confirmRecap" -> ReviewReason.GOOD_RECAP
             "quickRebirth",
-            "customizeRebirth" -> ReviewReason.THIRD_LIFE
+            "startHighSchool" -> ReviewReason.THIRD_LIFE
             else -> return
         }
         val state = (application as BaseballApplication).gameStore.current
@@ -448,7 +555,7 @@ public class MainActivity : ComponentActivity() {
     }
 
     private fun applyNativeSettings() {
-        platform.audioHaptics.startMusic(NativeAudioResources.MUSIC_CROWD, playbackSettings())
+        platform.audioHaptics.startMusic(NativeAudioResources.musicToggleResource(), playbackSettings())
     }
 
     private fun recordReturnPlanOpenAnalytics(launchType: String) {
@@ -617,7 +724,7 @@ public class MainActivity : ComponentActivity() {
         val payloads = Phase8Payloads.batch(state, Phase8ScreenId.P027_SETTINGS, "notificationTruth:$source", commands)
         activityScope.launch {
             try {
-                payloads.forEach { (application as BaseballApplication).gameStore.dispatch(it.envelope) }
+                (application as BaseballApplication).gameStore.dispatchBatch(payloads.map { it.envelope })
                 withContext(Dispatchers.Main) {
                     if (update.enabled) scheduleSavedReturnPlan()
                     refreshPlatformUiState()

@@ -10,6 +10,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -49,8 +51,11 @@ class Phase8ProductSemanticsTest {
             }
         }
 
-        composeRule.onNodeWithText("마운드의 계절").assertIsDisplayed()
-        composeRule.onNodeWithText("선수 준비하기").assertHasClickAction()
+        composeRule.onNodeWithText("다시 도전하는 야구 인생").assertIsDisplayed()
+        composeRule.onNodeWithText("시작하기").assertHasClickAction()
+        listOf("야구 못하면 또 환생함", "첫 화면", "선수 준비").forEach { label ->
+            assertTrue(composeRule.onAllNodesWithText(label, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
+        }
         assertTrue(composeRule.onAllNodesWithText("P-001", useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
         assertTrue(composeRule.onAllNodesWithText("nativeShadowReadOnly", useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
         assertTrue(composeRule.onAllNodesWithText("payload", useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
@@ -83,8 +88,13 @@ class Phase8ProductSemanticsTest {
             fontScale = scale
             composeRule.waitForIdle()
             composeRule.onNodeWithText("선수 이름").assertIsDisplayed()
+            composeRule.onNodeWithText("선수 이름을 정해 주세요").assertIsDisplayed()
+            composeRule.onNodeWithText("다음").assertIsDisplayed().performClick()
             composeRule.onNodeWithText("지역").assertIsDisplayed()
-            composeRule.onNodeWithText("고교 이야기 시작").assertIsDisplayed()
+            composeRule.onNodeWithText("다음").assertIsDisplayed().performClick()
+            composeRule.onNodeWithText("이 투수로 시작하기").assertIsDisplayed()
+            composeRule.onNodeWithText("이전").performClick()
+            composeRule.onNodeWithText("이전").performClick()
         }
     }
 }

@@ -61,6 +61,10 @@ private val DugoutColors = darkColorScheme(
 )
 
 @Composable
-fun BaseballMigrationTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = DugoutColors, content = content)
+fun BaseballMigrationTheme(highContrast: Boolean = false, content: @Composable () -> Unit) {
+    val colors = if (highContrast) DugoutColors.copy(
+        onBackground = Color.White, onSurface = Color.White, onSurfaceVariant = Color.White,
+        outline = Color(0xFFE0EBE2), onPrimary = Color.Black,
+    ) else DugoutColors
+    MaterialTheme(colorScheme = colors, content = content)
 }
