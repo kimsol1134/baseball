@@ -1,5 +1,7 @@
 package com.solkim.baseball.core.highschool
 
+import com.solkim.baseball.core.pitch.PitchLearningProject
+import com.solkim.baseball.core.pitch.PitchLearningRules
 import com.solkim.baseball.core.pitch.BatSide
 import com.solkim.baseball.core.pitch.BatterScoutingSnapshot
 import com.solkim.baseball.core.pitch.BatterSnapshot
@@ -401,6 +403,17 @@ public data class HighSchoolPhase4State(
     val trainingEvidence: List<HighSchoolTrainingEvidence> = emptyList(),
 )
 
+public data class HighSchoolRebirthSetup(
+    val presetId: String,
+    val identity: HighSchoolIdentity,
+    val difficulty: HighSchoolDifficulty,
+    val karmas: List<HighSchoolKarma> = emptyList(),
+    val soulDomain: HighSchoolSoulDomain = HighSchoolSoulDomain.TECHNIQUE,
+    val soulBoosts: List<HighSchoolSoulBoost> = emptyList(),
+    val primaryPitch: PitchKind = PitchKind.FOUR_SEAM,
+    val learningPitch: PitchKind = PitchKind.CHANGEUP,
+)
+
 public data class HighSchoolPhase4StartRequest(
     val seed: String,
     val presetId: String,
@@ -511,7 +524,7 @@ internal fun GameLogSnapshot.toPhase4Log(): HighSchoolPitchLog = HighSchoolPitch
 internal fun HighSchoolPitchGame.toBatterGameIdentity(): BatSide = BatSide.RIGHT
 
 /** Adapter with a stable pitch profile shape for HighSchool -> PitchKernel. */
-public fun HighSchoolState.toPitcherSnapshot(): PitcherSnapshot = PitcherSnapshot(
+public fun HighSchoolState.toPitcherSnapshot(): PitcherSnapshot = PitchLearningRules.playable(PitcherSnapshot(
     id = pitcher.id,
     name = pitcher.name,
     stuff = pitcher.stuff,
@@ -525,7 +538,8 @@ public fun HighSchoolState.toPitcherSnapshot(): PitcherSnapshot = PitcherSnapsho
         com.solkim.baseball.core.pitch.PitchProfileSnapshot(PitchKind.CHANGEUP, com.solkim.baseball.core.pitch.PitchUsageRole.DEVELOPMENT, 1285, pitcher.command, pitcher.command + 1, pitcher.movement - 1, pitcher.movement, pitcher.movement + 1, 1),
     ) },
     throwingHand = pitcher.throwingHand,
-)
+    mastery = pitcher.mastery,
+), pitchLearningProject)
 
 public fun HighSchoolState.toBatterSnapshot(): BatterSnapshot = BatterSnapshot(
     id = rival.id,

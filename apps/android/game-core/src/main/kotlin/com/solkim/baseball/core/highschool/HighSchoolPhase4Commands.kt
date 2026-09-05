@@ -23,6 +23,8 @@ public object HighSchoolRebirthEntryPath {
 
 public sealed interface HighSchoolPhase4Command {
     public data class Start(val request: HighSchoolPhase4StartRequest) : HighSchoolPhase4Command
+    public data class StartConfigured(val request: HighSchoolPhase4StartRequest, val primaryPitch: PitchKind, val learningPitch: PitchKind) : HighSchoolPhase4Command
+    public data class ConfigureRebirth(val seed: String, val dayKey: String, val setup: HighSchoolRebirthSetup) : HighSchoolPhase4Command
     public data object BeginTutorial : HighSchoolPhase4Command
     public data class CompleteTutorial(val seed: String) : HighSchoolPhase4Command
     public data class ChooseSchool(val seed: String, val schoolId: HighSchoolSchoolId) : HighSchoolPhase4Command
@@ -36,6 +38,8 @@ public sealed interface HighSchoolPhase4Command {
     public data class TrainingBlock(
         val seed: String,
         val requests: List<Pair<HighSchoolTrainingFocus, HighSchoolTrainingIntensity>>,
+        val targetPitch: PitchKind? = null,
+        val stopForSafety: Boolean = false,
     ) : HighSchoolPhase4Command
     public data class Relationship(
         val seed: String,
@@ -63,6 +67,7 @@ public sealed interface HighSchoolPhase4Command {
         init { HighSchoolRebirthEntryPath.requireValid(entryPath) }
     }
     public data object StartChallenge : HighSchoolPhase4Command
+    public data class StartSeedChallenge(val seed: String, val life: Int, val presetId: String) : HighSchoolPhase4Command
     public data object EndChallenge : HighSchoolPhase4Command
     public data object ClaimWeeklyReward : HighSchoolPhase4Command
     public data class SaveReturnPlan(val plan: HighSchoolReturnPlan) : HighSchoolPhase4Command
@@ -128,10 +133,14 @@ public class HighSchoolPhase4CommandStore(
             return HighSchoolPhase4DispatchResult(current ?: error("command.state"), existing.resultHash, duplicate = true)
         }
         if (state == null) {
-            if (envelope.command !is HighSchoolPhase4Command.Start || envelope.expectedRevision != 0UL) {
+            if (envelope.expectedRevision != 0UL) {
                 throw HighSchoolPhase4CommandException("command.start_required")
             }
-            val result = kernel.start(envelope.command.request)
+            val result = when (val start = envelope.command) {
+                is HighSchoolPhase4Command.Start -> kernel.start(start.request)
+                is HighSchoolPhase4Command.StartConfigured -> kernel.startConfigured(start.request, start.primaryPitch, start.learningPitch)
+                else -> throw HighSchoolPhase4CommandException("command.start_required")
+            }
             val committed = commit(result.state, envelope, envelopeHash)
             current = committed
             return HighSchoolPhase4DispatchResult(committed, result.eventHash, duplicate = false)
@@ -140,7 +149,7 @@ public class HighSchoolPhase4CommandStore(
         if (envelope.expectedRevision != state.revision) {
             throw HighSchoolPhase4CommandException("command.stale_revision")
         }
-        if (envelope.command is HighSchoolPhase4Command.Start) {
+        if (envelope.command is HighSchoolPhase4Command.Start || envelope.command is HighSchoolPhase4Command.StartConfigured) {
             throw HighSchoolPhase4CommandException("command.start_duplicate")
         }
         val result = apply(state, envelope.command)
@@ -168,12 +177,14 @@ public class HighSchoolPhase4CommandStore(
 
     private fun apply(state: HighSchoolPhase4State, command: HighSchoolPhase4Command): HighSchoolPhase4Result = when (command) {
         is HighSchoolPhase4Command.Start -> error("command.start_duplicate")
+        is HighSchoolPhase4Command.StartConfigured -> error("command.start_duplicate")
+        is HighSchoolPhase4Command.ConfigureRebirth -> kernel.beginRebirth(state, command.seed, command.dayKey, command.setup)
         HighSchoolPhase4Command.BeginTutorial -> kernel.beginTutorial(state)
         is HighSchoolPhase4Command.CompleteTutorial -> kernel.completeTutorial(command.seed, state)
         is HighSchoolPhase4Command.ChooseSchool -> kernel.chooseSchool(command.seed, state, command.schoolId)
         is HighSchoolPhase4Command.SelectPledge -> kernel.selectPledge(state, command.pledgeId)
         is HighSchoolPhase4Command.Training -> kernel.commitTraining(command.seed, state, command.focus, command.intensity, command.targetPitch)
-        is HighSchoolPhase4Command.TrainingBlock -> kernel.commitTrainingBlock(command.seed, state, command.requests)
+        is HighSchoolPhase4Command.TrainingBlock -> kernel.commitTrainingBlock(command.seed, state, command.requests, command.targetPitch, command.stopForSafety)
         is HighSchoolPhase4Command.Relationship -> kernel.resolveRelationship(command.seed, state, command.response)
         is HighSchoolPhase4Command.ReserveImportantGame -> kernel.reserveImportantGame(command.seed, state)
         is HighSchoolPhase4Command.SubmitPitch -> {
@@ -191,6 +202,7 @@ public class HighSchoolPhase4CommandStore(
         HighSchoolPhase4Command.FinalizeArchive -> kernel.finalizeArchive(state)
         is HighSchoolPhase4Command.BeginRebirth -> kernel.beginRebirth(state, command.seed, command.dayKey)
         HighSchoolPhase4Command.StartChallenge -> kernel.startChallenge(state)
+        is HighSchoolPhase4Command.StartSeedChallenge -> kernel.startChallenge(state, command.seed, command.life, command.presetId)
         HighSchoolPhase4Command.EndChallenge -> kernel.endChallenge(state)
         HighSchoolPhase4Command.ClaimWeeklyReward -> kernel.claimWeeklyReward(state)
         is HighSchoolPhase4Command.SaveReturnPlan -> kernel.saveReturnPlan(state, command.plan)

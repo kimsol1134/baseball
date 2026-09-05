@@ -1,5 +1,7 @@
 package com.solkim.baseball.core.highschool
 
+import com.solkim.baseball.core.pitch.PitchLearningProject
+import com.solkim.baseball.core.pitch.PitchLearningRules
 import com.solkim.baseball.core.SplitMix64
 import com.solkim.baseball.core.StableHash
 import com.solkim.baseball.core.pitch.PitchKind
@@ -86,6 +88,13 @@ public data class HighSchoolGameReport(
     /** Source ProGameLine support projection; populated by the Phase 4 boundary. */
     val teamRuns: Int? = null,
     val homeRuns: Int? = null,
+)
+
+public data class HighSchoolTrainingPreview(
+    val minimumGrowth: Int, val maximumGrowth: Int,
+    val fatigueChange: Int, val armRiskChange: Int,
+    val atTalentWall: Boolean, val rehabilitation: Boolean,
+    val schoolBonus: Boolean, val opportunityBonus: Boolean,
 )
 
 public data class HighSchoolTrainingResult(
@@ -219,6 +228,7 @@ public data class HighSchoolState(
     val rebirthEcho: HighSchoolRebirthEcho? = null,
     val recentRelationshipEventIds: List<String> = emptyList(),
     val stateCommitment: String,
+    val pitchLearningProject: PitchLearningProject? = null,
 )
 
 public data class HighSchoolEvent(
@@ -324,7 +334,8 @@ public class HighSchoolKernel {
         )
         val inheritance = applyInheritance(
             pitcher = pitcher,
-            points = max(request.inheritedSoulTotal ?: 0, request.inheritedSoulPoints),
+            // Explicit total is the automatic inheritance budget. A Pro wallet can be larger.
+            points = request.inheritedSoulTotal ?: request.inheritedSoulPoints,
             domain = request.inheritedSoulDomain,
             memories = request.inheritedMemories,
             talent = talent,
@@ -434,6 +445,43 @@ public class HighSchoolKernel {
         return result(seed, signed(state), "school_selected", listOf("school.${school.id.wire}"))
     }
 
+    /** Read-only forecast using the same formulas as the actual training command. No RNG is consumed. */
+    public fun trainingPreview(state: HighSchoolState, requestedFocus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): HighSchoolTrainingPreview {
+        val rehab = state.injuryRecovery > 0
+        val focus = if (rehab) HighSchoolTrainingFocus.RECOVERY else requestedFocus
+        val before = rating(focus, state.pitcher)
+        val wall = focus != HighSchoolTrainingFocus.RECOVERY && before >= min(80, state.talent.grade(focus).ceiling)
+        val signal = trainingSignalBase(state, requestedFocus, intensity)
+        val wind = windFor(state.careerId)
+        fun gain(signal: Int): Int {
+            if (rehab || focus == HighSchoolTrainingFocus.RECOVERY || wall) return 0
+            val base = trainingGrowth(max(60, signal))
+            val first = state.totalTrainingsCompleted == 0 && state.lifeNumber == 1
+            return max(if (first) 1 else 0, base) + wind.trainingGrowthBonus(focus)
+        }
+        val riskAfter = if (rehab) max(0, state.armRisk - 10) else clamp(state.armRisk + trainingArmRisk(focus, intensity), 0, 100)
+        return HighSchoolTrainingPreview(gain(signal - trainingVariance(focus)), gain(signal + trainingVariance(focus)),
+            trainingFatigueAfter(state, requestedFocus, intensity) - state.fatigue, riskAfter - state.armRisk,
+            wall, rehab, state.school?.strength == focus, !rehab && state.trainingOpportunity?.focus == focus)
+    }
+
+    private fun trainingSignalBase(state: HighSchoolState, focus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): Int {
+        val base = when (intensity) { HighSchoolTrainingIntensity.LIGHT -> 130; HighSchoolTrainingIntensity.STANDARD -> 210; HighSchoolTrainingIntensity.INTENSIVE -> 280 }
+        return base + (if (state.school?.strength == focus) 110 else 0) +
+            (if (state.injuryRecovery <= 0 && state.trainingOpportunity?.focus == focus) 90 else 0) -
+            max(0, state.fatigue - 45) * 3 + max(0, 16 - state.schedule.trainingTotal) * 24
+    }
+
+    private fun trainingFatigueAfter(state: HighSchoolState, requestedFocus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): Int {
+        val rehab = state.injuryRecovery > 0
+        val focus = if (rehab) HighSchoolTrainingFocus.RECOVERY else requestedFocus
+        val wind = windFor(state.careerId)
+        if (rehab) return clamp(state.fatigue + wind.trainingFatigueModifier(focus) - wind.recoveryBonus - 24, 0, 100)
+        val base = when (intensity) { HighSchoolTrainingIntensity.LIGHT -> 3; HighSchoolTrainingIntensity.STANDARD -> 8; HighSchoolTrainingIntensity.INTENSIVE -> 15 }
+        return clamp(state.fatigue + base + (if (HighSchoolContentCatalog.BALANCE_VERSION >= 4) trainingFatigueModifier(focus) else 0) +
+            wind.trainingFatigueModifier(focus) + (if (focus == HighSchoolTrainingFocus.RECOVERY) -wind.recoveryBonus - 18 else 0), 0, 100)
+    }
+
     public fun commitTraining(request: TrainingRequest): HighSchoolResult {
         val seed = validate(request.seed, request.state, HighSchoolPhase.TRAINING)
         val state = request.state
@@ -450,16 +498,7 @@ public class HighSchoolKernel {
         val opportunityHit = !rehab && state.trainingOpportunity?.focus == request.focus
         val differentiated = HighSchoolContentCatalog.BALANCE_VERSION >= 4
         val variance = trainingVariance(focus)
-        val base = when (request.intensity) {
-            HighSchoolTrainingIntensity.LIGHT -> 130
-            HighSchoolTrainingIntensity.STANDARD -> 210
-            HighSchoolTrainingIntensity.INTENSIVE -> 280
-        }
-        val signalBase = base +
-            (if (school.strength == request.focus) 110 else 0) +
-            (if (opportunityHit) 90 else 0) -
-            max(0, state.fatigue - 45) * 3 +
-            max(0, 16 - state.schedule.trainingTotal) * 24
+        val signalBase = trainingSignalBase(state, request.focus, request.intensity)
         val signal = max(60, signalBase + generator.nextInt(variance * 2 + 1) - variance)
         val jackpotChance = clamp(
             (if (HighSchoolSoulBoost.TRAINING_RHYTHM in state.soulBoosts) 26 else 16) +
@@ -498,7 +537,11 @@ public class HighSchoolKernel {
                 HighSchoolTrainingFocus.STAMINA, HighSchoolTrainingFocus.RECOVERY -> com.solkim.baseball.core.pitch.PitchAbilityKind.STAMINA
             },
         )
-        val pitcher = grow(state.pitcher, focus, growthPoints, request.targetPitch)
+        var pitcher = grow(state.pitcher, focus, growthPoints, request.targetPitch)
+        val project = state.pitchLearningProject
+        val learning = if (project != null && !project.completed && focus == HighSchoolTrainingFocus.BREAKING_BALL && request.targetPitch == project.pitchType)
+            project.practice(when(request.intensity) { HighSchoolTrainingIntensity.LIGHT -> 1; HighSchoolTrainingIntensity.STANDARD -> 2; HighSchoolTrainingIntensity.INTENSIVE -> 3 }) else project
+        if (project != null && learning != null) pitcher = pitcher.copy(pitchProfiles = PitchLearningRules.advance(pitcher.pitchProfiles, project, learning))
         val masteryAfter = pitcher.effectiveMastery.value(
             when (focus) {
                 HighSchoolTrainingFocus.VELOCITY -> com.solkim.baseball.core.pitch.PitchAbilityKind.POWER
@@ -507,22 +550,7 @@ public class HighSchoolKernel {
                 HighSchoolTrainingFocus.STAMINA, HighSchoolTrainingFocus.RECOVERY -> com.solkim.baseball.core.pitch.PitchAbilityKind.STAMINA
             },
         )
-        val baseFatigue = when (request.intensity) {
-            HighSchoolTrainingIntensity.LIGHT -> 3
-            HighSchoolTrainingIntensity.STANDARD -> 8
-            HighSchoolTrainingIntensity.INTENSIVE -> 15
-        }
-        val fatigue = if (rehab) {
-            clamp(state.fatigue + wind.trainingFatigueModifier(focus) - wind.recoveryBonus - 24, 0, 100)
-        } else {
-            clamp(
-                state.fatigue + baseFatigue +
-                    (if (differentiated) trainingFatigueModifier(focus) else 0) +
-                    wind.trainingFatigueModifier(focus) +
-                    (if (request.focus == HighSchoolTrainingFocus.RECOVERY) -wind.recoveryBonus - 18 else 0),
-                0, 100,
-            )
-        }
+        val fatigue = trainingFatigueAfter(state, request.focus, request.intensity)
         val after = rating(focus, pitcher)
         val growth = after - before
         val training = HighSchoolTrainingResult(
@@ -544,6 +572,7 @@ public class HighSchoolKernel {
             chapterTrainingCount = state.chapterTrainingCount + 1,
             totalTrainingsCompleted = number,
             lastTraining = training,
+            pitchLearningProject = learning,
             injuryRecovery = if (rehab) state.injuryRecovery - 1 else state.injuryRecovery,
             armRisk = if (rehab) max(0, state.armRisk - 10) else clamp(state.armRisk + trainingArmRisk(focus, request.intensity), 0, 100),
             awakeningSparks = if (talentApplication.bloomed) min(6, state.awakeningSparks + 1) else state.awakeningSparks,
@@ -1403,6 +1432,8 @@ public class HighSchoolKernel {
         return InheritanceApplication(value, updatedTalent)
     }
 
+    public fun previewAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher = applyAwakening(pitcher, awakening)
+
     private fun applyAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher {
         // Source: HighSchoolCareer.applyAwakening (current Swift). Keep the profile-level
         // deltas together with the scalar trade-offs; the automatic PitchKernel path consumes
@@ -1601,6 +1632,8 @@ public class HighSchoolKernel {
         return values.take(5)
     }
 
+    public fun draftAssessment(state: HighSchoolState): Triple<Int, Int, List<String>> = Triple(draftScore(state), draftThreshold(state), draftEvaluationBreakdown(state))
+
     private fun draftEvaluationBreakdown(state: HighSchoolState): List<String> {
         val ratings = state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina
         val performance = state.performance.strikeouts * 4 - state.performance.walks * 2 - state.performance.runsAllowed * 2
@@ -1629,6 +1662,9 @@ public class HighSchoolKernel {
             "능력 ${ratings / 4 + 15}",
             "고교 공식 경기 ${if (performance >= 0) "+" else ""}${performance / 6}",
             "시즌 기록 ${if (season >= 0) "+" else ""}$season",
+            "위기 관리 ${if (process >= 0) "+" else ""}$process",
+            "관심도 ${if (fan >= 0) "+" else ""}$fan",
+            "이번 생의 흐름 ${windFor(state.careerId).draftEvaluationDelta}",
             "각성 +${state.selectedAwakenings.size}",
             "관계 ${if (relationship >= 0) "+" else ""}$relationship",
         ) + (if (karma > 0) listOf("핸디캡 -$karma") else emptyList()) +
@@ -1963,6 +1999,7 @@ public class HighSchoolKernel {
                 "pitcherProfiles:$pitcherProfiles",
                 "schedule:${state.schedule.trainingsByChapter.joinToString(",")}|${state.schedule.milestonesByChapter.joinToString(";") { phases -> phases.joinToString(",") { it.wire } }}",
             ).toMutableList().apply {
+                state.pitchLearningProject?.let { add("learning:${it.token()}") }
                 if (scenario != null) add("gameScenario:$scenario")
                 if (currentEvent != "none") add("relationshipEvent:$currentEvent")
                 if (state.news.isNotEmpty()) add("news:${state.news.joinToString("\u001f")}")

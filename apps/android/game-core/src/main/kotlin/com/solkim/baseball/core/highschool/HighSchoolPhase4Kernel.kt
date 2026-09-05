@@ -1,5 +1,7 @@
 package com.solkim.baseball.core.highschool
 
+import com.solkim.baseball.core.pitch.PitchLearningProject
+import com.solkim.baseball.core.pitch.PitchLearningRules
 import com.solkim.baseball.core.StableHash
 import com.solkim.baseball.core.pitch.BatSide
 import com.solkim.baseball.core.pitch.BatterScoutingSnapshot
@@ -95,7 +97,7 @@ public class HighSchoolPhase4Kernel(
             nextLifeNumber = request.lifeNumber,
             soulPoints = request.inheritedSoulPoints.coerceAtLeast(0),
             soulTotalEarned = inheritedTotal.coerceAtLeast(0),
-            automaticSoulEarned = inheritedTotal.coerceAtLeast(0),
+            automaticSoulEarned = (request.inheritedSoulTotal ?: request.inheritedSoulPoints).coerceAtLeast(0),
             inheritedMemories = request.inheritedMemories,
             selectedSignatureLegacyId = request.inheritedSignatureLegacyId,
             unlockedSignatureLegacyIds = request.inheritedSignatureLegacyId?.let(::listOf) ?: emptyList(),
@@ -122,6 +124,17 @@ public class HighSchoolPhase4Kernel(
             ),
         )
         return result(state, "phase4_started", listOf("life.${request.lifeNumber}"))
+    }
+
+    public fun startConfigured(request: HighSchoolPhase4StartRequest, primaryPitch: PitchKind, learningPitch: PitchKind): HighSchoolPhase4Result {
+        val base = start(request).state
+        return result(configureStartingRepertoire(base, primaryPitch, learningPitch), "phase4_started", listOf("life.${request.lifeNumber}"))
+    }
+
+    private fun configureStartingRepertoire(state: HighSchoolPhase4State, primary: PitchKind, learning: PitchKind): HighSchoolPhase4State {
+        require(primary != learning && learning != PitchKind.FOUR_SEAM) { "rebirth.repertoire" }
+        val pitcher = state.run.pitcher.copy(pitchProfiles = PitchLearningRules.configure(state.run.pitcher.pitchProfiles, primary, learning))
+        return sign(state.copy(run = highSchool.resignShadowState(state.run.copy(pitcher = pitcher, pitchLearningProject = PitchLearningProject(learning))), startingPitcher = pitcher))
     }
 
     public fun beginTutorial(state: HighSchoolPhase4State): HighSchoolPhase4Result {
@@ -189,18 +202,23 @@ public class HighSchoolPhase4Kernel(
         seed: String,
         state: HighSchoolPhase4State,
         requests: List<Pair<HighSchoolTrainingFocus, HighSchoolTrainingIntensity>>,
+        targetPitch: PitchKind? = null,
+        stopForSafety: Boolean = false,
     ): HighSchoolPhase4Result {
         require(requests.isNotEmpty() && requests.size <= 16) { "training.block_size" }
+        require(targetPitch == null || (targetPitch != PitchKind.FOUR_SEAM && requests.all { it.first == HighSchoolTrainingFocus.BREAKING_BALL } && state.run.pitcher.pitchProfiles.any { it.pitchType == targetPitch })) { "training.block_target" }
         var run = state.run
         val evidence = state.trainingEvidence.toMutableList()
         var nextSeed = seed
         for ((focus, intensity) in requests) {
-            val committed = highSchool.commitTraining(HighSchoolKernel.TrainingRequest(nextSeed, run, focus, intensity))
+            val committed = highSchool.commitTraining(HighSchoolKernel.TrainingRequest(nextSeed, run, focus, intensity, targetPitch))
             val training = committed.snapshot.lastTraining ?: error("training.evidence_missing")
-            evidence += trainingEvidence(run, training, targetPitch = null)
+            evidence += trainingEvidence(run, training, targetPitch)
             run = committed.snapshot
             nextSeed = committed.nextSeed
             if (run.phase != HighSchoolPhase.TRAINING) break
+            if (stopForSafety && (training.bloomed || (focus != HighSchoolTrainingFocus.RECOVERY &&
+                    (run.fatigue >= 75 || run.armRisk >= 55 || run.injuryRecovery > 0)))) break
         }
         return result(sign(updateProgress(state.copy(run = run, trainingEvidence = evidence))), "training_block_committed")
     }
@@ -380,6 +398,7 @@ public class HighSchoolPhase4Kernel(
         )
         val next = sign(
             state.copy(
+                run = highSchool.resignShadowState(state.run.copy(pitchLearningProject = state.run.pitchLearningProject?.use(call.pitchType, session.context.plateAppearanceId, delivery, entry?.executionQuality ?: 0))),
                 activePitch = nextSession,
                 achievements = achievementProgress.unlocked,
                 unacknowledgedAchievements = achievementProgress.unacknowledged,
@@ -510,7 +529,7 @@ public class HighSchoolPhase4Kernel(
             homeRuns = session.log.entries.count { it.outcome == PitchOutcome.HOME_RUN },
         )
         val nextRun = highSchool.recordImportantGame(
-            HighSchoolKernel.GameRequest(session.seed, state.run, report),
+            HighSchoolKernel.GameRequest(session.seed, highSchool.resignShadowState(state.run.copy(pitcher = state.run.pitchLearningProject?.let { state.run.pitcher.copy(pitchProfiles = PitchLearningRules.advance(state.run.pitcher.pitchProfiles, it, it)) } ?: state.run.pitcher)), report),
         ).snapshot
         val line = HighSchoolSeasonLineRules.line(
             session.seed,
@@ -724,9 +743,16 @@ public class HighSchoolPhase4Kernel(
         return result(next, "archive_finalized", listOf("life.${state.run.lifeNumber}"))
     }
 
-    public fun beginRebirth(state: HighSchoolPhase4State, seed: String, dayKey: String = state.selectedDayKey): HighSchoolPhase4Result {
+    public fun beginRebirth(state: HighSchoolPhase4State, seed: String, dayKey: String = state.selectedDayKey, setup: HighSchoolRebirthSetup? = null): HighSchoolPhase4Result {
         require(state.run.phase == HighSchoolPhase.COMPLETED) { "rebirth.phase" }
         require(state.archive.any { it.careerId == state.run.careerId }) { "rebirth.archive_required" }
+        val boosts = setup?.soulBoosts.orEmpty()
+        require(boosts.distinct().size == boosts.size) { "rebirth.boost_duplicate" }
+        val cost = boosts.sumOf { it.cost }
+        require(cost <= state.inheritance.soulPoints) { "rebirth.insufficient_soul" }
+        setup?.let {
+            require(it.primaryPitch != it.learningPitch && it.learningPitch != PitchKind.FOUR_SEAM) { "rebirth.repertoire" }
+        }
         val echo = HighSchoolRebirthEcho(
             previousLifeNumber = state.run.lifeNumber,
             previousPlayerName = state.run.identity.name,
@@ -740,33 +766,37 @@ public class HighSchoolPhase4Kernel(
             previousCoachName = state.run.school?.coachName,
             previousRivalName = state.run.rival.name,
             inheritedLegacyId = state.inheritance.selectedSignatureLegacyId,
-            automaticInheritanceTotal = state.inheritance.soulTotalEarned,
+            automaticInheritanceTotal = state.inheritance.automaticSoulEarned,
             hadRunsAllowed = state.run.performance.runsAllowed > 0,
             hadCollapseGame = state.run.performance.runsAllowed > 0,
         )
         val request = HighSchoolPhase4StartRequest(
             seed = seed,
-            presetId = state.run.presetId,
+            presetId = setup?.presetId ?: state.run.presetId,
             stableUserId = state.weekly.stableUserId,
             weekKey = state.weekly.weekKey,
             dayKey = dayKey,
             lifeNumber = state.inheritance.nextLifeNumber,
             creationAllocation = HighSchoolAllocation(),
-            inheritedSoulPoints = state.inheritance.soulPoints,
-            inheritedSoulTotal = state.inheritance.soulTotalEarned,
+            inheritedSoulPoints = state.inheritance.soulPoints - cost,
+            inheritedSoulDomain = setup?.soulDomain,
+            inheritedSoulTotal = state.inheritance.automaticSoulEarned,
             inheritedMemories = state.inheritance.inheritedMemories,
             inheritedSignatureLegacyId = state.inheritance.selectedSignatureLegacyId,
             inheritedLineageMasteries = state.inheritance.lineageMasteries,
             lineageLoadout = state.inheritance.lineageLoadout,
             inheritanceRulesVersion = state.inheritance.inheritanceRulesVersion,
             inheritedNextRunIntent = state.nextRunIntent,
-            identity = state.run.identity,
-            difficulty = state.run.difficulty,
-            karmas = state.run.karmas,
-            soulBoosts = state.run.soulBoosts,
+            identity = setup?.identity ?: state.run.identity,
+            difficulty = setup?.difficulty ?: state.run.difficulty,
+            karmas = setup?.karmas ?: state.run.karmas,
+            soulBoosts = boosts,
             inheritedRebirthEcho = echo,
         )
-        val fresh = start(request).state
+        val initial = start(request).state
+        val fresh = if (setup != null) configureStartingRepertoire(initial, setup.primaryPitch, setup.learningPitch)
+            else state.run.pitchLearningProject?.let { project -> configureStartingRepertoire(initial,
+                state.startingPitcher.pitchProfiles.firstOrNull { it.role == com.solkim.baseball.core.pitch.PitchUsageRole.PRIMARY }?.pitchType ?: PitchKind.FOUR_SEAM, project.pitchType) } ?: initial
         val weekly = HighSchoolWeeklyRules.record(
             state.weekly,
             "next_run_started",
@@ -779,7 +809,7 @@ public class HighSchoolPhase4Kernel(
                 achievements = state.achievements,
                 unacknowledgedAchievements = state.unacknowledgedAchievements,
                 weekly = weekly,
-                inheritance = state.inheritance,
+                inheritance = state.inheritance.copy(soulPoints = state.inheritance.soulPoints - cost),
                 nextRunIntent = state.nextRunIntent,
             rebirthEcho = echo,
                 seasonLog = state.seasonLog,
@@ -795,9 +825,10 @@ public class HighSchoolPhase4Kernel(
         return result(next, "rebirth_started", listOf("life.${next.run.lifeNumber}"))
     }
 
-    public fun startChallenge(state: HighSchoolPhase4State): HighSchoolPhase4Result {
+    public fun startChallenge(state: HighSchoolPhase4State, seed: String? = null, life: Int = state.run.lifeNumber, presetId: String = state.run.presetId): HighSchoolPhase4Result {
         require(!state.challenge.active) { "challenge.already_active" }
-        require(state.run.phase == HighSchoolPhase.COMPLETED) { "challenge.phase" }
+        if (seed == null) require(state.run.phase == HighSchoolPhase.COMPLETED) { "challenge.phase" }
+        else require(seed.toULongOrNull() != null && life in 1..999 && state.activePitch == null) { "challenge.seed_or_boundary" }
             val backup = HighSchoolChallengeBackup(
             run = state.run,
             startingPitcher = state.startingPitcher,
@@ -826,17 +857,17 @@ public class HighSchoolPhase4Kernel(
         // Challenge is a fresh, un-inherited board. It may read the archived run as its seed
         // source, but it never shares the run object or any mutable projection with the durable
         // career. That is the same isolation boundary as Swift's challengeLifeNumber path.
-        val challengeSeed = Hashing.fnv1a64Hex("challenge|${state.run.careerId}").toULong(16).toString()
-        val fresh = start(
+        val challengeSeed = seed?.toULong()?.toString() ?: Hashing.fnv1a64Hex("challenge|${state.run.careerId}").toULong(16).toString()
+        var fresh = start(
             HighSchoolPhase4StartRequest(
                 seed = challengeSeed,
-                presetId = state.run.presetId,
-                stableUserId = state.weekly.stableUserId,
-                weekKey = state.weekly.weekKey,
-                dayKey = state.selectedDayKey,
-                lifeNumber = state.run.lifeNumber,
-                identity = state.run.identity,
-                difficulty = state.run.difficulty,
+                presetId = presetId,
+                stableUserId = if (seed == null) state.weekly.stableUserId else "challenge:$challengeSeed-$life",
+                weekKey = if (seed == null) state.weekly.weekKey else "1970-W01",
+                dayKey = if (seed == null) state.selectedDayKey else "1970-01-01",
+                lifeNumber = life,
+                identity = if (seed == null) state.run.identity else HighSchoolIdentity(),
+                difficulty = if (seed == null) state.run.difficulty else HighSchoolDifficulty(),
                 karmas = emptyList(),
                 soulBoosts = emptyList(),
                 inheritedSoulPoints = 0,
@@ -846,6 +877,7 @@ public class HighSchoolPhase4Kernel(
                 inheritedNextRunIntent = null,
             ),
         ).state
+        if (seed != null) fresh = completePrologue(challengeSeed, fresh).state
         return result(
             sign(
                 fresh.copy(

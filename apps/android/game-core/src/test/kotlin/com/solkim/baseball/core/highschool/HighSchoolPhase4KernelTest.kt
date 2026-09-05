@@ -98,6 +98,26 @@ class HighSchoolPhase4KernelTest {
             val challengeRestarted = HighSchoolPhase4StateCodec.decode(HighSchoolPhase4StateCodec.encode(challenge))
             val afterChallenge = kernel.endChallenge(challengeRestarted).state
             assertEquals(durableBeforeChallenge, afterChallenge)
+            if (offset == 0) {
+                val choices = HighSchoolRebirthSetup("breaking_ball_artist", HighSchoolIdentity("새민서", "left", "balanced", "부산"),
+                    HighSchoolDifficulty(careerHarshness = "challenging"), soulDomain = HighSchoolSoulDomain.BODY,
+                    primaryPitch = PitchKind.CURVEBALL, learningPitch = PitchKind.SLIDER)
+                val configured = kernel.beginRebirth(afterChallenge, "492211", setup = choices).state
+                val restored = HighSchoolPhase4StateCodec.decode(HighSchoolPhase4StateCodec.encode(configured))
+                assertEquals(choices.identity, restored.run.identity)
+                assertEquals(choices.difficulty, restored.run.difficulty)
+                assertEquals(afterChallenge.archive, restored.archive)
+                assertEquals(afterChallenge.inheritance.soulPoints, restored.inheritance.soulPoints)
+                assertEquals(com.solkim.baseball.core.pitch.PitchUsageRole.PRIMARY, restored.run.pitcher.pitchProfiles.single { it.pitchType == PitchKind.CURVEBALL }.role)
+                assertEquals(com.solkim.baseball.core.pitch.PitchUsageRole.DEVELOPMENT, restored.run.pitcher.pitchProfiles.single { it.pitchType == PitchKind.SLIDER }.role)
+                assertFailsWith<IllegalArgumentException> { kernel.beginRebirth(restored, "492212", setup = choices) }
+                assertFailsWith<IllegalArgumentException> { kernel.beginRebirth(afterChallenge, "492213", setup = choices.copy(primaryPitch = PitchKind.SLIDER)) }
+                val emptyWallet = kernel.commitShadowState(afterChallenge.copy(inheritance = afterChallenge.inheritance.copy(soulPoints = 0)))
+                assertFailsWith<IllegalArgumentException> { kernel.beginRebirth(emptyWallet, "492214", setup = choices.copy(soulBoosts = listOf(HighSchoolSoulBoost.HEAD_START))) }
+                val envelope = HighSchoolPhase4CommandEnvelope(commandId = "configured-rebirth", sessionId = "test", expectedRevision = afterChallenge.revision,
+                    command = HighSchoolPhase4Command.ConfigureRebirth("492211", "2026-09-05", choices))
+                assertEquals(envelope, HighSchoolPhase4CommandCodec.decode(HighSchoolPhase4CommandCodec.encode(envelope)))
+            }
             result = kernel.beginRebirth(result.state, (seed.toULong() + 77UL).toString())
             result = restart(result)
             assertEquals(2, result.state.run.lifeNumber)

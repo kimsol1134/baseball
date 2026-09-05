@@ -1,5 +1,7 @@
 package com.solkim.baseball.core.highschool
 
+import com.solkim.baseball.core.pitch.PitchKind
+
 import com.solkim.baseball.core.StableHash
 import com.solkim.baseball.core.pitch.PitchCall
 import com.solkim.baseball.core.pitch.PitchDelivery
@@ -69,6 +71,24 @@ public object HighSchoolPhase4CommandCodec {
     }
 
     private fun decodeCommand(kind: String, payload: String): HighSchoolPhase4Command = when (kind) {
+        "startSeedChallenge" -> unpack(payload, 3).let { HighSchoolPhase4Command.StartSeedChallenge(it[0], it[1].toIntStrict("challenge.life"), it[2]) }
+        "startConfigured" -> unpack(payload, 3).let { v ->
+            val start = decodeCommand("start", v[0]) as HighSchoolPhase4Command.Start
+            HighSchoolPhase4Command.StartConfigured(start.request,
+                enumByWire(PitchKind.entries, v[1], "start.primary") { it.wire },
+                enumByWire(PitchKind.entries, v[2], "start.learning") { it.wire })
+        }
+        "configureRebirth" -> unpack(payload, 16).let { v ->
+            HighSchoolPhase4Command.ConfigureRebirth(v[0], v[1], HighSchoolRebirthSetup(
+                presetId = v[2], identity = HighSchoolIdentity(v[3], v[4], v[5], v[6]),
+                difficulty = HighSchoolDifficulty(v[7], v[8], v[9], v[10]),
+                karmas = csv(v[11]).map { enumByWire(HighSchoolKarma.entries, it, "rebirth.karma") { value -> value.wire } },
+                soulDomain = enumByWire(HighSchoolSoulDomain.entries, v[12], "rebirth.domain") { it.wire },
+                soulBoosts = csv(v[13]).map { enumByWire(HighSchoolSoulBoost.entries, it, "rebirth.boost") { value -> value.wire } },
+                primaryPitch = enumByWire(PitchKind.entries, v[14], "rebirth.primary") { it.wire },
+                learningPitch = enumByWire(PitchKind.entries, v[15], "rebirth.learning") { it.wire },
+            ))
+        }
         "start" -> {
             val values = unpack(payload, 29)
             HighSchoolPhase4Command.Start(
@@ -103,13 +123,14 @@ public object HighSchoolPhase4CommandCodec {
                 values.getOrNull(3)?.ifEmpty { null }?.let { wire -> enumByWire(com.solkim.baseball.core.pitch.PitchKind.entries, wire, "training.targetPitch") { value -> value.wire } },
             )
         }
-        "trainingBlock" -> unpack(payload, 2).let { values ->
+        "trainingBlock" -> unpackOneOf(payload, 2, 4).let { values ->
             HighSchoolPhase4Command.TrainingBlock(values[0], values[1].split(';').filter { it.isNotEmpty() }.map { pair ->
                 val parts = pair.split(',')
                 if (parts.size != 2) fail("trainingBlock.pair")
                 enumByWire(HighSchoolTrainingFocus.entries, parts[0], "trainingBlock.focus") { value -> value.wire } to
                     enumByWire(HighSchoolTrainingIntensity.entries, parts[1], "trainingBlock.intensity") { value -> value.wire }
-            })
+            }, values.getOrNull(2)?.ifEmpty { null }?.let { wire -> enumByWire(com.solkim.baseball.core.pitch.PitchKind.entries, wire, "trainingBlock.targetPitch") { it.wire } },
+                values.getOrNull(3)?.let { flag -> when (flag) { "true" -> true; "false" -> false; else -> fail("trainingBlock.safety") } } ?: false)
         }
         "relationship" -> unpack(payload, 2).let { values -> HighSchoolPhase4Command.Relationship(values[0], enumByWire(HighSchoolRelationshipResponse.entries, values[1], "relationship.response") { value -> value.wire }) }
         "reserveImportantGame" -> HighSchoolPhase4Command.ReserveImportantGame(unpack(payload, 1).single())
@@ -167,6 +188,8 @@ public object HighSchoolPhase4CommandCodec {
 
     private fun kind(command: HighSchoolPhase4Command): String = when (command) {
         is HighSchoolPhase4Command.Start -> "start"
+        is HighSchoolPhase4Command.StartConfigured -> "startConfigured"
+        is HighSchoolPhase4Command.ConfigureRebirth -> "configureRebirth"
         HighSchoolPhase4Command.BeginTutorial -> "beginTutorial"
         is HighSchoolPhase4Command.CompleteTutorial -> "completeTutorial"
         is HighSchoolPhase4Command.ChooseSchool -> "chooseSchool"
@@ -185,6 +208,7 @@ public object HighSchoolPhase4CommandCodec {
         HighSchoolPhase4Command.FinalizeArchive -> "finalizeArchive"
         is HighSchoolPhase4Command.BeginRebirth -> "beginRebirth"
         HighSchoolPhase4Command.StartChallenge -> "startChallenge"
+        is HighSchoolPhase4Command.StartSeedChallenge -> "startSeedChallenge"
         HighSchoolPhase4Command.EndChallenge -> "endChallenge"
         HighSchoolPhase4Command.ClaimWeeklyReward -> "claimWeeklyReward"
         is HighSchoolPhase4Command.SaveReturnPlan -> "saveReturnPlan"
@@ -196,6 +220,13 @@ public object HighSchoolPhase4CommandCodec {
     }
 
     private fun payload(command: HighSchoolPhase4Command): String = when (command) {
+        is HighSchoolPhase4Command.StartSeedChallenge -> pack(listOf(command.seed, command.life.toString(), command.presetId))
+        is HighSchoolPhase4Command.StartConfigured -> pack(listOf(payload(HighSchoolPhase4Command.Start(command.request)), command.primaryPitch.wire, command.learningPitch.wire))
+        is HighSchoolPhase4Command.ConfigureRebirth -> command.setup.let { setup -> pack(listOf(
+            command.seed, command.dayKey, setup.presetId, setup.identity.name, setup.identity.throwingHand, setup.identity.bodyType, setup.identity.region,
+            setup.difficulty.careerHarshness, setup.difficulty.informationClarity, setup.difficulty.simulationDifficulty, setup.difficulty.interventionAssist,
+            setup.karmas.joinToString(",") { it.wire }, setup.soulDomain.wire, setup.soulBoosts.joinToString(",") { it.wire }, setup.primaryPitch.wire, setup.learningPitch.wire,
+        )) }
         is HighSchoolPhase4Command.Start -> pack(listOf(
             command.request.seed, command.request.presetId, command.request.stableUserId, command.request.weekKey, command.request.dayKey,
             command.request.lifeNumber.toString(), command.request.creationAllocation.stuff.toString(), command.request.creationAllocation.command.toString(),
@@ -214,7 +245,8 @@ public object HighSchoolPhase4CommandCodec {
         is HighSchoolPhase4Command.ChooseSchool -> pack(listOf(command.seed, command.schoolId.wire))
         is HighSchoolPhase4Command.SelectPledge -> pack(listOf(command.pledgeId))
         is HighSchoolPhase4Command.Training -> pack(listOf(command.seed, command.focus.wire, command.intensity.wire, command.targetPitch?.wire.orEmpty()))
-        is HighSchoolPhase4Command.TrainingBlock -> pack(listOf(command.seed, command.requests.joinToString(";") { it.first.wire + "," + it.second.wire }))
+        is HighSchoolPhase4Command.TrainingBlock -> pack(listOf(command.seed, command.requests.joinToString(";") { it.first.wire + "," + it.second.wire }) +
+            if (command.targetPitch != null || command.stopForSafety) listOf(command.targetPitch?.wire.orEmpty(), command.stopForSafety.toString()) else emptyList())
         is HighSchoolPhase4Command.Relationship -> pack(listOf(command.seed, command.response.wire))
         is HighSchoolPhase4Command.ReserveImportantGame -> pack(listOf(command.seed))
         is HighSchoolPhase4Command.SubmitPitch -> pack(listOf(command.sessionId, command.call.pitchType.wire, command.call.zone.row.toString(), command.call.zone.column.toString(), command.call.zoneIntent.wire, command.call.intensity.wire, command.delivery.releaseAccuracy.toString(), command.delivery.aimAccuracy.toString()))
@@ -245,12 +277,15 @@ public object HighSchoolPhase4CommandCodec {
 
     private fun canonical(command: HighSchoolPhase4Command): String = when (command) {
         is HighSchoolPhase4Command.Start -> "start|${command.request}"
+        is HighSchoolPhase4Command.StartConfigured -> "startConfigured|${command.request}|${command.primaryPitch.wire}|${command.learningPitch.wire}"
+        is HighSchoolPhase4Command.ConfigureRebirth -> "configureRebirth|${command.seed}|${command.dayKey}|${command.setup}"
         HighSchoolPhase4Command.BeginTutorial -> "beginTutorial"
         is HighSchoolPhase4Command.CompleteTutorial -> "completeTutorial|${command.seed}"
         is HighSchoolPhase4Command.ChooseSchool -> "chooseSchool|${command.seed}|${command.schoolId.wire}"
         is HighSchoolPhase4Command.SelectPledge -> "selectPledge|${command.pledgeId}"
         is HighSchoolPhase4Command.Training -> "training|${command.seed}|${command.focus.wire}|${command.intensity.wire}|${command.targetPitch?.wire ?: "none"}"
-        is HighSchoolPhase4Command.TrainingBlock -> "trainingBlock|${command.seed}|${command.requests.joinToString(",") { it.first.wire + ":" + it.second.wire }}"
+        is HighSchoolPhase4Command.TrainingBlock -> "trainingBlock|${command.seed}|${command.requests.joinToString(",") { it.first.wire + ":" + it.second.wire }}" +
+            if (command.targetPitch != null || command.stopForSafety) "|${command.targetPitch?.wire.orEmpty()}|${command.stopForSafety}" else ""
         is HighSchoolPhase4Command.Relationship -> "relationship|${command.seed}|${command.response.wire}"
         is HighSchoolPhase4Command.ReserveImportantGame -> "reserveImportantGame|${command.seed}"
         is HighSchoolPhase4Command.SubmitPitch -> "submitPitch|${command.sessionId}|${command.call}|${command.delivery}"
@@ -263,6 +298,7 @@ public object HighSchoolPhase4CommandCodec {
         HighSchoolPhase4Command.FinalizeArchive -> "finalizeArchive"
         is HighSchoolPhase4Command.BeginRebirth -> "beginRebirth|${command.seed}|${command.dayKey}|${command.entryPath}"
         HighSchoolPhase4Command.StartChallenge -> "startChallenge"
+        is HighSchoolPhase4Command.StartSeedChallenge -> "startSeedChallenge|${command.seed}|${command.life}|${command.presetId}"
         HighSchoolPhase4Command.EndChallenge -> "endChallenge"
         HighSchoolPhase4Command.ClaimWeeklyReward -> "claimWeeklyReward"
         is HighSchoolPhase4Command.SaveReturnPlan -> "saveReturnPlan|${command.plan}"

@@ -1,5 +1,7 @@
 package com.solkim.baseball.core.highschool
 
+import com.solkim.baseball.core.pitch.PitchLearningProject
+import com.solkim.baseball.core.pitch.PitchLearningRules
 import com.solkim.baseball.model.JsonValue
 import com.solkim.baseball.model.StrictJson
 
@@ -107,8 +109,12 @@ public object HighSchoolStateCodec {
         "draftResult" to (state.draftResult?.let(::writeDraft) ?: JsonValue.Null),
         "legacyOptions" to strings(state.legacyOptions),
         "selectedMemories" to strings(state.selectedMemories),
+        "pitchLearningProject" to (state.pitchLearningProject?.token()?.let(::str) ?: JsonValue.Null),
         "stateCommitment" to str(state.stateCommitment),
-    )
+    ).let { encoded ->
+        // Phase 4 commits these exact bytes. Legacy runs must not gain a null field.
+        if (state.pitchLearningProject == null) JsonValue.Obj(LinkedHashMap(encoded.entries).apply { remove("pitchLearningProject") }) else encoded
+    }
 
     private fun readState(value: JsonValue.Obj): HighSchoolState {
         // The event category was added as an additive v1 field so old shadow snapshots can
@@ -176,6 +182,7 @@ public object HighSchoolStateCodec {
             draftResult = value.optionalObject("draftResult")?.let(::readDraft),
             legacyOptions = value.strings("legacyOptions"),
             selectedMemories = value.strings("selectedMemories"),
+            pitchLearningProject = value.optionalAdditiveString("pitchLearningProject")?.let(PitchLearningProject::decode),
             stateCommitment = value.string("stateCommitment"),
         )
     }
@@ -661,9 +668,9 @@ public object HighSchoolStateCodec {
         "managerTrust", "catcherTrust", "rivalTrust", "selectedAwakenings", "awakeningOptions", "awakeningSparks", "fatigue",
         "performance", "currentGameScenarioId", "currentGameScenario", "currentRelationshipTarget", "currentRelationshipEvent", "news", "balanceVersion", "worldRulesVersion", "rebirthEcho", "recentRelationshipEventIds", "trainingOpportunity", "lastTraining", "lastRelationship",
         "fanInterest", "armRisk", "injuryRecovery", "automaticGames", "automaticOuts", "automaticRunsAllowed", "draftResult",
-        "legacyOptions", "selectedMemories", "currentRelationshipCategory", "stateCommitment",
+        "legacyOptions", "selectedMemories", "currentRelationshipCategory", "stateCommitment", "pitchLearningProject",
     )
-    private val STATE_REQUIRED_FIELDS = STATE_FIELDS - setOf(
+    private val STATE_REQUIRED_FIELDS = STATE_FIELDS - setOf("pitchLearningProject",
         "currentRelationshipCategory", "currentGameScenario", "currentRelationshipEvent", "news", "balanceVersion",
         "worldRulesVersion", "rebirthEcho", "recentRelationshipEventIds",
     )
