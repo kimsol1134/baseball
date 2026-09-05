@@ -72,10 +72,15 @@ public object GameAggregateCodec : JsonPayloadCodec<GameAggregateState> {
         "decisionReceiptIds" to JsonValue.Arr(value.decisionReceiptIds.map { JsonValue.Str(it) }),
         "activeHighSchoolCareerId" to if (value.activeHighSchoolCareerId == null) JsonValue.Null else JsonValue.Str(value.activeHighSchoolCareerId),
         "lifeArchiveCareerIds" to JsonValue.Arr(value.lifeArchiveCareerIds.map { JsonValue.Str(it) }),
-    ))
+    ).apply {
+        if (value.retiredProCareers.isNotEmpty()) put("retiredProCareers", ProRetirementCodec.encode(value.retiredProCareers))
+        if (value.standaloneSoulBalance != 0) put("standaloneSoulBalance", JsonValue.Num(value.standaloneSoulBalance.toString()))
+        value.seedChallenge?.let { put("seedChallenge", SeedChallengeCodec.encode(it)) }
+        value.playerGrowth?.let { put("playerGrowth", PlayerGrowthReceipt.encode(it)) }
+    })
 
     private fun decodeMeta(value: JsonValue.Obj): GameMetaState {
-        requireExact(value, metaFields, "meta")
+        requireExact(value, metaFields + setOf("retiredProCareers", "standaloneSoulBalance", "seedChallenge", "playerGrowth").filter { it in value.entries }, "meta")
         return GameMetaState(
             completedGameCount = value.decimal("completedGameCount"),
             achievementIds = value.strings("achievementIds"),
@@ -84,6 +89,10 @@ public object GameAggregateCodec : JsonPayloadCodec<GameAggregateState> {
             decisionReceiptIds = value.strings("decisionReceiptIds"),
             activeHighSchoolCareerId = value.nullableString("activeHighSchoolCareerId"),
             lifeArchiveCareerIds = value.strings("lifeArchiveCareerIds"),
+            retiredProCareers = ProRetirementCodec.decode(value["retiredProCareers"]),
+            standaloneSoulBalance = if ("standaloneSoulBalance" in value.entries) value.integer("standaloneSoulBalance") else 0,
+            seedChallenge = SeedChallengeCodec.decode(value["seedChallenge"]),
+            playerGrowth = PlayerGrowthReceipt.decode(value["playerGrowth"]),
         )
     }
 
@@ -102,7 +111,7 @@ public object GameAggregateCodec : JsonPayloadCodec<GameAggregateState> {
         )
     }
 
-    private fun encodePitch(value: PitchDurableState): JsonValue.Obj {
+    internal fun encodePitch(value: PitchDurableState): JsonValue.Obj {
         val fields = linkedMapOf<String, JsonValue>(
             "sessionId" to JsonValue.Str(value.sessionId), "careerKind" to JsonValue.Str(value.careerKind.wire), "careerId" to JsonValue.Str(value.careerId), "gameId" to JsonValue.Str(value.gameId), "seed" to JsonValue.Str(value.seed),
             "boundary" to JsonValue.Str(value.boundary.wire), "challengeRun" to JsonValue.Bool(value.challengeRun), "pitchIndex" to JsonValue.Num(value.pitchIndex.toString()),
@@ -115,7 +124,7 @@ public object GameAggregateCodec : JsonPayloadCodec<GameAggregateState> {
         return JsonValue.Obj(fields)
     }
 
-    private fun decodePitch(value: JsonValue.Obj): PitchDurableState {
+    internal fun decodePitch(value: JsonValue.Obj): PitchDurableState {
         val keys = value.entries.keys
         require(keys == pitchFields || keys == pitchFields + "holdCall") { "pitch.fields" }
         return PitchDurableState(

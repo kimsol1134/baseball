@@ -491,7 +491,7 @@ class Phase6ContractAuditTest {
     private fun envelope(id: String, revision: ULong, command: GameCommand): GameCommandEnvelope = GameCommandEnvelope(
         commandId = id,
         sessionId = when (command) {
-            GameCommand.EnterSetup -> "session-store"
+            GameCommand.EnterSetup, GameCommand.ResetProgress -> "session-store"
             is GameCommand.ReservePitch -> command.sessionId
             is GameCommand.StartPitch -> command.sessionId
             is GameCommand.CommitPitch -> command.sessionId

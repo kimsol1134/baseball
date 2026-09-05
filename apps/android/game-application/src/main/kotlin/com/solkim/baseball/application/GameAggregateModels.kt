@@ -26,6 +26,15 @@ public enum class GameStage(public val wire: String) {
     DELETED("deleted"),
 }
 
+/** Entering next-life setup preserves the finished career until the player confirms. */
+public fun GameAggregateState.canEnterPlayerSetup(): Boolean =
+    (stage == GameStage.OPENING && highSchool == null && pro == null) ||
+        (stage == GameStage.BETWEEN_LIVES &&
+            (pro == null || pro.phase == com.solkim.baseball.core.pro.ProCareerPhase.COMPLETED) &&
+            ((highSchool == null && pro != null) || (highSchool?.run?.phase == HighSchoolPhase.COMPLETED &&
+                highSchool.archive.any { it.careerId == highSchool.run.careerId })) &&
+            (pitch == null || pitch.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)))
+
 public enum class PitchBoundary(public val wire: String) {
     RESERVED("reserved"),
     PLAYING("playing"),
@@ -158,11 +167,26 @@ public data class GameMetaState(
     val decisionReceiptIds: List<String> = emptyList(),
     val activeHighSchoolCareerId: String? = null,
     val lifeArchiveCareerIds: List<String> = emptyList(),
+    val retiredProCareers: List<ProState> = emptyList(),
+    val standaloneSoulBalance: Int = 0,
+    val seedChallenge: SeedChallengeSession? = null,
+    val playerGrowth: PlayerGrowthReceipt? = null,
 ) {
     public fun validate() {
+        playerGrowth?.validate()
         require(completedGameCount >= 0UL) { "meta.completed_games" }
         listOf(achievementIds, weeklyReceiptIds, returnPlanReceiptIds, decisionReceiptIds, lifeArchiveCareerIds)
             .forEach { values -> require(values.distinct().size == values.size && values.all(String::isNotBlank)) { "meta.receipts" } }
+        require(standaloneSoulBalance >= 0) { "meta.soul_balance" }
+        require(retiredProCareers.map { it.careerId }.distinct().size == retiredProCareers.size) { "meta.retirement_duplicate" }
+        retiredProCareers.forEach {
+            require(it.phase == com.solkim.baseball.core.pro.ProCareerPhase.COMPLETED && it.commandReceipts.isEmpty()) { "meta.retirement_shape" }
+            com.solkim.baseball.core.pro.ProKernel().validateSavedState(it)
+        }
+        seedChallenge?.let {
+            require(it.returnPitch == null || it.returnPitch.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)) { "meta.challenge_active_return_pitch" }
+            require(it.returnStage !in setOf(GameStage.SETUP, GameStage.DELETED) && completedGameCount == it.returnGameCount) { "meta.challenge_return_state" }
+        }
     }
 }
 
@@ -210,6 +234,7 @@ public data class GameAggregateState(
             require(commandReceipts.last().committedRevision == revision) { "aggregate.receipt_tail" }
         }
         meta.validate()
+        if (meta.seedChallenge != null) require(highSchool?.challenge?.active == true) { "aggregate.challenge_owner" }
         analytics.validate(revision)
         pitch?.let {
             it.validate()
@@ -268,7 +293,9 @@ public data class GameAggregateState(
                 meta.returnPlanReceiptIds.joinToString(";"), meta.decisionReceiptIds.joinToString(";"),
                 meta.activeHighSchoolCareerId.orEmpty(), meta.lifeArchiveCareerIds.joinToString(";"),
                 pitchValue, settings.toString(), analytics, receiptsValue, deleted,
-            ).joinToString("|")
+            ).joinToString("|") + (if (meta.retiredProCareers.isNotEmpty() || meta.standaloneSoulBalance != 0) {
+                "|retired-pro:${meta.retiredProCareers.joinToString(",") { it.commitment }}|pro-wallet:${meta.standaloneSoulBalance}"
+            } else "") + (if (meta.seedChallenge != null) "|seed-challenge:${meta.seedChallenge}" else "")
         )
     }
 
@@ -288,6 +315,7 @@ public data class GameAggregateState(
 
 public sealed interface GameCommand {
     public data object EnterSetup : GameCommand
+    public data object ResetProgress : GameCommand
     public data class HighSchool(public val command: HighSchoolPhase4Command) : GameCommand
     public data class Pro(public val command: ProCommand) : GameCommand
     public data class ReservePitch(
@@ -347,6 +375,7 @@ public data class GameCommandEnvelope(
             is GameCommand.AbandonPitch -> require(value.sessionId == sessionId) { "game.command.session_mismatch" }
             is GameCommand.SetPitchHoldCall -> require(value.sessionId == sessionId) { "game.command.session_mismatch" }
             GameCommand.EnterSetup,
+            GameCommand.ResetProgress,
             is GameCommand.HighSchool,
             is GameCommand.Pro,
             is GameCommand.UpdateSettings,

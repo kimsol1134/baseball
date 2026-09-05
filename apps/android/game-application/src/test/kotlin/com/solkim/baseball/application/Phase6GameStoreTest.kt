@@ -84,6 +84,27 @@ class Phase6GameStoreTest {
     }
 
     @Test
+    fun enterSetupThenResetProgressReturnsOpeningWithoutThrowing() = runBlocking {
+        val initial = GameAggregateState.initial("install-reset")
+        val store = KotlinGameStore.fromState(initial, MemoryRepository(initial), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
+        store.dispatch(envelope("enter-setup", 0UL, GameCommand.EnterSetup))
+        assertEquals(GameStage.SETUP, store.current.stage)
+        assertTrue(store.current.revision > 0UL)
+        val reset = store.dispatch(envelope("reset-progress", store.current.revision, GameCommand.ResetProgress))
+        assertFalse(reset.duplicate)
+        assertEquals(GameStage.OPENING, reset.state.stage)
+        assertEquals(GameStage.OPENING, store.current.stage)
+        assertEquals(null, reset.state.highSchool)
+        assertEquals(null, reset.state.pro)
+        assertEquals(null, reset.state.pitch)
+        assertFalse(reset.state.settings.autoReleaseEnabled)
+        reset.state.validate()
+        assertEquals(0UL, reset.state.commandReceipts.first().expectedRevision)
+        assertEquals(1UL, reset.state.commandReceipts.first().committedRevision)
+        assertEquals(reset.state.revision, reset.state.commandReceipts.last().committedRevision)
+    }
+
+    @Test
     fun commandCodecAndNativeStateCodecAreCanonicalAndStrict() {
         runBlocking {
         val state = GameAggregateState.initial("install-a")
@@ -182,7 +203,7 @@ class Phase6GameStoreTest {
     private fun envelope(id: String, revision: ULong, command: GameCommand): GameCommandEnvelope = GameCommandEnvelope(
         id,
         when (command) {
-            GameCommand.EnterSetup -> "session-store"
+            GameCommand.EnterSetup, GameCommand.ResetProgress -> "session-store"
             is GameCommand.ReservePitch -> command.sessionId
             is GameCommand.StartPitch -> command.sessionId
             is GameCommand.CommitPitch -> command.sessionId

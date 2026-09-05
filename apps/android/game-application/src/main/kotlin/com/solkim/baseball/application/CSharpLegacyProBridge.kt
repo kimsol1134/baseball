@@ -22,10 +22,11 @@ public object CSharpLegacyProBridge {
         val snapshot = runCatching { StrictJson.parseUtf8(core.toByteArray()) as? JsonValue.Obj }.getOrNull() ?: return null
         val native = snapshot.stringOrNull(NATIVE_FIELD) ?: return null
         return try {
-            val decoded = ProStateCodec.decode(Base64.getDecoder().decode(native))
+            val bytes = runCatching { Base64.getUrlDecoder().decode(native) }.getOrElse { Base64.getDecoder().decode(native) }
+            val decoded = ProStateCodec.decode(bytes)
             decoded.copy(commitment = ProKernel().commitment(decoded.copy(commitment = "")))
-        } catch (_: Exception) {
-            null
+        } catch (error: Exception) {
+            throw IllegalArgumentException("native.pro.snapshot_invalid", error)
         }
     }
 
@@ -174,6 +175,7 @@ public object CSharpLegacyProBridge {
         ProCareerPhase.NATIONAL_TEAM_CALL -> "NationalTeamCall"
         ProCareerPhase.NATIONAL_TOURNAMENT -> "NationalTournament"
         ProCareerPhase.OFFSEASON_DECISION -> "OffseasonDecision"
+        ProCareerPhase.OFFSEASON_INVESTMENT -> "OffseasonInvestment"
         ProCareerPhase.RETIREMENT_DECISION -> "RetirementDecision"
         ProCareerPhase.LEGACY_SELECTION, ProCareerPhase.COMPLETED -> "Completed"
     }

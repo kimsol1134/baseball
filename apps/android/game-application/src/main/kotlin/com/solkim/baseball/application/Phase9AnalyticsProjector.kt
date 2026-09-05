@@ -64,6 +64,7 @@ public object Phase9AnalyticsContract {
         "onboarding_started" to "EnterSetup committed transition",
         "onboarding_completed" to "HighSchool.Start committed transition",
         "first_pitch" to "non-challenge tutorial completion committed transition",
+        "manual_pitch_released_v2" to "actual native manual release after accepted submit",
         "activation_first_game" to "official FinishImportantGame first-completion transition",
         "game_finished" to "official FinishImportantGame report transition",
         "chapter_advanced" to "HighSchool.AdvanceChapter committed transition",
@@ -113,6 +114,7 @@ public object Phase9AnalyticsContract {
         "onboarding_started" to emptySet(),
         "onboarding_completed" to emptySet(),
         "first_pitch" to emptySet(),
+        "manual_pitch_released_v2" to setOf("release_accuracy", "aim_accuracy"),
         "activation_first_game" to emptySet(),
         "life_card_share_tapped" to setOf("life_number"),
         "game_finished" to setOf("mode", "sequence_mastery_count", "sequence_tags", "recommendation_acceptance_rate", "development_rules_version", "ability_moment_count", "ability_moment_types", "life_number", "act_number", "result", "strikeouts", "walks", "runs", "target_batters", "batters"),
@@ -154,6 +156,7 @@ public object Phase9AnalyticsContract {
 
     /** Exact wire kinds for the matrix properties. Unlisted permitted values are text values. */
     public val propertyKinds: Map<String, Map<String, Phase9AnalyticsPropertyKind>> = mapOf(
+        "manual_pitch_released_v2" to kinds(wholes = setOf("release_accuracy", "aim_accuracy")),
         "game_finished" to kinds(
             flags = emptySet(),
             wholes = setOf("sequence_mastery_count", "development_rules_version", "ability_moment_count", "life_number", "act_number", "strikeouts", "walks", "runs", "target_batters", "batters"),
@@ -319,6 +322,7 @@ public object Phase9AnalyticsProjector {
             GameCommand.EnterSetup -> if (before.stage == GameStage.OPENING && after.stage == GameStage.SETUP) {
                 add("onboarding_started", "install")
             }
+            GameCommand.ResetProgress -> Unit
             is GameCommand.HighSchool -> projectHighSchool(before, after, command.command, ::add)
             is GameCommand.Pro -> projectPro(before, after, command.command, ::add)
             is GameCommand.CompletePitch -> Unit
@@ -368,9 +372,10 @@ public object Phase9AnalyticsProjector {
     ) {
         val previous = before.highSchool
         val current = after.highSchool
+        if (previous?.challenge?.active == true || current?.challenge?.active == true) return
         val previousRun = previous?.run
         val run = current?.run ?: return
-        if (command is HighSchoolPhase4Command.Start && previous == null) {
+        if (ProRetirementLedger.isHighSchoolStart(command) && previous == null) {
             add("onboarding_completed", "install", emptyMap())
             val inheritedIntent = current.nextRunIntent
             if (inheritedIntent != null) {
@@ -417,7 +422,7 @@ public object Phase9AnalyticsProjector {
             }
         }
 
-        if (previousRun != null && previousRun.phase != run.phase && command !is HighSchoolPhase4Command.Start) {
+        if (previousRun != null && previousRun.phase != run.phase && !ProRetirementLedger.isHighSchoolStart(command)) {
             add(
                 "phase_entered",
                 "career:${run.careerId}|phase:${run.phase.wire}|revision:${after.revision}",
@@ -578,7 +583,8 @@ public object Phase9AnalyticsProjector {
                     )
                 }
             }
-            is HighSchoolPhase4Command.BeginRebirth -> {
+            is HighSchoolPhase4Command.BeginRebirth, is HighSchoolPhase4Command.ConfigureRebirth -> {
+                val entryPath = (command as? HighSchoolPhase4Command.BeginRebirth)?.entryPath ?: "customize"
                 val inheritedIntent = previous?.nextRunIntent
                 val appliedIntent = current.nextRunIntent
                 if (inheritedIntent != null && appliedIntent == inheritedIntent) {
@@ -615,7 +621,7 @@ public object Phase9AnalyticsProjector {
                     "life:${run.careerId}",
                     buildMap {
                         put("life_number", Phase9AnalyticsValue.Whole(run.lifeNumber.toLong()))
-                        put("entry_point", Phase9AnalyticsValue.Text(command.entryPath))
+                        put("entry_point", Phase9AnalyticsValue.Text(entryPath))
                         current.inheritance.selectedSignatureLegacyId?.let { put("selected_legacy_id", Phase9AnalyticsValue.Text(it)) }
                         current.inheritance.inheritanceRulesVersion?.let { put("inheritance_rules_version", Phase9AnalyticsValue.Whole(it.toLong())) }
                         put("soul_total", Phase9AnalyticsValue.Whole(current.inheritance.soulTotalEarned.toLong()))
@@ -624,11 +630,11 @@ public object Phase9AnalyticsProjector {
                         put("soul_applied", Phase9AnalyticsValue.Whole(current.inheritance.automaticSoulEarned.toLong()))
                     },
                 )
-                if (command.entryPath in setOf("quick_rebirth", "customize")) {
+                if (entryPath in setOf("quick_rebirth", "customize")) {
                     add("recap_continue_tapped", "career:${previousRun?.careerId ?: run.careerId}", mapOf(
                         "life_number" to Phase9AnalyticsValue.Whole((previousRun?.lifeNumber ?: run.lifeNumber).toLong()),
                         "drafted" to Phase9AnalyticsValue.Flag(previousRun?.draftResult?.outcome == HighSchoolDraftOutcome.DRAFTED),
-                        "entry_path" to Phase9AnalyticsValue.Text(command.entryPath),
+                        "entry_path" to Phase9AnalyticsValue.Text(entryPath),
                         "has_suggested_intent" to Phase9AnalyticsValue.Flag(previous?.nextRunIntent != null),
                         "intent_saved" to Phase9AnalyticsValue.Flag(current.nextRunIntent != null),
                     ))

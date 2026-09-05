@@ -525,6 +525,7 @@ public class Phase7VerticalController(
         is GameCommand.ClearPitchPresentation -> command.sessionId
         is GameCommand.SetPitchHoldCall -> command.sessionId
         GameCommand.EnterSetup,
+        GameCommand.ResetProgress,
         is GameCommand.UpdateSettings,
         is GameCommand.RecordAnalytics -> shellSessionId
         is GameCommand.HighSchool -> store.state.value.highSchool?.commandReceipts?.firstOrNull()?.sessionId?.takeIf { it.isNotBlank() } ?: shellSessionId

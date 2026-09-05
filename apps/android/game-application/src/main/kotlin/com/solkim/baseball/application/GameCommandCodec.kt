@@ -52,6 +52,7 @@ public object GameCommandCodec {
 
     private fun kind(command: GameCommand): String = when (command) {
         GameCommand.EnterSetup -> "enterSetup"
+        GameCommand.ResetProgress -> "resetProgress"
         is GameCommand.HighSchool -> "highSchool"
         is GameCommand.Pro -> "pro"
         is GameCommand.ReservePitch -> "reservePitch"
@@ -71,6 +72,7 @@ public object GameCommandCodec {
 
     private fun payload(envelope: GameCommandEnvelope): String = when (val command = envelope.command) {
         GameCommand.EnterSetup -> pack(emptyList())
+        GameCommand.ResetProgress -> pack(emptyList())
         is GameCommand.HighSchool -> encodeInner(
             HighSchoolPhase4CommandCodec.encode(
                 HighSchoolPhase4CommandEnvelope(commandId = envelope.commandId, sessionId = envelope.sessionId, expectedRevision = envelope.expectedRevision, command = command.command),
@@ -106,6 +108,7 @@ public object GameCommandCodec {
 
     private fun decodeCommand(kind: String, payload: String, root: JsonValue.Obj): GameCommand = when (kind) {
         "enterSetup" -> unpack(payload, 0).let { GameCommand.EnterSetup }
+        "resetProgress" -> unpack(payload, 0).let { GameCommand.ResetProgress }
         "highSchool" -> {
             val inner = HighSchoolPhase4CommandCodec.decode(decodeInner(payload))
             requireInnerMatches(inner.commandId, inner.sessionId, inner.expectedRevision, root)

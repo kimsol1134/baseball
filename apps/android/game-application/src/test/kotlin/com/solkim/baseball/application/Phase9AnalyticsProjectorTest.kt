@@ -31,7 +31,7 @@ class Phase9AnalyticsProjectorTest {
     @Test
     fun everyNonZeroMatrixEventHasAContractSourceAndRetiredEventsHaveNoSource() {
         val expectedNonZeroMatrixEvents = setOf(
-            "onboarding_started", "onboarding_completed", "first_pitch", "activation_first_game", "game_finished",
+            "onboarding_started", "onboarding_completed", "first_pitch", "manual_pitch_released_v2", "activation_first_game", "game_finished",
             "chapter_advanced", "draft_resolved", "rebirth_started", "life_card_share_tapped",
             "run_pledge_selected", "run_pledge_resolved", "career_wind_seen", "next_run_intent_saved",
             "next_run_intent_applied", "weekly_program_opened", "weekly_program_completed",

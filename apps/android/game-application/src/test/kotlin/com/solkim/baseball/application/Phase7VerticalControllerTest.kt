@@ -551,7 +551,7 @@ class Phase7VerticalControllerTest {
     }
 
     private fun commandSession(command: GameCommand): String = when (command) {
-        GameCommand.EnterSetup -> "phase7-shell"
+        GameCommand.EnterSetup, GameCommand.ResetProgress -> "phase7-shell"
         is GameCommand.ReservePitch -> command.sessionId
         is GameCommand.StartPitch -> command.sessionId
         is GameCommand.CommitPitch -> command.sessionId

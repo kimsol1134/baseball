@@ -1,6 +1,7 @@
 package com.solkim.baseball.application
 
 import com.solkim.baseball.model.JsonValue
+import com.solkim.baseball.model.canonicalSha256
 import com.solkim.baseball.persistence.AtomicJsonRepository
 import com.solkim.baseball.persistence.JsonPayloadCodec
 import com.solkim.baseball.persistence.KotlinSaveRepository
@@ -39,6 +40,9 @@ private object CSharpPayloadCodec : JsonPayloadCodec<JsonValue.Obj> {
     override fun validate(value: JsonValue.Obj) {
         try {
             CSharpSaveCompatibilityCodec.validatePayload(value)
+            // A valid outer checksum is not enough if a native career sidecar is damaged.
+            // Deep validation lets the atomic repository recover a known-good backup.
+            CSharpLegacyAggregateBridge.project(value, 0UL, value.canonicalSha256()).meta.validate()
         } catch (error: LegacySaveCompatibilityException) {
             throw error
         } catch (error: Exception) {
@@ -77,6 +81,27 @@ public class CSharpLegacyGameStoreRepository(
     }
 
     override suspend fun reset(): Unit = withContext(Dispatchers.IO) { delegate.reset() }
+
+    public suspend fun exportCareer(): ByteArray = withContext(Dispatchers.IO) {
+        val loaded = delegate.load()
+        require(loaded.status in setOf(SaveLoadStatus.LOADED_CANONICAL, SaveLoadStatus.RECOVERED_BACKUP)) { "backup.no_save" }
+        CareerBackup.encode(requireNotNull(loaded.envelope).payload)
+    }
+
+    public suspend fun importCareer(bytes: ByteArray, expectedRevision: ULong): GameAggregateState = withContext(Dispatchers.IO) {
+        val source = CareerBackup.decode(bytes)
+        val loaded = delegate.load()
+        require(loaded.status in setOf(SaveLoadStatus.NO_SAVE, SaveLoadStatus.LOADED_CANONICAL, SaveLoadStatus.RECOVERED_BACKUP)) { "backup.current_save_unavailable" }
+        require((loaded.envelope?.revision ?: 0UL) == expectedRevision) { "backup.stale_revision" }
+        val sourceRevision = (source["revision"] as? JsonValue.Num)?.raw?.toULongOrNull() ?: error("backup.revision")
+        val revision = maxOf(expectedRevision, sourceRevision).checkedIncrement()
+        val payload = JsonValue.Obj(LinkedHashMap(source.entries).apply {
+            put("installId", JsonValue.Str(installId))
+            put("revision", JsonValue.Num(revision.toString()))
+        })
+        CSharpPayloadCodec.validate(payload)
+        projectEnvelope(delegate.save(payload, revision).envelope).payload
+    }
 
     override suspend fun dispatchLegacy(
         before: GameAggregateState,
@@ -122,7 +147,12 @@ public class CSharpLegacyGameStoreRepository(
             throw GameCommandException(error.message ?: "game.command.rejected")
         }
         val nextRevision = currentRevision.checkedIncrement()
-        val written = delegate.save(applied.payload, nextRevision)
+        val projected = CSharpLegacyAggregateBridge.project(applied.payload, nextRevision, applied.payload.canonicalSha256())
+        val growth = PlayerGrowthReceipt.transition(before, projected, envelope.commandId)
+        val nextMeta = LinkedHashMap((applied.payload["meta"] as JsonValue.Obj).entries)
+        if (growth == null) nextMeta.remove("playerGrowth") else nextMeta["playerGrowth"] = PlayerGrowthReceipt.encode(growth)
+        val payload = JsonValue.Obj(LinkedHashMap(applied.payload.entries).apply { put("meta", JsonValue.Obj(nextMeta)) })
+        val written = delegate.save(payload, nextRevision)
         val after = projectEnvelope(written.envelope).payload
         GameDispatchResult(
             state = after,

@@ -10,6 +10,7 @@ import com.solkim.baseball.core.highschool.HighSchoolPhase4CommandException
 import com.solkim.baseball.core.highschool.HighSchoolPhase4CommandStore
 import com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel
 import com.solkim.baseball.core.highschool.HighSchoolPhase4State
+import com.solkim.baseball.core.highschool.HighSchoolPhase4StateCodec
 import com.solkim.baseball.core.pro.ProCareerPhase
 import com.solkim.baseball.core.pro.ProCommand
 import com.solkim.baseball.core.pro.ProCommandEnvelope
@@ -25,6 +26,7 @@ import com.solkim.baseball.model.StrictJson
  * C# receipt/commitment wire cannot pass [GameAggregateState.validate].
  */
 public object CSharpLegacyAggregateBridge {
+    public const val NATIVE_HIGH_SCHOOL_FIELD: String = "nativePhase4State"
     public data class ApplyResult(
         val payload: JsonValue.Obj,
         val eventName: String,
@@ -33,7 +35,17 @@ public object CSharpLegacyAggregateBridge {
     public fun project(payload: JsonValue.Obj, envelopeRevision: ULong, payloadSha256: String): GameAggregateState {
         val highSchool = tryHydrateHighSchool(payload)
         val pro = CSharpLegacyProBridge.project(payload.objectOrNull("pro"))
-        val pitch = projectPitch(payload.objectOrNull("pitchResume"))
+        val completedPitch = when (val field = payload.objectOrNull("meta")?.get("nativeTerminalPitch")) {
+            null, JsonValue.Null -> null
+            is JsonValue.Obj -> GameAggregateCodec.decodePitch(field).also {
+                it.validate()
+                require(it.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)) { "native.terminal_pitch_boundary" }
+            }
+            else -> throw GameCommandException("native.terminal_pitch_shape")
+        }
+        val activePitch = projectPitch(payload.objectOrNull("pitchResume"))
+        require(activePitch == null || completedPitch == null) { "native.pitch_owner_conflict" }
+        val pitch = activePitch ?: completedPitch
         val stage = GameStage.entries.firstOrNull { it.wire == payload.string("stage") }
             ?: throw GameCommandException("game.store.stage_unknown")
         return GameAggregateState(
@@ -47,6 +59,10 @@ public object CSharpLegacyAggregateBridge {
                 completedGameCount = payload.objectOrNull("meta")?.ulongOrDefault("completedGameCount", 0UL) ?: 0UL,
                 activeHighSchoolCareerId = highSchool?.run?.careerId,
                 lifeArchiveCareerIds = highSchool?.archive?.map { it.careerId }.orEmpty(),
+                retiredProCareers = ProRetirementCodec.decode(payload.objectOrNull("meta")?.get("retiredProCareers")),
+                standaloneSoulBalance = ProRetirementCodec.balance(payload.objectOrNull("meta")?.get("standaloneSoulBalance")),
+                seedChallenge = SeedChallengeCodec.decode(payload.objectOrNull("meta")?.get("seedChallenge")),
+                playerGrowth = PlayerGrowthReceipt.decode(payload.objectOrNull("meta")?.get("playerGrowth")),
             ),
             pitch = pitch,
             settings = payload.objectOrNull("settings")?.toSettings() ?: GameSettingsState(),
@@ -65,11 +81,12 @@ public object CSharpLegacyAggregateBridge {
                 payload.withSettings(command.settings)
             }
             GameCommand.EnterSetup -> {
-                require(projected.stage == GameStage.OPENING) { "setup.opening_required" }
-                require(projected.highSchool == null && projected.pro == null) { "setup.active_career" }
+                val settled = ProRetirementLedger.settle(projected)
+                require(settled.canEnterPlayerSetup()) { "setup.active_career" }
                 eventName = "setup.opened"
-                payload.withStage(GameStage.SETUP)
+                withRetirementState(payload, settled).withStage(GameStage.SETUP)
             }
+            GameCommand.ResetProgress -> throw GameCommandException("reset.native_only")
             is GameCommand.HighSchool -> {
                 val applied = applyHighSchool(payload, projected, envelope, command.command)
                 eventName = applied.second
@@ -102,7 +119,8 @@ public object CSharpLegacyAggregateBridge {
             }
             is GameCommand.CompletePitch -> {
                 eventName = "pitch.completed"
-                applyPitch(payload, completePitch(projected, command).pitch, clearResume = true)
+                val completed = completePitch(projected, command)
+                withRetirementState(applyPitch(payload, completed.pitch, clearResume = true), completed)
             }
             is GameCommand.SuspendPitch -> {
                 eventName = "pitch.suspended"
@@ -140,8 +158,9 @@ public object CSharpLegacyAggregateBridge {
         envelope: GameCommandEnvelope,
         command: HighSchoolPhase4Command,
     ): Pair<JsonValue.Obj, String> {
-        val existing = projected.highSchool
-        val isStart = command is HighSchoolPhase4Command.Start
+        val base = ProRetirementLedger.settle(projected)
+        val existing = if (command is HighSchoolPhase4Command.StartSeedChallenge) SeedChallengeRules.checkpoint(base, command) else base.highSchool
+        val isStart = ProRetirementLedger.isHighSchoolStart(command)
         if (existing == null && !isStart) throw GameCommandException("game.highSchool.start_required")
         if (existing != null && isStart) throw GameCommandException("game.highSchool.start_duplicate")
         val nested = try {
@@ -150,13 +169,13 @@ public object CSharpLegacyAggregateBridge {
                     commandId = envelope.commandId,
                     sessionId = envelope.sessionId,
                     expectedRevision = existing?.revision ?: 0UL,
-                    command = command,
+                    command = ProRetirementLedger.prepareInitialCommand(base, command),
                 ),
             )
         } catch (error: HighSchoolPhase4CommandException) {
             throw GameCommandException(error.message ?: "game.highSchool.rejected")
         }
-        val next = nested.state
+        val next = if (isStart) ProRetirementLedger.attachInitialWallet(nested.state, base.meta.standaloneSoulBalance) else nested.state
         val previousHighSchool = payload.objectOrNull("highSchool")
         val previousSnapshot = previousHighSchool?.stringOrNull("coreStateJson")?.let { raw ->
             runCatching { StrictJson.parseUtf8(raw.toByteArray()) as? JsonValue.Obj }.getOrNull()
@@ -174,10 +193,15 @@ public object CSharpLegacyAggregateBridge {
         )
         val readModel = overlayHighSchool(previousHighSchool, next, extras, coreJson)
         val stage = when {
-            next.run.phase == HighSchoolPhase.COMPLETED && projected.pro == null -> GameStage.BETWEEN_LIVES
+            next.run.phase == HighSchoolPhase.COMPLETED && (base.pro == null || base.pro.phase == ProCareerPhase.COMPLETED) -> GameStage.BETWEEN_LIVES
             else -> GameStage.HIGH_SCHOOL
         }
-        return payload.withHighSchool(readModel, stage) to "highSchool.${commandName(command)}"
+        val updated = base.copy(highSchool = next, stage = stage,
+            meta = base.meta.copy(completedGameCount = GameCompletionRules.afterHighSchool(base, next), standaloneSoulBalance = if (isStart) 0 else base.meta.standaloneSoulBalance))
+        val result = SeedChallengeRules.finish(base, command, updated)
+        val output = payload.withHighSchool(readModel.takeIf { result.highSchool != null }, result.stage)
+        val pitchAdjusted = if (command is HighSchoolPhase4Command.StartSeedChallenge || command == HighSchoolPhase4Command.EndChallenge) applyPitch(output, result.pitch) else output
+        return withRetirementState(pitchAdjusted, result) to "highSchool.${commandName(command)}"
     }
 
     private fun applyPro(
@@ -186,11 +210,16 @@ public object CSharpLegacyAggregateBridge {
         envelope: GameCommandEnvelope,
         command: ProCommand,
     ): Pair<JsonValue.Obj, String> {
-        val existing = projected.pro
+        require(projected.highSchool?.challenge?.active != true) { "challenge.pro_locked" }
+        val settled = ProRetirementLedger.settle(projected)
         val isStart = command is ProCommand.StartLinked || command is ProCommand.StartDirect
+        val restarting = isStart && settled.pro?.phase == ProCareerPhase.COMPLETED
+        if (restarting) require(settled.pitch == null || settled.pitch.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)) { "pro.restart_active_pitch" }
+        val base = if (restarting) settled.copy(pro = null, pitch = null) else settled
+        val existing = base.pro
         if (existing == null && !isStart) throw GameCommandException("game.pro.start_required")
         if (existing != null && isStart) throw GameCommandException("game.pro.start_duplicate")
-        if (existing == null && payload.objectOrNull("pro") != null) {
+        if (existing == null && !restarting && payload.objectOrNull("pro") != null) {
             throw GameCommandException("nativeAuthoritative.legacy_pro_snapshot_unreadable")
         }
         val nested = try {
@@ -208,7 +237,7 @@ public object CSharpLegacyAggregateBridge {
             throw GameCommandException(error.message ?: "game.pro.rejected")
         }
         val next = nested.state
-        val previous = payload.objectOrNull("pro")
+        val previous = if (restarting) null else payload.objectOrNull("pro")
         val seed = previous?.stringOrNull("nextSeed") ?: next.seed
         val nextSeed = CSharpHighSchoolSnapshotWire.nextSeed(seed, next.revision)
         val readModel = CSharpLegacyProBridge.encodeReadModel(next, nextSeed, previous)
@@ -218,12 +247,40 @@ public object CSharpLegacyAggregateBridge {
             ProCareerPhase.COMPLETED -> GameStage.BETWEEN_LIVES
             else -> GameStage.PRO
         }
-        return payload.withPro(readModel, stage) to "pro.${commandName(command)}"
+        val changed = ProRetirementLedger.settle(base.copy(pro = next, stage = stage))
+        val output = payload.withPro(readModel, changed.stage)
+        return withRetirementState(if (restarting) applyPitch(output, null) else output, changed) to "pro.${commandName(command)}"
+    }
+
+    private fun withRetirementState(payload: JsonValue.Obj, state: GameAggregateState): JsonValue.Obj {
+        val root = LinkedHashMap(payload.entries)
+        val meta = LinkedHashMap(payload.objectOrNull("meta")?.entries ?: emptyMap())
+        meta["completedGameCount"] = JsonValue.Num(state.meta.completedGameCount.toString())
+        if (state.meta.retiredProCareers.isNotEmpty()) meta["retiredProCareers"] = ProRetirementCodec.encode(state.meta.retiredProCareers)
+        if (state.meta.standaloneSoulBalance != 0 || "standaloneSoulBalance" in meta) meta["standaloneSoulBalance"] = JsonValue.Num(state.meta.standaloneSoulBalance.toString())
+        if (state.meta.seedChallenge != null) meta["seedChallenge"] = SeedChallengeCodec.encode(state.meta.seedChallenge) else meta.remove("seedChallenge")
+        root["meta"] = JsonValue.Obj(meta)
+        root["stage"] = JsonValue.Str(state.stage.wire)
+        state.highSchool?.let { highSchool ->
+            val previous = payload.objectOrNull("highSchool")
+            val snapshot = previous?.stringOrNull("coreStateJson")?.let { runCatching { StrictJson.parseUtf8(it.toByteArray()) as? JsonValue.Obj }.getOrNull() }
+            val core = CSharpHighSchoolSnapshotWire.encodeUtf8(highSchool.run, snapshot)
+            val extras = readExtras(payload.string("installId"), previous, previous?.stringOrNull("nextSeed") ?: "0")
+            root["highSchool"] = overlayHighSchool(previous, highSchool, extras, core)
+        }
+        return JsonValue.Obj(root)
     }
 
     private fun tryHydrateHighSchool(payload: JsonValue.Obj): HighSchoolPhase4State? {
         val highSchool = payload.objectOrNull("highSchool") ?: return null
         val core = highSchool.stringOrNull("coreStateJson") ?: return null
+        highSchool.stringOrNull(NATIVE_HIGH_SCHOOL_FIELD)?.let { native ->
+            val decoded = HighSchoolPhase4StateCodec.decode(java.util.Base64.getUrlDecoder().decode(native))
+            require(highSchool.stringOrNull("nativePhase4CoreSha256") == com.solkim.baseball.model.Hashing.sha256Hex(core)) { "native.highSchool.core_binding" }
+            val legacy = StrictJson.parseUtf8(core.toByteArray()) as JsonValue.Obj
+            require(CSharpHighSchoolSnapshotWire.sign(decoded.run) == (legacy["StateCommitment"] as? JsonValue.Str)?.value) { "native.highSchool.snapshot_binding" }
+            return decoded
+        }
         val parsed = try {
             StrictJson.parseUtf8(core.toByteArray()) as? JsonValue.Obj
         } catch (_: Exception) {
@@ -292,6 +349,8 @@ public object CSharpLegacyAggregateBridge {
         next["remainingImportantGames"] = JsonValue.Num(CSharpHighSchoolSnapshotWire.remainingImportantGames(run).toString())
         next["remainingChapterAdvances"] = JsonValue.Num(CSharpHighSchoolSnapshotWire.remainingChapterAdvances(run).toString())
         next["coreStateJson"] = JsonValue.Str(coreJson)
+        next[NATIVE_HIGH_SCHOOL_FIELD] = JsonValue.Str(java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(HighSchoolPhase4StateCodec.encode(state)))
+        next["nativePhase4CoreSha256"] = JsonValue.Str(com.solkim.baseball.model.Hashing.sha256Hex(coreJson))
         next["karmas"] = JsonValue.Arr(run.karmas.map { JsonValue.Str(it.wire) })
         next["awakenings"] = JsonValue.Arr(run.selectedAwakenings.map { JsonValue.Str(it.wire) })
         next["fatigue"] = JsonValue.Num(run.fatigue.toString())
@@ -389,11 +448,8 @@ public object CSharpLegacyAggregateBridge {
         return state.copy(pitch = pitch.copy(boundary = PitchBoundary.TERMINAL, terminalPitchId = command.pitchId, resultHashes = resultHashes))
     }
 
-    private fun completePitch(state: GameAggregateState, command: GameCommand.CompletePitch): GameAggregateState {
-        val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary == PitchBoundary.TERMINAL) { "pitch.complete_boundary" }
-        return state.copy(pitch = pitch.copy(boundary = PitchBoundary.COMPLETED))
-    }
+    private fun completePitch(state: GameAggregateState, command: GameCommand.CompletePitch): GameAggregateState =
+        GameCompletionRules.completePitch(state, command.sessionId)
 
     private fun suspendPitch(state: GameAggregateState, command: GameCommand.SuspendPitch): GameAggregateState {
         val pitch = requirePitch(state, command.sessionId)
@@ -468,6 +524,14 @@ public object CSharpLegacyAggregateBridge {
 
     private fun applyPitch(payload: JsonValue.Obj, pitch: PitchDurableState?, clearResume: Boolean = false): JsonValue.Obj {
         val next = LinkedHashMap(payload.entries)
+        // C# resume state must be cleared after completion, while Compose needs the
+        // durable result to route the tutorial and continue the same multi-pitch game.
+        val meta = LinkedHashMap(payload.objectOrNull("meta")?.entries ?: emptyMap())
+        val terminal = pitch?.takeIf {
+            it.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)
+        }?.let(GameAggregateCodec::encodePitch)
+        if (terminal != null) meta["nativeTerminalPitch"] = terminal else meta.remove("nativeTerminalPitch")
+        next["meta"] = JsonValue.Obj(meta)
         if (pitch == null || clearResume || pitch.boundary == PitchBoundary.COMPLETED || pitch.boundary == PitchBoundary.ABANDONED) {
             next["pitchResume"] = JsonValue.Null
             next["pendingPitchCompletion"] = JsonValue.Null
@@ -582,6 +646,9 @@ public object CSharpLegacyAggregateBridge {
 
     private fun commandSeed(command: HighSchoolPhase4Command, fallback: String): String = when (command) {
         is HighSchoolPhase4Command.Start -> command.request.seed
+        is HighSchoolPhase4Command.StartConfigured -> command.request.seed
+        is HighSchoolPhase4Command.StartSeedChallenge -> command.seed
+        is HighSchoolPhase4Command.ConfigureRebirth -> command.seed
         is HighSchoolPhase4Command.CompleteTutorial -> command.seed
         is HighSchoolPhase4Command.ChooseSchool -> command.seed
         is HighSchoolPhase4Command.Training -> command.seed
@@ -622,9 +689,9 @@ public object CSharpLegacyAggregateBridge {
         return JsonValue.Obj(next)
     }
 
-    private fun JsonValue.Obj.withHighSchool(highSchool: JsonValue.Obj, stage: GameStage): JsonValue.Obj {
+    private fun JsonValue.Obj.withHighSchool(highSchool: JsonValue.Obj?, stage: GameStage): JsonValue.Obj {
         val next = LinkedHashMap(entries)
-        next["highSchool"] = highSchool
+        next["highSchool"] = highSchool ?: JsonValue.Null
         next["stage"] = JsonValue.Str(stage.wire)
         return JsonValue.Obj(next)
     }

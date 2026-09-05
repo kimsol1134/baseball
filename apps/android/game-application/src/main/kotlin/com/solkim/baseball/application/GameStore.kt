@@ -135,6 +135,9 @@ public interface GameStore {
 
     public suspend fun dispatch(envelope: CommandEnvelope<GameCommand>): DispatchResult
 
+    public suspend fun dispatchBatch(envelopes: List<GameCommandEnvelope>): List<GameDispatchResult> =
+        envelopes.map { dispatch(it) }
+
     public suspend fun reconcilePersistedRevision(): ReconcileResult
 }
 
@@ -152,6 +155,7 @@ public object GameStateReducer {
             val reduced = try {
             when (val command = envelope.command) {
                 GameCommand.EnterSetup -> enterSetup(state)
+                GameCommand.ResetProgress -> resetProgress(state)
                 is GameCommand.HighSchool -> reduceHighSchool(state, envelope, command.command)
                 is GameCommand.Pro -> reducePro(state, envelope, command.command)
                 is GameCommand.ReservePitch -> reservePitch(state, command)
@@ -189,8 +193,9 @@ public object GameStateReducer {
     }
 
     private fun reduceHighSchool(state: GameAggregateState, envelope: GameCommandEnvelope, command: HighSchoolPhase4Command): Pair<GameAggregateState, String> {
-        val existing = state.highSchool
-        val isStart = command is HighSchoolPhase4Command.Start
+        val base = ProRetirementLedger.settle(state)
+        val existing = if (command is HighSchoolPhase4Command.StartSeedChallenge) SeedChallengeRules.checkpoint(base, command) else base.highSchool
+        val isStart = ProRetirementLedger.isHighSchoolStart(command)
         if (existing == null && !isStart) throw GameCommandException("game.highSchool.start_required")
         if (existing != null && isStart) throw GameCommandException("game.highSchool.start_duplicate")
         val nested = HighSchoolPhase4CommandStore(initialState = existing).dispatch(
@@ -198,25 +203,31 @@ public object GameStateReducer {
                 commandId = envelope.commandId,
                 sessionId = envelope.sessionId,
                 expectedRevision = existing?.revision ?: 0UL,
-                command = command,
+                command = ProRetirementLedger.prepareInitialCommand(base, command),
             ),
         )
-        val next = nested.state
-        val nextMeta = state.meta.copy(
-            completedGameCount = maxOf(state.meta.completedGameCount, next.completedGameCounter),
+        val next = if (isStart) ProRetirementLedger.attachInitialWallet(nested.state, base.meta.standaloneSoulBalance) else nested.state
+        val nextMeta = base.meta.copy(
+            standaloneSoulBalance = if (isStart) 0 else base.meta.standaloneSoulBalance,
+            completedGameCount = GameCompletionRules.afterHighSchool(base, next),
             activeHighSchoolCareerId = next.run.careerId,
             lifeArchiveCareerIds = next.archive.map { it.careerId },
         )
         val nextStage = when {
-            next.run.phase == com.solkim.baseball.core.highschool.HighSchoolPhase.COMPLETED && state.pro == null -> GameStage.BETWEEN_LIVES
+            next.run.phase == com.solkim.baseball.core.highschool.HighSchoolPhase.COMPLETED && (base.pro == null || base.pro.phase == ProCareerPhase.COMPLETED) -> GameStage.BETWEEN_LIVES
             else -> GameStage.HIGH_SCHOOL
         }
-        return state.copy(highSchool = next, meta = nextMeta, stage = nextStage) to "highSchool.${commandName(command)}"
+        return SeedChallengeRules.finish(base, command, base.copy(highSchool = next, meta = nextMeta, stage = nextStage)) to "highSchool.${commandName(command)}"
     }
 
     private fun reducePro(state: GameAggregateState, envelope: GameCommandEnvelope, command: ProCommand): Pair<GameAggregateState, String> {
-        val existing = state.pro
+        require(state.highSchool?.challenge?.active != true) { "challenge.pro_locked" }
+        val settled = ProRetirementLedger.settle(state)
         val isStart = command is ProCommand.StartLinked || command is ProCommand.StartDirect
+        val restarting = isStart && settled.pro?.phase == ProCareerPhase.COMPLETED
+        if (restarting) require(settled.pitch == null || settled.pitch.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)) { "pro.restart_active_pitch" }
+        val base = if (restarting) settled.copy(pro = null, pitch = null) else settled
+        val existing = base.pro
         if (existing == null && !isStart) throw GameCommandException("game.pro.start_required")
         if (existing != null && isStart) throw GameCommandException("game.pro.start_duplicate")
         val nested = ProCommandStore(initialState = existing).dispatch(
@@ -234,11 +245,11 @@ public object GameStateReducer {
             ProCareerPhase.COMPLETED -> GameStage.BETWEEN_LIVES
             else -> GameStage.PRO
         }
-        return state.copy(
+        return ProRetirementLedger.settle(base.copy(
             pro = next,
             stage = nextStage,
-            meta = state.meta.copy(activeHighSchoolCareerId = next.sourceHighSchoolCareerId ?: state.meta.activeHighSchoolCareerId),
-        ) to "pro.${commandName(command)}"
+            meta = base.meta.copy(activeHighSchoolCareerId = next.sourceHighSchoolCareerId ?: base.meta.activeHighSchoolCareerId),
+        )) to "pro.${commandName(command)}"
     }
 
     private fun reservePitch(state: GameAggregateState, command: GameCommand.ReservePitch): Pair<GameAggregateState, String> {
@@ -267,10 +278,13 @@ public object GameStateReducer {
     }
 
     private fun enterSetup(state: GameAggregateState): Pair<GameAggregateState, String> {
-        require(state.stage == GameStage.OPENING) { "setup.opening_required" }
-        require(state.highSchool == null && state.pro == null) { "setup.active_career" }
-        return state.copy(stage = GameStage.SETUP) to "setup.opened"
+        val settled = ProRetirementLedger.settle(state)
+        require(settled.canEnterPlayerSetup()) { "setup.active_career" }
+        return settled.copy(stage = GameStage.SETUP) to "setup.opened"
     }
+
+    private fun resetProgress(state: GameAggregateState): Pair<GameAggregateState, String> =
+        GameAggregateState.initial(state.installId) to "game.reset"
 
     private fun startPitch(state: GameAggregateState, command: GameCommand.StartPitch): Pair<GameAggregateState, String> {
         val pitch = requirePitch(state, command.sessionId)
@@ -309,26 +323,8 @@ public object GameStateReducer {
         return state.copy(pitch = pitch.copy(boundary = PitchBoundary.TERMINAL, terminalPitchId = command.pitchId, resultHashes = resultHashes)) to "pitch.terminal"
     }
 
-    private fun completePitch(state: GameAggregateState, command: GameCommand.CompletePitch): Pair<GameAggregateState, String> {
-        val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary == PitchBoundary.TERMINAL) { "pitch.complete_boundary" }
-        // A HighSchool aggregate increments its own official-game receipt when the important
-        // game report is committed. The generic pitch completion must not double-count it, and a
-        // terminal plate appearance inside a multi-pitch game must not count as a game at all.
-        val countsAsOfficialGame = !pitch.challengeRun && when (pitch.careerKind) {
-            // An active HighSchool pitch belongs to the important-game aggregate. Its official
-            // count is recorded exactly once by FinishImportantGame, after the final plate
-            // appearance, so none of the intermediate pitch completions may increment it.
-            PitchCareerKind.HIGH_SCHOOL -> state.highSchool?.let { highSchool ->
-                highSchool.activePitch == null && pitch.sessionId !in highSchool.completedGameReceipts
-            } == true
-            PitchCareerKind.PRO -> true
-            PitchCareerKind.TUTORIAL -> false
-        }
-        require(!countsAsOfficialGame || state.meta.completedGameCount < ULong.MAX_VALUE) { "meta.completed_games_exhausted" }
-        val nextMeta = if (countsAsOfficialGame) state.meta.copy(completedGameCount = state.meta.completedGameCount + 1UL) else state.meta
-        return state.copy(pitch = pitch.copy(boundary = PitchBoundary.COMPLETED), meta = nextMeta) to "pitch.completed"
-    }
+    private fun completePitch(state: GameAggregateState, command: GameCommand.CompletePitch): Pair<GameAggregateState, String> =
+        GameCompletionRules.completePitch(state, command.sessionId) to "pitch.completed"
 
     private fun suspendPitch(state: GameAggregateState, command: GameCommand.SuspendPitch): Pair<GameAggregateState, String> {
         val pitch = requirePitch(state, command.sessionId)
@@ -426,6 +422,9 @@ public object GameStateReducer {
         commandHash: String,
         eventName: String,
     ): GameDispatchResult {
+        if (envelope.command is GameCommand.ResetProgress) {
+            return commitFreshWipe(previousState, envelope, commandHash, eventName)
+        }
         val nextRevision = reducedState.revision + 1UL
         val resultHash = GameCommandCodec.resultHash(previousState, envelope, eventName)
         val receipt = GameCommandReceipt(envelope.commandId, envelope.sessionId, envelope.expectedRevision, nextRevision, commandHash, resultHash, eventName)
@@ -434,6 +433,7 @@ public object GameStateReducer {
             else -> AnalyticsReceipt("command:${envelope.commandId}", eventName, nextRevision, previousState.commitment)
         }
         val base = reducedState.copy(
+            meta = reducedState.meta.copy(playerGrowth = PlayerGrowthReceipt.transition(previousState, reducedState, envelope.commandId)),
             revision = nextRevision,
             commandReceipts = reducedState.commandReceipts + receipt,
             analytics = reducedState.analytics.copy(receipts = reducedState.analytics.receipts + analyticsReceipt),
@@ -444,6 +444,38 @@ public object GameStateReducer {
         val projected = Phase9AnalyticsProjector.project(previousState, base, envelope)
         val committed = base.copy(
             analytics = base.analytics.copy(receipts = base.analytics.receipts + projected),
+        ).committed()
+        committed.validate()
+        return GameDispatchResult(committed, resultHash, duplicate = false)
+    }
+
+    /** Progress wipe starts a new legal receipt chain whose first receipt is this reset. */
+    private fun commitFreshWipe(
+        previousState: GameAggregateState,
+        envelope: GameCommandEnvelope,
+        commandHash: String,
+        eventName: String,
+    ): GameDispatchResult {
+        val nextRevision = 1UL
+        val resultHash = GameCommandCodec.resultHash(previousState, envelope, eventName)
+        val receipt = GameCommandReceipt(
+            envelope.commandId,
+            envelope.sessionId,
+            expectedRevision = 0UL,
+            committedRevision = nextRevision,
+            commandHash,
+            resultHash,
+            eventName,
+        )
+        val analyticsReceipt = AnalyticsReceipt("command:${envelope.commandId}", eventName, nextRevision, previousState.commitment)
+        val wiped = GameAggregateState.initial(previousState.installId).copy(
+            revision = nextRevision,
+            commandReceipts = listOf(receipt),
+            analytics = AnalyticsReceiptState(listOf(analyticsReceipt)),
+        ).committed()
+        val projected = Phase9AnalyticsProjector.project(previousState, wiped, envelope)
+        val committed = wiped.copy(
+            analytics = wiped.analytics.copy(receipts = wiped.analytics.receipts + projected),
         ).committed()
         committed.validate()
         return GameDispatchResult(committed, resultHash, duplicate = false)
@@ -602,6 +634,26 @@ public class KotlinGameStore private constructor(
     override val busy: StateFlow<Boolean> = _busy.asStateFlow()
     public val current: GameAggregateState get() = state.value
 
+    public val supportsCareerBackup: Boolean get() = repository is CSharpLegacyGameStoreRepository
+
+    public suspend fun exportCareerBackup(): ByteArray = mutex.withLock {
+        check(!closed.get()) { "game.store.closed" }
+        requireNotNull(repository as? CSharpLegacyGameStoreRepository).exportCareer()
+    }
+
+    public suspend fun importCareerBackup(bytes: ByteArray, expectedRevision: ULong): Unit = mutex.withLock {
+        check(!closed.get()) { "game.store.closed" }
+        require(current.revision == expectedRevision) { "backup.stale_revision" }
+        _busy.value = true
+        try {
+            withContext(kotlinx.coroutines.NonCancellable) {
+                val restored = requireNotNull(repository as? CSharpLegacyGameStoreRepository).importCareer(bytes, expectedRevision)
+                _state.value = restored
+                analyticsProjection?.establishBaseline(restored)
+            }
+        } finally { _busy.value = false }
+    }
+
     init {
         analyticsProjection?.establishBaseline(initial)
         // Reconcile only receipts that were not durably handed to the native boundary.  A
@@ -611,6 +663,18 @@ public class KotlinGameStore private constructor(
     }
 
     override suspend fun dispatch(envelope: GameCommandEnvelope): GameDispatchResult = mutex.withLock {
+        withContext(kotlinx.coroutines.NonCancellable) { dispatchLocked(envelope) }
+    }
+
+    override suspend fun dispatchBatch(envelopes: List<GameCommandEnvelope>): List<GameDispatchResult> = mutex.withLock {
+        withContext(kotlinx.coroutines.NonCancellable) {
+            envelopes.map { dispatchLocked(it) }
+        }
+    }
+
+    // Once a file write begins, publication must finish even if its Activity is destroyed.
+    // Cancellation may stop a caller waiting for the mutex, but cannot split this commit.
+    private suspend fun dispatchLocked(envelope: GameCommandEnvelope): GameDispatchResult {
         ensureOpen()
         _busy.value = true
         try {
@@ -618,7 +682,7 @@ public class KotlinGameStore private constructor(
             val nativeLegacyRepository = repository as? NativeAuthoritativeGameStoreRepository
             val reduced = nativeLegacyRepository?.dispatchLegacy(before, envelope)
                 ?: GameStateReducer.dispatch(before, envelope)
-            if (reduced.duplicate) return@withLock reduced
+            if (reduced.duplicate) return reduced
             if (nativeLegacyRepository == null && authorityMode != NativeAuthorityMode.NATIVE_AUTHORITATIVE && !allowShadowFixtureWrites) {
                 throw SaveRepositoryException(com.solkim.baseball.persistence.SaveFailureCode.WRITE_DISABLED, "nativeShadowReadOnly.save_disabled")
             }
@@ -629,7 +693,7 @@ public class KotlinGameStore private constructor(
             // StateFlow publication is after verified read-back and before observer/SDK work.
             _state.value = reduced.state
             analyticsProjection?.publishAfterSave(before, reduced.state)
-            reduced
+            return reduced
         } finally {
             _busy.value = false
         }
