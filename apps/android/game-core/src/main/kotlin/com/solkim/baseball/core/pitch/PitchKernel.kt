@@ -1171,7 +1171,12 @@ public class PitchKernel {
             outcome,
             count.result != null,
         )
-        val steal = resolveSteal(currentGame.runners, currentGame.defense, parameters.context, seed)
+        // Contact (including fouls) resolves runners through the batting play only.
+        val steal = when (outcome) {
+            PitchOutcome.BALL, PitchOutcome.CALLED_STRIKE, PitchOutcome.SWINGING_STRIKE ->
+                resolveSteal(currentGame.runners, currentGame.defense, parameters.context, seed)
+            else -> StealResolution(null, currentGame.runners, 0)
+        }
         val inning = resolveInning(parameters.context, currentGame, count.result, neutral.battedBall, fielding, steal.runnersAfter, steal.outsRecorded, seed)
         val ended = count.result != null || inning.inningEnded
         val advance = count.result?.let {

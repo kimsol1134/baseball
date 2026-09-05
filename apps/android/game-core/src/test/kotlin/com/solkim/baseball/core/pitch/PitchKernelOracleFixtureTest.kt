@@ -135,6 +135,41 @@ class PitchKernelOracleFixtureTest {
         }
     }
 
+    @Test
+    fun contactSuppressesStealsAndFoulsPreserveRunnersAndOuts() {
+        val kernel = PitchKernel()
+        val game = GameStateSnapshot.standard().copy(runners = BaserunnerStateSnapshot(true, false, false, 80))
+        val contactOutcomes = mutableSetOf<PitchOutcome>()
+        var successfulSteals = 0
+        var caughtSteals = 0
+        for (seed in 1..2_000) {
+            val request = fixtureRequest(seed.toString()).copy(gameState = game)
+            val preparation = kernel.prepare(request)
+            val result = kernel.submit(PitchKernel.SubmitRequest(
+                request.seed, request.pitcher, request.batter, request.scouting, request.context,
+                preparation.preparationToken, preparation.primaryRecommendation.call, gameState = game,
+            ))
+            val snapshot = result.snapshot
+            when (snapshot.outcome) {
+                PitchOutcome.BALL, PitchOutcome.CALLED_STRIKE, PitchOutcome.SWINGING_STRIKE -> {
+                    snapshot.stealAttempt?.let { if (it.succeeded) successfulSteals++ else caughtSteals++ }
+                }
+                else -> {
+                    contactOutcomes.add(snapshot.outcome)
+                    assertEquals(null, snapshot.stealAttempt, "seed=$seed")
+                    assertEquals(false, result.events.any { it.eventType == "steal_attempt_resolved" })
+                    if (snapshot.outcome == PitchOutcome.FOUL) {
+                        assertEquals(game.runners, snapshot.runnersAfter, "seed=$seed")
+                        assertEquals(request.context.outs, result.gameState.inningState?.outs)
+                    }
+                }
+            }
+        }
+        kotlin.test.assertTrue(contactOutcomes.containsAll(listOf(PitchOutcome.FOUL, PitchOutcome.SINGLE, PitchOutcome.IN_PLAY_OUT)))
+        kotlin.test.assertTrue(successfulSteals > 0)
+        kotlin.test.assertTrue(caughtSteals > 0)
+    }
+
     private fun submit(request: PitchKernel.PrepareRequest): PitchKernelResult {
         val kernel = PitchKernel()
         val preparation = kernel.prepare(request)

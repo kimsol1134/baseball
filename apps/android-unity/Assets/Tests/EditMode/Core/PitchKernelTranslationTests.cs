@@ -199,6 +199,52 @@ namespace Baseball.Tests.EditMode.Core
             Assert.That(second.PlanCommitment, Is.EqualTo(first.PlanCommitment));
         }
 
+        [Test]
+        public void ContactSuppressesStealsAndFoulsPreserveRunnersAndOuts()
+        {
+            var runners = new BaserunnerStateSnapshot(true, false, false, 80);
+            var standard = GameStateSnapshot.Standard;
+            var game = new GameStateSnapshot(standard.Defense, standard.Park, runners, 0);
+            var contacts = new HashSet<PitchOutcome>();
+            var successes = 0;
+            var caught = 0;
+            for (var seed = 1; seed <= 2000; seed++)
+            {
+                var baseline = FixtureInput(seed.ToString());
+                var input = new PreparePitchParams(baseline.Seed, baseline.Pitcher, baseline.Batter,
+                    baseline.Scouting, baseline.Context, gameState: game);
+                var preparation = engine.PreparePitch(input);
+                var result = engine.SubmitPitch(new SubmitPitchParams(input.Seed, input.Pitcher,
+                    input.Batter, input.Scouting, input.Context, preparation.PreparationToken,
+                    preparation.PrimaryRecommendation.Call, gameState: game));
+                var snapshot = result.Snapshot;
+                if (snapshot.Outcome == PitchOutcome.Ball || snapshot.Outcome == PitchOutcome.CalledStrike ||
+                    snapshot.Outcome == PitchOutcome.SwingingStrike)
+                {
+                    if (snapshot.StealAttempt != null)
+                    {
+                        if (snapshot.StealAttempt.Succeeded) successes++; else caught++;
+                    }
+                }
+                else
+                {
+                    contacts.Add(snapshot.Outcome);
+                    Assert.That(snapshot.StealAttempt, Is.Null, "seed=" + seed);
+                    Assert.That(result.EventTypes, Does.Not.Contain("steal_attempt_resolved"));
+                    if (snapshot.Outcome == PitchOutcome.Foul)
+                    {
+                        Assert.That(snapshot.RunnersAfter, Is.EqualTo(runners));
+                        Assert.That(result.GameState.InningState?.Outs, Is.EqualTo(input.Context.Outs));
+                    }
+                }
+            }
+            Assert.That(contacts, Does.Contain(PitchOutcome.Foul));
+            Assert.That(contacts, Does.Contain(PitchOutcome.Single));
+            Assert.That(contacts, Does.Contain(PitchOutcome.InPlayOut));
+            Assert.That(successes, Is.GreaterThan(0));
+            Assert.That(caught, Is.GreaterThan(0));
+        }
+
         private static PreparePitchParams FixtureInput(string seed)
         {
             return new PreparePitchParams(seed,

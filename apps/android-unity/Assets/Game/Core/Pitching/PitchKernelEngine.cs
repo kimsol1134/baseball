@@ -173,7 +173,11 @@ namespace Baseball.Core.Pitching
             var fatigue = Math.Min(100, parameters.Context.Fatigue + PitchAbilityRules.FatigueCost(parameters.Call.Intensity, parameters.Pitcher.Profile(parameters.Call.PitchType)));
             var memory = rivalMemoryEngine.Record(parameters.RivalMemory, parameters.Pitcher, parameters.Batter,
                 parameters.Context, parameters.Call, outcome, count.Result.HasValue);
-            var steal = baserunnerEngine.ResolveSteal(currentGame.Runners, currentGame.Defense, parameters.Context, seed);
+            // Contact (including fouls) resolves runners through the batting play only.
+            var permitsSteal = outcome == PitchOutcome.Ball || outcome == PitchOutcome.CalledStrike || outcome == PitchOutcome.SwingingStrike;
+            var steal = permitsSteal
+                ? baserunnerEngine.ResolveSteal(currentGame.Runners, currentGame.Defense, parameters.Context, seed)
+                : new StealResolution(null, currentGame.Runners, 0);
             var inning = inningStateEngine.Resolve(parameters.Context, currentGame, count.Result, neutral.BattedBall,
                 fielding, steal.RunnersAfter, steal.OutsRecorded, seed);
             var ended = count.Result.HasValue || inning.InningEnded;

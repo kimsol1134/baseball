@@ -243,12 +243,16 @@ public struct PitchKernelEngine: Sendable {
             outcome: outcome,
             plateAppearanceEnded: state.result != nil
         )
-        let stealResolution = baserunnerEngine.resolveSteal(
-            currentGameState.runners,
-            defense: currentGameState.defense,
-            context: params.context,
-            seed: seed
-        )
+        // Contact (including fouls) resolves runners through the batting play only.
+        let permitsSteal = outcome == .ball || outcome == .calledStrike || outcome == .swingingStrike
+        let stealResolution: (attempt: StealAttemptSnapshot?, runnersAfter: BaserunnerStateSnapshot, outsRecorded: Int) = permitsSteal
+            ? baserunnerEngine.resolveSteal(
+                currentGameState.runners,
+                defense: currentGameState.defense,
+                context: params.context,
+                seed: seed
+            )
+            : (nil, currentGameState.runners, 0)
         let inningTransition = inningStateEngine.resolve(
             context: params.context,
             gameState: currentGameState,

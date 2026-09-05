@@ -806,6 +806,51 @@ final class PitchKernelEngineTests: XCTestCase {
         XCTAssertEqual(result.defenseRating, 77)
     }
 
+    func testContactSuppressesStealsWithoutChangingContactRunnerAdvancement() throws {
+        let runners = BaserunnerStateSnapshot(
+            firstOccupied: true, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 80
+        )
+        let game = gameState(defense: 50, hitFactor: 1_000, homeRunFactor: 1_000, runners: runners)
+        var contactOutcomes = Set<PitchOutcome>()
+        var successfulSteals = 0
+        var caughtSteals = 0
+        for seed in 1...2_000 {
+            let params = makePrepareParams(seed: String(seed), gameState: game)
+            let preparation = try engine.preparePitch(params)
+            let result = try engine.submitPitch(makeSubmitParams(preparation: preparation, prepareParams: params))
+            let snapshot = result.snapshot
+            switch snapshot.outcome {
+            case .ball, .calledStrike, .swingingStrike:
+                if let steal = snapshot.stealAttempt {
+                    if steal.succeeded { successfulSteals += 1 } else { caughtSteals += 1 }
+                }
+            default:
+                contactOutcomes.insert(snapshot.outcome)
+                XCTAssertNil(snapshot.stealAttempt, "seed=\(seed)")
+                XCTAssertFalse(result.events.contains { $0.eventType == "steal_attempt_resolved" })
+                if snapshot.outcome == .foul {
+                    XCTAssertEqual(snapshot.runnersAfter, runners)
+                    XCTAssertEqual(result.gameState.inningState?.outs, params.context.outs)
+                } else if let paResult = snapshot.result {
+                    let expected = BaserunnerEngine().advance(
+                        runners, outcome: snapshot.outcome, plateAppearanceResult: paResult,
+                        defense: game.defense, seed: UInt64(seed),
+                        doublePlayCompleted: snapshot.inningTransition?.doublePlayCompleted ?? false,
+                        battedBall: snapshot.battedBall, fielding: snapshot.fieldingResolution,
+                        inningEnded: snapshot.inningTransition?.inningEnded ?? false
+                    )
+                    XCTAssertEqual(snapshot.runnersAfter, expected.after, "seed=\(seed)")
+                    XCTAssertEqual(snapshot.runsScored, expected.runsScored, "seed=\(seed)")
+                }
+            }
+        }
+        XCTAssertTrue(contactOutcomes.contains(.foul))
+        XCTAssertTrue(contactOutcomes.contains(.single))
+        XCTAssertTrue(contactOutcomes.contains(.inPlayOut))
+        XCTAssertGreaterThan(successfulSteals, 0)
+        XCTAssertGreaterThan(caughtSteals, 0)
+    }
+
     func testFastRunnerStealsMoreOftenAgainstWeakCatcherArm() {
         let engine = BaserunnerEngine()
         let context = PlateAppearanceContext(
