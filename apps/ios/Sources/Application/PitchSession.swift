@@ -300,6 +300,7 @@ final class PitchSession {
 
     private var pitcher: PitcherSnapshot { scenario.pitcher }
     var batter: BatterSnapshot { scenario.lineup[min(batterIndex, scenario.lineup.count - 1)] }
+    var releaseCommandRating: Int { pitcher.command }
     var pitcherName: String { scenario.pitcher.name }
     var repertoire: [PitchType] {
         scenario.pitcher.gameReadyPitchTypes
@@ -417,6 +418,12 @@ final class PitchSession {
                 call: call,
                 abilityReadout: abilityReadout
             )
+            if !automaticRelease, let delivery {
+                CareerTelemetry.log(.manualPitchReleasedV2, [
+                    "release_accuracy": delivery.releaseAccuracy,
+                    "aim_accuracy": delivery.aimAccuracy,
+                ])
+            }
         } catch {
             stage = .failed(error.localizedDescription)
         }

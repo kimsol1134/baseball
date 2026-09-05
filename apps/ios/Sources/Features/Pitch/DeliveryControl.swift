@@ -53,6 +53,7 @@ struct DeliveryControl: View {
     let heartbeatSignal: MoundHeartbeatSignal?
     let disturbanceSeed: UInt64
     let onDeliver: (PitchDelivery) -> Void
+    var commandRating: Int = PitchReleaseWindow.baselineCommand
     /// A new physical action supersedes any delayed feedback left by the previous pitch.
     var onWindUp: () -> Void = {}
     /// Stops scheduled mound feedback before the release result is applied.
@@ -65,6 +66,7 @@ struct DeliveryControl: View {
     /// 접근성 글자 크기에서 안내 문구가 커지면 92pt 고정 패드 안에서 겹친다 —
     /// 패드가 글자를 따라 자란다(3차 패널 P1, Dynamic Type).
     @ScaledMetric(relativeTo: .body) private var padHeight: CGFloat = 92
+    @State private var heldCommandRating = PitchReleaseWindow.baselineCommand
     @State private var isPressing = false
     @State private var meter: Double = 0
     /// 손가락이 끈 거리. 흔들림을 상쇄하는 데 쓴다.
@@ -134,7 +136,9 @@ struct DeliveryControl: View {
     }
 
     /// 미터가 스위트 스폿 안에 있는가. 촉감으로 경계를 알려 줄 때 쓴다.
-    private var inSweetSpot: Bool { abs(meter - 0.5) <= 0.09 }
+    private var windowCommand: Int { isPressing ? heldCommandRating : commandRating }
+    private var sweetWidth: Double { PitchReleaseWindow.width(command: windowCommand) }
+    private var inSweetSpot: Bool { PitchReleaseWindow.contains(meter: meter, command: windowCommand) }
 
     /// 스위트 스폿 중심에 얼마나 가까운가(0~1). 진동 세기가 이 값을 따른다.
     private var meterCloseness: Double { 1 - min(1, abs(meter - 0.5) * 2) }
@@ -158,8 +162,7 @@ struct DeliveryControl: View {
         VStack(spacing: 10) {
             HStack {
                 Text(verbatim: copyResolver.resolve(
-                    .deliveryTitle,
-                    arguments: [.userText(PitchCopy.localized(pitchType, resolver: copyResolver))]
+                    .localizable("control.window.title")
                 ))
                     .font(.caption.weight(.bold))
                     .foregroundStyle(BaseballTheme.textSecondary)
@@ -174,6 +177,10 @@ struct DeliveryControl: View {
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("pitch.releaseTempo")
             meterBar
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(copyResolver.resolve(.localizable("control.window.accessibility"),
+                    arguments: [.decimal(Double(PitchReleaseWindow.widthPermille(command: windowCommand)) / 10)]))
+                .accessibilityIdentifier("pitch.controlWindow")
             gesturePad
         }
         .onAppear { Haptics.shared.prepare() }
@@ -189,11 +196,11 @@ struct DeliveryControl: View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 Capsule().fill(BaseballTheme.surfaceRaised)
-                // 스위트 스폿. 가운데 18%. 좋은 릴리스도 이전보다 조금 더 집중해야 한다.
+                // The same 18–24% command window drives drawing, entry haptics and actual scoring.
                 Capsule()
                     .fill(BaseballTheme.action.opacity(0.42))
-                    .frame(width: proxy.size.width * 0.18)
-                    .offset(x: proxy.size.width * 0.41)
+                    .frame(width: proxy.size.width * sweetWidth)
+                    .offset(x: proxy.size.width * (0.5 - sweetWidth / 2))
                 // 퍼펙트 구간. **보이지 않으면 노릴 수 없다.** 스위트 스폿 안의 얇은 심지
                 // 하나가 "적당히 초록"과 "정확히 가운데"를 다른 목표로 만든다.
                 Capsule()
@@ -211,7 +218,6 @@ struct DeliveryControl: View {
             .overlay { Capsule().stroke(BaseballTheme.border.opacity(0.6), lineWidth: 1) }
         }
         .frame(height: 16)
-        .accessibilityHidden(true)
     }
 
     /// 미터 전체 폭 대비 퍼펙트 구간의 너비. `delivery(meter:…)`의 선형 환산에서
@@ -293,6 +299,7 @@ struct DeliveryControl: View {
 
     private func beginWindUp() {
         onWindUp()
+        heldCommandRating = commandRating
         isPressing = true
         pressStartedAt = CACurrentMediaTime()
         showHoldHint = false
@@ -351,10 +358,10 @@ struct DeliveryControl: View {
         if ProcessInfo.processInfo.arguments.contains(PitchControlPreferences.perfectReleaseUITestArgument) {
             delivery = PitchDelivery(releaseAccuracy: 1_000, aimAccuracy: 1_000)
         } else {
-            delivery = Self.delivery(meter: meter, aim: clampedAim, aimRadius: Self.aimRadius)
+            delivery = Self.delivery(meter: meter, aim: clampedAim, aimRadius: Self.aimRadius, commandRating: heldCommandRating)
         }
 #else
-        delivery = Self.delivery(meter: meter, aim: clampedAim, aimRadius: Self.aimRadius)
+        delivery = Self.delivery(meter: meter, aim: clampedAim, aimRadius: Self.aimRadius, commandRating: heldCommandRating)
 #endif
         if delivery.isPerfectRelease {
             // 정중앙에서 뗀 순간, 손과 눈과 귀가 동시에 안다. 이 게임에서 손으로 하는
@@ -372,14 +379,14 @@ struct DeliveryControl: View {
     }
 
     /// 미터 위치와 조준 이탈을 0~1000 정확도로 옮긴다. 순수 함수라 테스트할 수 있다.
-    static func delivery(meter: Double, aim: CGSize, aimRadius: CGFloat) -> PitchDelivery {
+    static func delivery(meter: Double, aim: CGSize, aimRadius: CGFloat, commandRating: Int = PitchReleaseWindow.baselineCommand) -> PitchDelivery {
         // 미터 0.5가 완벽. 멀어질수록 선형으로 떨어진다.
         let releaseError = min(1, abs(meter - 0.5) * 2)
         let release = Int(((1 - releaseError) * 1_000).rounded())
         let distance = min(Double(aimRadius), sqrt(Double(aim.width * aim.width + aim.height * aim.height)))
         let aimScore = Int(((1 - distance / Double(aimRadius)) * 1_000).rounded())
         return PitchDelivery(
-            releaseAccuracy: min(1_000, max(0, release)),
+            releaseAccuracy: PitchReleaseWindow.calibratedAccuracy(raw: release, command: commandRating),
             aimAccuracy: min(1_000, max(0, aimScore))
         )
     }
@@ -392,13 +399,10 @@ struct DeliveryControl: View {
         if delivery.isPerfectRelease {
             return ("퍼펙트 릴리스 — 제대로 긁혔다", .milestone)
         }
-        let score = (delivery.releaseAccuracy + delivery.aimAccuracy) / 2
-        switch score {
-        case 850...: return ("완벽한 릴리스", .positive)
-        case 650..<850: return ("좋은 릴리스", .positive)
-        case 400..<650: return ("무난한 릴리스", .standard)
-        default: return ("손에서 빠졌습니다", .warning)
+        if delivery.releaseAccuracy >= PitchReleaseWindow.stableReleaseThreshold {
+            return delivery.aimAccuracy < 650 ? ("안정 릴리스 · 조준은 흔들렸어요", .warning) : ("안정 릴리스", .positive)
         }
+        return delivery.releaseAccuracy >= 650 ? ("안정 구간에 가까웠어요", .standard) : ("타이밍을 놓쳤어요", .warning)
     }
 
     static func localizedVerdict(
@@ -409,13 +413,13 @@ struct DeliveryControl: View {
         if delivery.isPerfectRelease {
             return (resolver.resolve(.deliveryVerdictPerfect), .milestone)
         }
-        let score = (delivery.releaseAccuracy + delivery.aimAccuracy) / 2
-        switch score {
-        case 850...: return (resolver.resolve(.deliveryVerdictExcellent), .positive)
-        case 650..<850: return (resolver.resolve(.deliveryVerdictGood), .positive)
-        case 400..<650: return (resolver.resolve(.deliveryVerdictOkay), .standard)
-        default: return (resolver.resolve(.deliveryVerdictMissed), .warning)
+        if delivery.releaseAccuracy >= PitchReleaseWindow.stableReleaseThreshold {
+            let shaky = delivery.aimAccuracy < 650
+            return (resolver.resolve(.localizable(shaky ? "control.release.aim-shaky" : "control.release.stable")), shaky ? .warning : .positive)
         }
+        return delivery.releaseAccuracy >= 650
+            ? (resolver.resolve(.localizable("control.release.near")), .standard)
+            : (resolver.resolve(.localizable("control.release.missed")), .warning)
     }
 
     /// 무엇을 놓쳤는지 한 줄로 말한다.

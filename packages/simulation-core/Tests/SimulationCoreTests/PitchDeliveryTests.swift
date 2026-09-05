@@ -5,6 +5,68 @@ import XCTest
 /// the system depends on: absent/neutral deliveries change nothing at all, and a real delivery
 /// changes execution without touching the judgment path.
 final class PitchDeliveryTests: XCTestCase {
+    func testSharedAndroidWindowVectorsMatch() {
+        XCTAssertEqual([35, 47, 50, 65, 80].map { PitchReleaseWindow.widthPermille(command: $0) }, [180, 196, 200, 220, 240])
+        XCTAssertEqual([35, 47, 50, 65, 80].map { PitchReleaseWindow.calibratedAccuracy(raw: 800, command: $0) }, [800, 815, 820, 835, 848])
+    }
+
+    func testCommandWindowPreservesBeginnersNeutralAndPerfectAcrossEveryInputScore() {
+        for raw in 0...1_000 {
+            for command in [20, 35] { XCTAssertEqual(PitchReleaseWindow.calibratedAccuracy(raw: raw, command: command), raw) }
+            for command in 20...80 {
+                let score = PitchReleaseWindow.calibratedAccuracy(raw: raw, command: command)
+                XCTAssertGreaterThanOrEqual(score, raw)
+                XCTAssertLessThanOrEqual(score - raw, 60)
+                XCTAssertEqual(score >= PitchDelivery.perfectReleaseThreshold, raw >= PitchDelivery.perfectReleaseThreshold)
+                if raw <= 500 { XCTAssertEqual(score, raw) }
+            }
+        }
+    }
+
+    func testVisibleCommandWindowMatchesRealReleaseThresholdAndIsMonotonic() {
+        var previousWidth = 180
+        for command in 20...80 {
+            let width = PitchReleaseWindow.widthPermille(command: command)
+            XCTAssertTrue((180...240).contains(width))
+            XCTAssertGreaterThanOrEqual(width, previousWidth)
+            previousWidth = width
+            XCTAssertEqual(PitchReleaseWindow.calibratedAccuracy(raw: 1_000 - width, command: command), 820)
+            XCTAssertLessThan(PitchReleaseWindow.calibratedAccuracy(raw: 999 - width, command: command), 820)
+            var previousScore = -1
+            for raw in 0...1_000 {
+                let score = PitchReleaseWindow.calibratedAccuracy(raw: raw, command: command)
+                XCTAssertGreaterThanOrEqual(score, previousScore)
+                previousScore = score
+            }
+        }
+        XCTAssertEqual(PitchReleaseWindow.widthPermille(command: 80), 240)
+        XCTAssertFalse(PitchReleaseWindow.contains(meter: 0.60, command: 35))
+        XCTAssertTrue(PitchReleaseWindow.contains(meter: 0.60, command: 80))
+    }
+
+    func testCalibratedReleaseChangesExecutionButNeverAddsAimAssistanceOrPerfect() throws {
+        var changedOutcomes = 0
+        var largestQualityChange = 0
+        for index in 1...2_048 {
+            let raw = 700 + index % 275
+            let calibrated = PitchReleaseWindow.calibratedAccuracy(raw: raw, command: 80)
+            let before = try submit(seed: String(index), delivery: .init(releaseAccuracy: raw, aimAccuracy: 650))
+            let after = try submit(seed: String(index), delivery: .init(releaseAccuracy: calibrated, aimAccuracy: 650))
+            XCTAssertEqual(before.snapshot.execution.actualX, after.snapshot.execution.actualX)
+            XCTAssertEqual(before.snapshot.execution.actualY, after.snapshot.execution.actualY)
+            let qualityChange = after.snapshot.execution.executionQuality - before.snapshot.execution.executionQuality
+            XCTAssertTrue((0...15).contains(qualityChange))
+            XCTAssertTrue((0...2).contains(after.snapshot.execution.velocityTenthsKPH - before.snapshot.execution.velocityTenthsKPH))
+            largestQualityChange = max(largestQualityChange, qualityChange)
+            if before.snapshot.outcome != after.snapshot.outcome { changedOutcomes += 1 }
+            let delivered = PitchDelivery(releaseAccuracy: calibrated, aimAccuracy: 650)
+            XCTAssertFalse(delivered.isPerfectRelease)
+            XCTAssertEqual(try JSONDecoder().decode(PitchDelivery.self, from: JSONEncoder().encode(delivered)), delivered)
+        }
+        XCTAssertGreaterThan(largestQualityChange, 0, "The wider band must affect real execution, not just color")
+        print("CONTROL_WINDOW_BALANCE paired=2048 changedOutcomes=\(changedOutcomes) maximumQualityGain=\(largestQualityChange)/1000; aim unchanged")
+    }
+
     private let engine = PitchKernelEngine()
 
     private let pitcher = PitcherSnapshot(

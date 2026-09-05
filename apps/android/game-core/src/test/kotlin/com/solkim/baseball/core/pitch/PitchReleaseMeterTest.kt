@@ -7,6 +7,47 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class PitchReleaseMeterTest {
+    @Test fun sharedIOSWindowVectorsMatch() {
+        assertEquals(listOf(180, 196, 200, 220, 240), listOf(35, 47, 50, 65, 80).map(PitchReleaseWindow::widthPermille))
+        assertEquals(listOf(800, 815, 820, 835, 848), listOf(35, 47, 50, 65, 80).map { PitchReleaseWindow.calibratedAccuracy(800, it) })
+    }
+
+    @Test fun commandWindowPreservesBeginnersNeutralPerfectAndMonotonicScores() {
+        for (command in 20..80) {
+            val width = PitchReleaseWindow.widthPermille(command)
+            assertTrue(width in 180..240)
+            assertEquals(820, PitchReleaseWindow.calibratedAccuracy(1_000 - width, command))
+            assertTrue(PitchReleaseWindow.calibratedAccuracy(999 - width, command) < 820)
+            var previous = -1
+            for (raw in 0..1_000) {
+                val score = PitchReleaseWindow.calibratedAccuracy(raw, command)
+                assertTrue(score >= previous && score >= raw)
+                assertTrue(score - raw <= 60)
+                assertEquals(raw >= 975, score >= 975)
+                if (command <= 35 || raw <= 500) assertEquals(raw, score)
+                previous = score
+            }
+        }
+        assertEquals(240, PitchReleaseWindow.widthPermille(80))
+    }
+
+    @Test fun sameReleaseGetsCommandMarginWithoutMovingAimOrPerfectWindow() {
+        val before = PitchReleaseMeter.delivery(0.60, 12.0, 7.0, commandRating = 35)
+        val after = PitchReleaseMeter.delivery(0.60, 12.0, 7.0, commandRating = 80)
+        assertTrue(before.releaseAccuracy < 820 && after.releaseAccuracy >= 820)
+        assertEquals(before.aimAccuracy, after.aimAccuracy)
+        assertFalse(after.isPerfectRelease)
+        assertEquals(PitchReleaseMeter.delivery(0.5, 12.0, 7.0, commandRating = 35), PitchReleaseMeter.delivery(0.5, 12.0, 7.0, commandRating = 80))
+        for (rate in listOf(60, 120)) {
+            for (step in 0..rate) {
+                val phase = PitchReleaseMeter.phase(step / rate.toDouble(), 1.0)
+                val left = PitchReleaseMeter.delivery(phase, 4.0, 8.0, commandRating = 80)
+                val right = PitchReleaseMeter.delivery(1.0 - phase, 4.0, 8.0, commandRating = 80)
+                assertEquals(left, right)
+            }
+        }
+    }
+
     @Test
     fun centerReleaseAndCenteredAimScorePerfect() {
         val delivery = PitchReleaseMeter.delivery(0.5, 0.0, 0.0)

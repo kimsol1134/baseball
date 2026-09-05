@@ -48,3 +48,38 @@ public struct PitchDelivery: Codable, Equatable, Sendable {
     /// 델리버리를 넘기지 않던 모든 호출자에게 항등이다.
     public var isPerfectRelease: Bool { releaseAccuracy >= Self.perfectReleaseThreshold }
 }
+
+/// Manual-input calibration only. Persist the calibrated delivery once; replays must never apply
+/// this a second time. Low command, neutral inputs and the raw perfect threshold remain unchanged.
+public enum PitchReleaseWindow {
+    public static let baseWidthPermille = 180
+    public static let maximumWidthPermille = 240
+    public static let stableReleaseThreshold = 820
+    public static let baselineCommand = 35
+
+    public static func widthPermille(command: Int) -> Int {
+        baseWidthPermille + (min(80, max(baselineCommand, command)) - baselineCommand) * 60 / 45
+    }
+
+    public static func width(command: Int) -> Double { Double(widthPermille(command: command)) / 1_000 }
+
+    public static func calibratedAccuracy(raw: Int, command: Int) -> Int {
+        let raw = min(1_000, max(0, raw))
+        let perfect = PitchDelivery.perfectReleaseThreshold
+        guard raw > 500, raw < perfect else { return raw }
+        let edge = 1_000 - widthPermille(command: command)
+        if raw <= edge {
+            return 500 + (raw - 500) * (stableReleaseThreshold - 500) / (edge - 500)
+        }
+        return min(perfect - 1, stableReleaseThreshold + (raw - edge) * (perfect - stableReleaseThreshold) / (perfect - edge))
+    }
+
+    public static func rawAccuracy(meter: Double) -> Int {
+        guard meter.isFinite else { return 0 }
+        return min(1_000, max(0, Int(((1 - min(1, abs(meter - 0.5) * 2)) * 1_000).rounded())))
+    }
+
+    public static func contains(meter: Double, command: Int) -> Bool {
+        calibratedAccuracy(raw: rawAccuracy(meter: meter), command: command) >= stableReleaseThreshold
+    }
+}

@@ -10,6 +10,29 @@ import BaseballIOSDomain
 /// `-uiTestAutoRelease`로 이 경로를 우회하므로 아무도 알아채지 못한다.
 @MainActor
 final class DeliveryControlTests: XCTestCase {
+    func testRealGestureAdapterUsesCommandWindowAndKeepsAimAndPerfectHonest() {
+        let before = DeliveryControl.delivery(meter: 0.60, aim: CGSize(width: 12, height: 7), aimRadius: 46, commandRating: 35)
+        let after = DeliveryControl.delivery(meter: 0.60, aim: CGSize(width: 12, height: 7), aimRadius: 46, commandRating: 80)
+        XCTAssertLessThan(before.releaseAccuracy, 820)
+        XCTAssertGreaterThanOrEqual(after.releaseAccuracy, 820)
+        XCTAssertEqual(before.aimAccuracy, after.aimAccuracy)
+        XCTAssertFalse(after.isPerfectRelease)
+        for step in 0...1_000 {
+            let phase = Double(step) / 1_000
+            let low = DeliveryControl.delivery(meter: phase, aim: .zero, aimRadius: 46, commandRating: 35)
+            let high = DeliveryControl.delivery(meter: phase, aim: .zero, aimRadius: 46, commandRating: 80)
+            XCTAssertEqual(low.isPerfectRelease, high.isPerfectRelease)
+        }
+    }
+
+    func testControlWindowCopyResolvesInEverySupportedLanguage() {
+        for language in [AppLanguage.korean, .english, .japanese] {
+            let resolver = GameCopyResolver(language: language, policy: .strict)
+            XCTAssertFalse(resolver.resolve(.localizable("control.window.accessibility"), arguments: [.decimal(24)]).isEmpty)
+            XCTAssertFalse(resolver.resolve(.localizable("control.window.comparison"), arguments: [.decimal(18), .decimal(24)]).isEmpty)
+        }
+    }
+
     private let radius: CGFloat = 46
 
     func testManualSliderIsTheRegisteredAppDefaultWithoutOverwritingUserChoice() {
@@ -232,12 +255,12 @@ final class DeliveryControlTests: XCTestCase {
             ))?.text,
             "퍼펙트 릴리스 — 제대로 긁혔다"
         )
-        XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 900, aimAccuracy: 900))?.text, "완벽한 릴리스")
-        XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 700, aimAccuracy: 700))?.text, "좋은 릴리스")
+        XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 900, aimAccuracy: 900))?.text, "안정 릴리스")
+        XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 700, aimAccuracy: 700))?.text, "안정 구간에 가까웠어요")
         // 정확히 500/500은 자동 릴리스의 중립값이라 판정이 없다(아래 테스트). 손으로 만든
         // 무난한 공을 보려면 그 값을 피해야 한다.
-        XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 520, aimAccuracy: 480))?.text, "무난한 릴리스")
-        XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 100, aimAccuracy: 100))?.text, "손에서 빠졌습니다")
+        XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 520, aimAccuracy: 480))?.text, "타이밍을 놓쳤어요")
+        XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 100, aimAccuracy: 100))?.text, "타이밍을 놓쳤어요")
     }
 
     /// 자동 릴리스(접근성 경로)로 던진 공은 판정을 내지 않는다. 손으로 만든 결과가 아니다.

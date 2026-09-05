@@ -115,6 +115,8 @@ enum GameAnalytics {
         case onboardingCompleted = "onboarding_completed"
         /// 첫 불펜 투구 — 손맛을 처음 본 순간.
         case firstPitch = "first_pitch"
+        /// Actual accepted manual release, distinct from legacy tutorial-completion events.
+        case manualPitchReleasedV2 = "manual_pitch_released_v2"
         /// **activation: 첫 중요 경기 완료.** 사인→투구→판정→기록의 코어 루프를
         /// 한 바퀴 다 돈 순간이다. 광고 캠페인의 전환 목표가 이 이벤트다.
         case activationFirstGame = "activation_first_game"

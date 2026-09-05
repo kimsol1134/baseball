@@ -67,6 +67,7 @@ public object PitchReleaseMeter {
         aimX: Double,
         aimY: Double,
         aimRadius: Double = AIM_RADIUS_POINTS,
+        commandRating: Int = PitchReleaseWindow.BASELINE_COMMAND,
     ): PitchDelivery {
         val clampedMeter = meter.coerceIn(0.0, 1.0)
         val releaseError = min(1.0, abs(clampedMeter - PERFECT_PHASE) * 2.0)
@@ -75,7 +76,7 @@ public object PitchReleaseMeter {
         val distance = min(radius, hypot(aimX, aimY))
         val aimScore = ((1.0 - distance / radius) * 1_000.0).roundToInt()
         return PitchDelivery(
-            releaseAccuracy = release.coerceIn(0, 1_000),
+            releaseAccuracy = PitchReleaseWindow.calibratedAccuracy(release, commandRating),
             aimAccuracy = aimScore.coerceIn(0, 1_000),
         )
     }
@@ -91,4 +92,25 @@ public object PitchReleaseMeter {
             if (aim < 400) "조준이 크게 흔들렸습니다 — 손가락을 과녁에 머무르게 하세요" else "조준이 살짝 흔들렸습니다"
         }
     }
+}
+
+/** Calibrates new manual inputs once. Existing saved deliveries and automatic neutral inputs stay unchanged. */
+public object PitchReleaseWindow {
+    public const val BASE_WIDTH_PERMILLE: Int = 180
+    public const val MAXIMUM_WIDTH_PERMILLE: Int = 240
+    public const val STABLE_RELEASE_THRESHOLD: Int = 820
+    public const val BASELINE_COMMAND: Int = 35
+
+    public fun widthPermille(command: Int): Int = BASE_WIDTH_PERMILLE + (command.coerceIn(BASELINE_COMMAND, 80) - BASELINE_COMMAND) * 60 / 45
+    public fun width(command: Int): Double = widthPermille(command) / 1_000.0
+    public fun calibratedAccuracy(raw: Int, command: Int): Int {
+        val score = raw.coerceIn(0, 1_000)
+        val perfect = PitchDelivery.PERFECT_RELEASE_THRESHOLD
+        if (score <= 500 || score >= perfect) return score
+        val edge = 1_000 - widthPermille(command)
+        if (score <= edge) return 500 + (score - 500) * (STABLE_RELEASE_THRESHOLD - 500) / (edge - 500)
+        return minOf(perfect - 1, STABLE_RELEASE_THRESHOLD + (score - edge) * (perfect - STABLE_RELEASE_THRESHOLD) / (perfect - edge))
+    }
+    public fun rawAccuracy(meter: Double): Int = if (!meter.isFinite()) 0 else ((1.0 - min(1.0, abs(meter - 0.5) * 2.0)) * 1_000).roundToInt().coerceIn(0, 1_000)
+    public fun contains(meter: Double, command: Int): Boolean = calibratedAccuracy(rawAccuracy(meter), command) >= STABLE_RELEASE_THRESHOLD
 }
