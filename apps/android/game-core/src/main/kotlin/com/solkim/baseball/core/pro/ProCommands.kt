@@ -26,7 +26,13 @@ public object ProWire {
 public sealed interface ProCommand {
     public data class StartLinked(val request: ProStartLinkedRequest) : ProCommand
     public data class StartDirect(val request: ProStartDirectRequest) : ProCommand
+    public data class RequestRole(val seed: String, val requested: ProRole) : ProCommand
     public data object SignContract : ProCommand
+    public data class AcceptContractOffer(
+        val seed: String,
+        val offerId: String,
+        val ambition: ProCareerAmbition? = null,
+    ) : ProCommand
     public data class PlanWeek(val seed: String, val plan: ProWeekPlan, val targetPitch: PitchKind? = null) : ProCommand
     public data class AdvanceSegment(
         val seed: String,
@@ -41,6 +47,11 @@ public sealed interface ProCommand {
     public data class ReviewSeason(val seed: String) : ProCommand
     public data class AcknowledgeSeasonSettlement(val seed: String, val settlementId: String) : ProCommand
     public data class ChooseOffseason(val seed: String, val decision: OffseasonDecision) : ProCommand
+    public data class ChooseInvestment(
+        val seed: String,
+        val investment: ProOffseasonInvestment,
+        val focus: ProDevelopmentFocus? = null,
+    ) : ProCommand
     public data class SelectLegacy(val legacyId: String) : ProCommand
     public data object NormalizeBalance : ProCommand
     public data class RespondNationalTeamCall(val seed: String, val accepted: Boolean) : ProCommand
@@ -119,7 +130,9 @@ public object ProCommandCodec {
     private fun kind(command: ProCommand): String = when (command) {
         is ProCommand.StartLinked -> "startLinked"
         is ProCommand.StartDirect -> "startDirect"
+        is ProCommand.RequestRole -> "requestRole"
         ProCommand.SignContract -> "signContract"
+        is ProCommand.AcceptContractOffer -> "acceptContractOffer"
         is ProCommand.PlanWeek -> "planWeek"
         is ProCommand.AdvanceSegment -> "advanceSegment"
         is ProCommand.ApplySeasonDecision -> "applySeasonDecision"
@@ -129,6 +142,7 @@ public object ProCommandCodec {
         is ProCommand.ReviewSeason -> "reviewSeason"
         is ProCommand.AcknowledgeSeasonSettlement -> "acknowledgeSeasonSettlement"
         is ProCommand.ChooseOffseason -> "chooseOffseason"
+        is ProCommand.ChooseInvestment -> "chooseInvestment"
         is ProCommand.SelectLegacy -> "selectLegacy"
         ProCommand.NormalizeBalance -> "normalizeBalance"
         is ProCommand.RespondNationalTeamCall -> "respondNationalTeamCall"
@@ -143,9 +157,11 @@ public object ProCommandCodec {
             command.request.draftEvaluation.toString(), command.request.activeHighSchoolPreserved.toString(),
             command.request.entitlement.active.toString(), command.request.entitlement.source, command.request.entitlement.verifiedAt,
             pitcherWire(command.request.pitcher), legacyContextWire(command.request.highSchoolLegacyContext),
-        ))
+        ) + if (command.request.draftRound != null) listOf(command.request.pitchLearningProject?.token().orEmpty(), command.request.draftRound.toString(), command.request.signingBonus.toString(), command.request.overallPick.toString(), command.request.sourceFanInterest?.toString().orEmpty()) else listOfNotNull(command.request.pitchLearningProject?.token()))
         is ProCommand.StartDirect -> pack(listOf(command.request.seed, command.request.presetId, command.request.playerName, command.request.activeHighSchoolCareerId.orEmpty()))
+        is ProCommand.RequestRole -> pack(listOf(command.seed, command.requested.wire))
         ProCommand.SignContract -> pack(emptyList())
+        is ProCommand.AcceptContractOffer -> pack(listOf(command.seed, command.offerId, command.ambition?.wire.orEmpty()))
         is ProCommand.PlanWeek -> pack(listOf(command.seed, command.plan.wire, command.targetPitch?.wire.orEmpty()))
         is ProCommand.AdvanceSegment -> pack(listOf(command.seed, command.plan.wire, command.targetPitch?.wire.orEmpty(), command.maximumWeeks.toString()))
         is ProCommand.ApplySeasonDecision -> pack(listOf(command.seed, command.decisionId, command.choiceId))
@@ -158,6 +174,7 @@ public object ProCommandCodec {
         is ProCommand.ReviewSeason -> pack(listOf(command.seed))
         is ProCommand.AcknowledgeSeasonSettlement -> pack(listOf(command.seed, command.settlementId))
         is ProCommand.ChooseOffseason -> pack(listOf(command.seed, command.decision.wire))
+        is ProCommand.ChooseInvestment -> pack(listOf(command.seed, command.investment.wire, command.focus?.wire.orEmpty()))
         is ProCommand.SelectLegacy -> pack(listOf(command.legacyId))
         ProCommand.NormalizeBalance -> pack(emptyList())
         is ProCommand.RespondNationalTeamCall -> pack(listOf(command.seed, command.accepted.toString()))
@@ -169,16 +186,23 @@ public object ProCommandCodec {
     private fun canonical(command: ProCommand): String = "${kind(command)}|${payload(command)}"
 
     private fun decodeCommand(kind: String, payload: String): ProCommand = when (kind) {
-        "startLinked" -> unpack(payload, 11).let { values ->
+        "startLinked" -> unpackValues(payload).also { require(it.size in setOf(11, 12, 16)) { "pro.startLinked.fields" } }.let { values ->
             ProCommand.StartLinked(ProStartLinkedRequest(
                 seed = values[0], highSchoolCareerId = values[1], identityName = values[2], teamId = values[3],
                 draftEvaluation = values[4].int("startLinked.draftEvaluation"), activeHighSchoolPreserved = values[5].bool("startLinked.activeHighSchoolPreserved"),
                 entitlement = ProEntitlement(values[6].bool("startLinked.entitlement.active"), values[7], values[8]), pitcher = readPitcher(values[9]),
                 highSchoolLegacyContext = values[10].ifEmpty { null }?.let(::readLegacyContext),
+                pitchLearningProject = values.getOrNull(11)?.takeIf { it.isNotEmpty() }?.let(com.solkim.baseball.core.pitch.PitchLearningProject::decode),
+                draftRound = values.getOrNull(12)?.toInt(), signingBonus = values.getOrNull(13)?.toLong(),
+                overallPick = values.getOrNull(14)?.toInt(), sourceFanInterest = values.getOrNull(15)?.takeIf { it.isNotEmpty() }?.toInt(),
             ))
         }
         "startDirect" -> unpack(payload, 4).let { values -> ProCommand.StartDirect(ProStartDirectRequest(values[0], values[1], values[2], values[3].ifEmpty { null })) }
+        "requestRole" -> unpack(payload, 2).let { values -> ProCommand.RequestRole(values[0], ProRole.entries.firstOrNull { it.wire == values[1] } ?: error("pro.role_request.role")) }
         "signContract" -> exactPayload(payload) { ProCommand.SignContract }
+        "acceptContractOffer" -> unpack(payload, 3).let { values ->
+            ProCommand.AcceptContractOffer(values[0], values[1], values[2].ifEmpty { null }?.let(::ambition))
+        }
         "planWeek" -> unpack(payload, 3).let { values -> ProCommand.PlanWeek(values[0], plan(values[1]), values[2].ifEmpty { null }?.let(::pitchKind)) }
         "advanceSegment" -> unpack(payload, 4).let { values -> ProCommand.AdvanceSegment(values[0], plan(values[1]), values[2].ifEmpty { null }?.let(::pitchKind), values[3].int("advanceSegment.maximumWeeks")) }
         "applySeasonDecision" -> unpack(payload, 3).let { ProCommand.ApplySeasonDecision(it[0], it[1], it[2]) }
@@ -190,6 +214,13 @@ public object ProCommandCodec {
         "reviewSeason" -> unpack(payload, 1).let { ProCommand.ReviewSeason(it.single()) }
         "acknowledgeSeasonSettlement" -> unpack(payload, 2).let { ProCommand.AcknowledgeSeasonSettlement(it[0], it[1]) }
         "chooseOffseason" -> unpack(payload, 2).let { ProCommand.ChooseOffseason(it[0], offseason(it[1])) }
+        "chooseInvestment" -> unpack(payload, 3).let { values ->
+            ProCommand.ChooseInvestment(
+                values[0],
+                investment(values[1]),
+                values[2].ifEmpty { null }?.let(::developmentFocus),
+            )
+        }
         "selectLegacy" -> unpack(payload, 1).let { ProCommand.SelectLegacy(it.single()) }
         "normalizeBalance" -> exactPayload(payload) { ProCommand.NormalizeBalance }
         "respondNationalTeamCall" -> unpack(payload, 2).let { ProCommand.RespondNationalTeamCall(it[0], it[1].bool("nationalTeam.accepted")) }
@@ -275,6 +306,12 @@ public object ProCommandCodec {
     private fun zoneIntent(value: String): ZoneIntent = ZoneIntent.entries.firstOrNull { it.wire == value } ?: fail("pro.command.zone_unknown")
     private fun role(value: String): com.solkim.baseball.core.pitch.PitchUsageRole = com.solkim.baseball.core.pitch.PitchUsageRole.entries.firstOrNull { it.wire == value } ?: fail("pro.command.role_unknown")
     private fun offseason(value: String): OffseasonDecision = OffseasonDecision.entries.firstOrNull { it.wire == value } ?: fail("pro.command.offseason_unknown")
+    private fun investment(value: String): ProOffseasonInvestment =
+        ProOffseasonInvestment.entries.firstOrNull { it.wire == value } ?: fail("pro.command.investment_unknown")
+    private fun ambition(value: String): ProCareerAmbition =
+        ProCareerAmbition.entries.firstOrNull { it.wire == value } ?: fail("pro.command.ambition_unknown")
+    private fun developmentFocus(value: String): ProDevelopmentFocus =
+        ProDevelopmentFocus.entries.firstOrNull { it.wire == value } ?: fail("pro.command.focus_unknown")
     private fun hand(value: String): com.solkim.baseball.core.pitch.ThrowingHand = com.solkim.baseball.core.pitch.ThrowingHand.entries.firstOrNull { it.wire() == value } ?: fail("pro.command.hand_unknown")
     private fun com.solkim.baseball.core.pitch.ThrowingHand.wire(): String = name.lowercase()
 
@@ -347,7 +384,9 @@ public class ProCommandStore(
 
     private fun apply(state: ProState, command: ProCommand): ProResult = when (command) {
         is ProCommand.StartLinked, is ProCommand.StartDirect -> error("pro.command.start_duplicate")
+        is ProCommand.RequestRole -> kernel.requestRole(state, command.seed, command.requested)
         ProCommand.SignContract -> kernel.signContract(state, state.seed)
+        is ProCommand.AcceptContractOffer -> kernel.acceptContractOffer(state, command.seed, command.offerId, command.ambition)
         is ProCommand.PlanWeek -> kernel.planWeek(state, command.seed, command.plan, command.targetPitch)
         is ProCommand.AdvanceSegment -> kernel.advanceSegment(state, command.seed, command.plan, command.targetPitch, command.maximumWeeks)
         is ProCommand.ApplySeasonDecision -> kernel.applySeasonDecision(state, command.seed, command.decisionId, command.choiceId)
@@ -360,6 +399,7 @@ public class ProCommandStore(
         is ProCommand.ReviewSeason -> kernel.reviewSeason(state, command.seed)
         is ProCommand.AcknowledgeSeasonSettlement -> kernel.acknowledgeSeasonSettlement(state, command.seed, command.settlementId)
         is ProCommand.ChooseOffseason -> kernel.chooseOffseason(state, command.seed, command.decision)
+        is ProCommand.ChooseInvestment -> kernel.chooseInvestment(state, command.seed, command.investment, command.focus)
         is ProCommand.SelectLegacy -> kernel.selectLegacy(state, command.legacyId)
         ProCommand.NormalizeBalance -> kernel.normalizeBalance(state)
         is ProCommand.RespondNationalTeamCall -> kernel.respondToNationalTeamCall(state, command.seed, command.accepted)

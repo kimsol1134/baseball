@@ -153,6 +153,14 @@ class ProKernelTest {
         kernel.validateSavedState(reviewed)
         val afterReview = kernel.reviewSeason(reviewed, applied.nextSeed)
         assertEquals(ProCareerPhase.SEASON_SETTLEMENT, afterReview.state.phase)
+        val settlement = requireNotNull(afterReview.state.journeyState?.lastSettlement)
+        assertEquals(
+            ProJourneyKernel.merchandiseIncome(requireNotNull(reviewed.journeyState).reputation.fanSupport),
+            settlement.merchandiseIncome,
+        )
+        assertEquals(settlement.fanAfter - settlement.fanBefore, settlement.fanDelta)
+        assertEquals(settlement.contractYearsBefore - 1, settlement.contractYearsAfter)
+        assertTrue(settlement.fanReasons.isNotEmpty())
         val settled = kernel.acknowledgeSeasonSettlement(
             afterReview.state,
             afterReview.nextSeed,
@@ -162,6 +170,11 @@ class ProKernelTest {
         assertEquals(settled.state, roundTripped)
         assertEquals(ProCareerPhase.OFFSEASON_DECISION, roundTripped.phase)
         assertTrue(roundTripped.decisionHistory.any { it.type == ProSeasonDecisionType.MEDIA_OPPORTUNITY })
+        val continued = kernel.chooseOffseason(roundTripped, settled.nextSeed, OffseasonDecision.CONTINUE)
+        assertEquals(ProCareerPhase.OFFSEASON_INVESTMENT, continued.state.phase)
+        val invested = kernel.chooseInvestment(continued.state, continued.nextSeed, ProOffseasonInvestment.NONE, null)
+        assertEquals(ProCareerPhase.WEEKLY_PLAN, invested.state.phase)
+        assertEquals(roundTripped.season + 1, invested.state.season)
     }
 
     @Test
@@ -187,13 +200,17 @@ class ProKernelTest {
         assertEquals(null, after.state.pendingDecision)
         val declined = kernel.respondToNationalTeamCall(after.state, after.nextSeed, accepted = false)
         assertEquals(ProCareerPhase.OFFSEASON_DECISION, declined.state.phase)
-        assertEquals(68, declined.state.journeyState?.reputation?.fanSupport)
+        val fanAtCall = requireNotNull(after.state.journeyState).reputation.fanSupport
+        assertEquals(
+            (fanAtCall + ProNationalTeamRules.DECLINE_FAN_DELTA).coerceIn(0, 100),
+            declined.state.journeyState?.reputation?.fanSupport,
+        )
         val roundTripped = ProStateCodec.decode(ProStateCodec.encode(declined.state))
         assertEquals(declined.state, roundTripped)
     }
 
     @Test
-    fun freeAgencyOnRulesVersion10SignsMaximumContractYears() {
+    fun freeAgencyOnRulesVersion10KeepsTheChosenDurationAndSigningBonus() {
         val started = kernel.startDirect(ProStartDirectRequest("909", "power_prospect", "자유투수"))
         val reviewed = started.state.copy(
             phase = ProCareerPhase.SEASON_REVIEW,
@@ -208,12 +225,90 @@ class ProKernelTest {
             afterReview.nextSeed,
             requireNotNull(afterReview.state.journeyState?.lastSettlement).id,
         ).state
-        val eligible = offseason.copy(serviceYears = 6, commitment = "").let { it.copy(commitment = kernel.commitment(it)) }
+        val eligible = offseason.copy(
+            serviceYears = 6,
+            contract = offseason.contract?.copy(yearsRemaining = 0),
+            commitment = "",
+        ).let { it.copy(commitment = kernel.commitment(it)) }
         kernel.validateSavedState(eligible)
-        val signed = kernel.chooseOffseason(eligible, started.nextSeed, OffseasonDecision.FREE_AGENCY)
-        assertEquals(ProCatalog.maximumContractYears(eligible.proRulesVersion), signed.state.contract?.yearsRemaining)
-        assertEquals(5, signed.state.contract?.yearsRemaining)
-        assertNotEquals(eligible.team.id, signed.state.team.id)
+        val opened = kernel.chooseOffseason(eligible, started.nextSeed, OffseasonDecision.FREE_AGENCY)
+        assertEquals(ProCareerPhase.CONTRACT_OFFER, opened.state.phase)
+        assertEquals(0, opened.state.contract?.yearsRemaining)
+        val market = requireNotNull(opened.state.journeyState?.pendingContractMarket)
+        assertEquals(ProContractMarketKind.FREE_AGENCY, market.kind)
+        assertEquals(4, market.offers.size)
+        val maxOffer = market.offers.maxBy { it.years }
+        assertTrue(maxOffer.years in 4..ProCatalog.maximumContractYears(eligible.proRulesVersion))
+        assertEquals(4, market.offers.map { it.teamId }.distinct().size)
+        assertTrue(market.offers.all { (it.signingBonus ?: 0) > 0 })
+        val signed = kernel.acceptContractOffer(opened.state, opened.nextSeed, maxOffer.id, ProCareerAmbition.RECORD_BOOK)
+        assertEquals(maxOffer.years, signed.state.contract?.yearsRemaining)
+        assertEquals(opened.state.journeyState!!.finances.availableFunds + maxOffer.signingBonus!!, signed.state.journeyState!!.finances.availableFunds)
+        assertEquals(ProCareerPhase.OFFSEASON_INVESTMENT, signed.state.phase)
+        val invested = kernel.chooseInvestment(signed.state, signed.nextSeed, ProOffseasonInvestment.NONE, null)
+        assertEquals(ProCareerPhase.WEEKLY_PLAN, invested.state.phase)
+        assertEquals(maxOffer.years, invested.state.contract?.yearsRemaining)
+        assertTrue(market.offers.any { it.teamId != eligible.team.id })
+    }
+
+    @Test
+    fun expiredContractOpensRenewalMarketThenInvestment() {
+        val started = kernel.startDirect(ProStartDirectRequest("911", "power_prospect", "재계약투수"))
+        val reviewed = started.state.copy(
+            phase = ProCareerPhase.SEASON_REVIEW,
+            week = ProCatalog.WEEKS_PER_SEASON,
+            seasonSegment = ProCatalog.segment(ProCatalog.WEEKS_PER_SEASON),
+            commitment = "",
+        ).let { it.copy(commitment = kernel.commitment(it)) }
+        kernel.validateSavedState(reviewed)
+        val afterReview = kernel.reviewSeason(reviewed, started.nextSeed)
+        val offseason = kernel.acknowledgeSeasonSettlement(
+            afterReview.state,
+            afterReview.nextSeed,
+            requireNotNull(afterReview.state.journeyState?.lastSettlement).id,
+        ).state
+        val expired = offseason.copy(
+            contract = offseason.contract?.copy(yearsRemaining = 0),
+            commitment = "",
+        ).let { it.copy(commitment = kernel.commitment(it)) }
+        kernel.validateSavedState(expired)
+        val opened = kernel.chooseOffseason(expired, started.nextSeed, OffseasonDecision.CONTINUE)
+        assertEquals(ProCareerPhase.CONTRACT_OFFER, opened.state.phase)
+        val market = requireNotNull(opened.state.journeyState?.pendingContractMarket)
+        assertEquals(ProContractMarketKind.RENEWAL, market.kind)
+        assertEquals(2, market.offers.size)
+        val accepted = kernel.acceptContractOffer(opened.state, opened.nextSeed, market.offers.first().id, ProCareerAmbition.RECORD_BOOK)
+        assertEquals(ProCareerPhase.OFFSEASON_INVESTMENT, accepted.state.phase)
+        assertEquals(ProOffseasonTransitionRoute.UNDER_CONTRACT, accepted.state.journeyState?.offseasonTransition?.route)
+        assertTrue(accepted.state.standings.isNotEmpty())
+        val next = kernel.chooseInvestment(accepted.state, accepted.nextSeed, ProOffseasonInvestment.NONE, null)
+        assertEquals(ProCareerPhase.WEEKLY_PLAN, next.state.phase)
+        assertTrue((next.state.contract?.yearsRemaining ?: 0) >= 1)
+        val roundTripped = ProStateCodec.decode(ProStateCodec.encode(next.state))
+        assertEquals(next.state, roundTripped)
+    }
+
+    @Test
+    fun freeAgencyWhileUnderContractIsRejected() {
+        val started = kernel.startDirect(ProStartDirectRequest("912", "power_prospect", "잔류투수"))
+        val reviewed = started.state.copy(
+            phase = ProCareerPhase.SEASON_REVIEW,
+            week = ProCatalog.WEEKS_PER_SEASON,
+            seasonSegment = ProCatalog.segment(ProCatalog.WEEKS_PER_SEASON),
+            commitment = "",
+        ).let { it.copy(commitment = kernel.commitment(it)) }
+        kernel.validateSavedState(reviewed)
+        val afterReview = kernel.reviewSeason(reviewed, started.nextSeed)
+        val offseason = kernel.acknowledgeSeasonSettlement(
+            afterReview.state,
+            afterReview.nextSeed,
+            requireNotNull(afterReview.state.journeyState?.lastSettlement).id,
+        ).state
+        assertTrue((offseason.contract?.yearsRemaining ?: 0) > 0)
+        val error = assertFailsWith<ProKernelException> {
+            kernel.chooseOffseason(offseason, started.nextSeed, OffseasonDecision.FREE_AGENCY)
+        }
+        assertEquals("pro.free_agency_ineligible", error.code)
     }
 
     @Test
@@ -259,6 +354,7 @@ class ProKernelTest {
             ProCommand.StartLinked(ProStartLinkedRequest("1", "hs-1", "투수", ProCatalog.pitcherForPreset("power_prospect", "투수"), ProCatalog.teams.first().id, 72)),
             ProCommand.StartDirect(ProStartDirectRequest("2", "power_prospect", "투수", "hs-active")),
             ProCommand.SignContract,
+            ProCommand.AcceptContractOffer("13", "offer:1", ProCareerAmbition.RECORD_BOOK),
             ProCommand.PlanWeek("3", ProWeekPlan.DEVELOP_STUFF, PitchKind.FOUR_SEAM),
             ProCommand.AdvanceSegment("4", ProWeekPlan.DEVELOP_MOVEMENT, PitchKind.SLIDER, 12),
             ProCommand.ApplySeasonDecision("5", "decision-1", "choice-1"),
@@ -268,6 +364,7 @@ class ProKernelTest {
             ProCommand.ReviewSeason("7"),
             ProCommand.AcknowledgeSeasonSettlement("7b", "settlement:1"),
             ProCommand.ChooseOffseason("8", OffseasonDecision.FREE_AGENCY),
+            ProCommand.ChooseInvestment("14", ProOffseasonInvestment.PITCH_LAB, ProDevelopmentFocus.COMMAND),
             ProCommand.SelectLegacy("power_imprint"),
             ProCommand.NormalizeBalance,
             ProCommand.RespondNationalTeamCall("9", true),
@@ -381,12 +478,24 @@ class ProKernelTest {
                     val result = kernel.chooseOffseason(state, seed, if (state.season >= ProCatalog.MAXIMUM_CAREER_SEASONS) OffseasonDecision.RETIRE else OffseasonDecision.CONTINUE)
                     state = ProStateCodec.decode(ProStateCodec.encode(result.state)); seed = result.nextSeed
                 }
+                ProCareerPhase.OFFSEASON_INVESTMENT -> {
+                    val result = kernel.chooseInvestment(state, seed, ProOffseasonInvestment.NONE, null)
+                    state = ProStateCodec.decode(ProStateCodec.encode(result.state)); seed = result.nextSeed
+                }
                 ProCareerPhase.RETIREMENT_DECISION -> {
                     val result = kernel.chooseOffseason(state, seed, OffseasonDecision.RETIRE)
                     state = ProStateCodec.decode(ProStateCodec.encode(result.state)); seed = result.nextSeed
                 }
                 ProCareerPhase.LEGACY_SELECTION -> error("direct career must not open legacy selection")
-                ProCareerPhase.CONTRACT_OFFER -> error("direct career auto-signs")
+                ProCareerPhase.CONTRACT_OFFER -> {
+                    val offerId = state.journeyState?.pendingContractMarket?.offers?.firstOrNull()?.id
+                    val result = if (offerId != null) {
+                        kernel.acceptContractOffer(state, seed, offerId, ProCareerAmbition.RECORD_BOOK)
+                    } else {
+                        kernel.signContract(state, seed)
+                    }
+                    state = ProStateCodec.decode(ProStateCodec.encode(result.state)); seed = result.nextSeed
+                }
                 ProCareerPhase.COMPLETED -> Unit
             }
             guard += 1

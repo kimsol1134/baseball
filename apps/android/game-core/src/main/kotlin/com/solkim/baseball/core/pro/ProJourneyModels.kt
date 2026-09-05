@@ -262,6 +262,7 @@ public enum class ProContractKind(public val wire: String) {
     RENEWAL_LONG("renewal_long"),
     PROVE_IT("prove_it"),
     FREE_AGENT("free_agent"),
+    LONG_TERM("long_term"),
 }
 
 public enum class ProTeamOutlook(public val wire: String) {
@@ -290,6 +291,8 @@ public data class ProContractExpectation(
     val difficulty: ProExpectationDifficulty,
 )
 
+public data class ProClubInterest(val level: String, val reason: String)
+
 public data class ProContractOffer(
     val id: String,
     val teamId: String,
@@ -301,6 +304,7 @@ public data class ProContractOffer(
     val outlook: ProTeamOutlook,
     val expectation: ProContractExpectation,
     val preservesTeamLegacy: Boolean,
+    val interest: ProClubInterest? = null,
 )
 
 public data class ProContractMarket(
@@ -319,6 +323,7 @@ public enum class ProRetirementHonorKind(public val wire: String) {
     CLUB_HALL("club_hall"),
     AMBITION_COMPLETED("ambition_completed"),
     CAREER_EARNINGS("career_earnings"),
+    NATIONAL_GOLD("national_gold"),
 }
 
 public data class ProRetirementHonor(
@@ -360,6 +365,7 @@ public data class ProCareerJourneyState(
     val migration: ProJourneyMigration = ProJourneyMigration(
         ProJourneyMigrationSource.NEW_CAREER, 1, 1, 0, false,
     ),
+    val recoveryYearPending: Boolean? = null,
 ) {
     init {
         require(rulesVersion in 1..ProJourneyKernel.CURRENT_JOURNEY_RULES_VERSION) { "pro.journey.rules_version" }

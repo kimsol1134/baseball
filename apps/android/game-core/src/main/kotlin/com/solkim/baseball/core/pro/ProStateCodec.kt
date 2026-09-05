@@ -1,5 +1,7 @@
 package com.solkim.baseball.core.pro
 
+import com.solkim.baseball.core.pitch.PitchLearningProject
+import com.solkim.baseball.core.pitch.PitchLearningRules
 import com.solkim.baseball.core.pitch.BatSide
 import com.solkim.baseball.core.pitch.BatterScoutingSnapshot
 import com.solkim.baseball.core.pitch.BatterSnapshot
@@ -115,6 +117,7 @@ public object ProStateCodec {
         out.writeNullable(state.nationalTournament) { writeNationalTournament(it) }
         out.writeList(state.nationalTeamHistory) { writeNationalRecord(it) }
         out.writeNullable(state.nationalTeamCarry) { writeNationalCarry(it) }
+        if (state.pitchLearningProject != null) out.writeNullableString(state.pitchLearningProject.token())
     }
 
     private fun readState(input: DataInputStream, version: Int): ProState {
@@ -140,8 +143,9 @@ public object ProStateCodec {
         val nationalTournament = if (input.available() > 0) input.readNullable { readNationalTournament() } else null
         val nationalHistory = if (input.available() > 0) input.readList { readNationalRecord() } else emptyList()
         val nationalCarry = if (input.available() > 0) input.readNullable { readNationalCarry() } else null
+        val learning = if (input.available() > 0) input.readNullableString()?.let(PitchLearningProject::decode) else null
         if (input.available() != 0) fail("pro.state.trailing_bytes")
-        return ProState(careerId, revision, mode, source, legacyContext, activePreserved, seed, name, pitcher, team, entitlement, age, season, week, phase, level, role, rolePreference, managerTrust, catcherTrust, fatigue, injuryWeeks, serviceYears, military, contract, currentStats, currentLines, careerStats, ledgers, awards, milestones, decisions, pending, development, segment, trigger, rival, tensions, importantGames, standings, leaderboards, legacy, selectedLegacy, settlement, activePitch, presentation, lastSegment, hof, news, receipts, commitment, proRulesVersion, postseason = postseason, activeDecisionModifiers = modifiers, resolvedFollowUps = followUps, roleRequest = roleRequest, lastBattedBall = lastBattedBall, lastFielding = lastFielding, nationalTournament = nationalTournament, nationalTeamHistory = nationalHistory, nationalTeamCarry = nationalCarry)
+        return ProState(careerId, revision, mode, source, legacyContext, activePreserved, seed, name, pitcher, team, entitlement, age, season, week, phase, level, role, rolePreference, managerTrust, catcherTrust, fatigue, injuryWeeks, serviceYears, military, contract, currentStats, currentLines, careerStats, ledgers, awards, milestones, decisions, pending, development, segment, trigger, rival, tensions, importantGames, standings, leaderboards, legacy, selectedLegacy, settlement, activePitch, presentation, lastSegment, hof, news, receipts, commitment, proRulesVersion, postseason = postseason, activeDecisionModifiers = modifiers, resolvedFollowUps = followUps, roleRequest = roleRequest, lastBattedBall = lastBattedBall, lastFielding = lastFielding, nationalTournament = nationalTournament, nationalTeamHistory = nationalHistory, nationalTeamCarry = nationalCarry, pitchLearningProject = learning)
     }
 
     private fun DataOutputStream.writeTeam(value: ProTeam) { writeString(value.id); writeString(value.name); writeString(value.positionCompetitor); writeString(value.developmentPlan); writeInt(value.demand) }

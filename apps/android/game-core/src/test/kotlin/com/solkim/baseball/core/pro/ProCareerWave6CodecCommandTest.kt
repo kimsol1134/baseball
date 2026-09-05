@@ -26,8 +26,9 @@ class ProCareerWave6CodecCommandTest {
 
     @Test
     fun v1LegacySaveUpgradesAtStableBoundaryAndDurablyReloads() {
-        val legacy = ProKernel().startDirect(ProStartDirectRequest("620007", "power_prospect", "legacy" )).state
-        assertEquals(ProCareerPhase.WEEKLY_PLAN, legacy.phase)
+        val started = ProKernel().startDirect(ProStartDirectRequest("620007", "power_prospect", "legacy" )).state
+        assertEquals(ProCareerPhase.WEEKLY_PLAN, started.phase)
+        val legacy = started.copy(journeyState = null, commitment = "").let { it.copy(commitment = ProKernel().commitment(it)) }
         val v1 = ProStateCodec.encode(legacy)
         val upgraded = ProStateCodecV2.decodeAndMigrate(v1)
         assertNotEquals(null, upgraded.journeyState)

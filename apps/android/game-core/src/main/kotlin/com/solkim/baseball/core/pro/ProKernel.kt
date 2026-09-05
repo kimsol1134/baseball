@@ -1,5 +1,7 @@
 package com.solkim.baseball.core.pro
 
+import com.solkim.baseball.core.pitch.PitchLearningProject
+import com.solkim.baseball.core.pitch.PitchLearningRules
 import com.solkim.baseball.core.SplitMix64
 import com.solkim.baseball.core.StableHash
 import com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel
@@ -86,11 +88,16 @@ public class ProKernel(
             if (state.phase == ProCareerPhase.RETIREMENT_DECISION) return false
             if (state.nationalTeamHistory.any { it.season == state.season }) return false
             val fan = state.journeyState?.reputation?.fanSupport ?: 0
-            val skill = (state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina) / 4
-            return fan >= ProNationalTeamRules.FAN_SUPPORT_THRESHOLD ||
-                state.awards.isNotEmpty() ||
-                skill >= ProNationalTeamRules.MARKET_SCORE_THRESHOLD
+            val marketScore = if (state.journeyState != null) ProCurrentMarketRules.marketScore(state) else 0
+            val currentAwards = state.journeyState?.recognitions.orEmpty().count { it.kind == ProCareerRecognitionKind.AWARD && it.season == state.season }
+            return fan >= ProNationalTeamRules.FAN_SUPPORT_THRESHOLD || currentAwards > 0 || marketScore >= ProNationalTeamRules.MARKET_SCORE_THRESHOLD
         }
+
+        /** An already-issued, signed call remains valid when eligibility calculations change. */
+        private fun recordedNationalCallValid(state: ProState): Boolean = usesNationalTeamRules(state) &&
+            state.phase == ProCareerPhase.NATIONAL_TEAM_CALL && state.season >= ProNationalTeamRules.MINIMUM_SEASON &&
+            state.season % ProNationalTeamRules.CALL_INTERVAL == 0 && state.age <= ProNationalTeamRules.MAXIMUM_AGE &&
+            state.nationalTeamHistory.none { it.season == state.season }
 
         public fun injuryPressure(rawFatigue: Int, stamina: Int, mastery: Int, challengeRules: Boolean): Int {
             val effective = PitchAbilityRules.effectiveFatigue(rawFatigue, stamina, mastery)
@@ -183,7 +190,14 @@ public class ProKernel(
             entitlement = request.entitlement,
             draftEvaluation = request.draftEvaluation,
         )
-        return result(state, seed.nextSeed(), listOf("pro_career_started", "pro_linked_start"))
+        val journey = state.journeyState!!.let { base ->
+            if (request.draftRound == null) base else {
+                require(request.draftRound >= 1 && (request.signingBonus ?: 0) > 0 && (request.overallPick ?: 0) > 0) { "pro.invalid_draft" }
+                base.copy(reputation = base.reputation.copy(fanSupport = request.sourceFanInterest?.let { (5 + it.coerceAtLeast(0) / 2).coerceIn(5, 30) } ?: (5 + (request.draftEvaluation - 50).coerceAtLeast(0) / 2).coerceIn(5, 25)), pendingContractMarket = ProJourneyKernel.rookieMarket(state.careerId, team.id, state.revision,
+                    draftRound = request.draftRound, signingBonus = request.signingBonus!!, overallPick = request.overallPick!!))
+            }
+        }
+        return result(state.copy(pitchLearningProject = request.pitchLearningProject, journeyState = journey), seed.nextSeed(), listOf("pro_career_started", "pro_linked_start"))
     }
 
     public fun startDirect(request: ProStartDirectRequest): ProResult {
@@ -211,14 +225,88 @@ public class ProKernel(
 
     public fun signContract(state: ProState, seedText: String): ProResult {
         validate(state, ProCareerPhase.CONTRACT_OFFER)
+        val market = state.journeyState?.pendingContractMarket
+        if (market != null) {
+            val offer = market.offers.firstOrNull() ?: throw ProKernelException("pro.contract_offer_missing")
+            return acceptContractOffer(state, seedText, offer.id, null)
+        }
         val seed = seed(seedText)
         return result(signContractInternal(state), seed.nextSeed(), listOf("rookie_contract_signed"))
+    }
+
+    public fun acceptContractOffer(
+        state: ProState,
+        seedText: String,
+        offerId: String,
+        ambition: ProCareerAmbition?,
+    ): ProResult {
+        validate(state, ProCareerPhase.CONTRACT_OFFER)
+        val journey = state.journeyState ?: throw ProKernelException("pro.contract_market_missing")
+        val market = journey.pendingContractMarket ?: throw ProKernelException("pro.contract_market_missing")
+        val offer = market.offers.firstOrNull { it.id == offerId } ?: throw ProKernelException("pro.contract_offer_missing")
+        val completedGoals = journey.goalHistory.filter { it.outcome == ProCareerGoalOutcome.COMPLETED }.map { it.ambition }.toSet()
+        require(ambition != null || completedGoals.size == ProCareerAmbition.entries.size) { "pro.ambition_required" }
+        require(ambition == null || ambition !in completedGoals) { "pro.ambition_already_completed" }
+        val accepted = ProJourneyCommandKernel.apply(
+            journey,
+            state.careerId,
+            ProJourneyCommandEnvelope(
+                commandId = "accept-$offerId-${state.revision}",
+                sessionId = state.careerId,
+                expectedRevision = 0UL,
+                command = ProJourneyCommand.AcceptContract(market.id, offer.id, ambition),
+            ),
+        ).state
+        val team = ProCatalog.team(offer.teamId)
+        val contract = ProContract(offer.years, offer.annualSalary.toInt().coerceAtLeast(1), offer.rolePromise)
+        val isRookie = market.kind == ProContractMarketKind.ROOKIE
+        val phase = if (isRookie) ProCareerPhase.WEEKLY_PLAN else ProCareerPhase.OFFSEASON_INVESTMENT
+        val projected = state.copy(team = team, role = offer.rolePromise, contract = contract)
+        val tensions = seasonTensions(projected)
+        val signedTransition = journey.offseasonTransition?.copy(route = ProOffseasonTransitionRoute.UNDER_CONTRACT)
+        val next = signed(
+            state.copy(
+                revision = state.revision + 1UL,
+                phase = phase,
+                team = team,
+                role = offer.rolePromise,
+                rolePreference = offer.rolePromise,
+                contract = contract,
+                journeyState = accepted.copy(offseasonTransition = signedTransition),
+                milestones = state.milestones.addUnique(if (isRookie) "신인 계약" else "새 계약"),
+                news = (listOf("${team.name}과 ${offer.years}년 계약 · 연봉 ${offer.annualSalary}원") + state.news).take(30),
+                seasonTensions = if (isRookie) tensions else state.seasonTensions,
+                standings = deriveStandings(projected),
+                leaderboards = deriveLeaderboards(projected),
+                commitment = "",
+            ),
+        )
+        val seed = seed(seedText)
+        return result(next, seedText, listOf(if (isRookie) "rookie_contract_signed" else "pro_contract_accepted"))
     }
 
     public fun normalizeBalance(state: ProState): ProResult {
         validateSavedState(state)
         val normalized = signed(state.copy(commitment = ""))
         return ProResult(normalized, state.seed, emptyList())
+    }
+
+    public fun requestRole(state: ProState, seedText: String, requested: ProRole): ProResult {
+        validate(state, ProCareerPhase.WEEKLY_PLAN)
+        seed(seedText)
+        require(ProRoleRequestRules.shouldOffer(state)) { "pro.role_request.unavailable" }
+        val outcome = ProRoleRequestRules.evaluate(state, requested)
+        val rejected = outcome == ProRoleRequestOutcome.REJECTED
+        val request = ProRoleRequestState(requested, outcome, if (outcome == ProRoleRequestOutcome.CONDITIONAL) ProRoleRequestRules.REVIEW_WEEK else 0, state.season)
+        val news = when (outcome) {
+            ProRoleRequestOutcome.ACCEPTED -> "${requested.label} 지원을 받아들였습니다. 다음 등판부터 준비합니다."
+            ProRoleRequestOutcome.CONDITIONAL -> "${requested.label} 지원을 접수했습니다. 6주차에 역할을 다시 면담합니다."
+            ProRoleRequestOutcome.REJECTED -> "${requested.label} 준비가 더 필요합니다. 현재 보직을 유지합니다."
+        }
+        return result(state.copy(revision = state.revision + 1UL,
+            rolePreference = if (rejected) state.rolePreference else requested,
+            managerTrust = (state.managerTrust - if (rejected) 1 else 0).coerceAtLeast(0),
+            roleRequest = request, news = (listOf(news) + state.news).take(30), commitment = ""), seedText, listOf("pro_role_requested"))
     }
 
     public fun planWeek(state: ProState, seedText: String, plan: ProWeekPlan, targetPitch: PitchKind? = null): ProResult {
@@ -232,6 +320,16 @@ public class ProKernel(
             ProRole.STARTER -> Triple(1, 18, 96)
             ProRole.LONG_RELIEF -> Triple(2, 6, 42)
             ProRole.SETUP, ProRole.CLOSER -> Triple(3, 3, 24)
+        }
+        var activeModifiers = state.activeDecisionModifiers.orEmpty().filter { it.expiresWeek >= nextWeek }
+        var outings = roles.first
+        if (activeModifiers.any { it.suppressOutings }) outings = 0
+        else if (!recovering) {
+            activeModifiers = activeModifiers.map { modifier ->
+                val remaining = max(0, modifier.extraOutingChance - (modifier.extraOutingsGranted ?: 0))
+                outings += remaining
+                if (remaining == 0) modifier else modifier.copy(extraOutingsGranted = (modifier.extraOutingsGranted ?: 0) + remaining)
+            }
         }
         val lines = mutableListOf<ProGameLine>()
         var outs = 0
@@ -250,11 +348,11 @@ public class ProKernel(
             AutoCallPolicy.PERFECT
         }
         if (!recovering) {
-            repeat(roles.first) { outingIndex ->
+            repeat(outings) { outingIndex ->
                 val weekSalt = nextWeek.toULong() * 0x9E37UL
                 val baseSeed = (rng.next() xor weekSalt) + outingIndex.toULong()
                 val line = automaticOuting.simulate(
-                    pitcher = state.pitcher,
+                    pitcher = PitchLearningRules.playable(state.pitcher, state.pitchLearningProject),
                     startingFatigue = state.fatigue + outingIndex * 5,
                     outsTarget = roles.second,
                     pitchCap = roles.third,
@@ -292,8 +390,8 @@ public class ProKernel(
                 )
             }
         }
-        val games = if (recovering) 0 else roles.first
-        val starts = if (recovering || state.role != ProRole.STARTER) 0 else 1
+        val games = if (recovering) 0 else outings
+        val starts = lines.count { it.started }
         val trainingLoad = when (plan) {
             ProWeekPlan.DEVELOP_STUFF -> 10
             ProWeekPlan.DEVELOP_MOVEMENT -> 8
@@ -308,12 +406,12 @@ public class ProKernel(
         val fatigueDelta = if (recovering) -20 else trainingLoad + outingLoad - staminaRelief
         val fatigue = clamp(state.fatigue + fatigueDelta, 0, 100)
         val injuryRoll = rng.nextInt(100)
-        val fatiguePressure = injuryPressure(
+        val fatiguePressure = max(activeModifiers.mapNotNull { it.injuryPressureFloor }.maxOrNull() ?: 0, injuryPressure(
             rawFatigue = fatigue,
             stamina = state.pitcher.stamina,
             mastery = state.pitcher.effectiveMastery.stamina,
             challengeRules = usesChallengeRules(state),
-        )
+        ))
         // A healthy, low-fatigue week is safe. The former minimum-percent floor left a hidden
         // two-percent roll even when the player managed workload well. An overload
         // event also requires a real outing so recovery is an actionable answer.
@@ -372,7 +470,8 @@ public class ProKernel(
             }
         } else if (managerTrust >= 52) ProRole.STARTER else ProRole.LONG_RELIEF
         val role = state.rolePreference ?: assignedRole
-        val development = resolveDevelopment(state.pitcher, state.developmentProgress, plan, targetPitch, recovering, usesLiveOutingRules(state))
+        val development = resolveDevelopment(state.pitcher, state.developmentProgress, plan, targetPitch, recovering || state.journeyState?.recoveryYearPending == true, usesLiveOutingRules(state),
+            activeModifiers.mapNotNull { it.trainingEfficiencyPermille }.minOrNull() ?: 1_000)
         val priorImportantGames = state.importantGames
         val regularTrigger = if (nextWeek >= ProCatalog.WEEKS_PER_SEASON || lines.isEmpty() || injuryWeeks > 0) {
             null
@@ -397,7 +496,8 @@ public class ProKernel(
         val openDecision = nextWeek < ProCatalog.WEEKS_PER_SEASON &&
             ProCatalog.decisionWeeks(state.proRulesVersion).contains(nextWeek) && trigger == null &&
             !recovering && injuryWeeks == 0 && decisionsThisSeason < ProCatalog.maximumDecisions(state.proRulesVersion)
-        val pending = if (openDecision) seasonDecision(state, nextWeek, weekClimate, managerTrust) else null
+        val decisionSource = if (usesWeeklyDecisionRules(state)) state.copy(pitcher = development.pitcher, role = role, managerTrust = managerTrust, fatigue = fatigue, currentStats = currentStats, currentGameLines = state.currentGameLines + lines) else state
+        val pending = if (openDecision) seasonDecision(decisionSource, nextWeek, weekClimate, managerTrust) else null
         val phase = when {
             nextWeek >= ProCatalog.WEEKS_PER_SEASON ->
                 if (autumnTrigger != null) ProCareerPhase.IMPORTANT_GAME else ProCareerPhase.SEASON_REVIEW
@@ -472,14 +572,32 @@ public class ProKernel(
                 )
             }
         }
+        val project = state.pitchLearningProject
+        val learning = if (!recovering && plan == ProWeekPlan.DEVELOP_MOVEMENT && project != null && !project.completed && targetPitch == project.pitchType) project.practice(2) else project
+        var finalPitcher = if (project != null && learning != null) development.pitcher.copy(pitchProfiles = PitchLearningRules.advance(development.pitcher.pitchProfiles.orEmpty(), project, learning)) else development.pitcher
+        var finalTrust = managerTrust
+        val followUps = state.resolvedFollowUps.orEmpty().toMutableList()
+        val qualityStarts = lines.count { it.started && it.outs >= 18 && it.runsAllowed <= 3 }
+        val tracked = activeModifiers.map { it.copy(qualityStarts = it.qualityStarts + qualityStarts, runsAllowed = it.runsAllowed + runsAllowed) }
+        val expired = tracked.filter { it.expiresWeek <= nextWeek }
+        for (modifier in expired) {
+            val beforeCommand = finalPitcher.command
+            if (modifier.commandDelta != 0) finalPitcher = applyEffect(finalPitcher, ProDecisionEffect(commandDelta = -modifier.commandDelta))
+            if (modifier.suppressOutings) finalTrust = (finalTrust + 4).coerceAtMost(100)
+            val followUp = ProWeeklyDecisionRules.followUp(modifier, finalPitcher, state.season, nextWeek,
+                (finalPitcher.command - beforeCommand).takeIf { modifier.commandDelta != 0 })
+            followUps += followUp
+            news.add(0, "결정 결과 · ${ProWeeklyDecisionRules.title(modifier.type)} · ${ProWeeklyDecisionRules.summary(followUp)}")
+        }
         val updated = state.copy(
             revision = state.revision + 1UL,
-            pitcher = development.pitcher,
+            pitcher = finalPitcher,
+            pitchLearningProject = learning,
             week = nextWeek,
             phase = phase,
             level = level,
             role = role,
-            managerTrust = managerTrust,
+            managerTrust = finalTrust,
             fatigue = fatigue,
             injuryWeeks = injuryWeeks,
             currentStats = currentStats,
@@ -493,6 +611,8 @@ public class ProKernel(
             seasonTensions = if (state.seasonTensions.isEmpty()) seasonTensions(state) else state.seasonTensions,
             importantGames = priorImportantGames + if (phase == ProCareerPhase.IMPORTANT_GAME && autumnTrigger == null) 1 else 0,
             pendingDecision = pending,
+            activeDecisionModifiers = tracked.filter { it.expiresWeek > nextWeek }.takeIf { it.isNotEmpty() },
+            resolvedFollowUps = followUps.takeIf { it.isNotEmpty() },
             journeyState = nextJourney,
             postseason = endOfSeasonPostseason,
             standings = deriveStandings(state.copy(week = nextWeek, currentGameLines = state.currentGameLines + lines, currentStats = currentStats)),
@@ -503,6 +623,7 @@ public class ProKernel(
         )
         val events = buildList {
             add("pro_week_resolved")
+            if (expired.isNotEmpty()) add("pro_weekly_decision_followup_resolved")
             add(if (state.level != level && level == ProLevel.MAJOR) "major_call_up" else "weekly_progress")
             if (injuryEvent != null) add("pro_injury_started")
             if (phase == ProCareerPhase.SEASON_DECISION) add("pro_season_decision_opened")
@@ -563,18 +684,38 @@ public class ProKernel(
         require(state.decisionHistory.none { it.decisionId == pending.id }) { "pro.decision_duplicate" }
         val choice = pending.choices.firstOrNull { it.id == choiceId } ?: throw ProKernelException("pro.choice_unknown")
         val effect = choice.effect
-        val history = state.decisionHistory + ProDecisionRecord(
-            pending.id, pending.type, pending.season, pending.week, choice.id, choice.title, effect,
-        )
+        var appliedPitcher = applyEffect(state.pitcher, effect)
+        if (pending.type == ProSeasonDecisionType.NEW_PITCH_TRIAL) appliedPitcher = ProWeeklyDecisionRules.applyingPitchTrial(appliedPitcher, choice.id)
+        val modifier = if (pending.type.isWeeklyBinary) ProWeeklyDecisionRules.modifier(pending, choice, appliedPitcher) else null
+        val history = state.decisionHistory + ProDecisionRecord(pending.id, pending.type, pending.season, pending.week, choice.id, choice.title, effect, modifier?.expiresWeek)
         val rolePreference = if (pending.type == ProSeasonDecisionType.ROLE_MEETING || pending.type == ProSeasonDecisionType.FORM_CRISIS || pending.type == ProSeasonDecisionType.AGING_CROSSROADS) {
             effect.roleTarget ?: state.role
         } else {
             state.rolePreference
         }
+        val mediaEffect = if (pending.type == ProSeasonDecisionType.MEDIA_OPPORTUNITY) mediaJourneyEffect(choice.id) else null
+        var nextJourney = if (mediaEffect != null && state.journeyState != null) {
+            ProJourneyKernel.applyMediaChoice(
+                state.journeyState,
+                state.careerId,
+                state.season,
+                pending.id,
+                choice.id,
+                mediaEffect.income,
+                mediaEffect.fanDelta,
+                mediaEffect.communityDelta,
+                state.team.id,
+            )
+        } else {
+            state.journeyState
+        }
+        if (pending.type == ProSeasonDecisionType.AGING_CROSSROADS && choice.id.endsWith(".recovery_year")) nextJourney = nextJourney?.copy(recoveryYearPending = true)
+        if (pending.type == ProSeasonDecisionType.FORM_CRISIS && choice.id.endsWith(".recover")) nextJourney = nextJourney?.copy(activeSeasonBenefit = ProSeasonBenefit(ProSeasonBenefitKind.CLIMATE_STABILIZATION, null, 2))
         val next = state.copy(
             revision = state.revision + 1UL,
             phase = ProCareerPhase.WEEKLY_PLAN,
-            pitcher = applyEffect(state.pitcher, effect),
+            pitcher = appliedPitcher,
+            activeDecisionModifiers = (state.activeDecisionModifiers.orEmpty() + listOfNotNull(modifier)).takeIf { it.isNotEmpty() },
             role = effect.roleTarget ?: state.role,
             rolePreference = rolePreference,
             managerTrust = clamp(state.managerTrust + effect.managerTrustDelta, 0, 100),
@@ -583,6 +724,7 @@ public class ProKernel(
             pendingDecision = null,
             decisionHistory = history,
             news = (listOf("${pending.title} · ${choice.title} — ${effect.summary()}") + state.news).take(30),
+            journeyState = nextJourney,
             commitment = "",
         )
         return result(next, seedText, listOf("pro_season_decision_resolved"))
@@ -639,7 +781,7 @@ public class ProKernel(
             inningState = InningStateSnapshot(entryInning, HalfInning.TOP, 1),
         )
         val log = GameLogSnapshot("${availabilityState.careerId}:important:${availabilityState.importantGames}", 0UL, 0, emptyList())
-        val preparation = pitch.prepare(PitchKernel.PrepareRequest(seedText, availabilityState.pitcher, batter, scouting, context, memory, game, log))
+        val preparation = pitch.prepare(PitchKernel.PrepareRequest(seedText, PitchLearningRules.playable(availabilityState.pitcher, availabilityState.pitchLearningProject), batter, scouting, context, memory, game, log))
         val session = ProPitchSession(
             sessionId = "${availabilityState.careerId}:important:${availabilityState.importantGames}",
             week = availabilityState.week,
@@ -676,10 +818,10 @@ public class ProKernel(
         require(session.sessionId == sessionId) { "pro.pitch_session_stale" }
         require(!session.ended) { "pro.pitch_ended" }
         require(session.boundary != ProPitchBoundary.COMPLETED) { "pro.pitch_boundary_completed" }
-        val preparation = pitch.prepare(PitchKernel.PrepareRequest(session.seed, state.pitcher, session.batter, session.scouting, session.context, session.memory, session.game, session.log))
+        val preparation = pitch.prepare(PitchKernel.PrepareRequest(session.seed, PitchLearningRules.playable(state.pitcher, state.pitchLearningProject), session.batter, session.scouting, session.context, session.memory, session.game, session.log))
         require(preparation.preparationToken == session.preparationToken) { "pro.pitch_preparation_stale" }
         val submitted = pitch.submit(
-            PitchKernel.SubmitRequest(session.seed, state.pitcher, session.batter, session.scouting, session.context, session.preparationToken, call, session.memory, session.game, session.log),
+            PitchKernel.SubmitRequest(session.seed, PitchLearningRules.playable(state.pitcher, state.pitchLearningProject), session.batter, session.scouting, session.context, session.preparationToken, call, session.memory, session.game, session.log),
             delivery,
         )
         val snapshot = submitted.snapshot
@@ -725,6 +867,7 @@ public class ProKernel(
         val next = state.copy(
             revision = state.revision + 1UL,
             activePitch = nextSession,
+            pitchLearningProject = state.pitchLearningProject?.use(call.pitchType, session.context.plateAppearanceId, delivery, entry?.executionQuality ?: 0),
             lastPresentation = snapshot.trajectoryPresentation,
             lastBattedBall = snapshot.battedBall,
             lastFielding = snapshot.fieldingResolution,
@@ -1131,7 +1274,7 @@ public class ProKernel(
         val seed = seed(seedText)
         val stats = state.currentStats.archivingPostseason(state.postseason?.gameHistory)
         var awards = state.awards
-        val honorVersion = if (usesLiveOutingRules(state)) 2 else 1
+        val honorVersion = state.journeyState?.rulesVersion ?: if (usesLiveOutingRules(state)) 2 else 1
         ProCareerRecognitionRules.awardContentIDs(stats, honorVersion).forEach { contentId ->
             awards = awards.addUnique(ProCareerRecognitionRules.awardLabel(contentId, state.season))
         }
@@ -1149,27 +1292,59 @@ public class ProKernel(
         val offerNational = state.season < ProCatalog.MAXIMUM_CAREER_SEASONS && shouldOfferNationalTeam(state)
         val journey = state.journeyState
         val openSettlement = journey != null
-        val years = max(1, state.contract?.yearsRemaining ?: 1)
+        val yearsBefore = max(1, state.contract?.yearsRemaining ?: 1)
+        val yearsAfter = max(0, yearsBefore - 1)
+        val serviceAfter = state.serviceYears + if (state.level == ProLevel.MAJOR) 1 else 0
         val nextRoute = when {
             state.season >= ProCatalog.MAXIMUM_CAREER_SEASONS -> ProSettlementNextRoute.FORCED_RETIREMENT
-            state.serviceYears >= 6 -> ProSettlementNextRoute.FREE_AGENCY_ELIGIBLE
-            else -> ProSettlementNextRoute.UNDER_CONTRACT
+            yearsAfter > 0 -> ProSettlementNextRoute.UNDER_CONTRACT
+            serviceAfter >= 6 -> ProSettlementNextRoute.FREE_AGENCY_ELIGIBLE
+            else -> ProSettlementNextRoute.RENEWAL_MARKET
         }
-        val nextJourney = if (openSettlement) {
+        val goalBefore = journey?.activeGoal?.let { ProCurrentMarketRules.goalProgress(state.copy(currentStats = ProSeasonStats(state.season, state.team.id)), it) }
+        val goalAfter = journey?.activeGoal?.let { ProCurrentMarketRules.goalProgress(state.copy(careerStats = state.careerStats + stats, serviceYears = serviceAfter, awards = awards), it) }
+        val goalCompleted = goalBefore?.completed == false && goalAfter?.completed == true
+        val fanReasons = (if (openSettlement) ProJourneyKernel.settlementFanReasons(state.copy(awards = awards)) else emptyList()) + if (goalCompleted) listOf(ProFanReason("fan-reason:${state.careerId}:${state.season}:career_ambition_completed:pro.fan.career-ambition-completed:0", ProFanReasonKind.CAREER_AMBITION_COMPLETED, "pro.fan.career-ambition-completed", 10)) else emptyList()
+        val fanDelta = fanReasons.sumOf { it.delta }
+        val contractMet = ProJourneyKernel.contractExpectationMet(state)
+        val merchandise = ProJourneyKernel.merchandiseIncome(journey?.reputation?.fanSupport ?: 0)
+        val newAwards = awards.size - state.awards.size
+        val hallOfFameDelta = newAwards * 4 + if (stats.strikeouts >= 150) 2 else 0
+        val nextJourney = if (journey != null) {
             ProJourneyKernel.settle(
                 state = journey,
                 careerId = state.careerId,
                 season = state.season,
                 teamId = state.team.id,
                 salary = max(1L, (state.contract?.annualSalary ?: 0).toLong()),
-                merchandise = 0L,
-                fanDelta = 0,
-                legacyDelta = 0,
-                hallOfFameDelta = 0,
-                yearsBefore = years,
-                yearsAfter = years,
+                merchandise = merchandise,
+                fanDelta = fanDelta,
+                legacyDelta = 1 + newAwards,
+                hallOfFameDelta = hallOfFameDelta,
+                yearsBefore = yearsBefore,
+                yearsAfter = yearsAfter,
                 nextRoute = nextRoute,
-            )
+                fanReasons = fanReasons,
+            ).let { settled ->
+                val expectation = ProJourneyKernel.contractExpectation(state)
+                val history = journey.contractHistory.map { record ->
+                    if (record.teamId != state.team.id || record.endedSeason != null) record else record.copy(
+                        coveredSeasons = (record.coveredSeasons + state.season).distinct().sorted(),
+                        fulfilledExpectationSeasons = if (contractMet == true) (record.fulfilledExpectationSeasons + state.season).distinct().sorted() else record.fulfilledExpectationSeasons,
+                        endedSeason = state.season.takeIf { yearsAfter == 0 }, endReason = ProContractEndReason.EXPIRED.takeIf { yearsAfter == 0 })
+                }
+                val newRecognitions = (ProCareerRecognitionRules.awardContentIDs(state.currentStats, journey.rulesVersion) + listOfNotNull("pro.autumn.champion".takeIf { state.postseason?.result == ProPostseasonResult.CHAMPION })).map { content ->
+                    ProCareerRecognition("recognition:${state.careerId}:${state.season}:award:$content", ProCareerRecognitionKind.AWARD, content, state.season, state.team.id, null)
+                }
+                val recognitions = (journey.recognitions + newRecognitions).distinctBy { it.id }
+                val records = ProCurrentMarketRules.records(state.copy(journeyState = journey.copy(recognitions = recognitions)), state.careerStats + stats)
+                val awarded = if (goalCompleted) ProJourneyKernel.completeActiveGoal(settled, state.careerId, state.season) else settled
+                awarded.copy(contractHistory = history, teamRecords = records, recognitions = (recognitions + awarded.recognitions).distinctBy { it.id },
+                    lastSettlement = settled.lastSettlement?.copy(goalProgressBefore = goalBefore, goalProgressAfter = goalAfter, goalCompleted = goalCompleted,
+                        hallOfFameBefore = hallOfFameScore(state), hallOfFameAfter = hallOfFameScore(state.copy(careerStats = state.careerStats + stats, serviceYears = serviceAfter, awards = awards)), contractExpectation = expectation,
+                        contractExpectationActual = ProJourneyKernel.contractExpectationActual(state), contractExpectationMet = contractMet,
+                        teamLegacyAfter = records.firstOrNull { it.teamId == state.team.id }?.let { ProTeamLegacyRules.score(it, journey.rulesVersion) } ?: 0))
+            }
         } else {
             journey
         }
@@ -1182,6 +1357,8 @@ public class ProKernel(
         val next = state.copy(
             revision = state.revision + 1UL,
             phase = phase,
+            managerTrust = if (contractMet == true) (state.managerTrust + 3).coerceAtMost(100) else state.managerTrust,
+            serviceYears = if (openSettlement) serviceAfter else state.serviceYears,
             awards = awards,
             milestones = milestones,
             careerStats = state.careerStats + stats,
@@ -1189,9 +1366,10 @@ public class ProKernel(
             pendingDecision = null,
             news = (listOf("시즌 ${state.season} 종료 · ${stats.games}경기 · ${stats.strikeouts}K · 9이닝당 실점 ${"%.2f".format(java.util.Locale.ROOT, stats.runPerNinePermille / 1_000.0)}") + state.news).take(30),
             journeyState = nextJourney,
+            contract = state.contract?.copy(yearsRemaining = yearsAfter),
             commitment = "",
         )
-        return result(next, seed.nextSeed(), listOf("pro_season_reviewed"))
+        return result(next, if (openSettlement) seedText else seed.nextSeed(), listOf("pro_season_reviewed"))
     }
 
     public fun acknowledgeSeasonSettlement(state: ProState, seedText: String, settlementId: String): ProResult {
@@ -1225,7 +1403,7 @@ public class ProKernel(
 
     public fun respondToNationalTeamCall(state: ProState, seedText: String, accepted: Boolean): ProResult {
         validate(state, ProCareerPhase.NATIONAL_TEAM_CALL)
-        require(shouldOfferNationalTeam(state)) { "국가대표 소집 대상이 아닙니다." }
+        require(recordedNationalCallValid(state)) { "국가대표 소집 대상이 아닙니다." }
         val seed = seed(seedText)
         if (!accepted) {
             val journey = state.journeyState
@@ -1323,7 +1501,7 @@ public class ProKernel(
         rng: SplitMix64,
     ): ProNationalTournamentGameLine {
         val outing = automaticOuting.simulate(
-            pitcher = state.pitcher,
+            pitcher = PitchLearningRules.playable(state.pitcher, state.pitchLearningProject),
             startingFatigue = state.fatigue,
             outsTarget = ProNationalTeamRules.GROUP_OUTS_TARGET,
             pitchCap = ProNationalTeamRules.GROUP_PITCH_CAP,
@@ -1511,16 +1689,131 @@ public class ProKernel(
                 revision = state.revision + 1UL,
                 phase = phase,
                 legacyCandidates = candidates,
+                contract = if (state.journeyState != null) null else state.contract,
+                journeyState = state.journeyState?.let { journey ->
+                    val active = journey.activeGoal
+                    val goals = if (active == null || journey.goalHistory.any { it.id == active.id }) journey.goalHistory else journey.goalHistory +
+                        ProCareerGoalRecord(active.id, active.ambition, active.selectedSeason, active.anchorTeamId, active.completedSeason, state.season,
+                            if (active.completedSeason != null) ProCareerGoalOutcome.COMPLETED else ProCareerGoalOutcome.RETIRED_INCOMPLETE)
+                    val closed = journey.copy(activeGoal = null, goalHistory = goals, pendingContractMarket = null, offseasonTransition = null,
+                        contractHistory = journey.contractHistory.map { if (it.endReason == null) it.copy(endedSeason = state.season, endReason = ProContractEndReason.RETIRED) else it },
+                        lastSettlement = journey.lastSettlement?.copy(hallOfFameAfter = score))
+                    closed.copy(retirementHonors = ProJourneyKernel.retirementPreview(closed, state.team.id).honors +
+                        listOfNotNull(state.nationalTeamHistory.count { it.result == ProNationalTournamentResult.GOLD }.takeIf { it > 0 }?.let { ProRetirementHonor("honor:${state.careerId}:national_gold:none", ProRetirementHonorKind.NATIONAL_GOLD, null, null, it.toLong()) }))
+                },
                 hallOfFameScore = score,
                 milestones = state.milestones.addUnique("은퇴 · 통산 ${state.careerStats.size}시즌"),
                 news = (retirementNews(state, score) + state.news).take(30),
                 commitment = "",
             )
-            return result(next, seed.nextSeed(), listOf(if (candidates.isEmpty()) "pro_career_retired" else "pro_legacy_candidates_frozen"))
+            return result(next, if (state.journeyState != null) seedText else seed.nextSeed(), listOf(if (candidates.isEmpty()) "pro_career_retired" else "pro_legacy_candidates_frozen"))
         }
+        val remainingYears = state.contract?.yearsRemaining ?: 0
+        if (decision == OffseasonDecision.FREE_AGENCY && remainingYears > 0) {
+            throw ProKernelException("pro.free_agency_ineligible")
+        }
+        if (
+            state.journeyState != null &&
+            decision in setOf(OffseasonDecision.CONTINUE, OffseasonDecision.MILITARY_SERVICE) &&
+            remainingYears >= 1
+        ) {
+            if (decision == OffseasonDecision.MILITARY_SERVICE) {
+                require(!state.militaryCompleted) { "pro.military_already_completed" }
+            }
+            val military = decision == OffseasonDecision.MILITARY_SERVICE
+            val transition = ProOffseasonTransition(
+                afterSeason = state.season,
+                nextSeason = state.season + 1,
+                ageAdvanceYears = if (military) 2 else 1,
+                includesMilitaryService = military,
+                route = ProOffseasonTransitionRoute.UNDER_CONTRACT,
+            )
+            val journey = state.journeyState.copy(offseasonTransition = transition)
+            return result(
+                state.copy(
+                    revision = state.revision + 1UL,
+                    phase = ProCareerPhase.OFFSEASON_INVESTMENT,
+                    journeyState = journey,
+                    commitment = "",
+                ),
+                seedText,
+                listOf("pro_offseason_transition_saved"),
+            )
+        }
+        if (state.journeyState != null && remainingYears == 0) {
+            if (decision == OffseasonDecision.MILITARY_SERVICE) {
+                require(!state.militaryCompleted) { "pro.military_already_completed" }
+            }
+            val service = state.serviceYears + if (state.journeyState == null && state.level == ProLevel.MAJOR) 1 else 0
+            val freeAgency = decision == OffseasonDecision.FREE_AGENCY || (decision == OffseasonDecision.MILITARY_SERVICE && service >= 6)
+            if (decision == OffseasonDecision.FREE_AGENCY) {
+                require(service >= 6) { "pro.free_agency_service" }
+            }
+            val military = decision == OffseasonDecision.MILITARY_SERVICE
+            val route = if (freeAgency) ProOffseasonTransitionRoute.FREE_AGENCY_MARKET else ProOffseasonTransitionRoute.RENEWAL_MARKET
+            val transition = ProOffseasonTransition(
+                afterSeason = state.season,
+                nextSeason = state.season + 1,
+                ageAdvanceYears = if (military) 2 else 1,
+                includesMilitaryService = military,
+                route = route,
+            )
+            val marketState = state.copy(journeyState = state.journeyState.copy(offseasonTransition = transition))
+            val market = if (!freeAgency) ProCurrentMarketRules.renewal(marketState) else ProCurrentMarketRules.freeAgency(marketState)
+            val journey = state.journeyState.copy(
+                pendingContractMarket = market,
+                offseasonTransition = transition,
+            )
+            return result(
+                state.copy(
+                    revision = state.revision + 1UL,
+                    phase = ProCareerPhase.CONTRACT_OFFER,
+                    contract = state.contract,
+                    standings = emptyList(),
+                    leaderboards = emptyList(),
+                    journeyState = journey,
+                    commitment = "",
+                ),
+                seedText,
+                listOf("pro_contract_market_opened"),
+            )
+        }
+        return chooseOffseasonAdvance(state, seedText, decision)
+    }
+
+    public fun chooseInvestment(
+        state: ProState,
+        seedText: String,
+        investment: ProOffseasonInvestment,
+        focus: ProDevelopmentFocus?,
+    ): ProResult {
+        validate(state, ProCareerPhase.OFFSEASON_INVESTMENT)
+        val journey = state.journeyState ?: throw ProKernelException("pro.investment_missing_journey")
+        val transition = journey.offseasonTransition ?: throw ProKernelException("pro.investment_missing_transition")
+        require(transition.route == ProOffseasonTransitionRoute.UNDER_CONTRACT) { "pro.investment_route" }
+        if (investment == ProOffseasonInvestment.PITCH_LAB) {
+            require(focus != null) { "pro.investment_focus" }
+        }
+        val invested = ProJourneyKernel.applyInvestment(
+            journey,
+            state.careerId,
+            transition.nextSeason,
+            investment,
+            focus,
+        )
+        val waiting = state.copy(
+            journeyState = invested.copy(offseasonTransition = journey.offseasonTransition),
+            commitment = "",
+        )
+        val decision = if (transition.includesMilitaryService) OffseasonDecision.MILITARY_SERVICE else OffseasonDecision.CONTINUE
+        return chooseOffseasonAdvance(waiting, seedText, decision)
+    }
+
+    private fun chooseOffseasonAdvance(state: ProState, seedText: String, decision: OffseasonDecision): ProResult {
+        val seed = seed(seedText)
         var age = state.age + 1
         var military = state.militaryCompleted
-        val service = state.serviceYears + if (state.level == ProLevel.MAJOR) 1 else 0
+        val service = state.serviceYears + if (state.journeyState == null && state.level == ProLevel.MAJOR) 1 else 0
         var team = state.team
         val news = state.news.toMutableList()
         when (decision) {
@@ -1532,26 +1825,23 @@ public class ProKernel(
             }
             OffseasonDecision.FREE_AGENCY -> {
                 require(service >= 6) { "pro.free_agency_service" }
-                val index = ProCatalog.teams.indexOfFirst { it.id == state.team.id }.coerceAtLeast(0)
-                team = ProCatalog.teams[(index + 3) % ProCatalog.teams.size]
-                news.add(0, "FA 계약: ${team.name}과 새 도전을 시작합니다.")
+                news.add(0, "FA 시장이 열렸습니다.")
             }
             OffseasonDecision.CONTINUE -> Unit
             OffseasonDecision.RETIRE -> error("unreachable")
         }
         val season = state.season + 1
-        val pitcher = projectedPitcher(state.pitcher, age, CURRENT_RULES_VERSION, recoveryYear = false)
-        val yearsRemaining = if (decision == OffseasonDecision.FREE_AGENCY && usesContractDepthRules(state)) {
-            ProCatalog.maximumContractYears(state.proRulesVersion)
-        } else {
-            max(1, (state.contract?.yearsRemaining ?: 1) - 1)
-        }
-        val contract = ProContract(
-            yearsRemaining = yearsRemaining,
-            annualSalary = max(state.contract?.annualSalary ?: 40_000_000, 40_000_000 + service * 50_000_000),
+        val pitcher = projectedPitcher(state.pitcher, age, CURRENT_RULES_VERSION, recoveryYear = state.journeyState?.recoveryYearPending == true)
+        val contract = if (state.journeyState != null && state.contract != null) state.contract else state.contract?.copy(
+            annualSalary = max(state.contract.annualSalary, 40_000_000 + service * 50_000_000),
+            rolePromise = state.role,
+        ) ?: ProContract(
+            yearsRemaining = 1,
+            annualSalary = 40_000_000 + service * 50_000_000,
             rolePromise = state.role,
         )
         val opening = nextSeasonOpeningLoad(state)
+        val clearedJourney = state.journeyState?.copy(offseasonTransition = null, recoveryYearPending = null)
         val base = state.copy(
             revision = state.revision + 1UL,
             phase = ProCareerPhase.WEEKLY_PLAN,
@@ -1560,7 +1850,8 @@ public class ProKernel(
             age = age,
             season = season,
             week = 0,
-            rolePreference = state.role,
+            role = if (state.journeyState != null) contract.rolePromise else state.role,
+            rolePreference = if (state.journeyState != null) contract.rolePromise else state.role,
             fatigue = opening.fatigue,
             injuryWeeks = opening.injuryWeeks,
             serviceYears = service,
@@ -1584,6 +1875,7 @@ public class ProKernel(
             resolvedFollowUps = null,
             roleRequest = null,
             nationalTeamCarry = null,
+            journeyState = clearedJourney,
         )
         val declineNews = if (age >= 31) listOf("${age}세 · 전성기가 기울며 구위가 한 단계 떨어졌습니다.") else emptyList()
         val next = base.copy(
@@ -1593,7 +1885,7 @@ public class ProKernel(
             leaderboards = deriveLeaderboards(base),
             commitment = "",
         )
-        return result(next, seed.nextSeed(), listOf("pro_offseason_resolved"))
+        return result(next, if (state.journeyState != null) seedText else seed.nextSeed(), listOf("pro_offseason_resolved"))
     }
 
     public fun selectLegacy(state: ProState, legacyId: String): ProResult {
@@ -1675,7 +1967,10 @@ public class ProKernel(
             require(it.managerTrust in 0..100 && it.catcherTrust in 0..100 && it.rivalTrust in 0..100) { "pro.hs_context_trust" }
         }
         require(state.managerTrust in 0..100 && state.catcherTrust in 0..100 && state.fatigue in 0..100 && state.injuryWeeks >= 0) { "pro.bounded" }
-        requireStatsShape(state.currentStats, state.season, state.team.id, "pro.stats")
+        val previousTeamStats = state.phase == ProCareerPhase.OFFSEASON_INVESTMENT && state.careerStats.lastOrNull()?.let {
+            it.season == state.season && it.teamId == state.currentStats.teamId && it.games == state.currentStats.games && it.inningsOuts == state.currentStats.inningsOuts
+        } == true
+        requireStatsShape(state.currentStats, state.season, if (previousTeamStats) state.currentStats.teamId else state.team.id, "pro.stats")
         require(state.currentStats.games == state.currentGameLines.size) { "pro.ledger_games" }
         require(state.currentGameLines.all {
             it.season == state.season && it.week in 1..ProCatalog.WEEKS_PER_SEASON &&
@@ -1699,12 +1994,15 @@ public class ProKernel(
         }
         require((state.phase == ProCareerPhase.SEASON_DECISION) == (state.pendingDecision != null)) { "pro.decision_phase" }
         if (state.phase == ProCareerPhase.NATIONAL_TEAM_CALL && state.journeyState != null) {
-            require(shouldOfferNationalTeam(state)) { "pro.national_team_call" }
+            require(recordedNationalCallValid(state)) { "pro.national_team_call" }
         }
         if (state.phase == ProCareerPhase.SEASON_SETTLEMENT && state.journeyState != null) {
             val settlement = state.journeyState.lastSettlement
             require(settlement != null && !state.journeyState.settlementAcknowledged) { "pro.settlement_phase" }
             require(settlement.season == state.season && settlement.teamId == state.team.id) { "pro.settlement_identity" }
+        }
+        if (state.phase == ProCareerPhase.OFFSEASON_INVESTMENT && state.journeyState != null) {
+            require(state.journeyState.offseasonTransition != null) { "pro.investment_phase" }
         }
         val tournamentExpected = state.phase == ProCareerPhase.NATIONAL_TOURNAMENT ||
             (state.phase == ProCareerPhase.IMPORTANT_GAME && state.seasonTrigger == ProSeasonTrigger.NATIONAL_FINAL)
@@ -1721,11 +2019,11 @@ public class ProKernel(
         require(state.commandReceipts.zipWithNext().all { (a, b) -> a.revision < b.revision }) { "pro.command_receipts_order" }
         require(state.commandReceipts.all { it.commandId.isNotBlank() && it.sessionId.isNotBlank() && it.revision <= state.revision }) { "pro.command_receipt_shape" }
         if (state.phase != ProCareerPhase.CONTRACT_OFFER) {
-            require(state.contract != null) { "pro.contract_missing" }
+            require(state.contract != null || state.phase in setOf(ProCareerPhase.LEGACY_SELECTION, ProCareerPhase.COMPLETED)) { "pro.contract_missing" }
             requireStandingSnapshot(state.standings, "pro.standings")
             requireLeaderboardSnapshot(state.leaderboards, "pro.leaderboards")
         } else {
-            require(state.contract == null) { "pro.contract_unexpected" }
+            require(state.contract == null || state.contract.yearsRemaining == 0 && (state.journeyState == null || state.journeyState.pendingContractMarket?.kind in setOf(ProContractMarketKind.RENEWAL, ProContractMarketKind.FREE_AGENCY))) { "pro.contract_unexpected" }
             require(state.standings.isEmpty() && state.leaderboards.isEmpty()) { "pro.contract_projection" }
         }
         require(state.activePitch == null || state.phase == ProCareerPhase.IMPORTANT_GAME) { "pro.pitch_phase" }
@@ -1826,6 +2124,7 @@ public class ProKernel(
                 add("national_history:${state.nationalTeamHistory.joinToString(";") { it.toString() }}")
             }
             state.nationalTeamCarry?.let { add("national_carry:$it") }
+            state.pitchLearningProject?.let { add("learning:${it.token()}") }
         }
         return StableHash.fnv1a64(values.joinToString("|"))
     }
@@ -1953,7 +2252,11 @@ public class ProKernel(
         preparation: PitchPreparation? = null,
         presentation: com.solkim.baseball.core.pitch.TrajectoryPresentationSnapshot? = null,
         injuryEvent: ProInjuryEventSnapshot? = null,
-    ): ProResult = ProResult(signed(state), nextSeed, events, preparation, presentation, injuryEvent = injuryEvent)
+    ): ProResult {
+        val project = state.pitchLearningProject
+        val normalized = if (project != null && state.activePitch == null) state.copy(pitcher = state.pitcher.copy(pitchProfiles = PitchLearningRules.advance(state.pitcher.pitchProfiles.orEmpty(), project, project))) else state
+        return ProResult(signed(normalized), nextSeed, events, preparation, presentation, injuryEvent = injuryEvent)
+    }
 
     private fun validate(state: ProState, phase: ProCareerPhase) {
         require(state.phase == phase) { "pro.expected_phase:${phase.wire}:${state.phase.wire}" }
@@ -1971,13 +2274,9 @@ public class ProKernel(
         val weeks = ProCatalog.decisionWeeks(state.proRulesVersion)
         val slot = weeks.indexOf(week)
         require(slot >= 0) { "pro.decision_week" }
+        val reviewDue = ProRoleRequestRules.pendingReview(state, week)
         val used = state.decisionHistory.filter { it.season == state.season }.map { it.type }.toSet()
-        if (usesWeeklyDecisionRules(state) && week == ProCatalog.mediaOpportunityWeek(state.careerId, state.season, state.proRulesVersion) && ProSeasonDecisionType.MEDIA_OPPORTUNITY !in used &&
-            state.journeyState != null && (state.journeyState.reputation.fanSupport >= 35)
-        ) {
-            return mediaDecision(state, week)
-        }
-        if (usesCareerArcRules(state)) {
+        if (!reviewDue && usesCareerArcRules(state)) {
             val history = state.decisionHistory
             val hadFormCrisis = history.any { it.season == state.season && it.type == ProSeasonDecisionType.FORM_CRISIS }
             if (!hadFormCrisis && climate == ProSeasonClimate.SLUMP && (trust ?: state.managerTrust) < 55) {
@@ -1988,6 +2287,11 @@ public class ProKernel(
                 return makeArcDecision(ProSeasonDecisionType.AGING_CROSSROADS, state, week)
             }
         }
+        if (!reviewDue && usesWeeklyDecisionRules(state) && week == ProCatalog.mediaOpportunityWeek(state.careerId, state.season, state.proRulesVersion) && ProSeasonDecisionType.MEDIA_OPPORTUNITY !in used &&
+            state.journeyState != null && (state.journeyState.reputation.fanSupport >= 35)
+        ) {
+            return mediaDecision(state, week)
+        }
         val types = listOf(
             ProSeasonDecisionType.EXTRA_BULLPEN,
             ProSeasonDecisionType.CATCHER_GAME_PLAN,
@@ -1996,8 +2300,14 @@ public class ProKernel(
             ProSeasonDecisionType.RIVAL_ANALYSIS,
             ProSeasonDecisionType.SEASON_FINALE,
         )
-        val type = types[(proHash("${state.careerId}|season${state.season}|season-decisions") % types.size.toULong()).toInt().plus(slot).mod(types.size)]
+        val eligible = if (usesWeeklyDecisionRules(state)) ProWeeklyDecisionRules.candidates(state, week, trust ?: state.managerTrust) else types
+        val pool = eligible.ifEmpty { types }
+        val salt = if (usesWeeklyDecisionRules(state)) "weekly-decisions" else "season-decisions"
+        val type = if (ProRoleRequestRules.pendingReview(state, week)) ProSeasonDecisionType.ROLE_MEETING else
+            pool[(proHash("${state.careerId}|season${state.season}|$salt") % pool.size.toULong()).toInt().plus(slot).mod(pool.size)]
         val choices = when (type) {
+            ProSeasonDecisionType.ROTATION_PUSH, ProSeasonDecisionType.NEW_PITCH_TRIAL,
+            ProSeasonDecisionType.FARM_RESET, ProSeasonDecisionType.VETERAN_MENTOR -> ProWeeklyDecisionRules.choices(type, state)
             ProSeasonDecisionType.EXTRA_BULLPEN -> listOf(
                 choice(type, "high_intensity", "강하게 더 던진다", "구위와 변화구를 함께 끌어올립니다.", ProDecisionEffect(stuffDelta = 1, movementDelta = 1, fatigueDelta = 14)),
                 choice(type, "shape_work", "변화구만 다듬는다", "부담을 줄이고 변화구 감각에 집중합니다.", ProDecisionEffect(movementDelta = 1, fatigueDelta = 7)),
@@ -2047,9 +2357,9 @@ public class ProKernel(
             type.title,
             type.detail,
             listOf(
-                choice(type, "appear", "촬영에 나선다", "팬 지지를 얻는 대신 피로가 조금 쌓입니다.", ProDecisionEffect(managerTrustDelta = 2, fatigueDelta = 6)),
-                choice(type, "short", "짧게만 응한다", "부담을 줄이고 구단에만 얼굴을 비칩니다.", ProDecisionEffect(catcherTrustDelta = 1, fatigueDelta = 2)),
-                choice(type, "decline", "정중히 거절한다", "몸을 아끼고 마운드에 집중합니다.", ProDecisionEffect(fatigueDelta = -4)),
+                choice(type, "advertising_shoot", "광고 촬영에 참여한다", "출연료 3천만 원 · 팬 지지 +5 · 피로 +6", ProDecisionEffect(fatigueDelta = 6)),
+                choice(type, "fan_together_shoot", "팬과 함께 촬영한다", "출연료 1천만 원 · 팬 지지 +10 · 지역 활동 +2 · 피로 +4", ProDecisionEffect(fatigueDelta = 4)),
+                choice(type, "focus_on_season", "시즌에 집중한다", "촬영을 쉬고 피로를 4 줄입니다.", ProDecisionEffect(fatigueDelta = -4)),
             ),
         )
     }
@@ -2069,6 +2379,15 @@ public class ProKernel(
                 choice(type, "decline", "구단에 남는다", "대표 대신 시즌 막판 로테이션을 지킵니다.", ProDecisionEffect(managerTrustDelta = -2, fatigueDelta = -6)),
             ),
         )
+    }
+
+    private data class MediaJourneyEffect(val income: Long, val fanDelta: Int, val communityDelta: Int)
+
+    private fun mediaJourneyEffect(choiceId: String): MediaJourneyEffect? = when (choiceId.substringAfterLast('.')) {
+        "advertising_shoot", "appear" -> MediaJourneyEffect(30_000_000L, 5, 0)
+        "fan_together_shoot", "short" -> MediaJourneyEffect(10_000_000L, 10, 2)
+        "focus_on_season", "decline" -> MediaJourneyEffect(0L, 0, 0)
+        else -> null
     }
 
     private fun choice(type: ProSeasonDecisionType, suffix: String, title: String, detail: String, effect: ProDecisionEffect) =
@@ -2101,6 +2420,8 @@ public class ProKernel(
 
     private val ProSeasonDecisionType.title: String
         get() = when (this) {
+            ProSeasonDecisionType.ROTATION_PUSH, ProSeasonDecisionType.NEW_PITCH_TRIAL,
+            ProSeasonDecisionType.FARM_RESET, ProSeasonDecisionType.VETERAN_MENTOR -> ProWeeklyDecisionRules.title(this)
             ProSeasonDecisionType.EXTRA_BULLPEN -> "추가 불펜"
             ProSeasonDecisionType.CATCHER_GAME_PLAN -> "포수와 경기 계획"
             ProSeasonDecisionType.ROLE_MEETING -> "역할 면담"
@@ -2115,6 +2436,8 @@ public class ProKernel(
 
     private val ProSeasonDecisionType.detail: String
         get() = when (this) {
+            ProSeasonDecisionType.ROTATION_PUSH, ProSeasonDecisionType.NEW_PITCH_TRIAL,
+            ProSeasonDecisionType.FARM_RESET, ProSeasonDecisionType.VETERAN_MENTOR -> ProWeeklyDecisionRules.detail(this)
             ProSeasonDecisionType.EXTRA_BULLPEN -> "정규 훈련이 끝난 뒤 마운드 사용 시간이 남았습니다."
             ProSeasonDecisionType.CATCHER_GAME_PLAN -> "다음 등판의 구종 순서와 승부 방식을 정합니다."
             ProSeasonDecisionType.ROLE_MEETING -> "코칭스태프가 남은 시즌의 등판 역할을 묻습니다."
@@ -2129,12 +2452,12 @@ public class ProKernel(
 
     private fun validateDecision(value: ProSeasonDecision, season: Int, week: Int) {
         require(value.id == "season-$season-week-${value.week}-${value.type.wire}") { "pro.decision_id" }
-        require(value.season == season && value.choices.size == 3) { "pro.decision_shape" }
+        require(value.season == season && value.choices.size == (if (value.type.isWeeklyBinary) 2 else 3)) { "pro.decision_shape" }
         require(
             value.week == week ||
                 (value.type == ProSeasonDecisionType.NATIONAL_TEAM && value.week == week),
         ) { "pro.decision_week_mismatch" }
-        require(value.choices.map { it.id }.distinct().size == 3) { "pro.decision_choices" }
+        require(value.choices.map { it.id }.distinct().size == value.choices.size) { "pro.decision_choices" }
         require(value.choices.all { it.id.startsWith("${value.type.wire}.") && it.title.isNotBlank() && it.detail.isNotBlank() }) { "pro.decision_copy" }
         require(value.choices.all { effectReasonable(it.effect) }) { "pro.decision_effect" }
     }
@@ -2199,6 +2522,7 @@ public class ProKernel(
         target: PitchKind?,
         paused: Boolean,
         liveTicks: Boolean,
+        efficiencyPermille: Int = 1_000,
     ): DevelopmentResolution {
         if (paused || plan == ProWeekPlan.RECOVER || plan == ProWeekPlan.EARN_TRUST) return DevelopmentResolution(pitcher, progress, emptyList())
         var value = pitcher
@@ -2209,8 +2533,9 @@ public class ProKernel(
         val labels = mutableListOf<String>()
         fun advance(current: Int, setter: (Int) -> Unit, ability: Int, focus: ProGrowthFocus, label: String, pitch: PitchKind? = null) {
             val needed = if (liveTicks) developmentTicksRequired(ability) else 2
+            val scaledNeeded = if (efficiencyPermille >= 1_000) max(1, needed * 1_000 / efficiencyPermille) else max(needed, (needed * 1_000 + efficiencyPermille - 1) / efficiencyPermille)
             val nextTick = current + 1
-            if (nextTick >= needed) {
+            if (nextTick >= scaledNeeded) {
                 setter(0)
                 value = grow(value, focus, 1, pitch)
                 labels += "$label +1"
@@ -2315,35 +2640,8 @@ public class ProKernel(
 
     private fun tensionHeadline(values: List<ProSeasonTension>): String = "올해의 세 가지 긴장 · ${values.joinToString(" · ") { it.title }}"
 
-    private fun deriveStandings(state: ProState): List<ProStanding> {
-        val gamesPlayed = (state.week * 144 / ProCatalog.WEEKS_PER_SEASON).coerceIn(0, 144)
-        if (gamesPlayed == 0) return ProCatalog.teams.mapIndexed { index, team -> ProStanding(index + 1, team.id, team.name, 0, 0, 0, 0, team.id == state.team.id) }
-        val rng = SplitMix64(proHash("league|${state.seed}|${state.season}") xor state.season.toULong())
-        val rows = ProCatalog.teams.mapIndexed { index, team ->
-            val draws = (2 + rng.nextInt(4)) * gamesPlayed / 144
-            val expected = (gamesPlayed - draws) * (380 + rng.nextInt(241)) / 1_000
-            val wins = (expected + rng.nextInt(7) - 3).coerceIn(0, gamesPlayed - draws)
-            ProStanding(0, team.id, team.name, wins, gamesPlayed - draws - wins, draws, 0, team.id == state.team.id)
-        }.toMutableList()
-        val playerLines = state.currentGameLines
-        val playerIndex = rows.indexOfFirst { it.teamId == state.team.id }
-        if (playerIndex >= 0 && playerLines.isNotEmpty()) {
-            val generated = rows[playerIndex]
-            val mine = playerLines.take(gamesPlayed)
-            val wins = mine.count { it.teamRuns > it.opponentRuns }
-            val losses = mine.count { it.teamRuns < it.opponentRuns }
-            val draws = mine.size - wins - losses
-            val remaining = max(0, gamesPlayed - mine.size)
-            val scaledWins = generated.wins * remaining / max(1, gamesPlayed)
-            val scaledDraws = min(remaining - min(remaining, scaledWins), generated.draws * remaining / max(1, gamesPlayed))
-            rows[playerIndex] = generated.copy(wins = wins + scaledWins, losses = losses + max(0, remaining - scaledWins - scaledDraws), draws = draws + scaledDraws)
-        }
-        val leaderWins = rows.maxOf { it.wins }
-        val leaderLosses = rows.minOf { it.losses }
-        return rows.map { it.copy(gamesBehindPermille = ((leaderWins - it.wins) + (it.losses - leaderLosses)) * 500) }
-            .sortedWith(compareByDescending<ProStanding> { it.wins * 1_000 / max(1, it.wins + it.losses) }.thenByDescending { it.wins })
-            .mapIndexed { index, row -> row.copy(rank = index + 1) }
-    }
+    private fun deriveStandings(state: ProState): List<ProStanding> =
+        deriveStandingsForPostseason(state, (state.week * 144 / ProCatalog.WEEKS_PER_SEASON).coerceIn(0, 144))
 
     private fun deriveLeaderboards(state: ProState): List<ProLeaderboardRow> {
         val rng = SplitMix64(proHash("leaders|${state.seed}|${state.season}") xor (state.season * 31).toULong())
@@ -2443,7 +2741,14 @@ public class ProKernel(
         else -> "제구 ${pitcher.command}·체력 ${pitcher.stamina}"
     }
 
+    public fun hallOfFameProjection(state: ProState): Int {
+        val includes = state.careerStats.any { it.season == state.currentStats.season && it.teamId == state.currentStats.teamId }
+        return hallOfFameScore(if (includes) state else state.copy(careerStats = state.careerStats + state.currentStats,
+            serviceYears = state.serviceYears + if (state.level == ProLevel.MAJOR && state.currentStats.games > 0) 1 else 0))
+    }
+
     private fun hallOfFameScore(state: ProState): Int {
+        val awardCount = ProCurrentMarketRules.awardCount(state)
         val strikeouts = state.careerStats.sumOf { it.strikeouts }
         val outs = state.careerStats.sumOf { it.inningsOuts }
         val decisions = state.careerStats.sumOf { it.wins + it.saves }
@@ -2452,15 +2757,15 @@ public class ProKernel(
             ProPostseasonRules.hofBonus(state.postseason?.result ?: ProPostseasonResult.DID_NOT_QUALIFY)
         } else 0
         if (state.proRulesVersion < HALL_OF_FAME_FORMULA_VERSION) {
-            return (strikeouts / 150 + outs / 300 + decisions / 12 + quality * 2 + state.awards.size * 8 + state.serviceYears * 3).coerceIn(0, 100)
+            return (strikeouts / 150 + outs / 300 + decisions / 12 + quality * 2 + awardCount * 8 + state.serviceYears * 3).coerceIn(0, 100)
         }
         val longevity = min(15, max(0, state.serviceYears))
         val strikeoutContribution = min(22, max(0, strikeouts) / 200)
         val workloadContribution = min(15, max(0, outs) / 600)
         val decisionContribution = min(9, max(0, decisions) / 25)
         val qualityContribution = min(10, max(0, quality) / 2)
-        val awardContribution = if (state.awards.size >= 3) min(12, 2 + (state.awards.size - 3) / 8) else 0
-        return (longevity + strikeoutContribution + workloadContribution + decisionContribution + qualityContribution + awardContribution + autumnBonus).coerceIn(0, 100)
+        val awardContribution = if (awardCount >= 3) min(12, 2 + (awardCount - 3) / 8) else 0
+        return (longevity + strikeoutContribution + workloadContribution + decisionContribution + qualityContribution + awardContribution + autumnBonus + if (usesNationalTeamRules(state)) state.nationalTeamHistory.count { it.result == ProNationalTournamentResult.GOLD } * ProNationalTeamRules.HOF_GOLD_BONUS else 0).coerceIn(0, 100)
     }
 
     private fun retirementNews(state: ProState, score: Int): List<String> = buildList {

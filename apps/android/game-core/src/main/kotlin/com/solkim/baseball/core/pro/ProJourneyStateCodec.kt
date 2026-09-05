@@ -65,10 +65,10 @@ public object ProJourneyStateCodec {
         "offseasonTransition" to nullable(state.offseasonTransition, ::encodeTransition),
         "retirementHonors" to arr(state.retirementHonors, ::encodeHonor),
         "migration" to encodeMigration(state.migration),
-    )
+    ).let { encoded -> if (state.recoveryYearPending == null) encoded else obj(*(encoded.entries.toList() + ("recoveryYearPending" to JsonValue.Bool(state.recoveryYearPending))).toTypedArray()) }
 
     private fun decodeState(value: JsonValue.Obj): ProCareerJourneyState {
-        requireExact(value, setOf("rulesVersion", "activeGoal", "goalHistory", "pendingContractMarket", "contractHistory", "teamRecords", "recognitions", "reputation", "finances", "activeSeasonBenefit", "lastSettlement", "settlementAcknowledged", "offseasonTransition", "retirementHonors", "migration"), "pro.journey.payload")
+        requireExact(value, setOf("rulesVersion", "activeGoal", "goalHistory", "pendingContractMarket", "contractHistory", "teamRecords", "recognitions", "reputation", "finances", "activeSeasonBenefit", "lastSettlement", "settlementAcknowledged", "offseasonTransition", "retirementHonors", "migration") + if ("recoveryYearPending" in value.entries) setOf("recoveryYearPending") else emptySet(), "pro.journey.payload")
         return ProCareerJourneyState(
             rulesVersion = value.int("rulesVersion"),
             activeGoal = value.nullable("activeGoal", ::decodeGoalState),
@@ -85,6 +85,7 @@ public object ProJourneyStateCodec {
             offseasonTransition = value.nullable("offseasonTransition", ::decodeTransition),
             retirementHonors = value.arr("retirementHonors", ::decodeHonor),
             migration = decodeMigration(value.obj("migration")),
+            recoveryYearPending = if ("recoveryYearPending" in value.entries) value.bool("recoveryYearPending") else null,
         )
     }
 
@@ -120,12 +121,13 @@ public object ProJourneyStateCodec {
         "id" to str(value.id), "teamID" to str(value.teamId), "years" to num(value.years), "annualSalary" to num(value.annualSalary),
         "signingBonus" to nullableLong(value.signingBonus), "contractKind" to str(value.contractKind.wire), "rolePromise" to str(value.rolePromise.wire),
         "outlook" to str(value.outlook.wire), "expectation" to encodeExpectation(value.expectation), "preservesTeamLegacy" to JsonValue.Bool(value.preservesTeamLegacy),
-    )
+    ).let { encoded -> value.interest?.let { obj(*(encoded.entries.toList() + ("interest" to obj("level" to str(it.level), "reason" to str(it.reason)))).toTypedArray()) } ?: encoded }
 
     private fun decodeOffer(value: JsonValue.Obj): ProContractOffer = ProContractOffer(
         value.string("id"), value.string("teamID"), value.int("years"), value.long("annualSalary"), value.nullableLong("signingBonus"),
         contractKind(value.string("contractKind")), role(value.string("rolePromise")), outlook(value.string("outlook")),
         decodeExpectation(value.obj("expectation")), value.bool("preservesTeamLegacy"),
+        value.entries["interest"]?.let { (it as JsonValue.Obj).let { ProClubInterest(it.string("level"), it.string("reason")) } },
     )
 
     private fun encodeMarket(value: ProContractMarket): JsonValue.Obj = obj(

@@ -1,5 +1,7 @@
 package com.solkim.baseball.core.pro
 
+import com.solkim.baseball.core.pitch.PitchLearningProject
+import com.solkim.baseball.core.pitch.PitchLearningRules
 import com.solkim.baseball.core.highschool.HighSchoolArchiveRecord
 import com.solkim.baseball.core.highschool.HighSchoolDraftResult
 import com.solkim.baseball.core.highschool.HighSchoolPerformance
@@ -38,6 +40,7 @@ public enum class ProCareerPhase(public val wire: String) {
     NATIONAL_TEAM_CALL("national_team_call"),
     NATIONAL_TOURNAMENT("national_tournament"),
     OFFSEASON_DECISION("offseason_decision"),
+    OFFSEASON_INVESTMENT("offseason_investment"),
     RETIREMENT_DECISION("retirement_decision"),
     LEGACY_SELECTION("legacy_selection"),
     COMPLETED("completed"),
@@ -122,6 +125,10 @@ public enum class ProSeasonTrigger(public val wire: String) {
 }
 
 public enum class ProSeasonDecisionType(public val wire: String) {
+    ROTATION_PUSH("rotation_push"),
+    NEW_PITCH_TRIAL("new_pitch_trial"),
+    FARM_RESET("farm_reset"),
+    VETERAN_MENTOR("veteran_mentor"),
     EXTRA_BULLPEN("extra_bullpen"),
     CATCHER_GAME_PLAN("catcher_game_plan"),
     ROLE_MEETING("role_meeting"),
@@ -131,7 +138,9 @@ public enum class ProSeasonDecisionType(public val wire: String) {
     FORM_CRISIS("form_crisis"),
     AGING_CROSSROADS("aging_crossroads"),
     MEDIA_OPPORTUNITY("media_opportunity"),
-    NATIONAL_TEAM("national_team"),
+    NATIONAL_TEAM("national_team");
+
+    public val isWeeklyBinary: Boolean get() = this in setOf(ROTATION_PUSH, NEW_PITCH_TRIAL, FARM_RESET, VETERAN_MENTOR)
 }
 
 public enum class ProPitchBoundary(public val wire: String) {
@@ -391,6 +400,11 @@ public data class ProStartLinkedRequest(
     val entitlement: ProEntitlement = ProEntitlement(),
     val activeHighSchoolPreserved: Boolean = true,
     val highSchoolLegacyContext: ProHighSchoolLegacyContext? = null,
+    val pitchLearningProject: PitchLearningProject? = null,
+    val draftRound: Int? = null,
+    val signingBonus: Long? = null,
+    val overallPick: Int? = null,
+    val sourceFanInterest: Int? = null,
 ) {
     public companion object
 }
@@ -517,6 +531,7 @@ public data class ProState(
     val nationalTournament: ProNationalTournamentState? = null,
     val nationalTeamHistory: List<ProNationalTeamRecord> = emptyList(),
     val nationalTeamCarry: ProNationalTeamCarryState? = null,
+    val pitchLearningProject: PitchLearningProject? = null,
 )
 
 /** v9 weekly decision temporary effects. Missing on legacy saves; decodeIfPresent keeps v8 bytes. */

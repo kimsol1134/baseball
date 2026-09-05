@@ -194,7 +194,13 @@ public object ProJourneyCommandKernel {
         val record = ProContractRecord(offer.id, offer.teamId, offer.contractKind, market.forSeason, offer.years, offer.annualSalary, offer.signingBonus, offer.rolePromise, offer.expectation, emptyList(), emptyList(), null, null)
         val signing = offer.signingBonus?.let { ProFinanceTransaction("signing-bonus:$careerId:${market.forSeason}", market.forSeason, ProFinanceTransactionKind.SIGNING_BONUS, it) }
         val finance = signing?.let { state.finances.copy(careerEarnings = state.finances.careerEarnings + it.amount, availableFunds = state.finances.availableFunds + it.amount, transactions = state.finances.transactions + it) } ?: state.finances
-        val goal = command.ambition?.let { ProCareerGoalState("goal:$careerId:${market.forSeason}:${it.wire}", it, market.forSeason, offer.teamId, null) }
-        return state.copy(pendingContractMarket = null, contractHistory = state.contractHistory + record, finances = finance, activeGoal = goal, settlementAcknowledged = true)
+        val oldGoal = state.activeGoal
+        val anchor = offer.teamId.takeIf { command.ambition == ProCareerAmbition.FRANCHISE_ICON }
+        val keep = oldGoal != null && oldGoal.completedSeason == null && oldGoal.ambition == command.ambition && oldGoal.anchorTeamId == anchor
+        val goal = if (keep) oldGoal else command.ambition?.let { ProCareerGoalState("goal:$careerId:${market.forSeason}:${it.wire}:${anchor ?: "none"}", it, market.forSeason, anchor, null) }
+        val history = if (!keep && oldGoal != null && state.goalHistory.none { it.id == oldGoal.id }) state.goalHistory +
+            ProCareerGoalRecord(oldGoal.id, oldGoal.ambition, oldGoal.selectedSeason, oldGoal.anchorTeamId, oldGoal.completedSeason, market.forSeason - 1,
+                if (oldGoal.completedSeason != null) ProCareerGoalOutcome.COMPLETED else ProCareerGoalOutcome.REPLACED) else state.goalHistory
+        return state.copy(pendingContractMarket = null, contractHistory = state.contractHistory + record, finances = finance, activeGoal = goal, goalHistory = history, settlementAcknowledged = true)
     }
 }

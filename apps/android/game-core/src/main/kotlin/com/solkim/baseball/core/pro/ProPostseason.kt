@@ -534,12 +534,16 @@ internal fun deriveStandingsForPostseason(state: ProState, gamesPlayed: Int): Li
             ProStanding(index + 1, team.id, team.name, 0, 0, 0, 0, team.id == state.team.id)
         }
     }
-    val rng = com.solkim.baseball.core.SplitMix64(proHash("league|${state.seed}|${state.season}") xor state.season.toULong())
-    val rows = ProCatalog.teams.map { team ->
-        val draws = (2 + rng.nextInt(4)) * gamesPlayed / 144
-        val expected = (gamesPlayed - draws) * (380 + rng.nextInt(241)) / 1_000
-        val wins = (expected + rng.nextInt(7) - 3).coerceIn(0, gamesPlayed - draws)
-        ProStanding(0, team.id, team.name, wins, gamesPlayed - draws - wins, draws, 0, team.id == state.team.id)
+    val rng = com.solkim.baseball.core.SplitMix64(proHash("league|${state.careerId}|${state.season}") xor state.season.toULong())
+    val rawStrengths = ProCatalog.teams.map { 380 + rng.nextInt(241) }
+    val mean = rawStrengths.sum() / rawStrengths.size
+    val strengths = rawStrengths.map { it - mean + 500 }
+    val draws = ProCatalog.teams.map { (2 + rng.nextInt(4)) * gamesPlayed / 144 }.toMutableList()
+    if ((gamesPlayed * draws.size - draws.sum()) % 2 != 0) draws[0] += 1
+    val rows = ProCatalog.teams.mapIndexed { index, team ->
+        val decided = gamesPlayed - draws[index]
+        val wins = (decided * strengths[index] / 1000 + rng.nextInt(7) - 3).coerceIn(0, decided)
+        ProStanding(0, team.id, team.name, wins, decided - wins, draws[index], 0, team.id == state.team.id)
     }.toMutableList()
     val playerLines = state.currentGameLines
     val playerIndex = rows.indexOfFirst { it.teamId == state.team.id }
@@ -558,9 +562,21 @@ internal fun deriveStandingsForPostseason(state: ProState, gamesPlayed: Int): Li
             draws = draws + scaledDraws,
         )
     }
-    val leaderWins = rows.maxOf { it.wins }
-    val leaderLosses = rows.minOf { it.losses }
-    return rows.map { it.copy(gamesBehindPermille = ((leaderWins - it.wins) + (it.losses - leaderLosses)) * 500) }
-        .sortedWith(compareByDescending<ProStanding> { it.wins * 1_000 / max(1, it.wins + it.losses) }.thenByDescending { it.wins })
-        .mapIndexed { index, row -> row.copy(rank = index + 1) }
+    var surplus = rows.sumOf { it.wins - it.losses }
+    val order = rows.indices.filter { rows[it].teamId != state.team.id }.sortedWith(if (surplus > 0) compareByDescending { rows[it].wins } else compareBy { rows[it].wins })
+    if (surplus % 2 != 0) for (index in order) {
+        val r = rows[index]
+        if (surplus > 0 && r.wins > 0) { rows[index] = r.copy(wins = r.wins - 1, draws = r.draws + 1); surplus--; break }
+        if (surplus < 0 && r.losses > 0) { rows[index] = r.copy(losses = r.losses - 1, draws = r.draws + 1); surplus++; break }
+    }
+    var cursor = 0; var stalled = 0
+    while (surplus != 0 && surplus % 2 == 0 && stalled < order.size) {
+        val index = order[cursor++ % order.size]; val r = rows[index]
+        if (surplus > 0 && r.wins > 0) { rows[index] = r.copy(wins = r.wins - 1, losses = r.losses + 1); surplus -= 2; stalled = 0 }
+        else if (surplus < 0 && r.losses > 0) { rows[index] = r.copy(wins = r.wins + 1, losses = r.losses - 1); surplus += 2; stalled = 0 }
+        else stalled++
+    }
+    val ranked = rows.sortedWith(compareByDescending<ProStanding> { it.wins.toDouble() / max(1, it.wins + it.losses) }.thenByDescending { it.wins })
+    val leader = ranked.first()
+    return ranked.mapIndexed { index, row -> row.copy(rank = index + 1, gamesBehindPermille = ((leader.wins - row.wins) + (row.losses - leader.losses)) * 500) }
 }

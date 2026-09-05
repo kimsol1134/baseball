@@ -29,6 +29,20 @@ class ProNationalTeamTest {
     }
 
     @Test
+    fun recordedLegacyCallSurvivesEligibilityUpdateAndCanBeAnswered() {
+        val issued = eligibleCall(seed = "940101", fanSupport = 60).state
+        val legacy = issued.copy(pitcher = issued.pitcher.copy(stuff = 20, command = 20, movement = 20, stamina = 20),
+            awards = listOf("시즌 1 탈삼진상"), journeyState = issued.journeyState!!.copy(reputation = issued.journeyState.reputation.copy(fanSupport = 0),
+                recognitions = issued.journeyState.recognitions.filterNot { it.season == issued.season && it.kind == ProCareerRecognitionKind.AWARD }), commitment = "")
+        assertFalse(ProKernel.shouldOfferNationalTeam(legacy))
+        val signed = legacy.copy(commitment = kernel.commitment(legacy))
+        val restored = ProStateCodec.decode(ProStateCodec.encode(signed))
+        val answered = kernel.respondToNationalTeamCall(restored, restored.seed, false)
+        assertEquals(ProCareerPhase.OFFSEASON_DECISION, answered.state.phase)
+        assertEquals(restored.seed, answered.nextSeed)
+    }
+
+    @Test
     fun oddSeasonAndV9DoNotOpenTheCall() {
         val odd = settledSeason(seed = "940102", season = 1, fanSupport = 80)
         assertEquals(ProCareerPhase.OFFSEASON_DECISION, odd.state.phase)
@@ -93,6 +107,8 @@ class ProNationalTeamTest {
             )
             assertTrue(result.state.journeyState?.recognitions.orEmpty().any { it.contentId == "pro.award.national-gold" })
             assertTrue(result.state.milestones.contains("대표팀 금메달"))
+            val beforeGoldBonus = kernel.hallOfFameProjection(result.state.copy(nationalTeamHistory = emptyList()))
+            assertEquals(minOf(100, beforeGoldBonus + 4), kernel.hallOfFameProjection(result.state))
         }
         assertEquals(tournament.result, result.state.nationalTeamHistory.last().result)
         val carry = assertNotNull(result.state.nationalTeamCarry)
@@ -100,7 +116,13 @@ class ProNationalTeamTest {
         assertEquals(ProCareerPhase.OFFSEASON_DECISION, result.state.phase)
         assertNull(result.state.nationalTournament)
         assertEquals(seed, result.nextSeed)
-        val continued = kernel.chooseOffseason(result.state, result.nextSeed, OffseasonDecision.CONTINUE)
+        val investment = kernel.chooseOffseason(result.state, result.nextSeed, OffseasonDecision.CONTINUE)
+        assertEquals(ProCareerPhase.OFFSEASON_INVESTMENT, investment.state.phase)
+        assertEquals(carry, investment.state.nationalTeamCarry)
+        val restoredInvestment = ProStateCodec.decode(ProStateCodec.encode(investment.state))
+        val continued = kernel.chooseInvestment(restoredInvestment, investment.nextSeed, ProOffseasonInvestment.NONE, null)
+        assertEquals(result.state.season + 1, continued.state.season)
+        assertEquals(ProCareerPhase.WEEKLY_PLAN, continued.state.phase)
         assertEquals(carry.fatigue, continued.state.fatigue)
         assertEquals(carry.injuryWeeks, continued.state.injuryWeeks)
         assertNull(continued.state.nationalTeamCarry)

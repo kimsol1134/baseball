@@ -16,6 +16,16 @@ public object ProCatalog {
     public const val BALANCE_VERSION: Int = 4
     public const val MAXIMUM_CAREER_SEASONS: Int = 20
     public const val WEEKS_PER_SEASON: Int = 24
+
+    public fun expectedRemainingOutings(week: Int, injuryWeeks: Int, role: ProRole): Int {
+        val remainingWeeks = max(0, WEEKS_PER_SEASON - week - max(0, injuryWeeks))
+        val perWeek = when (role) {
+            ProRole.STARTER -> 1
+            ProRole.LONG_RELIEF -> 2
+            ProRole.SETUP, ProRole.CLOSER -> 3
+        }
+        return remainingWeeks * perWeek
+    }
     public const val DEMOTION_TRUST: Int = 34
     public val SEASON_DECISION_WEEKS: List<Int> = listOf(6, 13, 20)
     public val WEEKLY_SEASON_DECISION_WEEKS: List<Int> = listOf(3, 6, 9, 12, 15, 18, 21)

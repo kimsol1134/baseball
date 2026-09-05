@@ -7,6 +7,7 @@ public object ProCareerRecognitionRules {
     public const val COMMAND: String = "pro.award.command"
     public const val HITS: String = "pro.award.hits"
     public const val INNINGS: String = "pro.award.innings"
+    public val recognizedTeamAwards: Set<String> = setOf(STRIKEOUTS, RUN_PREVENTION, COMMAND, HITS, INNINGS)
 
     public fun awardContentIDs(stats: ProSeasonStats, rulesVersion: Int): List<String> {
         val ids = mutableListOf<String>()

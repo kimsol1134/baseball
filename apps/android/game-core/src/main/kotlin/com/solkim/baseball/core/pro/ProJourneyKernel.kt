@@ -46,6 +46,55 @@ public object ProJourneyKernel {
         else -> 40_000_000L
     }
 
+    public fun playerMarket(
+        careerId: String,
+        currentTeamId: String,
+        forSeason: Int,
+        freeAgency: Boolean,
+        state: ProCareerJourneyState,
+        currentRole: ProRole,
+        rulesVersion: Int = ProCatalog.RULES_VERSION,
+    ): ProContractMarket {
+        val marketKind = if (freeAgency) ProContractMarketKind.FREE_AGENCY else ProContractMarketKind.RENEWAL
+        val marketId = "market:$careerId:$forSeason:${marketKind.wire}"
+        val expectation = ProContractExpectation(ProContractExpectationKind.MAJOR_ROSTER, 1, ProExpectationDifficulty.STANDARD)
+        fun offer(
+            teamId: String,
+            years: Int,
+            multiplier: Int,
+            kind: ProContractKind,
+            role: ProRole,
+            outlook: ProTeamOutlook,
+            preserves: Boolean,
+        ): ProContractOffer = ProContractOffer(
+            id = "offer:$marketId:$teamId:${kind.wire}",
+            teamId = teamId,
+            years = years.coerceAtMost(ProCatalog.MAXIMUM_CAREER_SEASONS - forSeason + 1).coerceAtLeast(1),
+            annualSalary = annualSalary(55, marketId, teamId, kind, multiplier),
+            signingBonus = null,
+            contractKind = kind,
+            rolePromise = role,
+            outlook = outlook,
+            expectation = expectation,
+            preservesTeamLegacy = preserves,
+        )
+        val external = ProCatalog.teams.filter { it.id != currentTeamId }.sortedBy { StableHash.fnv1a64("$marketId|${it.id}") }.take(2)
+        val faYears = ProCatalog.maximumContractYears(rulesVersion)
+        val offers = if (!freeAgency) {
+            listOf(
+                offer(currentTeamId, 3, 90, ProContractKind.RENEWAL_LONG, currentRole, ProTeamOutlook.BALANCED, true),
+                offer(currentTeamId, 1, 110, ProContractKind.PROVE_IT, currentRole, ProTeamOutlook.OPPORTUNITY, true),
+            )
+        } else {
+            listOf(
+                offer(currentTeamId, faYears, 100, ProContractKind.FREE_AGENT, currentRole, ProTeamOutlook.BALANCED, true),
+                offer(external[0].id, 2, 115, ProContractKind.FREE_AGENT, ProRole.LONG_RELIEF, ProTeamOutlook.CONTENDER, false),
+                offer(external[1].id, 1, 85, ProContractKind.FREE_AGENT, ProRole.STARTER, ProTeamOutlook.OPPORTUNITY, false),
+            )
+        }
+        return ProContractMarket(marketId, marketKind, forSeason, (state.lastSettlement?.season ?: 0).toULong(), offers)
+    }
+
     public fun rookieMarket(
         careerId: String,
         teamId: String,
@@ -182,6 +231,7 @@ public object ProJourneyKernel {
         yearsBefore: Int,
         yearsAfter: Int,
         nextRoute: ProSettlementNextRoute,
+        fanReasons: List<ProFanReason> = emptyList(),
     ): ProCareerJourneyState {
         val id = "settlement:$careerId:$season"
         if (state.lastSettlement?.id == id) return state
@@ -213,7 +263,7 @@ public object ProJourneyKernel {
             fanBefore = fanBefore,
             fanAfter = fanAfter,
             fanDelta = fanAfter - fanBefore,
-            fanReasons = emptyList(),
+            fanReasons = fanReasons,
             merchandiseTier = merchandiseTier(fanBefore),
             teamLegacyBefore = previousRecord?.let(::teamLegacy) ?: 0,
             teamLegacyAfter = (previousRecord?.let(::teamLegacy) ?: 0) + legacyDelta,
@@ -231,7 +281,10 @@ public object ProJourneyKernel {
         )
         return state.copy(
             teamRecords = state.teamRecords.filterNot { it.teamId == teamId } + record,
-            reputation = state.reputation.copy(fanSupport = fanAfter),
+            reputation = state.reputation.copy(
+                fanSupport = fanAfter,
+                lastMerchandiseTier = merchandiseTier(fanBefore),
+            ),
             finances = finances,
             lastSettlement = settlement,
             settlementAcknowledged = false,
@@ -252,22 +305,102 @@ public object ProJourneyKernel {
         endorsementAmount: Long,
         fanDelta: Int,
         communityDelta: Int,
+        teamId: String? = null,
     ): ProCareerJourneyState {
         val transactionId = "endorsement:$careerId:$season:$decisionId"
-        require(state.finances.transactions.none { it.id == transactionId }) { "pro.journey.endorsement_duplicate" }
-        val transaction = ProFinanceTransaction(transactionId, season, ProFinanceTransactionKind.ENDORSEMENT, endorsementAmount)
-        val teamId = state.lastSettlement?.teamId
-        val record = teamId?.let { state.teamRecords.firstOrNull { row -> row.teamId == it } }
-        val updatedRecord = record?.copy(communityPoints = record.communityPoints + communityDelta)
+        val transaction = if (endorsementAmount == 0L) {
+            null
+        } else {
+            require(state.finances.transactions.none { it.id == transactionId }) { "pro.journey.endorsement_duplicate" }
+            ProFinanceTransaction(transactionId, season, ProFinanceTransactionKind.ENDORSEMENT, endorsementAmount)
+        }
+        val resolvedTeamId = teamId ?: state.lastSettlement?.teamId
+        val record = resolvedTeamId?.let { id -> state.teamRecords.firstOrNull { row -> row.teamId == id } }
+        val updatedRecord = if (record == null || communityDelta == 0) null else record.copy(communityPoints = record.communityPoints + communityDelta)
         return state.copy(
             finances = state.finances.copy(
                 careerEarnings = state.finances.careerEarnings + endorsementAmount,
                 availableFunds = state.finances.availableFunds + endorsementAmount,
-                transactions = state.finances.transactions + transaction,
+                transactions = state.finances.transactions + listOfNotNull(transaction),
             ),
-            reputation = state.reputation.copy(fanSupport = (state.reputation.fanSupport + fanDelta).coerceIn(0, 100), endorsementSeasons = (state.reputation.endorsementSeasons + season).distinct().sorted()),
+            reputation = state.reputation.copy(
+                fanSupport = (state.reputation.fanSupport + fanDelta).coerceIn(0, 100),
+                endorsementSeasons = if (endorsementAmount == 0L) {
+                    state.reputation.endorsementSeasons
+                } else {
+                    (state.reputation.endorsementSeasons + season).distinct().sorted()
+                },
+            ),
             teamRecords = if (updatedRecord == null) state.teamRecords else state.teamRecords.filterNot { it.teamId == updatedRecord.teamId } + updatedRecord,
         )
+    }
+
+    public fun merchandiseIncome(fanSupport: Int): Long =
+        (fanSupport.coerceIn(0, 100).toLong() * 500_000L).coerceAtMost(50_000_000L)
+
+    public fun settlementFanReasons(state: ProState): List<ProFanReason> {
+        val reasons = mutableListOf<ProFanReason>()
+        val careerId = state.careerId
+        val season = state.season
+        state.currentGameLines.filter { it.season == season && it.played }.sortedWith(compareBy({ it.week }, { it.outingNumber })).forEach { line ->
+            when {
+                line.runsAllowed == 0 -> reasons += ProFanReason(
+                    id = "fan-reason:$careerId:$season:${ProFanReasonKind.IMPORTANT_GAME_SCORELESS.wire}:pro.fan.important-game.scoreless:${line.outingNumber}",
+                    kind = ProFanReasonKind.IMPORTANT_GAME_SCORELESS,
+                    contentId = "pro.fan.important-game.scoreless",
+                    delta = 2,
+                )
+                line.runsAllowed >= 3 -> reasons += ProFanReason(
+                    id = "fan-reason:$careerId:$season:${ProFanReasonKind.IMPORTANT_GAME_RUNS_ALLOWED.wire}:pro.fan.important-game.runs-allowed:${line.outingNumber}",
+                    kind = ProFanReasonKind.IMPORTANT_GAME_RUNS_ALLOWED,
+                    contentId = "pro.fan.important-game.runs-allowed",
+                    delta = -1,
+                )
+            }
+        }
+        (ProCareerRecognitionRules.awardContentIDs(state.currentStats, state.journeyState?.rulesVersion ?: 1) + listOfNotNull("pro.autumn.champion".takeIf { state.postseason?.result == ProPostseasonResult.CHAMPION })).sorted().take(2).forEachIndexed { index, award ->
+            reasons += ProFanReason(
+                id = "fan-reason:$careerId:$season:${ProFanReasonKind.SEASON_AWARD.wire}:$award:$index",
+                kind = ProFanReasonKind.SEASON_AWARD,
+                contentId = award,
+                delta = 4,
+            )
+        }
+        if (state.currentStats.teamId == state.team.id) {
+            reasons += ProFanReason(
+                id = "fan-reason:$careerId:$season:${ProFanReasonKind.SAME_TEAM_SEASON.wire}:pro.fan.same-team-season:0",
+                kind = ProFanReasonKind.SAME_TEAM_SEASON,
+                contentId = "pro.fan.same-team-season",
+                delta = 1,
+            )
+        }
+        fun milestone(kind: String, prior: Int, current: Int, marks: List<Int>) {
+            marks.filter { prior < it && current >= it }.forEach { mark ->
+                val content = "pro.milestone.career.$kind.$mark"
+                reasons += ProFanReason("fan-reason:$careerId:$season:career_milestone:$content:0", ProFanReasonKind.CAREER_MILESTONE, content, 2)
+            }
+        }
+        milestone("games", state.careerStats.sumOf { it.games }, state.careerStats.sumOf { it.games } + state.currentStats.games, listOf(50, 100, 300))
+        milestone("strikeouts", state.careerStats.sumOf { it.strikeouts }, state.careerStats.sumOf { it.strikeouts } + state.currentStats.strikeouts, listOf(50, 100, 200, 500))
+        contractExpectationMet(state)?.let { met ->
+            val kind = if (met) ProFanReasonKind.CONTRACT_EXPECTATION_MET else ProFanReasonKind.CONTRACT_EXPECTATION_MISSED
+            val content = "pro.fan.contract-expectation.${if (met) "met" else "missed"}"
+            reasons += ProFanReason("fan-reason:$careerId:$season:${kind.wire}:$content:0", kind, content, if (met) 3 else -1)
+        }
+        return reasons.sortedBy { it.id }
+    }
+
+    public fun contractExpectation(state: ProState): ProContractExpectation? = state.journeyState?.contractHistory?.lastOrNull { it.teamId == state.team.id && it.endedSeason == null }?.expectation
+    public fun contractExpectationActual(state: ProState): Int? = contractExpectation(state)?.let { e -> when (e.kind) {
+        ProContractExpectationKind.MAJOR_ROSTER -> if (state.level == ProLevel.MAJOR) 1 else 0
+        ProContractExpectationKind.INNINGS -> state.currentStats.inningsOuts
+        ProContractExpectationKind.STRIKEOUTS -> state.currentStats.strikeouts
+        ProContractExpectationKind.SAVES -> state.currentStats.saves
+        ProContractExpectationKind.RUN_PREVENTION -> state.currentStats.runPerNinePermille.takeIf { state.currentStats.inningsOuts >= 60 }
+    } }
+    public fun contractExpectationMet(state: ProState): Boolean? = contractExpectation(state)?.let { e ->
+        val actual = contractExpectationActual(state)
+        actual != null && if (e.kind == ProContractExpectationKind.RUN_PREVENTION) actual <= e.target else actual >= e.target
     }
 
     public fun completeActiveGoal(state: ProCareerJourneyState, careerId: String, season: Int): ProCareerJourneyState {
@@ -299,20 +432,22 @@ public object ProJourneyKernel {
         val rules = state.rulesVersion
         val lastLegacy = last?.let { teamLegacy(it, rules) } ?: 0
         val retiredNumber = last != null && last.completedSeasons >= RETIRED_NUMBER_SEASONS && lastLegacy >= RETIRED_NUMBER_LEGACY && state.reputation.fanSupport >= RETIRED_NUMBER_FAN
+        val clubHalls = state.teamRecords.filter { it.completedSeasons >= 6 && teamLegacy(it, rules) >= 65 && (!retiredNumber || it.teamId != lastTeamId) }.map { it.teamId }.sorted()
         val honors = buildList {
             if (retiredNumber) add(ProRetirementHonor("retired-number:$lastTeamId", ProRetirementHonorKind.RETIRED_NUMBER, lastTeamId, null, null))
             if ((state.lastSettlement?.hallOfFameAfter ?: 0) >= 70) add(ProRetirementHonor("hof:$lastTeamId", ProRetirementHonorKind.HALL_OF_FAME, null, null, state.lastSettlement?.hallOfFameAfter?.toLong()))
+            clubHalls.forEach { add(ProRetirementHonor("club-hall:$it", ProRetirementHonorKind.CLUB_HALL, it, null, null)) }
             completed.forEach { add(ProRetirementHonor("ambition:${it.wire}", ProRetirementHonorKind.AMBITION_COMPLETED, lastTeamId, it.wire, null)) }
             add(ProRetirementHonor("earnings", ProRetirementHonorKind.CAREER_EARNINGS, null, null, state.finances.careerEarnings))
         }
         return ProCareerRetirementProjection(
-            finalScore = (state.lastSettlement?.hallOfFameAfter ?: 0) + state.reputation.fanSupport,
+            finalScore = state.lastSettlement?.hallOfFameAfter ?: 0,
             lastTeamId = lastTeamId,
             lastTeamSeasons = last?.completedSeasons ?: 0,
             lastTeamLegacy = lastLegacy,
             fanSupport = state.reputation.fanSupport,
             retiredNumberEligible = retiredNumber,
-            clubHallTeamIds = state.teamRecords.filter { it.completedSeasons >= 6 && teamLegacy(it, rules) >= 65 }.map { it.teamId }.sorted(),
+            clubHallTeamIds = clubHalls,
             completedAmbitions = completed,
             careerEarnings = state.finances.careerEarnings,
             honors = honors,
