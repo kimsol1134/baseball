@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">野球がダメならまた転生</string>
+    <string name="share_action">共有する</string>
+    <string name="share_draft_title">ドラフト結果</string>
+    <string name="share_national_title">環太平洋招待大会</string>
+    <string name="share_retirement_title">引退記録</string>
+    <string name="share_records_title">記録</string>
+    <string name="choice_heading_training">今日の練習</string>
+    <string name="choice_heading_relationship">今回の返事</string>
+    <string name="choice_heading_week">今週の選択</string>
+    <string name="pitch_hold_to_release">長押しして離す</string>
+    <string name="opening_what_this_is">転生して投手を続けるゲームです。基本の投球はピッチスライダーです。</string>
+    <string name="settings_auto_release">自動リリースは補助操作です。基本は長押しでワインドアップです。</string>
+</resources>

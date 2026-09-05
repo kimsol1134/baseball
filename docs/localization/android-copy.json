@@ -1,0 +1,512 @@
+{
+  "android.setup.preset-description": {
+    "ko": "%1$s. 구위 %2$d, 제구 %3$d, 무브먼트 %4$d, 체력 %5$d",
+    "en": "%1$s. Stuff %2$d, command %3$d, movement %4$d, stamina %5$d",
+    "ja": "%1$s。球威 %2$d、制球 %3$d、変化量 %4$d、体力 %5$d"
+  },
+  "android.pitch.inning": {
+    "ko": "이닝 %1$d",
+    "en": "Inning %1$d",
+    "ja": "%1$d回"
+  },
+  "android.app.name": {
+    "ko": "야구 못하면 또 환생함",
+    "en": "Mound Reborn",
+    "ja": "野球がダメならまた転生"
+  },
+  "android.setup.title": {
+    "ko": "선수 만들기",
+    "en": "Create your pitcher",
+    "ja": "投手を作成"
+  },
+  "android.setup.start": {
+    "ko": "고교 이야기 시작",
+    "en": "Start your high school story",
+    "ja": "高校生活を始める"
+  },
+  "android.setup.name": {
+    "ko": "선수 이름",
+    "en": "Player name",
+    "ja": "選手名"
+  },
+  "android.setup.name-hint": {
+    "ko": "비워 두면 민서준으로 시작합니다",
+    "en": "Leave blank to use Min Seo-jun",
+    "ja": "空欄ならミン・ソジュンで始めます"
+  },
+  "android.setup.name-step": {
+    "ko": "이름을 정합니다",
+    "en": "Choose a name",
+    "ja": "名前を決める"
+  },
+  "android.setup.region-step": {
+    "ko": "지역을 고릅니다",
+    "en": "Choose a region",
+    "ja": "地域を選ぶ"
+  },
+  "android.setup.style-step": {
+    "ko": "투수 유형과 손을 고릅니다",
+    "en": "Choose a style and throwing hand",
+    "ja": "投手タイプと利き腕を選ぶ"
+  },
+  "android.setup.pitch-step": {
+    "ko": "구종 구성을 고릅니다",
+    "en": "Build your repertoire",
+    "ja": "持ち球を組み立てる"
+  },
+  "android.setup.legacy-step": {
+    "ko": "다음 생의 계승을 고릅니다",
+    "en": "Choose what carries into this life",
+    "ja": "次の人生に引き継ぐ力を選ぶ"
+  },
+  "android.opening.prepare": {
+    "ko": "선수 준비하기",
+    "en": "Create your pitcher",
+    "ja": "投手を作成する"
+  },
+  "android.opening.tagline": {
+    "ko": "환생 투수 커리어",
+    "en": "A pitching career across lifetimes",
+    "ja": "転生を重ねる投手人生"
+  },
+  "android.action.story": {
+    "ko": "← 이야기",
+    "en": "← Story",
+    "ja": "← ストーリー"
+  },
+  "android.action.help": {
+    "ko": "야구 용어",
+    "en": "Baseball terms",
+    "ja": "野球用語"
+  },
+  "android.pitch.first-choices": {
+    "ko": "첫 공의 선택",
+    "en": "Your first pitch",
+    "ja": "最初の一球"
+  },
+  "android.pitch.first-hint": {
+    "ko": "처음에는 포수의 사인을 따라 던져 보세요.",
+    "en": "Try following your catcher's sign for the first pitch.",
+    "ja": "最初は捕手のサインに合わせて投げてみましょう。"
+  },
+  "android.pitch.hold-release": {
+    "ko": "누르고 초록 구간에서 놓기",
+    "en": "Hold, then release in the green zone",
+    "ja": "長押しして緑の範囲で離す"
+  },
+  "android.pitch.slider-help": {
+    "ko": "누른 채 조준을 맞추고, 슬라이더가 초록 구간에 오면 손을 뗍니다.",
+    "en": "Aim while holding. Lift your finger when the slider reaches the green zone.",
+    "ja": "長押ししたまま狙いを定め、スライダーが緑の範囲に来たら指を離します。"
+  },
+  "android.pitch.current": {
+    "ko": "현재 투구",
+    "en": "Current pitch",
+    "ja": "今回の投球"
+  },
+  "android.pitch.continue-help": {
+    "ko": "한 구를 던지고 결과를 확인하면 다음으로 이어집니다.",
+    "en": "Throw a pitch and review the result to continue.",
+    "ja": "一球投げて結果を確認すると、次へ進みます。"
+  },
+  "android.rebirth.quick": {
+    "ko": "빠른 다음 생",
+    "en": "Quick reincarnation",
+    "ja": "すぐに次の人生へ"
+  },
+  "android.rebirth.custom": {
+    "ko": "다음 생 설정하기",
+    "en": "Customize your next life",
+    "ja": "次の人生を設定する"
+  },
+  "android.rebirth.difficulty": {
+    "ko": "이번 생의 난이도",
+    "en": "This life's difficulty",
+    "ja": "今回の人生の難易度"
+  },
+  "android.rebirth.domain": {
+    "ko": "야구혼 계승 분야",
+    "en": "Baseball spirit focus",
+    "ja": "野球魂の継承分野"
+  },
+  "android.rebirth.body": {
+    "ko": "몸 · 구위",
+    "en": "Body · stuff",
+    "ja": "身体・球威"
+  },
+  "android.rebirth.technique": {
+    "ko": "기술 · 제구",
+    "en": "Technique · control",
+    "ja": "技術・制球"
+  },
+  "android.rebirth.game": {
+    "ko": "경기 · 운영",
+    "en": "Game · tactics",
+    "ja": "試合・組み立て"
+  },
+  "android.rebirth.gentle": {
+    "ko": "부드럽게",
+    "en": "Relaxed",
+    "ja": "やさしく"
+  },
+  "android.rebirth.harsh": {
+    "ko": "혹독하게",
+    "en": "Challenging",
+    "ja": "厳しく"
+  },
+  "android.rebirth.boost-talent": {
+    "ko": "재능의 벽 확장",
+    "en": "Raise your talent ceiling",
+    "ja": "才能の壁を広げる"
+  },
+  "android.rebirth.boost-memory": {
+    "ko": "기억 한 자리 추가",
+    "en": "One extra memory slot",
+    "ja": "記憶枠を一つ追加"
+  },
+  "android.rebirth.boost-start": {
+    "ko": "시작 능력 보너스",
+    "en": "Starting ability bonus",
+    "ja": "初期能力ボーナス"
+  },
+  "android.rebirth.boost-rhythm": {
+    "ko": "훈련 리듬",
+    "en": "Training rhythm",
+    "ja": "練習のリズム"
+  },
+  "android.rebirth.boost-wallet": {
+    "ko": "영혼 상점 · 잔액 %1$d · 사용 %2$d",
+    "en": "Spirit shop · balance %1$d · spending %2$d",
+    "ja": "魂の店・残高 %1$d・使用 %2$d"
+  },
+  "android.pro.role-section": {
+    "ko": "스프링캠프 보직 지원",
+    "en": "Spring camp role request",
+    "ja": "春季キャンプの役割希望"
+  },
+  "android.pro.role-result": {
+    "ko": "보직 지원 결과",
+    "en": "Role request result",
+    "ja": "役割希望の結果"
+  },
+  "android.pro.followup-section": {
+    "ko": "지난 선택의 결과",
+    "en": "How your choice turned out",
+    "ja": "前の選択がもたらした結果"
+  },
+  "android.pro.followup-trial": {
+    "ko": "제구 회복 +%1$d · 실전 시험을 마쳤습니다.",
+    "en": "Control restored +%1$d · Live trial complete.",
+    "ja": "制球回復 +%1$d・実戦テストが終わりました。"
+  },
+  "android.pro.followup-farm": {
+    "ko": "3주 재정비 완료 · 감독의 믿음 +%1$d · 등판 복귀",
+    "en": "Three-week reset complete · Manager trust +%1$d · Back to pitching",
+    "ja": "3週間の立て直し完了・監督の信頼 +%1$d・登板復帰"
+  },
+  "android.pro.followup-rotation": {
+    "ko": "3주간 결과 · QS %1$d · 실점 %2$d",
+    "en": "Three-week results · QS %1$d · Runs allowed %2$d",
+    "ja": "3週間の結果・QS %1$d・失点 %2$d"
+  },
+  "android.pro.followup-mentor": {
+    "ko": "3주간 성장 · 구위 %1$d · 제구 %2$d · 무브먼트 %3$d",
+    "en": "Three-week growth · Stuff %1$d · Control %2$d · Movement %3$d",
+    "ja": "3週間の成長・球威 %1$d・制球 %2$d・変化量 %3$d"
+  },
+  "android.opening.headline": {
+    "ko": "한 구를 던지고,\n한 생을 남기세요.",
+    "en": "Throw a pitch.\nLeave a legacy.",
+    "ja": "一球を投げ、\n人生の証を残そう。"
+  },
+  "android.opening.journey": {
+    "ko": "고교에서 배우고, 프로에서 승부하고, 은퇴 뒤에는 다음 생으로 이어집니다.",
+    "en": "Learn in high school, compete as a pro, and carry your legacy into the next life.",
+    "ja": "高校で学び、プロで勝負し、引退したら次の人生へ引き継ぎます。"
+  },
+  "android.opening.slider": {
+    "ko": "슬라이더의 타이밍을 직접 맞춰 공을 던집니다. 처음에는 포수의 사인을 따라 해 보세요.",
+    "en": "Time the slider yourself to throw. Start by following your catcher’s sign.",
+    "ja": "スライダーのタイミングを自分で合わせて投球します。最初は捕手のサインに従ってみましょう。"
+  },
+  "android.opening.save": {
+    "ko": "진행은 자동으로 저장됩니다.",
+    "en": "Your progress saves automatically.",
+    "ja": "進行状況は自動で保存されます。"
+  },
+  "android.setup.name-question": {
+    "ko": "어떤 이름으로 불릴까요?",
+    "en": "What should we call you?",
+    "ja": "どんな名前で呼ばれたいですか？"
+  },
+  "android.setup.region-question": {
+    "ko": "어디에서 시작할까요?",
+    "en": "Where does your story begin?",
+    "ja": "どこから始めますか？"
+  },
+  "android.setup.style-question": {
+    "ko": "어떤 투수가 되고 싶나요?",
+    "en": "What kind of pitcher will you be?",
+    "ja": "どんな投手を目指す？"
+  },
+  "android.setup.pitch-question": {
+    "ko": "어떤 공으로 승부할까요?",
+    "en": "Which pitches will define you?",
+    "ja": "どんな球で勝負しますか？"
+  },
+  "android.setup.legacy-question": {
+    "ko": "이번 생에는 무엇을 이어받을까요?",
+    "en": "What will you carry into this life?",
+    "ja": "今回の人生に何を引き継ぎますか？"
+  },
+  "android.setup.confirm": {
+    "ko": "이 투수로 시작하기",
+    "en": "Begin with this pitcher",
+    "ja": "この投手で開始"
+  },
+  "android.screen.home": {
+    "ko": "나의 야구 인생",
+    "en": "Your baseball life",
+    "ja": "あなたの野球人生"
+  },
+  "android.screen.setup": {
+    "ko": "새로운 투수",
+    "en": "A new pitcher",
+    "ja": "新しい投手"
+  },
+  "android.pitch.slider-description": {
+    "ko": "투구 슬라이더. 누르고 조준한 뒤 놓으면 던집니다.",
+    "en": "Pitch slider. Hold and aim, then release to throw.",
+    "ja": "投球スライダー。長押しして狙いを定め、離すと投げます。"
+  },
+  "android.pitch.timing.perfect": {
+    "ko": "★ 퍼펙트 릴리스",
+    "en": "★ Perfect release",
+    "ja": "★ パーフェクトリリース"
+  },
+  "android.pitch.timing.good": {
+    "ko": "좋은 타이밍",
+    "en": "Good timing",
+    "ja": "良いタイミング"
+  },
+  "android.pitch.timing.close": {
+    "ko": "초록 구간에 가까웠습니다",
+    "en": "Close to the green zone",
+    "ja": "緑の範囲までもう少し"
+  },
+  "android.pitch.timing.miss": {
+    "ko": "초록 구간을 놓쳤습니다",
+    "en": "Missed the green zone",
+    "ja": "緑の範囲を逃しました"
+  },
+  "android.challenge.title": {
+    "ko": "같은 조건에 도전",
+    "en": "Challenge the same conditions",
+    "ja": "同じ条件に挑戦"
+  },
+  "android.challenge.explanation": {
+    "ko": "원래 커리어를 보관하고 별도로 플레이합니다. 계승한 힘은 쓰지 않으며, 언제든 원래 이야기로 돌아올 수 있습니다.",
+    "en": "Play a separate challenge while keeping your career safe. Inherited bonuses are excluded, and you can return to your story at any time.",
+    "ja": "元の人生を残して、別の挑戦を遊びます。継承した力は使わず、いつでも元の物語に戻れます。"
+  },
+  "android.challenge.code": {
+    "ko": "도전 코드 또는 링크",
+    "en": "Challenge code or link",
+    "ja": "挑戦コードまたはリンク"
+  },
+  "android.challenge.generate": {
+    "ko": "새 코드 만들기",
+    "en": "New code",
+    "ja": "新しいコード"
+  },
+  "android.challenge.invitation": {
+    "ko": "함께 도전해요",
+    "en": "Take the challenge together",
+    "ja": "一緒に挑戦しよう"
+  },
+  "android.challenge.share-code": {
+    "ko": "도전 코드 %1$s",
+    "en": "Challenge code %1$s",
+    "ja": "挑戦コード %1$s"
+  },
+  "android.challenge.share": {
+    "ko": "링크 공유",
+    "en": "Share link",
+    "ja": "リンクを共有"
+  },
+  "android.challenge.style": {
+    "ko": "이번 도전의 투수 유형",
+    "en": "Pitcher style for this challenge",
+    "ja": "今回の投手タイプ"
+  },
+  "android.challenge.preset.power_prospect": {
+    "ko": "강속구형",
+    "en": "Power pitcher",
+    "ja": "速球型"
+  },
+  "android.challenge.preset.precision_commander": {
+    "ko": "정밀 제구형",
+    "en": "Control pitcher",
+    "ja": "精密制球型"
+  },
+  "android.challenge.preset.breaking_ball_artist": {
+    "ko": "변화구형",
+    "en": "Breaking-ball artist",
+    "ja": "変化球型"
+  },
+  "android.challenge.preset.innings_eater": {
+    "ko": "이닝 소화형",
+    "en": "Innings eater",
+    "ja": "長いイニングを投げる型"
+  },
+  "android.challenge.wait": {
+    "ko": "진행 중인 투구나 설정을 마친 뒤 도전을 시작할 수 있습니다.",
+    "en": "Finish the current pitch or setup before starting the challenge.",
+    "ja": "進行中の投球や設定を終えてから挑戦できます。"
+  },
+  "android.challenge.start": {
+    "ko": "도전 시작",
+    "en": "Start challenge",
+    "ja": "挑戦を始める"
+  },
+  "android.challenge.later": {
+    "ko": "나중에",
+    "en": "Later",
+    "ja": "あとで"
+  },
+  "android.challenge.exit-title": {
+    "ko": "도전을 마칠까요?",
+    "en": "Finish this challenge?",
+    "ja": "挑戦を終えますか？"
+  },
+  "android.challenge.exit-body": {
+    "ko": "이 도전의 진행을 마치고 원래 이야기로 돌아갑니다. 원래 커리어의 기록과 야구혼은 그대로입니다.",
+    "en": "End this challenge and return to your story. Your original career records and baseball spirit stay intact.",
+    "ja": "この挑戦を終えて元の物語に戻ります。元の人生の記録と野球魂はそのままです。"
+  },
+  "android.challenge.exit": {
+    "ko": "원래 이야기로",
+    "en": "Return to your story",
+    "ja": "元の物語へ"
+  },
+  "android.challenge.keep-playing": {
+    "ko": "계속 도전하기",
+    "en": "Keep playing",
+    "ja": "挑戦を続ける"
+  },
+  "android.challenge.invalid-title": {
+    "ko": "도전 코드를 확인해 주세요",
+    "en": "Check the challenge code",
+    "ja": "挑戦コードを確認してください"
+  },
+  "android.challenge.invalid-body": {
+    "ko": "12345-1 형태의 코드나 이 게임의 도전 링크를 입력해 주세요.",
+    "en": "Enter a code such as 12345-1 or a challenge link from this game.",
+    "ja": "12345-1のようなコードか、このゲームの挑戦リンクを入力してください。"
+  },
+  "android.challenge.ok": {
+    "ko": "확인",
+    "en": "OK",
+    "ja": "確認"
+  },
+  "android.challenge.open": {
+    "ko": "도전 코드",
+    "en": "Challenge code",
+    "ja": "挑戦コード"
+  },
+  "android.challenge.pending": {
+    "ko": "도전 링크 열기",
+    "en": "Open your challenge",
+    "ja": "届いた挑戦を開く"
+  },
+  "android.challenge.player": {
+    "ko": "도전 투수",
+    "en": "Challenger",
+    "ja": "挑戦する投手"
+  },
+  "android.challenge.screen-title": {
+    "ko": "도전 · %1$s",
+    "en": "Challenge · %1$s",
+    "ja": "挑戦・%1$s"
+  },
+  "android.challenge.result": {
+    "ko": "도전 결과",
+    "en": "Challenge result",
+    "ja": "挑戦の結果"
+  },
+  "android.school.question": {
+    "ko": "어느 학교에서 시작할까요?",
+    "en": "Which school will you choose?",
+    "ja": "どの学校で始めますか？"
+  },
+  "android.training.question": {
+    "ko": "오늘은 무엇을 다듬을까요?",
+    "en": "What will you work on today?",
+    "ja": "今日は何を磨きますか？"
+  },
+  "android.training.condition": {
+    "ko": "피로 %1$d · 팔 부담 %2$d",
+    "en": "Fatigue %1$d · Arm strain %2$d",
+    "ja": "疲労 %1$d・腕への負担 %2$d"
+  },
+  "android.training.recovery-hint": {
+    "ko": "몸이 지쳤습니다. 회복을 섞어 다음 등판을 준비해 보세요.",
+    "en": "You are tired. Mix in recovery to prepare for the next outing.",
+    "ja": "体が疲れています。回復を挟んで次の登板に備えましょう。"
+  },
+  "android.week.question": {
+    "ko": "이번 주는 어떻게 보낼까요?",
+    "en": "How will you spend this week?",
+    "ja": "今週はどう過ごしますか？"
+  },
+  "android.week.condition": {
+    "ko": "%1$d주차 · 피로 %2$d",
+    "en": "Week %1$d · Fatigue %2$d",
+    "ja": "%1$d週目・疲労 %2$d"
+  },
+  "android.week.role-request": {
+    "ko": "이번 시즌 보직 지원",
+    "en": "Request a role for this season",
+    "ja": "今季の役割を希望する"
+  },
+  "android.details.show": {
+    "ko": "상세 기록 보기",
+    "en": "View detailed records",
+    "ja": "詳しい記録を見る"
+  },
+  "android.details.hide": {
+    "ko": "상세 기록 접기",
+    "en": "Hide detailed records",
+    "ja": "詳しい記録を閉じる"
+  },
+  "android.core.option-selected": {
+    "ko": "%@ 선택됨",
+    "en": "%@ selected",
+    "ja": "%@ 選択中"
+  },
+  "android.core.option-available": {
+    "ko": "%@ 선택 가능",
+    "en": "%@ available",
+    "ja": "%@ 選択可能"
+  },
+  "android.core.rationale-power": {
+    "ko": "강속구형의 포심·구속 강점을 반영한 사인입니다.",
+    "en": "This call uses the power build’s fastball and velocity strengths.",
+    "ja": "速球型のストレートと球速の強みを活かすサインです。"
+  },
+  "android.core.rationale-command": {
+    "ko": "정밀 제구형의 코스 반복 정확도를 반영한 사인입니다.",
+    "en": "This call uses the control build’s consistent location.",
+    "ja": "制球型の安定したコントロールを活かすサインです。"
+  },
+  "android.core.rationale-movement": {
+    "ko": "변화구형의 결정구 움직임을 반영한 사인입니다.",
+    "en": "This call uses the breaking-ball build’s finishing pitch.",
+    "ja": "変化球型の決め球の変化を活かすサインです。"
+  },
+  "android.core.rationale-stamina": {
+    "ko": "이닝 소화형의 효율 좋은 구종을 반영한 사인입니다.",
+    "en": "This call uses the endurance build’s efficient pitches.",
+    "ja": "スタミナ型の効率のよい球種を活かすサインです。"
+  }
+}

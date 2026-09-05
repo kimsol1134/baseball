@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Mound Reborn</string>
+    <string name="share_action">Share</string>
+    <string name="share_draft_title">Draft result</string>
+    <string name="share_national_title">Pacific Rim Invitational</string>
+    <string name="share_retirement_title">Retirement record</string>
+    <string name="share_records_title">Records</string>
+    <string name="choice_heading_training">Today\'s training</string>
+    <string name="choice_heading_relationship">Your answer</string>
+    <string name="choice_heading_week">This week\'s plan</string>
+    <string name="pitch_hold_to_release">Hold, then release</string>
+    <string name="opening_what_this_is">A reincarnation pitching career. The default throw is the pitch slider.</string>
+    <string name="settings_auto_release">Auto-release is an accessibility aid. The default throw is hold to wind up.</string>
+</resources>
