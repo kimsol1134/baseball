@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { AppStoreButton } from "@/components/AppStoreButton";
-import { APP_STORE_ID, STOREFRONT_NEUTRAL_APP_STORE_URL } from "@/lib/links";
+import { GOOGLE_PLAY_URL, STOREFRONT_NEUTRAL_APP_STORE_URL } from "@/lib/links";
 
 type ChallengePageProps = {
   params: Promise<{ token: string }>;
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: ChallengePageProps): Promise<
   const { token } = await params;
   const title = `같은 시드로 도전 · ${token}`;
   const description =
-    "같은 시드로 누가 더 잘 키우나. 앱에서 도전을 열거나 App Store에서 설치하세요.";
+    "같은 조건에서 누가 더 잘 키우나. 앱에서 도전을 열거나 사용 중인 휴대전화의 스토어를 확인하세요.";
   return {
     title,
     description,
@@ -66,7 +66,7 @@ export default async function ChallengePage({ params }: ChallengePageProps) {
           {token}
         </p>
         <p className="section-description">
-          앱이 있으면 바로 열고, 없으면 App Store에서 설치한 뒤 같은 코드로 시작하세요.
+          앱이 있으면 바로 열고, 없으면 휴대전화에 맞는 스토어에서 설치한 뒤 같은 코드를 입력하세요.
         </p>
         <div className="challenge-actions">
           <a className="button button-primary" href={schemeHref}>
@@ -75,8 +75,10 @@ export default async function ChallengePage({ params }: ChallengePageProps) {
           <AppStoreButton href={storeHref} target="_blank" rel="noreferrer">
             App Store에서 받기
           </AppStoreButton>
+          <a className="button button-secondary" href={GOOGLE_PLAY_URL} target="_blank" rel="noreferrer">
+            Google Play에서 보기
+          </a>
         </div>
-        <p className="challenge-store-id">App Store id{APP_STORE_ID}</p>
       </section>
     </main>
   );

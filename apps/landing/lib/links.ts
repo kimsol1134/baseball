@@ -5,6 +5,7 @@ export type StorefrontLocale = "ko" | "en";
 /// App Store 앱 페이지. 심사 통과 전에도 Apple ID가 정해져 있어 주소는 확정이다.
 export const APP_STORE_ID = "6794754217";
 export const STOREFRONT_NEUTRAL_APP_STORE_URL = `https://apps.apple.com/app/id${APP_STORE_ID}`;
+export const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.solkim.baseball.android";
 export const KOREA_APP_STORE_URL = `https://apps.apple.com/kr/app/id${APP_STORE_ID}`;
 
 function trackedUrl(rawUrl: string, content: string, campaign: string) {
