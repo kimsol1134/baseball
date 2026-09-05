@@ -172,7 +172,7 @@ internal fun ControlWindowPreview(command: Int, before: Int? = null, compact: Bo
             color = if (expanded) BaseballColors.action else BaseballColors.textSecondary)
         androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(if (compact) 12.dp else 18.dp)) {
             val radius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx())
-            drawRoundRect(BaseballColors.surfaceRaised, cornerRadius = radius)
+            drawRoundRect(BaseballColors.canvas, cornerRadius = radius)
             drawRoundRect(BaseballColors.action.copy(alpha = 0.6f), topLeft = androidx.compose.ui.geometry.Offset(size.width * (0.5f - width / 2), 0f),
                 size = androidx.compose.ui.geometry.Size(size.width * width, size.height), cornerRadius = radius)
             if (old != null && old != width) for (side in listOf(-1, 1)) {

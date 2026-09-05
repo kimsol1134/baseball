@@ -38,7 +38,25 @@
 
 - Swift 코어: 13개 테스트 통과. 모든 입력 점수 0~1000·제구 20~80 조합에서 단조성, 보정 상한, 퍼펙트 불변성을 검사했다.
 - Swift/Kotlin의 공통 제구·릴리스 검증 벡터 일치. Kotlin은 좌우 대칭과 60/120Hz 시간 표본도 검사했다.
-- iOS 첫 검사: 단위 및 실제 수동 투구·제구 훈련 UI 26개 통과.
-- 최종 언어·실기기 검사 진행 중.
+- iOS: 단위 및 실제 수동 투구·제구 훈련·영어/일본어 첫 플레이 28개 통과. 숫자 중복을 줄인 최종 배치에서도 제구 훈련 UI를 재검증했고 마지막 빌드가 성공했다.
+- Android: Kotlin 조작 규칙 13개, 현지화 8개, 앱 검사 10개 통과. lint 오류 0개.
+- Galaxy A53: 투구 중 제구가 바뀌어도 현재 구간 고정, 취소 시 0구, 다음 의도한 릴리스는 1구인 실기기 검사 통과.
+- Galaxy A53: 제구 훈련의 실제 구간 비교와 파일 저장 재로드를 글자 크기 2배에서 검증했다.
+- Galaxy A53: 일본어 120Hz 요청·영어 60Hz 요청 설정에서 신규 플레이의 기본 슬라이더 투구 완료. 새 문구의 한글 대체 미노출 검사 통과.
+- 전체 제품 문구 검사: 내부 용어 38종·실존 야구 IP 42종 미노출.
+
+## 실제 실행 화면
+
+| iOS — 제구 성장 | Android — 글자 크기 2배 |
+|---|---|
+| ![iOS 제구 성장](/Users/solkim/Dev/baseball/docs/assets/mobile-core/control-window-ios-growth.png) | ![Android 제구 성장](/Users/solkim/Dev/baseball/docs/assets/mobile-core/control-window-android-growth.png) |
+
+서로 다른 실제 검증 회차의 화면이다. 표시선은 이전 안정 구간, 초록은 현재 구간, 금색은 그대로 유지되는 퍼펙트다.
+
+## 결과 파일
+
+- [iOS 검증 기록](/Users/solkim/Dev/baseball/artifacts/mobile-core/qa/control-window-ios-verification.json)
+- [Android 검증 기록](/Users/solkim/Dev/baseball/artifacts/mobile-core/qa/control-window-android-verification.json)
+- [Android QA APK](/Users/solkim/Dev/baseball/artifacts/mobile-core/qa/app-coreqa.apk)
 
 검증 앱은 기존 저장과 분리한 `.ios.coreqa`, `.android.core.compose.qa`다. 이 작업은 스토어 제출을 포함하지 않는다.

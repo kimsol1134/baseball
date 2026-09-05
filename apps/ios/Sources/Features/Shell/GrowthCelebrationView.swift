@@ -47,6 +47,10 @@ struct GrowthCelebrationView: View {
             // 같은 값을 큰 숫자와 게이지로 두 번 적으면 축하가 아니라 오류로 보인다
             // (QA P2-1). 큰 숫자 + "다음 단계까지"만 남긴다.
             ForEach(Array(orderedGains.prefix(1))) { gain in
+                if gain.ability == .command {
+                    Text(verbatim: HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver))
+                        .font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(accent)
+                } else {
                 StatTile(
                     label: copyResolver.resolve(gain.ability.displayCopyToken),
                     value: "\(AbilityDisplayScale.displayRating(gain.after))",
@@ -70,6 +74,7 @@ struct GrowthCelebrationView: View {
                     },
                     tone: accent
                 )
+                }
             }
             if let commandGain = gains.first(where: { $0.ability == .command }), commandGain.after != commandGain.before {
                 ControlWindowPreview(command: commandGain.after, beforeCommand: commandGain.before)
