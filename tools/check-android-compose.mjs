@@ -9,10 +9,9 @@ const required = [
   "apps/android/settings.gradle.kts",
   "apps/android/app/src/main/AndroidManifest.xml",
   "apps/android/app/src/main/java/com/solkim/baseball/android/MainActivity.kt",
-  "apps/android/app/src/main/java/com/solkim/baseball/android/PitchUnityActivity.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/PitchActivity.kt",
   "apps/android/app/src/main/java/com/solkim/baseball/android/PitchDeliveryControl.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pitch/PitchReleaseMeter.kt",
-  "apps/android/unity-runtime/src/main/kotlin/com/solkim/baseball/bridge/UnityRuntimeHost.kt",
   "apps/android/game-model/src/main/kotlin/com/solkim/baseball/model/PitchIpcModels.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pitch/PitchKernel.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolContentCatalog.kt",
@@ -38,12 +37,7 @@ const required = [
   "apps/android/game-core/src/test/resources/fixtures/swift-pitch-kernel-current-v1.json",
   "apps/android/game-core/src/test/resources/fixtures/swift-simulation-engine-golden-v1.json",
   "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/PitchPresentationFactory.kt",
-  "apps/android/unity-bridge/src/main/kotlin/com/solkim/baseball/bridge/PitchIpcCodec.kt",
-  "apps/android/unity-bridge/src/main/kotlin/com/solkim/baseball/bridge/PitchSessionGate.kt",
   "apps/android/game-persistence/src/main/kotlin/com/solkim/baseball/persistence/LegacySaveCodec.kt",
-  "apps/android-pitch-unity/Assets/PitchRuntime/Bridge/PitchBridgeReceiver.cs",
-  "apps/android-pitch-unity/Assets/PitchRuntime/Rendering/PitchTrajectoryRenderer.cs",
-  "tools/export-android-pitch-unity.sh",
   "tools/android-compose-build.sh",
   "tools/android-compose-instrumentation.sh",
   "tools/check-android-compose-release.mjs",
@@ -66,12 +60,8 @@ const kotlinContract = readFileSync(
   resolve(root, "apps/android/game-model/src/main/kotlin/com/solkim/baseball/model/PitchIpcModels.kt"),
   "utf8",
 );
-const csharpContract = readFileSync(
-  resolve(root, "apps/android-pitch-unity/Assets/PitchRuntime/Bridge/PitchIpcWire.cs"),
-  "utf8",
-);
 const activity = readFileSync(
-  resolve(root, "apps/android/app/src/main/java/com/solkim/baseball/android/PitchUnityActivity.kt"),
+  resolve(root, "apps/android/app/src/main/java/com/solkim/baseball/android/PitchActivity.kt"),
   "utf8",
 );
 const pitchKernel = readFileSync(
@@ -118,11 +108,7 @@ const wave6Feature = readFileSync(
   resolve(root, "apps/android/feature-career/src/main/kotlin/com/solkim/baseball/feature/career/ProCareerJourneyScreens.kt"),
   "utf8",
 );
-const unityRuntimeFiles = [
-  "apps/android-pitch-unity/Assets/PitchRuntime/Bridge/PitchBridgeReceiver.cs",
-  "apps/android-pitch-unity/Assets/PitchRuntime/Bridge/PitchIpcWire.cs",
-  "apps/android-pitch-unity/Assets/PitchRuntime/Rendering/PitchTrajectoryRenderer.cs",
-].map((relativePath) => readFileSync(resolve(root, relativePath), "utf8"));
+const settingsGradle = readFileSync(resolve(root, "apps/android/settings.gradle.kts"), "utf8");
 
 const productLabel = readFileSync(resolve(root, "apps/android/app/src/main/res/values/strings.xml"), "utf8");
 if (!productLabel.includes(">야구 못하면 또 환생함<")) {
@@ -149,7 +135,11 @@ if (!manifest.includes('android:resizeableActivity="false"')) {
 if (!appGradle.includes('applicationId = "com.solkim.baseball.android"')) {
   errors.push("production application ID is not explicit");
 }
-if (!appGradle.includes('applicationIdSuffix = ".compose.dev"')) {
+const suffixBranches = appGradle.match(/applicationIdSuffix\s*=\s*when\s*\{([^}]+)\}/)?.[1];
+const isolatedSuffixBranches = suffixBranches && /else\s*->\s*"\.compose\.dev"/.test(suffixBranches) &&
+  [...suffixBranches.matchAll(/->\s*"([^"]+)"/g)].every(match => /^\.(?:core\.)?compose\.(?:qa|dev)$/.test(match[1]));
+if (!isolatedSuffixBranches && !appGradle.includes('applicationIdSuffix = ".compose.dev"') &&
+    !appGradle.includes('applicationIdSuffix = if (providers.gradleProperty("baseballLaunchQa").orNull == "true") ".compose.qa" else ".compose.dev"')) {
   errors.push("debug fixture application ID suffix is not isolated");
 }
 if (!appGradle.includes('apply(plugin = "com.google.firebase.crashlytics")')) {
@@ -181,11 +171,17 @@ if (legacyRepository.includes("legacy_command_not_ported")) {
 if (!legacyBridge.includes("HighSchoolPhase4CommandStore") || !legacyBridge.includes("CSharpHighSchoolSnapshotWire")) {
   errors.push("C# legacy aggregate bridge is missing HighSchool write-back");
 }
-if (!manifest.includes("PitchUnityActivity") || !manifest.includes("MainActivity")) {
+if (!manifest.includes("PitchActivity") || !manifest.includes("MainActivity")) {
   errors.push("both shell and pitch activities must be declared");
 }
-if (!manifest.includes('android:name="com.unity3d.player.UnityPlayerActivity" tools:node="remove"')) {
-  errors.push("generated Unity launcher must be removed so Compose MainActivity is the sole product launcher");
+if (manifest.includes("PitchUnityActivity") || manifest.includes("UnityPlayerActivity")) {
+  errors.push("Unity pitch host must not remain in the product manifest");
+}
+if (settingsGradle.includes(":unity-bridge") || settingsGradle.includes(":unity-runtime") || settingsGradle.includes(":unityLibrary")) {
+  errors.push("Compose settings must not include Unity modules");
+}
+if (appGradle.includes('project(":unity-bridge")') || appGradle.includes('project(":unity-runtime")') || appGradle.includes('project(":unityLibrary")')) {
+  errors.push("Compose app must not depend on Unity modules");
 }
 for (const marker of [
   'SCHEMA: String = "baseball-pitch-ipc-v1"',
@@ -194,7 +190,6 @@ for (const marker of [
   "sessionId",
   "presentationSeed",
   "PitchTerminalResult",
-  "UNITY_UNLOADED",
 ]) {
   if (!kotlinContract.includes(marker)) errors.push(`Kotlin IPC contract marker missing: ${marker}`);
 }
@@ -242,23 +237,14 @@ for (const marker of [
 ]) {
   if (!wave6Feature.includes(marker)) errors.push(`Wave 6 Compose surface marker missing: ${marker}`);
 }
-for (const marker of [
-  'Schema = "baseball-pitch-ipc-v1"',
-  "SchemaVersion = 1",
-  "messageId",
-  "sessionId",
-  "presentationSeed",
-]) {
-  if (!csharpContract.includes(marker)) errors.push(`C# IPC contract marker missing: ${marker}`);
-}
-if (!activity.includes("unityHost.close()") || !activity.includes("OnBackPressedCallback")) {
+if (!activity.includes("OnBackPressedCallback") || !activity.includes("finish()")) {
   errors.push("pitch Activity must own explicit close and back lifecycle");
 }
 if (!activity.includes("onNewIntent") || !activity.includes("FLAG_ACTIVITY_REORDER_TO_FRONT")) {
   errors.push("pitch Activity must retain the one-runtime re-entry route");
 }
-if (!activity.includes("KotlinPitchPresentationSession") || activity.includes("DemoPitchRequests")) {
-  errors.push("pitch Activity must use the Kotlin authoritative presentation session");
+if (activity.includes("DemoPitchRequests") || activity.includes("UnityPlayer") || activity.includes("unityHost")) {
+  errors.push("pitch Activity must stay Compose-native without a Unity host");
 }
 if (activity.includes("Compose Pitch HUD") || activity.includes('Text("투구하기")')) {
   errors.push("pitch overlay still uses the one-tap migration HUD instead of the pitch slider");
@@ -271,7 +257,7 @@ const deliveryControl = readFileSync(
   "utf8",
 );
 for (const marker of [
-  "누르고 있다가 놓기",
+  "길게 눌러 와인드업",
   "PitchDelivery.NEUTRAL",
   "PitchReleaseMeter.delivery",
   "MINIMUM_HOLD_SECONDS",
@@ -366,15 +352,6 @@ for (const marker of [
   if (!presentationFactory.includes(marker)) errors.push(`presentation factory marker missing: ${marker}`);
 }
 
-// Unity receives a presentation snapshot and may acknowledge lifecycle/terminal state, but it
-// must not acquire a gameplay result generator. Keep this scan intentionally narrow so the IPC
-// terminal acknowledgement vocabulary remains allowed.
-for (const source of unityRuntimeFiles) {
-  for (const forbidden of ["PitchKernel", "PitchKernelResult", "SubmitPitch", "ResolvePitch", "GenerateResult", "GenerateOutcome"]) {
-    if (source.includes(forbidden)) errors.push(`Unity runtime contains Kotlin/gameplay authority marker: ${forbidden}`);
-  }
-}
-
 // This is intentionally a narrow source scan. It catches accidental real-world league/team
 // copy in the new migration surface without treating the oracle's historical fixtures as product
 // content. The shared copy checker remains the authority for the existing game content.
@@ -382,7 +359,7 @@ const blockedWorldTerms = ["KBO", "LG 트윈스", "한화 이글스", "SSG 랜�
 // Avoid recursive directory traversal here; the repository-level check-copy command remains the
 // source of truth for copy. The new files above are checked by the explicit source snippets.
 for (const term of blockedWorldTerms) {
-  if (manifest.includes(term) || appGradle.includes(term) || kotlinContract.includes(term) || csharpContract.includes(term)) {
+  if (manifest.includes(term) || appGradle.includes(term) || kotlinContract.includes(term)) {
     errors.push(`real-world baseball IP found in migration contract: ${term}`);
   }
 }

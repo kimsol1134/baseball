@@ -3,7 +3,31 @@ import Foundation
 import SimulationCore
 
 private let fixtureSchema = "baseball-pro-career-fixture-v1"
-private let sourceCommit = "792d72859dc5dcfdc8cefa8b69ab50bc072c212f"
+private let sourceCommit: String = {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+    process.arguments = ["rev-parse", "HEAD"]
+    let pipe = Pipe()
+    process.standardOutput = pipe
+    try! process.run()
+    process.waitUntilExit()
+    precondition(process.terminationStatus == 0, "fixture export requires source revision")
+    return String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)!
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+}()
+// Commit alone cannot identify a dirty worktree. Pin the exact Swift core bytes as well.
+private let sourceTreeSha256: String = {
+    let directory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        .deletingLastPathComponent().appendingPathComponent("SimulationCore")
+    let files = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: nil)!
+        .compactMap { $0 as? URL }.filter { $0.pathExtension == "swift" }.sorted { $0.path < $1.path }
+    var hash = SHA256()
+    for file in files {
+        hash.update(data: Data((String(file.path.dropFirst(directory.path.count + 1)) + "\n").utf8))
+        hash.update(data: try! Data(contentsOf: file))
+    }
+    return hash.finalize().map { String(format: "%02x", $0) }.joined()
+}()
 private let defaultOutput = "artifacts/android-compose/fixtures/swift-pro-career-oracle-v1.json"
 
 private struct Row {
@@ -295,6 +319,7 @@ var output = """
   "fixtureSchema": \(json(fixtureSchema)),
   "sourceRuntime": "swift",
   "sourceCommit": \(json(sourceCommit)),
+  "sourceTreeSha256": \(json(sourceTreeSha256)),
   "inputSha256": \(json(sha256(inputCanonical))),
   "outputSha256": \(json(sha256(outputCanonical))),
   "authorityScope": "current-swift-pro-core-vertical",

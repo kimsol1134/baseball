@@ -3,10 +3,6 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-if [[ "${ANDROID_COMPOSE_SKIP_UNITY_EXPORT:-0}" != "1" ]]; then
-  "$REPO_ROOT/tools/export-android-pitch-unity.sh"
-fi
-
 cd "$REPO_ROOT/apps/android"
 ./gradlew :app:assembleDebug --no-daemon --stacktrace
 

@@ -25,8 +25,12 @@ const analyticsProjector = read("apps/android/game-application/src/main/kotlin/c
 const platformContracts = read("apps/android/platform/src/main/kotlin/com/solkim/baseball/platform/Phase9PlatformContracts.kt");
 const highSchoolPhase4Kernel = read("apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolPhase4Kernel.kt");
 const highSchoolPhase4Codec = read("apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolPhase4StateCodec.kt");
-const generatedUnityGradle = read("artifacts/android-compose/unity-export/current/unityLibrary/build.gradle");
-const generatedUnityManifest = read("artifacts/android-compose/unity-export/current/unityLibrary/src/main/AndroidManifest.xml");
+const generatedUnityGradle = existsSync(resolve(root, "artifacts/android-compose/unity-export/current/unityLibrary/build.gradle"))
+  ? read("artifacts/android-compose/unity-export/current/unityLibrary/build.gradle")
+  : "";
+const generatedUnityManifest = existsSync(resolve(root, "artifacts/android-compose/unity-export/current/unityLibrary/src/main/AndroidManifest.xml"))
+  ? read("artifacts/android-compose/unity-export/current/unityLibrary/src/main/AndroidManifest.xml")
+  : "";
 
 if (!appGradle.includes('implementation(project(":platform"))')) errors.push("app does not own the native platform module");
 if ((!platformGradle.includes("libs.firebase.analytics") && !platformGradle.includes("firebase-analytics")) ||
@@ -114,8 +118,11 @@ for (const marker of [
 ]) {
   if (!highSchoolPhase4Kernel.includes(marker)) errors.push(`training evidence authority marker missing: ${marker}`);
 }
-if (!highSchoolPhase4Codec.includes("SCHEMA_VERSION: Int = 7") || !highSchoolPhase4Codec.includes("readTrainingEvidence")) {
-  errors.push("training evidence codec is not versioned at schema 7");
+const highSchoolSchemaVersion = Number(highSchoolPhase4Codec.match(/SCHEMA_VERSION: Int = (\d+)/)?.[1]);
+if (!Number.isInteger(highSchoolSchemaVersion) || highSchoolSchemaVersion < 7 ||
+    !highSchoolPhase4Codec.includes("payloadVersion >= 7") ||
+    !highSchoolPhase4Codec.includes("readTrainingEvidence")) {
+  errors.push("training evidence codec must preserve the schema 7+ read boundary");
 }
 
 if (!analyticsProjector.includes("current.trainingEvidence") || !analyticsProjector.includes('"career_training_completed"')) {

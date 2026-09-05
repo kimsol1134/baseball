@@ -363,6 +363,7 @@ function proCanonicalRows(fixture) {
 }
 
 function verifyProFixture(fixture, label) {
+  if (!/^[0-9a-f]{64}$/.test(fixture.sourceTreeSha256 ?? "")) fail(`${label} Swift source tree hash missing`);
   const required = ["fixtureSchema", "sourceRuntime", "sourceCommit", "inputSha256", "outputSha256", "input", "expected"];
   for (const field of required) if (!(field in fixture)) fail(`${label} missing ${field}`);
   if (fixture.fixtureSchema !== "baseball-pro-career-fixture-v1") fail(`${label} schema mismatch`);
@@ -399,7 +400,7 @@ const phase4Generated = fs.existsSync(phase4GeneratedPath)
   ? verifyPhase4Fixture(readJson(phase4GeneratedPath), "generated Swift Phase 4")
   : { status: "NOT_RUN", evidence: "Swift Phase 4 exporter output was not present" };
 if (phase4Generated.status !== "NOT_RUN") {
-  if (phase4Generated.sourceCommit !== phase4Committed.sourceCommit ||
+  if (readJson(phase4GeneratedPath).sourceTreeSha256 !== readJson(phase4CommittedPath).sourceTreeSha256 ||
       phase4Generated.inputSha256 !== phase4Committed.inputSha256 ||
       phase4Generated.outputSha256 !== phase4Committed.outputSha256 ||
       JSON.stringify(phase4Generated.rows) !== JSON.stringify(phase4Committed.rows)) {
@@ -407,12 +408,13 @@ if (phase4Generated.status !== "NOT_RUN") {
   }
 }
 
-const proCommitted = verifyProFixture(readJson(proCommittedPath), "committed Swift Pro");
+const proCommittedSource = readJson(proCommittedPath);
+const proCommitted = verifyProFixture(proCommittedSource, "committed Swift Pro");
 const proGenerated = fs.existsSync(proGeneratedPath)
   ? verifyProFixture(readJson(proGeneratedPath), "generated Swift Pro")
   : { status: "NOT_RUN", evidence: "Swift Pro exporter output was not present" };
 if (proGenerated.status !== "NOT_RUN") {
-  if (proGenerated.sourceCommit !== proCommitted.sourceCommit ||
+  if (readJson(proGeneratedPath).sourceTreeSha256 !== proCommittedSource.sourceTreeSha256 ||
       proGenerated.inputSha256 !== proCommitted.inputSha256 ||
       proGenerated.outputSha256 !== proCommitted.outputSha256 ||
       JSON.stringify(proGenerated.rows) !== JSON.stringify(proCommitted.rows)) {
@@ -509,10 +511,10 @@ const report = {
     { locale: "ja-JP", timezone: "Asia/Tokyo", status: "VERIFIED by JVM matrix test; no Android product locale claim" },
   ],
   failClosed: {
-    invalidJson: "VERIFIED by StrictJson/PitchIpcCodec/CommittedPitchReplay tests",
+    invalidJson: "VERIFIED by StrictJson/CommittedPitchReplay tests",
     futureSchema: "VERIFIED by LegacySaveCodec and CommittedPitchReplay tests",
-    unknownWire: "VERIFIED by PitchIpcCodec and CommittedPitchReplay tests",
-    staleDuplicate: "VERIFIED by PitchSessionGate, replay lifecycle, and PitchKernel stale-token tests",
+    unknownWire: "VERIFIED by CommittedPitchReplay tests",
+    staleDuplicate: "VERIFIED by replay lifecycle and PitchKernel stale-token tests",
   },
 };
 

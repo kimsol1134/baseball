@@ -15,9 +15,10 @@ class ProCareerFixtureTest {
         ).asObject()
         assertEquals("baseball-pro-career-fixture-v1", root.string("fixtureSchema"))
         assertEquals("swift", root.string("sourceRuntime"))
-        assertEquals("792d72859dc5dcfdc8cefa8b69ab50bc072c212f", root.string("sourceCommit"))
+        assertTrue(root.string("sourceCommit").matches(Regex("[0-9a-f]{40}")))
+        assertEquals("567ce57cf2e932d24464d6c30636d75a9ab1276391a1a5e16263d8f8f3c28712", root.string("sourceTreeSha256"))
         assertEquals("78f6e4e41f638d6ef09bb961d5a731e412126ebfe0b94756b52763ef9885a982", root.string("inputSha256"))
-        assertEquals("1696cab0d50140f7dae07b5e4cd6946168b19059b15505f3819c21ce34b9c781", root.string("outputSha256"))
+        assertEquals("5a3ce34f35882d5d8c8ae93c68b8d9629c8ae334cc88be9d6ee0f8d88a11412b", root.string("outputSha256"))
         assertEquals(
             root.string("inputSha256"),
             Hashing.sha256Hex(

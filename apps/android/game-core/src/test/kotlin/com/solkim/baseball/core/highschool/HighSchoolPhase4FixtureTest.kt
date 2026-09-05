@@ -14,7 +14,8 @@ class HighSchoolPhase4FixtureTest {
         val root = StrictJson.parseUtf8(bytes) as JsonValue.Obj
         assertEquals("baseball-high-school-phase4-fixture-v3", root.string("fixtureSchema"))
         assertEquals("swift", root.string("sourceRuntime"))
-        assertEquals("792d72859dc5dcfdc8cefa8b69ab50bc072c212f", root.string("sourceCommit"))
+        assertTrue(root.string("sourceCommit").matches(Regex("[0-9a-f]{40}")))
+        assertEquals("567ce57cf2e932d24464d6c30636d75a9ab1276391a1a5e16263d8f8f3c28712", root.string("sourceTreeSha256"))
         val inputCanonical = listOf(
             "HighSchoolCareerEngine.Phase4Vertical",
             "preset:power_prospect", "school:haedong_power", "focus:command", "intensity:standard", "relationship:listen",

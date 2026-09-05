@@ -19,6 +19,7 @@ let package = Package(
         .executable(name: "high-school-phase4-fixture-exporter", targets: ["HighSchoolPhase4FixtureExporter"]),
         .executable(name: "pro-career-fixture-exporter", targets: ["ProCareerFixtureExporter"]),
         .executable(name: "pro-career-fixture-exporter-v2", targets: ["ProCareerFixtureExporterV2"]),
+        .executable(name: "release-parity-exporter", targets: ["ReleaseParityExporter"]),
         .executable(name: "pro-career-distribution-runner", targets: ["ProCareerDistributionRunner"])
     ],
     targets: [
@@ -60,6 +61,7 @@ let package = Package(
             name: "ProCareerDistributionRunner",
             dependencies: ["SimulationCore"]
         ),
+        .executableTarget(name: "ReleaseParityExporter", dependencies: ["SimulationCore"]),
         .testTarget(
             name: "SimulationCoreTests",
             dependencies: ["SimulationCore"],

@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_MODE="${1:-verification}"
 VERSION_NAME="${BASEBALL_VERSION_NAME:-1.0.0}"
-VERSION_CODE="${BASEBALL_VERSION_CODE:-37}"
+VERSION_CODE="${BASEBALL_VERSION_CODE:-42}"
 ARTIFACT_DIRECTORY="${BASEBALL_COMPOSE_ARTIFACT_DIRECTORY:-$REPO_ROOT/artifacts/android-compose/rc/${VERSION_NAME}-${VERSION_CODE}}"
 INJECTED_GOOGLE_SERVICES="$REPO_ROOT/apps/android/app/google-services.json"
 CLEANED_INJECTION=0
@@ -25,14 +25,11 @@ if [[ ! "$VERSION_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   fail "BASEBALL_VERSION_NAME must be a three-part numeric version: $VERSION_NAME"
 fi
 if [[ ! "$VERSION_CODE" =~ ^[1-9][0-9]*$ ]] || [[ "$VERSION_CODE" -le 5 ]]; then
-  fail "BASEBALL_VERSION_CODE must be an integer higher than the current Play Unity baseline (5)"
+  fail "BASEBALL_VERSION_CODE must be an integer higher than the current Play baseline (5)"
 fi
 
 case "$BUILD_MODE" in
   verification)
-    if [[ "${ANDROID_COMPOSE_SKIP_UNITY_EXPORT:-0}" != "1" ]]; then
-      "$REPO_ROOT/tools/export-android-pitch-unity.sh"
-    fi
     cd "$REPO_ROOT/apps/android"
     ./gradlew :app:assembleDebug --no-daemon --stacktrace \
       -Pphase10VersionName="$VERSION_NAME" \
@@ -89,13 +86,6 @@ case "$BUILD_MODE" in
     if [[ "$git_dirty" == "true" && "${BASEBALL_ALLOW_DIRTY_RC:-0}" != "1" ]]; then
       fail "production RC requires a clean worktree; set BASEBALL_ALLOW_DIRTY_RC=1 only for a local non-Play candidate"
     fi
-    if [[ "${ANDROID_COMPOSE_SKIP_UNITY_EXPORT:-0}" == "1" ]]; then
-      fail "Compose production RC cannot skip the pitch Unity export"
-    fi
-    "$REPO_ROOT/tools/export-android-pitch-unity.sh"
-    if [[ ! -d "$REPO_ROOT/artifacts/android-compose/unity-export/current/unityLibrary" ]]; then
-      fail "pitch Unity export is missing; a Play AAB without the trajectory runtime is not a candidate"
-    fi
 
     mkdir -p "$ARTIFACT_DIRECTORY"
     cp "$BASEBALL_GOOGLE_SERVICES_PATH" "$INJECTED_GOOGLE_SERVICES"
@@ -108,8 +98,7 @@ case "$BUILD_MODE" in
       -Pphase10VersionCode="$VERSION_CODE" \
       -Pphase9ExternalSdks=true \
       -Pphase9AmplitudeApiKey="$BASEBALL_AMPLITUDE_API_KEY" \
-      -Pphase11Distribution=production \
-      -PbaseballIgnoreDependencyLocks=true
+      -Pphase11Distribution=production
 
     cleanup_injection
     CLEANED_INJECTION=0
@@ -142,8 +131,6 @@ case "$BUILD_MODE" in
     bundle_bytes="$(wc -c <"$AAB_PATH" | tr -d ' ')"
     printf '%s  %s\n' "$bundle_sha" "$AAB_NAME" >"$ARTIFACT_DIRECTORY/checksums.sha256"
 
-    UNITY_EXPORT="$REPO_ROOT/artifacts/android-compose/unity-export/current/unityLibrary"
-    unity_hash="$(find "$UNITY_EXPORT" -type f ! -path '*/build/*' -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | awk '{print $1}')"
     content_hash="$(shasum -a 256 "$REPO_ROOT/apps/android-unity/StoreAssets/manifest.json" | awk '{print $1}')"
 
     SCHEMA="baseball-android-compose-build-manifest-v1"
@@ -156,7 +143,7 @@ case "$BUILD_MODE" in
     GIT_COMMIT="$git_commit" GIT_DIRTY="$git_dirty" \
     ARTIFACT_DIRECTORY="$ARTIFACT_DIRECTORY" AAB_NAME="$AAB_NAME" \
     BUNDLE_SHA="$bundle_sha" BUNDLE_BYTES="$bundle_bytes" \
-    CERT_SHA="$actual_certificate" UNITY_HASH="$unity_hash" \
+    CERT_SHA="$actual_certificate" \
     CONTENT_HASH="$content_hash" DISTRIBUTION="$DISTRIBUTION" \
     SCHEMA="$SCHEMA" REPO_ROOT="$REPO_ROOT" node <<'NODE'
 const fs = require("node:fs");
@@ -182,10 +169,8 @@ const manifest = {
   gradle: gradleMatch ? gradleMatch[1] : null,
   kotlin: pick(catalog, "kotlin"),
   composeBom: pick(catalog, "composeBom"),
-  unityVersion: "6000.3.19f1",
-  unityExportHash: process.env.UNITY_HASH,
-  unityProtocol: "baseball-pitch-ipc-v1",
-  il2cppCompilerConfiguration: "Release",
+  pitchRenderer: "compose-canvas",
+  pitchProtocol: "baseball-pitch-ipc-v1",
   minSdk: 26,
   targetSdk: 36,
   compileSdk: 36,

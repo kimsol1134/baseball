@@ -1,0 +1,16 @@
+{
+  "package": "com.solkim.baseball.android",
+  "observedAtUtc": "2026-09-05T11:53:44.576818+00:00",
+  "latestUploadedVersionCode": 41,
+  "versionName": "1.0.0",
+  "activeTracks": [
+    "internal",
+    "closed-alpha"
+  ],
+  "productionActive": false,
+  "nextCandidateVersionCode": 42,
+  "uploadCertificateSha256": "D0:A8:EC:4F:DC:EC:6F:7F:74:BB:EB:CE:74:7C:B3:D2:FA:30:8D:B7:2C:CA:10:6D:30:AA:2A:78:2D:AA:44:5F",
+  "assetLinksFingerprintObserved": "AE:6A:52:6D:AC:89:35:B0:B4:F3:84:8D:3A:E6:3A:31:A2:4D:9C:3D:FB:29:13:E1:FF:A6:1F:A5:01:9C:40:E8",
+  "source": "Play Console releases overview and app signing pages (read only)",
+  "publishedOrChangedSettings": false
+}

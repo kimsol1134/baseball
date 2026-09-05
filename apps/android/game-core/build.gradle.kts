@@ -4,6 +4,10 @@ plugins {
 
 kotlin { jvmToolchain(17) }
 
+tasks.withType<Test>().configureEach {
+    inputs.files(provider { rootProject.file("../../artifacts/android-compose/release-gate/swift-release-parity.json").takeIf { it.exists() }?.let(::listOf) ?: emptyList<File>() })
+}
+
 dependencies {
     api(project(":game-model"))
     testImplementation(kotlin("test"))
