@@ -77,7 +77,6 @@ class CareerParityUiTest {
             })
         } } }
         compose.onNodeWithTag("training.learning").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("training.change").performScrollTo().performClick()
         compose.onNodeWithTag("training.focus.breaking_ball").performScrollTo().performClick()
         compose.onNodeWithTag("training.target.$learningPitch").performScrollTo().performClick()
         compose.onNodeWithTag("training.intensity.intensive").performScrollTo().performClick()
@@ -92,19 +91,23 @@ class CareerParityUiTest {
         var state by mutableStateOf(fixture(awakening = true))
         val context = Phase8CommandContext()
         val model = Phase8ScreenProjection.project(state, Phase8ScreenId.P009_AWAKENING, context)
-        compose.setContent { BaseballMigrationTheme {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        compose.setContent { BaseballMigrationTheme { Surface(color = androidx.compose.material3.MaterialTheme.colorScheme.background) {
+            Column(Modifier.fillMaxSize().systemBarsPadding().verticalScroll(rememberScrollState())) {
                 AwakeningTreeView(state, model, { action ->
                     action.capturedPayloads.orEmpty().forEach { state = GameStateReducer.dispatch(state, it.envelope).state }
                 })
             }
-        } }
+        } } }
         compose.onNodeWithTag("awakening.node.rising_four_seam").assertDoesNotExist()
         compose.onNodeWithTag("awakening.fullTree").performScrollTo().performClick()
         compose.onNodeWithTag("awakening.node.rising_four_seam").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("action.awakening:rising_four_seam").assertDoesNotExist()
         compose.onNodeWithTag("action.awakening:explosive_fastball").performScrollTo().performClick()
         assertEquals(0, state.highSchool!!.run.selectedAwakenings.size)
+        compose.mainClock.advanceTimeBy(600)
+        compose.waitForIdle()
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).waitForIdle()
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).takeScreenshot(File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, "stat-colors-skill-confirm.png"))
         compose.onNodeWithTag("awakening.confirm").performClick()
         compose.waitForIdle()
         assertEquals(listOf("explosive_fastball"), state.highSchool!!.run.selectedAwakenings.map { it.wire })
@@ -131,6 +134,18 @@ class CareerParityUiTest {
         val pitcher = requireNotNull(state.highSchool).startingPitcher
         assertEquals(expected.next, listOf(pitcher.stuff, pitcher.command, pitcher.movement, pitcher.stamina))
         assertEquals(expected.nextLife, state.highSchool?.run?.lifeNumber)
+        compose.onNodeWithTag("rebirth.ready").assertIsDisplayed()
+        compose.onNodeWithTag("action.completeTutorial").assertIsDisplayed()
+        compose.onNodeWithTag("action.openTutorialPitch").assertIsDisplayed()
+        compose.onNodeWithTag("rebirth.previousSelf").assertDoesNotExist()
+        UiDevice.getInstance(inst).takeScreenshot(File(inst.targetContext.cacheDir, "loop-reborn-ready.png"))
+        compose.onNodeWithTag("rebirth.memories").performScrollTo().performClick()
+        compose.onNodeWithTag("rebirth.previousSelf").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("rebirth.memories").performScrollTo().performClick()
+        compose.onNodeWithTag("action.completeTutorial").performClick()
+        compose.waitForIdle()
+        assertEquals(Phase8ScreenId.P005_SCHOOL_SELECTION, Phase8ScreenProjection.preferredScreen(state))
+        assertEquals(pitcher, state.highSchool?.run?.pitcher)
     }
 
 }

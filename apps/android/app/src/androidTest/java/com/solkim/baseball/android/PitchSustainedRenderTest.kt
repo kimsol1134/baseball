@@ -29,9 +29,21 @@ class PitchSustainedRenderTest {
         device.wakeUp()
         context.startActivity(requireNotNull(context.packageManager.getLaunchIntentForPackage(context.packageName))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+        // A disposable QA install starts at the opening screen, so the career this render sample needs
+        // is created here instead of depending on another test class having run first.
+        device.wait(Until.findObject(By.res("action.enterSetup")), 20_000)?.click()
+        if (device.wait(Until.hasObject(By.res("setup.name")), 10_000)) {
+            requireNotNull(device.wait(Until.findObject(By.res("setup.next")), 10_000)).click()
+            requireNotNull(device.wait(Until.findObject(By.res("setup.confirm")), 10_000)).click()
+        }
         val open = device.wait(Until.findObject(By.res("action.openTutorialPitch")), 20_000)
-        assertNotNull("Run FirstPitchLocalizedSmokeTest first", open)
+        assertNotNull("the tutorial pitch must be reachable from a fresh install", open)
         requireNotNull(open).click()
+        // The replay this test samples exists only after a pitch has been thrown.
+        if (!device.wait(Until.hasObject(By.res("pitch.replay")), 5_000)) {
+            val slider = requireNotNull(device.wait(Until.findObject(By.res("pitch.slider")), 20_000)).visibleBounds
+            device.swipe(slider.centerX(), slider.centerY(), slider.centerX() + 1, slider.centerY(), 180)
+        }
         assertTrue(device.wait(Until.hasObject(By.res("pitch.replay")), 20_000))
         val revision = app.gameStore.current.revision
         val receipts = app.gameStore.current.pitch?.resultHashes

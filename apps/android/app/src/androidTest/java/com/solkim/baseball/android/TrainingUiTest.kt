@@ -57,7 +57,16 @@ class TrainingUiTest {
         val device = UiDevice.getInstance(inst)
         compose.waitForIdle()
         device.takeScreenshot(File(context.cacheDir, "training-before.png"))
-        compose.onNodeWithTag("training.change").performScrollTo().performClick()
+        for (option in TrainingFocus.entries) compose.onNodeWithTag("training.focus.${option.wire}").assertExists()
+        compose.onNodeWithTag("training.focus.command").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("training.focus.recovery").performScrollTo().assertIsDisplayed()
+        assertEquals(before.highSchool!!.run.totalTrainingsCompleted, app.gameStore.current.highSchool!!.run.totalTrainingsCompleted)
+        val learningPitch = before.highSchool!!.run.pitchLearningProject?.pitchType
+        if (learningPitch != null) {
+            compose.onNodeWithTag("training.learning").performScrollTo().performClick()
+            compose.onNodeWithTag("training.target.${learningPitch.wire}").performScrollTo().assertIsDisplayed()
+            assertEquals(before.highSchool!!.run.totalTrainingsCompleted, app.gameStore.current.highSchool!!.run.totalTrainingsCompleted)
+        }
         compose.onNodeWithTag("training.focus.${focus.wire}").performScrollTo().performClick()
         if (focus == TrainingFocus.BREAKING_BALL) compose.onNodeWithTag("training.target.${target.wire}").performScrollTo().performClick()
         compose.onNodeWithTag("training.intensity.${intensity.wire}").performScrollTo().performClick()
@@ -66,18 +75,27 @@ class TrainingUiTest {
         device.takeScreenshot(File(context.cacheDir, "training-selected.png"))
         compose.onNodeWithTag("training.commit").assertIsDisplayed().performClick()
         compose.waitForIdle()
-        compose.onNodeWithTag("training.result").performScrollTo().assertIsDisplayed()
         val after = app.gameStore.current
+        // A chapter can hold a single training. Committing the last one leaves the training screen for
+        // the next milestone, and the result card lives on the screen that just closed.
+        val stillTraining = after.highSchool!!.run.phase.name == "TRAINING"
         val evidence = after.highSchool!!.trainingEvidence.last()
         assertEquals(focus, evidence.focus)
         assertEquals(intensity, evidence.intensity)
         assertEquals(if (focus == TrainingFocus.BREAKING_BALL) target else null, evidence.targetPitch)
         assertEquals(before.highSchool!!.run.totalTrainingsCompleted + 1, after.highSchool!!.run.totalTrainingsCompleted)
-        compose.onNodeWithTag("training.result.gains").assertIsDisplayed()
-        if (focus == TrainingFocus.COMMAND && before.highSchool!!.run.pitcher.command != after.highSchool!!.run.pitcher.command) {
-            compose.onNodeWithTag("growth.controlWindow").performScrollTo().assertIsDisplayed()
+        if (stillTraining) {
+            compose.onNodeWithTag("training.result").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithTag("training.result.gains").assertIsDisplayed()
         }
         device.takeScreenshot(File(context.cacheDir, "training-after.png"))
+        if (stillTraining && focus == TrainingFocus.COMMAND && before.highSchool!!.run.pitcher.command != after.highSchool!!.run.pitcher.command) {
+            if (!GrowthFeedbackPresentation.controlMilestone(requireNotNull(after.meta.playerGrowth))) {
+                compose.onNodeWithTag("growth.controlWindow").assertDoesNotExist()
+                compose.onNodeWithTag("training.result.details").performScrollTo().performClick()
+            }
+            compose.onNodeWithTag("growth.controlWindow").performScrollTo().assertIsDisplayed()
+        }
         runBlocking {
             val reopened = KotlinGameStore.open(after.installId,
                 CSharpLegacyGameStoreRepository(File(context.getExternalFilesDir(null), "save").toPath(), after.installId),

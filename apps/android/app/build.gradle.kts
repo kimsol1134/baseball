@@ -98,13 +98,17 @@ android {
         debug {
             // Isolated launch QA leaves any existing development career untouched.
             applicationIdSuffix = when {
+                providers.gradleProperty("baseballResetQa").orNull == "true" -> ".reset.compose.qa"
                 providers.gradleProperty("baseballCoreQa").orNull == "true" -> ".core.compose.qa"
                 providers.gradleProperty("baseballLaunchQa").orNull == "true" -> ".compose.qa"
                 else -> ".compose.dev"
             }
             versionNameSuffix = "-migration"
-            val nativeQa = providers.gradleProperty("baseballLaunchQa").orNull == "true" &&
-                providers.gradleProperty("baseballQaNativeStore").orNull == "true"
+            // The release build is native-authoritative, so QA must be able to run in that mode too.
+            // Reset QA especially: erasing progress is a write, and a shadow read-only store cannot do it.
+            val nativeQa = providers.gradleProperty("baseballQaNativeStore").orNull == "true" &&
+                (providers.gradleProperty("baseballLaunchQa").orNull == "true" ||
+                    providers.gradleProperty("baseballResetQa").orNull == "true")
             buildConfigField("boolean", "QA_NATIVE_STORE", nativeQa.toString())
             buildConfigField("String", "NATIVE_AUTHORITY_MODE", if (nativeQa) "\"nativeAuthoritative\"" else "\"nativeShadowReadOnly\"")
             buildConfigField("boolean", "PHASE10_PRODUCTION_BUILD", "false")

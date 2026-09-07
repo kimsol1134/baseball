@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performClick
@@ -49,6 +50,11 @@ class Phase9PlatformSemanticsTest {
 
     private val context = Phase8CommandContext(Phase8KoreaClock { LocalDate.of(2026, 8, 14) })
 
+    /**
+     * The permission ask lives on the settings notification page. The reminder offer card is a second
+     * entry point that only appears after a first completed game, so the payload contract is checked
+     * where every player can reach it.
+     */
     @Test
     fun notificationPermissionActionCapturesCanonicalTypedPayload() {
         val state = GameAggregateState.initial("phase9-platform-settings")
@@ -56,16 +62,23 @@ class Phase9PlatformSemanticsTest {
         var captured by mutableStateOf<Phase9UiAction?>(null)
         composeRule.setContent {
             BaseballMigrationTheme {
-                Phase9PlatformSurface(
+                SettingsScreen(
                     state = state,
                     model = model,
+                    busy = false,
+                    actionError = null,
                     platformState = Phase9PlatformUiState(NotificationPermissionTruth.REQUESTABLE, null),
-                    onAction = { captured = it },
+                    onAction = {},
+                    onPlatformAction = { captured = it },
+                    onExit = {},
+                    onRestored = {},
+                    bottomBar = {},
                 )
             }
         }
 
-        composeRule.onNodeWithText("알림 권한 요청").assertHasClickAction().performClick()
+        composeRule.onNodeWithTag("settings.open.notifications").performScrollTo().performClick()
+        composeRule.onNodeWithTag("settings.notification.change").performScrollTo().assertHasClickAction().performClick()
         val action = requireNotNull(captured)
         assertEquals(PlatformAction.REQUEST_NOTIFICATION_PERMISSION, action.payload.action)
         assertEquals(action.payload, PlatformActionCodec.decode(action.encodedPayload))
@@ -81,21 +94,29 @@ class Phase9PlatformSemanticsTest {
         composeRule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f, fontScale)) {
                 BaseballMigrationTheme {
-                    Phase9PlatformSurface(
+                    SettingsScreen(
                         state = state,
                         model = model,
+                        busy = false,
+                        actionError = null,
                         platformState = Phase9PlatformUiState(NotificationPermissionTruth.BLOCKED, null),
                         onAction = {},
+                        onPlatformAction = {},
+                        onExit = {},
+                        onRestored = {},
+                        bottomBar = {},
                     )
                 }
             }
         }
 
+        composeRule.onNodeWithTag("settings.open.notifications").performScrollTo().performClick()
+        // Tags, not copy: the wording moved once already and the test could not catch up while it was unrunnable.
         listOf(1.0f, 1.3f, 1.5f, 2.0f).forEach { scale ->
             fontScale = scale
             composeRule.waitForIdle()
-            composeRule.onNodeWithText("알림 설정 열기").assertIsDisplayed()
-            composeRule.onNodeWithText("기기 설정에서 알림이 차단됨").assertIsDisplayed()
+            composeRule.onNodeWithTag("settings.notification.state").performScrollTo().assertIsDisplayed()
+            composeRule.onNodeWithTag("settings.notification.change").performScrollTo().assertIsDisplayed()
         }
     }
 
@@ -127,8 +148,8 @@ class Phase9PlatformSemanticsTest {
             }
         }
 
-        composeRule.onNodeWithText("기기 알림").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText("알림 권한 요청").assertHasClickAction()
+        composeRule.onNodeWithText("알림").performScrollTo().performClick()
+        composeRule.onNodeWithText("알림 켜기").assertHasClickAction()
     }
 
     @Test

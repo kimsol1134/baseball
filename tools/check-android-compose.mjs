@@ -137,7 +137,7 @@ if (!appGradle.includes('applicationId = "com.solkim.baseball.android"')) {
 }
 const suffixBranches = appGradle.match(/applicationIdSuffix\s*=\s*when\s*\{([^}]+)\}/)?.[1];
 const isolatedSuffixBranches = suffixBranches && /else\s*->\s*"\.compose\.dev"/.test(suffixBranches) &&
-  [...suffixBranches.matchAll(/->\s*"([^"]+)"/g)].every(match => /^\.(?:core\.)?compose\.(?:qa|dev)$/.test(match[1]));
+  [...suffixBranches.matchAll(/->\s*"([^"]+)"/g)].every(match => /^\.(?:(?:core|reset)\.)?compose\.(?:qa|dev)$/.test(match[1]));
 if (!isolatedSuffixBranches && !appGradle.includes('applicationIdSuffix = ".compose.dev"') &&
     !appGradle.includes('applicationIdSuffix = if (providers.gradleProperty("baseballLaunchQa").orNull == "true") ".compose.qa" else ".compose.dev"')) {
   errors.push("debug fixture application ID suffix is not isolated");

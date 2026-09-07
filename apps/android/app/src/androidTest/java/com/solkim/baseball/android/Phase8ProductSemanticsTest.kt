@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -51,9 +52,10 @@ class Phase8ProductSemanticsTest {
             }
         }
 
-        composeRule.onNodeWithText("다시 도전하는 야구 인생").assertIsDisplayed()
+        composeRule.onNodeWithText("야구 못하면 또 환생함").assertIsDisplayed()
+        composeRule.onNodeWithText("한 구씩,\n한 생씩.").assertIsDisplayed()
         composeRule.onNodeWithText("시작하기").assertHasClickAction()
-        listOf("야구 못하면 또 환생함", "첫 화면", "선수 준비").forEach { label ->
+        listOf("환생 투수 커리어", "첫 화면", "선수 준비", "다음 선택").forEach { label ->
             assertTrue(composeRule.onAllNodesWithText(label, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
         }
         assertTrue(composeRule.onAllNodesWithText("P-001", useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
@@ -89,11 +91,10 @@ class Phase8ProductSemanticsTest {
             composeRule.waitForIdle()
             composeRule.onNodeWithText("선수 이름").assertIsDisplayed()
             composeRule.onNodeWithText("선수 이름을 정해 주세요").assertIsDisplayed()
-            composeRule.onNodeWithText("다음").assertIsDisplayed().performClick()
             composeRule.onNodeWithText("지역").assertIsDisplayed()
+            composeRule.onNodeWithTag("setup.portrait").assertIsDisplayed()
             composeRule.onNodeWithText("다음").assertIsDisplayed().performClick()
             composeRule.onNodeWithText("이 투수로 시작하기").assertIsDisplayed()
-            composeRule.onNodeWithText("이전").performClick()
             composeRule.onNodeWithText("이전").performClick()
         }
     }

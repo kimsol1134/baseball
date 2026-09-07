@@ -69,16 +69,40 @@ class FirstPitchLocalizedSmokeTest {
         tap("action.enterSetup")
         assertTrue(device.wait(Until.hasObject(By.res("setup.name")), 10_000))
         capture("name")
-        tap("setup.next")
-        assertTrue(device.wait(Until.gone(By.res("setup.name")), 10_000))
         tap("setup.region")
         tap("setup.region.부산")
         capture("region")
         tap("setup.next")
+        assertTrue(device.wait(Until.gone(By.res("setup.name")), 10_000))
         capture("style")
         tap("setup.confirm")
-        tap("action.beginTutorial")
         tap("action.openTutorialPitch")
+        if (InstrumentationRegistry.getArguments().getString("qaPreferenceFailure") == "true") {
+            require(context.packageName == "com.solkim.baseball.android.reset.compose.qa")
+            tap("pitch.settings")
+            for (attempt in 0..12) {
+                val bounds = requireNotNull(device.findObject(By.scrollable(true).pkg(context.packageName))).visibleBounds
+                val target = device.findObject(By.res("pitch.haptics.toggle"))?.visibleBounds
+                if (target != null && target.top >= bounds.top && target.bottom <= bounds.bottom) break
+                device.swipe(bounds.centerX(), bounds.bottom - 35, bounds.centerX(), bounds.top + 35, 24)
+                device.waitForIdle()
+            }
+            val before = app.gameStore.current.settings.hapticsEnabled
+            val blocked = File(context.getExternalFilesDir(null), "save/save.tmp")
+            assertTrue(blocked.mkdir())
+            val blocker = File(blocked, "qa-blocker").apply { writeText("disposable write fault") }
+            try {
+                capture("before-setting-error")
+                tap("pitch.haptics.toggle")
+                val errorVisible = device.wait(Until.hasObject(By.res("pitch.error")), 10_000)
+                if (!errorVisible) capture("missing-setting-error")
+                assertTrue("Pitch settings failures must be visible", errorVisible)
+                assertEquals(before, app.gameStore.current.settings.hapticsEnabled)
+                capture("setting-error")
+                tap("pitch.error.close")
+            } finally { blocker.delete(); if (blocked.isDirectory) assertTrue(blocked.delete()) }
+            tap("pitch.settings.close")
+        }
         val manualPlan = InstrumentationRegistry.getArguments().getString("qaManualPlan") == "true"
         if (manualPlan) {
             tap("pitch.type.curveball")
@@ -97,12 +121,10 @@ class FirstPitchLocalizedSmokeTest {
             capture("manual-plan")
         }
         if (InstrumentationRegistry.getArguments().getString("qaStrategy") == "true") {
-            tap("pitch.strategy")
-            // The opening bullpen may have no prepared catcher rationale.
+            // The catcher's reason sits inline under the sign. The opening bullpen may have none.
             device.wait(Until.findObject(By.res("pitch.rationale").pkg(context.packageName)), 1_000)?.click()
             capture("strategy")
-            assertTrue("A strategy dialog must remain available after inspecting its rationale", device.wait(Until.hasObject(By.res("pitch.strategy.close").pkg(context.packageName)), 5_000))
-            tap("pitch.strategy.close")
+            assertTrue("The slider must stay available after reading the catcher's reason", device.wait(Until.hasObject(By.res("pitch.slider").pkg(context.packageName)), 5_000))
         }
         val pad = device.wait(Until.findObject(By.res("pitch.slider").pkg(context.packageName)), 20_000)
         if (pad == null) capture("missing-slider")
