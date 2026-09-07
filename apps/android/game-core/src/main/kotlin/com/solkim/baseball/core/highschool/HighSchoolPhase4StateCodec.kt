@@ -23,7 +23,7 @@ import java.util.Base64
 public object HighSchoolPhase4StateCodec {
     public const val SCHEMA: String = "baseball-high-school-phase4-state-v1"
     /** v2 profiles/hand; v3 sequence history; v4 tournament/prospect fields; v5 rich content/echo; v6 Meta ledgers; v7 training evidence; v8 mastery; v9 batted-ball contact. */
-    public const val SCHEMA_VERSION: Int = 9
+    public const val SCHEMA_VERSION: Int = 10
     public const val MAX_BYTES: Int = 4 * 1024 * 1024
     private const val MAGIC: String = "P4M1"
     private val ROOT_FIELDS = setOf("schema", "schemaVersion", "payload", "stateCommitment")
@@ -106,7 +106,7 @@ public object HighSchoolPhase4StateCodec {
         val run = HighSchoolStateCodec.decode(input.readString().fromBase64())
         val starting = input.readPitcher(includeProfiles = payloadVersion >= 2, includeMastery = payloadVersion >= 8)
         val inheritance = input.readInheritance()
-        val archive = input.readArchive()
+        val archive = input.readArchive(includePerfect = payloadVersion >= 10)
         val achievements = input.readStrings()
         val unacknowledgedAchievements = if (payloadVersion >= 6) input.readStrings() else emptyList()
         val weekly = input.readWeekly(includeMetaFields = payloadVersion >= 6)
@@ -115,10 +115,10 @@ public object HighSchoolPhase4StateCodec {
         val selectedSignature = input.readNullableString()
         val returnPlan = input.readNullable { readReturnPlan(includeMetaFields = payloadVersion >= 6) }
         val echo = input.readNullable { readEcho(includeRichFields = payloadVersion >= 5) }
-        val seasonLog = input.readSeasonLog(includeRichFields = payloadVersion >= 5)
+        val seasonLog = input.readSeasonLog(includeRichFields = payloadVersion >= 5, includePerfect = payloadVersion >= 10)
         val tournaments = input.readTournaments(includeSchools = payloadVersion >= 4)
         val prospects = input.readProspects(includeTag = payloadVersion >= 4)
-        val activePitch = input.readNullable { readPitchSession(includeSequencePitches = payloadVersion >= 3) }
+        val activePitch = input.readNullable { readPitchSession(includeSequencePitches = payloadVersion >= 3, includePerfect = payloadVersion >= 10) }
         val lastPresentation = input.readNullable { readPresentation(includeContact = payloadVersion >= 9) }
         val tutorial = HighSchoolTutorialState(input.readBoolean(), input.readBoolean())
         val challengeActive = input.readBoolean()
@@ -132,6 +132,7 @@ public object HighSchoolPhase4StateCodec {
                 includeMetaFields = payloadVersion >= 6,
                 includeTrainingEvidence = payloadVersion >= 7,
                 includePresentationContact = payloadVersion >= 9,
+                includePerfect = payloadVersion >= 10,
             )
         }
         val completedCounter = input.readULong()
@@ -223,12 +224,14 @@ public object HighSchoolPhase4StateCodec {
             writeBoolean(value.drafted); writeInt(value.draftEvaluation); writeNullableString(value.teamId); writeInts(value.ratings); writeInt(value.importantGames); writeInt(value.pitches)
             writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeStrings(value.selectedAwakenings); writeNullableString(value.selectedSignatureLegacyId)
             writeNullableString(value.pledgeId); writeBoolean(value.pledgeAchieved); writeInt(value.soulEarned); writeULong(value.completedGameCounterAtArchive)
+            writeInt(value.perfectReleases)
         }
     }
-    private fun DataInputStream.readArchive(): List<HighSchoolArchiveRecord> = readList {
+    private fun DataInputStream.readArchive(includePerfect: Boolean = false): List<HighSchoolArchiveRecord> = readList {
         HighSchoolArchiveRecord(
             readString(), readInt(), readString(), readNullableString(), readNullableString(), readBoolean(), readInt(), readNullableString(), readInts(), readInt(), readInt(),
             readInt(), readInt(), readInt(), readStrings(), readNullableString(), readNullableString(), readBoolean(), readInt(), readULong(),
+            perfectReleases = if (includePerfect) readInt() else 0,
         )
     }
 
@@ -326,9 +329,10 @@ public object HighSchoolPhase4StateCodec {
         writeList(values) {
             writeString(it.careerId); writeInt(it.lifeNumber); writeInt(it.chapter); writeInt(it.gameNumber); writeInt(it.pitches); writeInt(it.strikeouts); writeInt(it.walks); writeInt(it.runsAllowed); writeInt(it.expectedDamage); writeInt(it.actualDamage); writeStrings(it.abilityMoments); writeInt(it.rivalStrikeouts)
             writeInt(it.season); writeInt(it.week); writeInt(it.outingNumber); writeBoolean(it.started); writeInt(it.outs); writeInt(it.teamRuns); writeInt(it.opponentRuns); writeString(it.decision.wire); writeBoolean(it.played); writeInt(it.hits); writeInt(it.homeRuns)
+            writeBoolean(it.regular); writeInt(it.perfectReleases)
         }
     }
-    private fun DataInputStream.readSeasonLog(includeRichFields: Boolean): List<HighSchoolSeasonLine> = readList {
+    private fun DataInputStream.readSeasonLog(includeRichFields: Boolean, includePerfect: Boolean = false): List<HighSchoolSeasonLine> = readList {
         val careerId = readString(); val lifeNumber = readInt(); val chapter = readInt(); val gameNumber = readInt(); val pitches = readInt(); val strikeouts = readInt(); val walks = readInt(); val runsAllowed = readInt(); val expectedDamage = readInt(); val actualDamage = readInt(); val abilityMoments = readStrings(); val rivalStrikeouts = readInt()
         if (!includeRichFields) {
             HighSchoolSeasonLine(careerId, lifeNumber, chapter, gameNumber, pitches, strikeouts, walks, runsAllowed, expectedDamage, actualDamage, abilityMoments, rivalStrikeouts)
@@ -340,6 +344,7 @@ public object HighSchoolPhase4StateCodec {
                 rivalStrikeouts = rivalStrikeouts, season = readInt(), week = readInt(), outingNumber = readInt(),
                 started = readBoolean(), outs = readInt(), teamRuns = readInt(), opponentRuns = readInt(),
                 decision = pitchingDecision(readString()), played = readBoolean(), hits = readInt(), homeRuns = readInt(),
+                regular = if (includePerfect) readBoolean() else false, perfectReleases = if (includePerfect) readInt() else 0,
             )
         }
     }
@@ -378,8 +383,9 @@ public object HighSchoolPhase4StateCodec {
         writeList(value.sequencePitches) {
             writeString(it.pitchType.wire); writeInt(it.zone.row); writeInt(it.zone.column); writeString(it.intent.wire); writeInt(it.expectedVelocityKph); writeString(it.outcome.wire)
         }
+        writeInt(value.perfectReleases)
     }
-    private fun DataInputStream.readPitchSession(includeSequencePitches: Boolean): HighSchoolPitchSession {
+    private fun DataInputStream.readPitchSession(includeSequencePitches: Boolean, includePerfect: Boolean = false): HighSchoolPitchSession {
         val sessionId = readString(); val gameNumber = readInt(); val seed = readString(); val pitchIndex = readInt(); val preparationToken = readString()
         val context = readContext(); val memory = readMemory(); val game = readGame(); val log = readLog()
         val pitches = readInt(); val strikeouts = readInt(); val walks = readInt(); val runsAllowed = readInt(); val expectedDamage = readInt(); val actualDamage = readInt(); val accepted = readInt(); val outs = readInt(); val hits = readInt(); val abilityMoments = readStrings(); val ended = readBoolean()
@@ -393,6 +399,7 @@ public object HighSchoolPhase4StateCodec {
                 pitchOutcome(readString()),
             )
         } else emptyList()
+        val perfectReleases = if (includePerfect) readInt() else 0
         return HighSchoolPitchSession(
             sessionId = sessionId,
             gameNumber = gameNumber,
@@ -416,6 +423,7 @@ public object HighSchoolPhase4StateCodec {
             ended = ended,
             sequenceMasteryCount = sequenceMasteryCount,
             sequencePitches = sequencePitches,
+            perfectReleases = perfectReleases,
         )
     }
 
@@ -504,11 +512,12 @@ public object HighSchoolPhase4StateCodec {
         includeTrainingEvidence: Boolean,
         includeMastery: Boolean,
         includePresentationContact: Boolean = false,
+        includePerfect: Boolean = false,
     ): HighSchoolChallengeBackup {
         val run = HighSchoolStateCodec.decode(readString().fromBase64())
         val startingPitcher = readPitcher(includeProfiles, includeMastery)
         val inheritance = readInheritance()
-        val archive = readArchive()
+        val archive = readArchive(includePerfect)
         val achievements = readStrings()
         val unacknowledgedAchievements = if (includeMetaFields) readStrings() else emptyList()
         val weekly = readWeekly(includeMetaFields = includeMetaFields)
@@ -517,7 +526,7 @@ public object HighSchoolPhase4StateCodec {
         val selectedSignature = readNullableString()
         val returnPlan = readNullable { readReturnPlan(includeMetaFields = includeMetaFields) }
         val echo = readNullable { readEcho(includeRichFields = includeRichEcho) }
-        val seasonLog = readSeasonLog(includeRichFields = includeRichEcho)
+        val seasonLog = readSeasonLog(includeRichFields = includeRichEcho, includePerfect = includePerfect)
         val tournaments = readTournaments(includeSchools = includeTournamentSchools)
         val prospects = readProspects(includeTag = includeProspectTags)
         val counter = readULong()

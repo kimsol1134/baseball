@@ -12,17 +12,17 @@ public object HighSchoolPledgeRules {
     public const val RULES_VERSION: Int = 2
 
     public val definitions: List<HighSchoolPledgeDefinition> = listOf(
-        HighSchoolPledgeDefinition("get_drafted", HighSchoolPledgeTier.SAFE, 1, "지명받기", "이번 생에 드래프트 지명을 받습니다."),
-        HighSchoolPledgeDefinition("strikeout_master", HighSchoolPledgeTier.BOLD, 5, "삼진 다섯 개", "중요 경기에서 삼진 5개를 기록합니다."),
-        HighSchoolPledgeDefinition("clean_games", HighSchoolPledgeTier.BOLD, 4, "깨끗한 경기", "무실점 중요 경기를 4회 기록합니다."),
-        HighSchoolPledgeDefinition("iron_control", HighSchoolPledgeTier.BOLD, 4, "철벽 제구", "중요 경기 4회 동안 볼넷을 허용하지 않습니다."),
+        HighSchoolPledgeDefinition("get_drafted", HighSchoolPledgeTier.SAFE, 1, "지명받기", "이번 생엔 반드시 이름이 불린다."),
+        HighSchoolPledgeDefinition("strikeout_master", HighSchoolPledgeTier.BOLD, 5, "삼진 다섯 개", "승부처에서 삼진 다섯을 잡는다."),
+        HighSchoolPledgeDefinition("clean_games", HighSchoolPledgeTier.BOLD, 4, "깨끗한 경기", "승부처 네 번을 무실점으로 막는다."),
+        HighSchoolPledgeDefinition("iron_control", HighSchoolPledgeTier.BOLD, 4, "철벽 제구", "승부처 네 번 동안 볼넷을 하나도 안 준다."),
         HighSchoolPledgeDefinition("healthy_finish", HighSchoolPledgeTier.SAFE, 1, "건강한 완주", "팔 경고 없이 고교 생활을 마칩니다."),
-        HighSchoolPledgeDefinition("awakening_three", HighSchoolPledgeTier.BOLD, 3, "세 번의 각성", "각성 3회를 선택합니다."),
-        HighSchoolPledgeDefinition("fan_sixty", HighSchoolPledgeTier.BOLD, 25, "관중의 시선", "팬 관심 25점을 쌓습니다."),
-        HighSchoolPledgeDefinition("evaluation_sixty_five", HighSchoolPledgeTier.BOLD, 64, "평가 65", "드래프트 평가 64점 이상을 받습니다."),
-        HighSchoolPledgeDefinition("evaluation_seventy_five", HighSchoolPledgeTier.LEGENDARY, 67, "평가 75", "드래프트 평가 67점 이상을 받습니다."),
+        HighSchoolPledgeDefinition("awakening_three", HighSchoolPledgeTier.BOLD, 3, "세 번의 각성", "이번 생에 각성 셋을 익힌다."),
+        HighSchoolPledgeDefinition("fan_sixty", HighSchoolPledgeTier.BOLD, 25, "관중의 시선", "팬 관심 25를 쌓는다."),
+        HighSchoolPledgeDefinition("evaluation_sixty_five", HighSchoolPledgeTier.BOLD, 64, "평가 65", "드래프트 평가 64점을 넘긴다."),
+        HighSchoolPledgeDefinition("evaluation_seventy_five", HighSchoolPledgeTier.LEGENDARY, 67, "평가 75", "드래프트 평가 67점을 넘긴다."),
         HighSchoolPledgeDefinition("iron_control_five", HighSchoolPledgeTier.LEGENDARY, 6, "완벽한 철벽", "삼진과 무볼넷의 기준을 넘깁니다."),
-        HighSchoolPledgeDefinition("rival_three_strikeouts", HighSchoolPledgeTier.BOLD, 3, "라이벌을 넘어서", "라이벌과의 경기에서 삼진 3개를 쌓습니다."),
+        HighSchoolPledgeDefinition("rival_three_strikeouts", HighSchoolPledgeTier.BOLD, 3, "라이벌을 넘어서", "라이벌 앞에서 삼진 셋을 잡는다."),
         HighSchoolPledgeDefinition("relationship_sixty_five", HighSchoolPledgeTier.SAFE, 69, "믿음의 배터리", "관계 신뢰를 69점 이상으로 만듭니다."),
     )
 

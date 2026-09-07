@@ -140,9 +140,9 @@ public object ProNationalTeamRules {
     }
 
     public fun news(result: ProNationalTournamentResult): String = when (result) {
-        ProNationalTournamentResult.GOLD -> "대표팀 금메달. 이번 겨울의 얼굴이 됐습니다."
-        ProNationalTournamentResult.SILVER -> "대표팀 은메달. 결승까지 올라 이름을 남겼습니다."
-        ProNationalTournamentResult.BRONZE -> "대표팀 동메달. 조별 탈락은 면했습니다."
-        ProNationalTournamentResult.GROUP_EXIT -> "대표팀 조별 리그에서 멈췄습니다."
+        ProNationalTournamentResult.GOLD -> "대표팀 금메달. 이번 겨울의 얼굴이 됐다."
+        ProNationalTournamentResult.SILVER -> "대표팀 은메달. 결승까지 올라 이름을 남겼다."
+        ProNationalTournamentResult.BRONZE -> "대표팀 동메달. 메달은 걸고 돌아온다."
+        ProNationalTournamentResult.GROUP_EXIT -> "대표팀 조별 리그에서 멈췄다."
     }
 }

@@ -267,6 +267,7 @@ public data class ProSeasonStats(
     val losses: Int = 0,
     val saves: Int = 0,
     val postseasonGames: List<ProPostseasonGameLine>? = null,
+    val perfectReleases: Int = 0,
 ) {
     public val runPerNinePermille: Int
         get() = if (inningsOuts == 0) 9_990 else runsAllowed * 27_000 / inningsOuts
@@ -295,6 +296,7 @@ public data class ProGameLine(
     val played: Boolean,
     val hits: Int = 0,
     val homeRuns: Int = 0,
+    val perfectReleases: Int = 0,
 )
 
 public data class ProRivalBatter(
@@ -388,6 +390,7 @@ public data class ProPitchSession(
     val sequencePitches: List<PitchSequencePitch> = emptyList(),
     val ended: Boolean = false,
     val boundary: ProPitchBoundary = ProPitchBoundary.PLAYING,
+    val perfectReleases: Int = 0,
 )
 
 public data class ProStartLinkedRequest(
@@ -623,7 +626,8 @@ public fun ProStartLinkedRequest.Companion.fromHighSchool(
         highSchoolLegacyContext = ProHighSchoolLegacyContext(
             startingPitcher = state.startingPitcher.toPitcherSnapshotForPro(),
             highSchoolPitcher = run.toPitcherSnapshotForPro(),
-            performance = run.performance,
+            // The pro legacy wire carries the nine original counters; 퍼펙트 stays on the high-school run.
+            performance = run.performance.copy(perfectReleases = 0),
             selectedAwakenings = run.selectedAwakenings.map { it.wire },
             managerTrust = run.managerTrust,
             catcherTrust = run.catcherTrust,

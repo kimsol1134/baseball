@@ -54,6 +54,7 @@ public sealed interface HighSchoolPhase4Command {
     public data object FinishImportantGame : HighSchoolPhase4Command
     public data class ChooseAwakening(val seed: String, val awakening: HighSchoolAwakening) : HighSchoolPhase4Command
     public data class AdvanceChapter(val seed: String) : HighSchoolPhase4Command
+    public data class ClaimChapterGame(val seed: String) : HighSchoolPhase4Command
     public data class ResolveDraft(val seed: String) : HighSchoolPhase4Command
     public data object PrepareLegacy : HighSchoolPhase4Command
     public data class SelectLegacy(val legacyId: String) : HighSchoolPhase4Command
@@ -196,6 +197,7 @@ public class HighSchoolPhase4CommandStore(
         HighSchoolPhase4Command.FinishImportantGame -> kernel.finishImportantGame(state)
         is HighSchoolPhase4Command.ChooseAwakening -> kernel.chooseAwakening(command.seed, state, command.awakening)
         is HighSchoolPhase4Command.AdvanceChapter -> kernel.advanceChapter(command.seed, state)
+        is HighSchoolPhase4Command.ClaimChapterGame -> kernel.claimChapterGame(command.seed, state)
         is HighSchoolPhase4Command.ResolveDraft -> kernel.resolveDraft(command.seed, state)
         HighSchoolPhase4Command.PrepareLegacy -> kernel.prepareLegacy(state)
         is HighSchoolPhase4Command.SelectLegacy -> kernel.selectLegacy(state, command.legacyId)

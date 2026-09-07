@@ -238,7 +238,7 @@ public class HighSchoolPhase4Kernel(
         require(state.activePitch == null) { "importantGame.already_reserved" }
         val gameNumber = state.run.performance.importantGamesCompleted + 1
         val scenario = state.run.currentGameScenario
-            ?: HighSchoolContentCatalog.scenarios.firstOrNull { it.id == state.run.currentGameScenarioId }
+            ?: (HighSchoolContentCatalog.scenarios + HighSchoolContentCatalog.regularScenarios).firstOrNull { it.id == state.run.currentGameScenarioId }
             ?: error("importantGame.scenario_missing")
         val pitcher = state.run.toPitcherSnapshot()
         val batter = state.run.toBatterSnapshot()
@@ -387,6 +387,7 @@ public class HighSchoolPhase4Kernel(
             ended = snapshot.ended,
             sequenceMasteryCount = session.sequenceMasteryCount + if (sequenceMoment != null) 1 else 0,
             sequencePitches = nextSequencePitches,
+            perfectReleases = session.perfectReleases + if (delivery.isPerfectRelease) 1 else 0,
         )
         val deliveryAchievements = HighSchoolAchievementRules.updateDelivery(
             state.achievements.toSet(), delivery.releaseAccuracy, delivery.aimAccuracy,
@@ -527,6 +528,7 @@ public class HighSchoolPhase4Kernel(
             sequenceMasteryCount = session.sequenceMasteryCount,
             scoreDifferentialAtEntry = session.context.scoreDifferential,
             homeRuns = session.log.entries.count { it.outcome == PitchOutcome.HOME_RUN },
+            perfectReleases = session.perfectReleases,
         )
         val nextRun = highSchool.recordImportantGame(
             HighSchoolKernel.GameRequest(session.seed, highSchool.resignShadowState(state.run.copy(pitcher = state.run.pitchLearningProject?.let { state.run.pitcher.copy(pitchProfiles = PitchLearningRules.advance(state.run.pitcher.pitchProfiles, it, it)) } ?: state.run.pitcher)), report),
@@ -536,7 +538,7 @@ public class HighSchoolPhase4Kernel(
             state.run,
             report,
             outingNumber = state.seasonLog.size + 1,
-        ).copy(abilityMoments = session.abilityMoments)
+        ).copy(abilityMoments = session.abilityMoments, regular = state.run.chapterGameClaimed, perfectReleases = session.perfectReleases)
         val nextCounter = if (state.challenge.active) state.completedGameCounter else
             HighSchoolCompletedGameCounterRules.record(state.completedGameCounter)
         val nextReceipts = if (state.challenge.active) state.completedGameReceipts else {
@@ -606,6 +608,12 @@ public class HighSchoolPhase4Kernel(
     public fun chooseAwakening(seed: String, state: HighSchoolPhase4State, awakening: HighSchoolAwakening): HighSchoolPhase4Result {
         val next = highSchool.chooseAwakening(HighSchoolKernel.AwakeningRequest(seed, state.run, awakening)).snapshot
         return result(sign(updateProgress(state.copy(run = next))), "awakening_selected", listOf("awakening.${awakening.wire}"))
+    }
+
+    public fun claimChapterGame(seed: String, state: HighSchoolPhase4State): HighSchoolPhase4Result {
+        require(state.activePitch == null) { "chapterGame.pitch_in_progress" }
+        val next = highSchool.claimChapterGame(HighSchoolKernel.AdvanceRequest(seed, state.run)).snapshot
+        return result(sign(updateProgress(state.copy(run = next))), "chapter_game_claimed")
     }
 
     public fun advanceChapter(seed: String, state: HighSchoolPhase4State): HighSchoolPhase4Result {
@@ -690,6 +698,7 @@ public class HighSchoolPhase4Kernel(
             strikeouts = state.run.performance.strikeouts,
             walks = state.run.performance.walks,
             runsAllowed = state.run.performance.runsAllowed,
+            perfectReleases = state.run.performance.perfectReleases,
             selectedAwakenings = state.run.selectedAwakenings.map { it.wire },
             selectedSignatureLegacyId = state.selectedSignatureLegacyId,
             pledgeId = pledge?.definition?.id,
@@ -1201,7 +1210,7 @@ public class HighSchoolPhase4Kernel(
         parts += state.commandReceipts.joinToString(";") { "${it.commandId}:${it.revision}:${it.resultHash}:${it.commandHash}:${it.sessionId}" }
         parts += state.selectedDayKey
         return StableHash.fnv1a64(
-            parts.joinToString("|"),
+            com.solkim.baseball.core.SaveCommitmentCompatibility.stable(parts.joinToString("|")),
         )
     }
 

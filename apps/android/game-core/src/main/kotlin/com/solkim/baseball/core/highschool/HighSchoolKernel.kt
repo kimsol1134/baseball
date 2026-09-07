@@ -68,6 +68,8 @@ public data class HighSchoolPerformance(
     val actualDamage: Int = 0,
     val outs: Int = 0,
     val hits: Int = 0,
+    /** Perfect releases across every recorded game; absent from the Swift oracle, so it stays 0 on fixture paths. */
+    val perfectReleases: Int = 0,
 )
 
 public data class HighSchoolGameReport(
@@ -88,6 +90,8 @@ public data class HighSchoolGameReport(
     /** Source ProGameLine support projection; populated by the Phase 4 boundary. */
     val teamRuns: Int? = null,
     val homeRuns: Int? = null,
+    /** Android-first: perfect releases in this game; null keeps oracle reports unchanged. */
+    val perfectReleases: Int? = null,
 )
 
 public data class HighSchoolTrainingPreview(
@@ -229,6 +233,8 @@ public data class HighSchoolState(
     val recentRelationshipEventIds: List<String> = emptyList(),
     val stateCommitment: String,
     val pitchLearningProject: PitchLearningProject? = null,
+    /** "이 경기는 내가 던진다": the chapter's regular game was claimed; cleared by advanceChapter. */
+    val chapterGameClaimed: Boolean = false,
 )
 
 public data class HighSchoolEvent(
@@ -713,16 +719,16 @@ public class HighSchoolKernel {
                     nextRisk = 50
                     fatigueDelta = 6
                     if (HighSchoolKarma.NO_LAST_CHANCE in state.karmas) {
-                        event = "팔이 버티지 못했습니다. 시즌이 여기서 끝났고, 지금까지의 기록으로 평가받습니다."
+                        event = "팔이 버티지 못했다. 시즌은 여기서 끝. 지금까지의 기록으로 평가받는다."
                         headline = "시즌 아웃 · ${state.pitcher.name}, 부상으로 조기 드래프트 평가에 들어갑니다."
                     } else {
-                        event = "무리한 등판이 겹쳐 팔에 이상이 왔습니다. 다음 훈련 ${severity}회는 재활로 씁니다."
+                        event = "무리한 등판이 겹쳐 팔에 이상이 왔다. 다음 훈련 ${severity}번은 재활이다."
                         headline = "팔 부상 · ${state.pitcher.name}, 무리한 등판이 반복돼 재활에 들어갑니다."
                     }
                 } else {
                     fatigueDelta = 4
-                    event = "오늘도 예정대로 던졌습니다. 능력은 지켰지만 팔의 위험이 더 커졌습니다."
-                    headline = "${state.pitcher.name}, 경고에도 등판을 강행했습니다 · 팔 위험 누적."
+                    event = "오늘도 예정대로 던졌다. 능력은 지켰지만 팔은 더 위험해졌다."
+                    headline = "${state.pitcher.name}, 경고에도 등판을 강행했다 · 팔 위험 누적."
                 }
             }
             HighSchoolRelationshipResponse.LISTEN -> {
@@ -730,16 +736,16 @@ public class HighSchoolKernel {
                 fatigueDelta = -30
                 trustDelta = 2
                 fanDelta = 0
-                event = "이번 등판은 건너뛰고 팔을 쉬게 했습니다. 피로와 위험이 크게 줄었습니다."
-                headline = "${state.pitcher.name}, 짧은 휴식으로 팔을 아꼈습니다 · 회복 우선."
+                event = "이번 등판은 건너뛰고 팔을 쉬게 했다. 피로와 위험이 크게 줄었다."
+                headline = "${state.pitcher.name}, 짧은 휴식으로 팔을 아꼈다 · 회복 우선."
             }
             HighSchoolRelationshipResponse.EXPLAIN -> {
                 nextRisk = 0
                 fatigueDelta = -HighSchoolContentCatalog.ARM_EXAM_RELIEF
                 trustDelta = 1
                 fanDelta = 0
-                event = "정밀 검진 결과 큰 손상은 없었습니다. 검진 전 위험 수치는 $priorRisk, 관리 계획을 새로 세웠습니다."
-                headline = "${state.pitcher.name}, 정밀 검진으로 팔 상태를 확인했습니다 · 위험 관리 시작."
+                event = "정밀 검진 결과 큰 손상은 없었다. 트레이너가 관리 계획을 새로 세웠다."
+                headline = "${state.pitcher.name}, 정밀 검진으로 팔 상태를 확인했다 · 위험 관리 시작."
             }
         }
         val wind = windFor(state.careerId)
@@ -815,6 +821,7 @@ public class HighSchoolKernel {
             actualDamage = state.performance.actualDamage + report.actualDamage,
             outs = state.performance.outs + (report.outs ?: min(27, report.pitches / 5)),
             hits = state.performance.hits + (report.hits ?: 0),
+            perfectReleases = state.performance.perfectReleases + (report.perfectReleases ?: 0),
         )
         val gameGrowth = applyGameGrowth(state, report)
         val wind = windFor(state.careerId)
@@ -830,7 +837,8 @@ public class HighSchoolKernel {
             state.awakeningSparks +
                 (if (report.runsAllowed == 0 || report.strikeouts >= 4) 2 else 0) +
                 (if (report.actualDamage <= report.expectedDamage) 1 else 0) +
-                (if (gameGrowth.bloomed) 1 else 0),
+                (if (gameGrowth.bloomed) 1 else 0) +
+                (report.perfectReleases ?: 0) / 3,
         )
         val sequenceTrustReward = min(max(report.sequenceMasteryCount ?: 0, 0), 3)
         val managerTrust = if (sequenceTrustReward > 0) {
@@ -843,8 +851,7 @@ public class HighSchoolKernel {
         } else {
             state.catcherTrust
         }
-        val next = enterMilestone(
-            state.copy(
+        val recorded = state.copy(
                 revision = state.revision + 1UL,
                 pitcher = gameGrowth.pitcher,
                 talent = gameGrowth.talent,
@@ -857,10 +864,21 @@ public class HighSchoolKernel {
                 awakeningSparks = sparks,
                 fatigue = clamp(state.fatigue + max(5, report.pitches * max(60, 140 - state.pitcher.stamina) / 200), 0, 100),
                 currentGameScenarioId = null,
-            ),
-            seed,
-            state.milestoneIndex + 1,
-        )
+            )
+        // A claimed chapter game returns to the chapter review instead of the next milestone.
+        val next = if (state.chapterGameClaimed) {
+            recorded.copy(
+                phase = HighSchoolPhase.CHAPTER_REVIEW,
+                currentGameScenario = null,
+                currentRelationshipEvent = null,
+                currentRelationshipTarget = null,
+                currentRelationshipCategory = null,
+                awakeningOptions = emptyList(),
+                trainingOpportunity = null,
+            )
+        } else {
+            enterMilestone(recorded, seed, state.milestoneIndex + 1)
+        }
         return result(seed, signed(next), "career_important_game_completed", listOf("important_game.$expected"))
     }
 
@@ -884,12 +902,41 @@ public class HighSchoolKernel {
         return result(seed, signed(next), "career_awakening_selected", listOf("awakening.${request.awakening.wire}"))
     }
 
+    /**
+     * "이 경기는 내가 던진다": once per chapter, before the draft chapter, the player takes one of the
+     * chapter's regular games. It is recorded like an important game; advanceChapter then drops one
+     * simulated automatic line so the chapter still holds two games.
+     */
+    public fun claimChapterGame(request: AdvanceRequest): HighSchoolResult {
+        val seed = validate(request.seed, request.state, HighSchoolPhase.CHAPTER_REVIEW)
+        val state = request.state
+        require(state.chapter.number < HighSchoolContentCatalog.chapters.size) { "chapterGame.final_chapter" }
+        require(!state.chapterGameClaimed) { "chapterGame.already_claimed" }
+        val scenario = regularScenario(state)
+        val next = state.copy(
+            revision = state.revision + 1UL,
+            phase = HighSchoolPhase.IMPORTANT_GAME,
+            currentGameScenarioId = scenario.id,
+            currentGameScenario = scenario,
+            chapterGameClaimed = true,
+        )
+        return result(seed, signed(next), "career_chapter_game_claimed", listOf("chapter_game.${scenario.id}"))
+    }
+
+    private fun regularScenario(state: HighSchoolState): HighSchoolGameScenario {
+        val pool = HighSchoolContentCatalog.regularScenarios
+        val base = (hashValue("regular_scenario|${state.careerId}|${state.chapter.number}") % pool.size.toULong()).toInt()
+        return pool[base]
+    }
+
     public fun advanceChapter(request: AdvanceRequest): HighSchoolResult {
         val seed = validate(request.seed, request.state, HighSchoolPhase.CHAPTER_REVIEW)
         val state = request.state
         require(state.chapter.number < HighSchoolContentCatalog.chapters.size) { "chapter.final" }
-        val automaticLines = automaticOuting.simulate(state, state.chapter, seed)
-        require(automaticLines.size == 2) { "automaticGame.incomplete" }
+        val simulatedLines = automaticOuting.simulate(state, state.chapter, seed)
+        require(simulatedLines.size == 2) { "automaticGame.incomplete" }
+        // Both lines are always simulated so RNG order never changes; a claimed game replaces the first.
+        val automaticLines = if (state.chapterGameClaimed) simulatedLines.drop(1) else simulatedLines
         val automaticOuts = state.automaticOuts + automaticLines.sumOf { it.outs }
         val automaticRuns = state.automaticRunsAllowed + automaticLines.sumOf { it.runsAllowed }
         val nextChapter = HighSchoolContentCatalog.chapters[state.chapter.number]
@@ -903,6 +950,7 @@ public class HighSchoolKernel {
             automaticGames = state.automaticGames + automaticLines.size,
             automaticOuts = automaticOuts,
             automaticRunsAllowed = automaticRuns,
+            chapterGameClaimed = false,
         )
         return result(seed, signed(next), "career_chapter_advanced", listOf("chapter.${nextChapter.number}"))
     }
@@ -945,9 +993,9 @@ public class HighSchoolKernel {
             firstSeasonGoal = team?.let { "퓨처스 선발 10경기와 볼넷률 8% 이하" },
             evaluationBreakdown = draftEvaluationBreakdown(state),
             summary = if (drafted) {
-                "지명 구단 · ${team?.name ?: "프로 구단"}. 구위와 고교 경기 기록에서 높은 평가를 받았습니다."
+                "지명 구단 · ${team?.name ?: "프로 구단"}. 구위와 고교 경기 기록이 스카우트를 움직였다."
             } else {
-                "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
+                "마지막 라운드까지 이름이 불리지 않았다. 다음 생에 남길 것을 고른다."
             },
         )
         val next = state.copy(
@@ -1876,14 +1924,14 @@ public class HighSchoolKernel {
         val bucket = HighSchoolWindRules.bucketFor(careerId)
         return when (bucket) {
             in 0..29 -> Wind("calm")
-            in 30..37 -> Wind("monster_generation", "괴물 세대", "강한 숙적과 맞서는 만큼 좋은 경기에는 더 많은 시선이 모입니다.", rivalBonus = 5, rewardBonusPermille = 150, fanInterestGainBonus = 3)
-            in 38..45 -> Wind("scout_frenzy", "스카우트 풍년", "일찍 모인 시선이 시즌 내내 따라붙습니다.", startingFanInterest = 10)
-            in 46..53 -> Wind("quiet_season", "무명의 해", "관심 없이 시작하지만 숙적도 평소보다 덜 완성된 해입니다.", rivalBonus = -3, startingFanInterest = 0, rewardBonusPermille = 80)
-            in 54..61 -> Wind("heatwave", "긴 여름", "훈련의 피로가 더 쌓이는 대신 몸을 돌보는 회복도 더 깊습니다.", rewardBonusPermille = 120, trainingFatigueDelta = 2, recoveryBonus = 4)
+            in 30..37 -> Wind("monster_generation", "괴물 세대", "라이벌이 강한 해. 대신 좋은 경기엔 더 많은 시선이 모인다.", rivalBonus = 5, rewardBonusPermille = 150, fanInterestGainBonus = 3)
+            in 38..45 -> Wind("scout_frenzy", "스카우트 풍년", "일찍 모인 시선이 시즌 내내 따라붙는다.", startingFanInterest = 10)
+            in 46..53 -> Wind("quiet_season", "무명의 해", "관심 없이 시작하지만 라이벌도 평소보다 덜 완성된 해.", rivalBonus = -3, startingFanInterest = 0, rewardBonusPermille = 80)
+            in 54..61 -> Wind("heatwave", "긴 여름", "훈련 피로가 더 쌓이는 대신 회복도 더 깊은 해.", rewardBonusPermille = 120, trainingFatigueDelta = 2, recoveryBonus = 4)
             in 62..69 -> Wind("command_year", "코스의 해", "제구 감각이 잘 붙지만 강한 공을 만드는 날에는 피로가 더 듭니다.", rewardBonusPermille = 50, favoredTraining = HighSchoolTrainingFocus.COMMAND, favoredTrainingBonus = 1, extraFatigueFocus = HighSchoolTrainingFocus.VELOCITY, extraFatigueDelta = 1)
             in 70..77 -> Wind("power_year", "강한 공의 해", "구위는 빠르게 자라지만 숙적도 강한 승부에 맞춰 올라옵니다.", rivalBonus = 3, rewardBonusPermille = 100, favoredTraining = HighSchoolTrainingFocus.VELOCITY, favoredTrainingBonus = 1)
             in 78..85 -> Wind("battery_year", "배터리의 해", "조용한 출발 대신 포수와 쌓는 믿음이 더 빠르게 깊어집니다.", startingFanInterest = 2, rewardBonusPermille = 50, favoredRelationship = HighSchoolRelationshipTarget.CATCHER, favoredRelationshipBonus = 2)
-            in 86..92 -> Wind("spotlight_year", "조명의 해", "좋은 장면은 더 큰 관심을 부르지만 관계에서의 실패도 더 선명하게 남습니다.", rewardBonusPermille = 80, fanInterestGainBonus = 2, relationshipLossPenalty = 2)
+            in 86..92 -> Wind("spotlight_year", "조명의 해", "좋은 장면은 더 큰 관심을 부르지만 관계의 실패도 더 선명하게 남는 해.", rewardBonusPermille = 80, fanInterestGainBonus = 2, relationshipLossPenalty = 2)
             else -> Wind("underdog_year", "언더독의 해", "관심 없이 강한 숙적을 만나지만 끝까지 증명하면 평가가 따라옵니다.", startingFanInterest = 0, rivalBonus = 2, rewardBonusPermille = 120, draftEvaluationDelta = 1)
         }
     }
@@ -1895,17 +1943,17 @@ public class HighSchoolKernel {
         windNews: String?,
     ): List<String> {
         val base = if (lifeNumber <= 1) {
-            listOf("${identity.region} 중학교 마지막 대회에서 보여준 공이 같은 지역 네 고교의 관심을 끌었습니다.")
+            listOf("${identity.region} 중학교 마지막 대회에서 던진 공이 같은 지역 네 고교의 눈에 들었다.")
         } else {
             val openers = listOf(
-                "${identity.region} 중학교 마지막 대회. 처음 서는 마운드인데 흙의 감촉이 낯설지 않았습니다. 같은 지역 네 고교가 다시 지켜보고 있습니다.",
-                "${identity.region} 중학교 마지막 대회에서 던진 마지막 공. 포수 미트에 꽂히는 소리가 어딘가 익숙했습니다. 네 고교의 시선이 모입니다.",
-                "${identity.region} 중학교 마지막 대회를 마친 뒤, 어깨보다 먼저 마음이 다음 이닝을 준비하고 있었습니다. 네 고교에서 제안이 도착했습니다.",
+                "${identity.region} 중학교 마지막 대회. 처음 서는 마운드인데 흙의 감촉이 낯설지 않았다. 같은 지역 네 고교가 다시 지켜보고 있다.",
+                "${identity.region} 중학교 마지막 대회에서 던진 마지막 공. 미트에 꽂히는 소리가 어딘가 익숙했다. 네 고교의 시선이 모인다.",
+                "${identity.region} 중학교 마지막 대회를 마친 뒤, 어깨보다 먼저 마음이 다음 이닝을 준비하고 있었다. 네 고교에서 제안이 왔다.",
             )
             buildList {
                 add(openers[(lifeNumber - 2) % openers.size])
                 if (inheritedMemoryCount > 0) {
-                    add("처음 잡는 그립인데 손끝이 먼저 기억합니다 · 설명하기 어려운 감각 ${inheritedMemoryCount}가지")
+                    add("처음 잡는 그립인데 손끝이 먼저 기억한다 · 설명하기 어려운 감각 ${inheritedMemoryCount}가지")
                 }
             }
         }
@@ -2009,6 +2057,8 @@ public class HighSchoolKernel {
                 if (state.recentRelationshipEventIds.isNotEmpty()) add("recentRelationships:${state.recentRelationshipEventIds.joinToString(",")}")
                 if (echo != "none") add("rebirthEcho:$echo")
                 state.pitcher.mastery?.let { add("mastery:${it.stuff}:${it.command}:${it.movement}:${it.stamina}") }
+                if (state.chapterGameClaimed) add("chapterGame:claimed")
+                if (state.performance.perfectReleases > 0) add("perfect:${state.performance.perfectReleases}")
             }.joinToString("|"),
         )
     }
@@ -2055,7 +2105,7 @@ public class HighSchoolKernel {
     private data class Wind(
         val id: String,
         val title: String = "바람 없는 해",
-        val detail: String = "특별할 것 없는 평범한 해입니다. 실력만이 말합니다.",
+        val detail: String = "특별할 것 없는 평범한 해. 실력만이 말한다.",
         val rivalBonus: Int = 0,
         val startingFanInterest: Int = 5,
         val rewardBonusPermille: Int = 0,

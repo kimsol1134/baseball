@@ -149,6 +149,7 @@ public object HighSchoolPhase4CommandCodec {
         "finishImportantGame" -> exactPayload(kind, payload, "finishImportantGame") { HighSchoolPhase4Command.FinishImportantGame }
         "chooseAwakening" -> unpack(payload, 2).let { values -> HighSchoolPhase4Command.ChooseAwakening(values[0], enumByWire(HighSchoolAwakening.entries, values[1], "awakening.id") { value -> value.wire }) }
         "advanceChapter" -> HighSchoolPhase4Command.AdvanceChapter(unpack(payload, 1).single())
+        "claimChapterGame" -> HighSchoolPhase4Command.ClaimChapterGame(unpack(payload, 1).single())
         "resolveDraft" -> HighSchoolPhase4Command.ResolveDraft(unpack(payload, 1).single())
         "prepareLegacy" -> exactPayload(kind, payload, "prepareLegacy") { HighSchoolPhase4Command.PrepareLegacy }
         "selectLegacy" -> HighSchoolPhase4Command.SelectLegacy(unpack(payload, 1).single())
@@ -202,6 +203,7 @@ public object HighSchoolPhase4CommandCodec {
         HighSchoolPhase4Command.FinishImportantGame -> "finishImportantGame"
         is HighSchoolPhase4Command.ChooseAwakening -> "chooseAwakening"
         is HighSchoolPhase4Command.AdvanceChapter -> "advanceChapter"
+        is HighSchoolPhase4Command.ClaimChapterGame -> "claimChapterGame"
         is HighSchoolPhase4Command.ResolveDraft -> "resolveDraft"
         HighSchoolPhase4Command.PrepareLegacy -> "prepareLegacy"
         is HighSchoolPhase4Command.SelectLegacy -> "selectLegacy"
@@ -253,6 +255,7 @@ public object HighSchoolPhase4CommandCodec {
         HighSchoolPhase4Command.FinishImportantGame -> "finishImportantGame"
         is HighSchoolPhase4Command.ChooseAwakening -> pack(listOf(command.seed, command.awakening.wire))
         is HighSchoolPhase4Command.AdvanceChapter -> pack(listOf(command.seed))
+        is HighSchoolPhase4Command.ClaimChapterGame -> pack(listOf(command.seed))
         is HighSchoolPhase4Command.ResolveDraft -> pack(listOf(command.seed))
         HighSchoolPhase4Command.PrepareLegacy -> "prepareLegacy"
         is HighSchoolPhase4Command.SelectLegacy -> pack(listOf(command.legacyId))
@@ -292,6 +295,7 @@ public object HighSchoolPhase4CommandCodec {
         HighSchoolPhase4Command.FinishImportantGame -> "finishImportantGame"
         is HighSchoolPhase4Command.ChooseAwakening -> "chooseAwakening|${command.seed}|${command.awakening.wire}"
         is HighSchoolPhase4Command.AdvanceChapter -> "advanceChapter|${command.seed}"
+        is HighSchoolPhase4Command.ClaimChapterGame -> "claimChapterGame|${command.seed}"
         is HighSchoolPhase4Command.ResolveDraft -> "resolveDraft|${command.seed}"
         HighSchoolPhase4Command.PrepareLegacy -> "prepareLegacy"
         is HighSchoolPhase4Command.SelectLegacy -> "selectLegacy|${command.legacyId}"

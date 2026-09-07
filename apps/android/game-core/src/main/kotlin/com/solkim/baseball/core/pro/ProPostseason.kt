@@ -460,23 +460,23 @@ public object ProPostseasonRules {
     }
 
     public fun qualificationNews(seed: Int): String = when (seed) {
-        1 -> "정규시즌 1위입니다. 우승 결정전 한 판이 남았습니다."
-        2 -> "정규시즌 2위입니다. 플레이오프 한 판부터 올라갑니다."
-        3 -> "정규시즌 3위입니다. 준플레이오프 한 판부터 시작합니다."
-        4 -> "정규시즌 4위입니다. 와일드카드에서 한 승이면 올라갑니다."
-        5 -> "정규시즌 5위입니다. 와일드카드에서 두 번을 이겨야 합니다."
+        1 -> "정규시즌 1위. 우승 결정전 한 판이 남았다."
+        2 -> "정규시즌 2위. 플레이오프부터 올라간다."
+        3 -> "정규시즌 3위. 준플레이오프부터 시작한다."
+        4 -> "정규시즌 4위. 와일드카드에서 한 번만 이기면 된다."
+        5 -> "정규시즌 5위. 와일드카드에서 두 번 이겨야 한다."
         else -> "플레이오프가 열립니다."
     }
 
     public fun unavailableNews(level: ProLevel): String =
-        if (level == ProLevel.MINOR) "구단은 가을에 올랐지만 2군이라 마운드에 서지 못했습니다."
-        else "구단은 가을에 올랐지만 부상으로 마운드에 서지 못했습니다."
+        if (level == ProLevel.MINOR) "팀은 가을에 올랐지만 나는 2군이었다."
+        else "팀은 가을에 올랐지만 나는 부상으로 마운드에 서지 못했다."
 
     public fun eliminationNews(round: ProAutumnRound?): String = when (round) {
-        ProAutumnRound.WILD_CARD -> "와일드카드에서 탈락했습니다."
-        ProAutumnRound.SEMIFINAL -> "준플레이오프에서 탈락했습니다."
-        ProAutumnRound.PLAYOFF -> "플레이오프에서 탈락했습니다."
-        else -> "플레이오프에서 탈락했습니다."
+        ProAutumnRound.WILD_CARD -> "와일드카드에서 끝났다."
+        ProAutumnRound.SEMIFINAL -> "준플레이오프에서 끝났다."
+        ProAutumnRound.PLAYOFF -> "플레이오프에서 끝났다."
+        else -> "플레이오프에서 끝났다."
     }
 
     public fun hofBonus(result: ProPostseasonResult): Int = when (result) {

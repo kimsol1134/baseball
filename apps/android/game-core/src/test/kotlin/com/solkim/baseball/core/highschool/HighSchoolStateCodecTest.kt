@@ -114,4 +114,16 @@ class HighSchoolStateCodecTest {
     private fun checkpoint(result: HighSchoolResult): HighSchoolResult = result.copy(
         snapshot = HighSchoolStateCodec.decode(HighSchoolStateCodec.encode(result.snapshot)),
     )
+
+    @Test
+    fun claimedGameAndPerfectReleasesAreAdditiveAndOmittedWhenDefault() {
+        val state = kernel.start(HighSchoolKernel.StartRequest("918220", "power_prospect")).snapshot
+        val encoded = HighSchoolStateCodec.encode(state).decodeToString()
+        assertTrue("chapterGameClaimed" !in encoded && "perfectReleases" !in encoded)
+        val marked = kernel.resignShadowState(state.copy(chapterGameClaimed = true, performance = state.performance.copy(perfectReleases = 3)))
+        val roundTrip = HighSchoolStateCodec.decode(HighSchoolStateCodec.encode(marked))
+        assertEquals(marked, roundTrip)
+        assertTrue(roundTrip.chapterGameClaimed)
+        assertEquals(3, roundTrip.performance.perfectReleases)
+    }
 }

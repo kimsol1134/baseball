@@ -520,7 +520,7 @@ class HighSchoolPhase4KernelTest {
                     signingBonus = 210_000_000,
                     firstSeasonGoal = "퓨처스 선발 10경기와 볼넷률 8% 이하",
                     evaluationBreakdown = listOf("능력 45", "관계 +2"),
-                    summary = "지명 구단 · 서울 코메츠. 구위와 고교 경기 기록에서 높은 평가를 받았습니다.",
+                    summary = "지명 구단 · 서울 코메츠. 구위와 고교 경기 기록이 스카우트를 움직였다.",
                 ),
             ),
         )
@@ -590,6 +590,56 @@ class HighSchoolPhase4KernelTest {
         )
         assertFailsWith<IllegalArgumentException> { HighSchoolPhase4StateCodec.encode(tampered) }
         assertFailsWith<IllegalArgumentException> { kernel.validateSavedState(tampered) }
+    }
+
+    @Test
+    fun claimedChapterGameCountsLikeAnImportantGameAndReplacesOneAutomaticLine() {
+        var result = kernel.reserveImportantGame("918220", setupImportantGame())
+        result = finishReservedGame(result, "918220")
+        while (result.state.run.phase != HighSchoolPhase.CHAPTER_REVIEW) {
+            result = when (result.state.run.phase) {
+                HighSchoolPhase.RELATIONSHIP -> kernel.resolveRelationship("918220", result.state, HighSchoolRelationshipResponse.LISTEN)
+                HighSchoolPhase.AWAKENING -> kernel.chooseAwakening("918220", result.state, result.state.run.awakeningOptions.first())
+                HighSchoolPhase.IMPORTANT_GAME -> finishReservedGame(result, "918220")
+                HighSchoolPhase.TRAINING -> kernel.commitTraining("918220", result.state, HighSchoolTrainingFocus.COMMAND, HighSchoolTrainingIntensity.STANDARD)
+                else -> error("phase=${result.state.run.phase}")
+            }
+        }
+        val review = restart(result).state
+        val gamesBefore = review.run.performance.importantGamesCompleted
+        val untouched = kernel.advanceChapter("918220", review).state
+        assertEquals(review.run.automaticGames + 2, untouched.run.automaticGames)
+
+        val claimed = restart(kernel.claimChapterGame("918220", review)).state
+        assertEquals(HighSchoolPhase.IMPORTANT_GAME, claimed.run.phase)
+        assertTrue(claimed.run.chapterGameClaimed)
+        assertTrue(claimed.run.currentGameScenarioId!!.startsWith("regular-"))
+        assertEquals(review.run.milestoneIndex, claimed.run.milestoneIndex)
+
+        var game = kernel.reserveImportantGame("918220", claimed)
+        var preparation = game.preparation ?: error("preparation missing")
+        var guard = 0
+        while (game.state.activePitch?.ended != true && guard++ < 80) {
+            game = kernel.submitPitch(game.state, game.state.activePitch!!.sessionId, preparation.primaryRecommendation.call, PitchDelivery(990, 900))
+            game = restart(game)
+            preparation = game.preparation ?: break
+        }
+        val pitchesThrown = game.state.activePitch!!.pitches
+        assertEquals(pitchesThrown, game.state.activePitch!!.perfectReleases, "every 990 release is perfect")
+        val finished = restart(kernel.finishImportantGame(game.state)).state
+        assertEquals(HighSchoolPhase.CHAPTER_REVIEW, finished.run.phase)
+        assertTrue(finished.run.chapterGameClaimed)
+        assertEquals(gamesBefore + 1, finished.run.performance.importantGamesCompleted)
+        assertEquals(pitchesThrown, finished.run.performance.perfectReleases)
+        assertTrue(finished.seasonLog.last().regular)
+        assertEquals(pitchesThrown, finished.seasonLog.last().perfectReleases)
+        assertFailsWith<IllegalArgumentException> { kernel.claimChapterGame("918220", finished) }
+
+        val advanced = restart(kernel.advanceChapter("918220", finished)).state
+        assertEquals(review.run.automaticGames + 1, advanced.run.automaticGames, "one automatic line is replaced by the claimed game")
+        assertEquals(false, advanced.run.chapterGameClaimed)
+        assertEquals(HighSchoolPhase.TRAINING, advanced.run.phase)
+        assertEquals(pitchesThrown, advanced.run.performance.perfectReleases)
     }
 
     private fun restart(result: HighSchoolPhase4Result): HighSchoolPhase4Result =

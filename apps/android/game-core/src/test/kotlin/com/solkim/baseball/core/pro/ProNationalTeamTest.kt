@@ -21,7 +21,7 @@ class ProNationalTeamTest {
         assertEquals(seed, result.nextSeed)
         assertEquals(ProCareerPhase.OFFSEASON_DECISION, result.state.phase)
         assertEquals(fanBefore - 2, result.state.journeyState?.reputation?.fanSupport)
-        assertEquals("국가대표 소집을 정중히 거절했습니다.", result.state.news.first())
+        assertEquals("국가대표 소집을 정중히 거절했다.", result.state.news.first())
         assertTrue(result.events.contains("pro_national_team_called"))
         assertNull(result.state.nationalTournament)
         val roundTripped = ProStateCodec.decode(ProStateCodec.encode(result.state))

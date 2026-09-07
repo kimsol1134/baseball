@@ -1058,16 +1058,16 @@ private class CatcherRecommendationEngine {
 
     private fun recommendationReason(reasonCodes: List<String>, situationNote: String): String {
         var reason = when {
-            "rival.pattern_detected" in reasonCodes -> "반복 패턴을 읽고 있어 배합을 바꿉니다."
-            "sequence.avoid_repeat" in reasonCodes -> "방금 공과 다른 배합을 요구합니다."
-            "scouting.pitch_weakness" in reasonCodes -> "타자의 약점 구종과 코스를 공략합니다."
-            else -> "강한 코스를 피해 타이밍을 바꿉니다."
+            "rival.pattern_detected" in reasonCodes -> "타자가 우리 패턴을 읽고 있어. 배합을 바꾸자."
+            "sequence.avoid_repeat" in reasonCodes -> "방금 공이랑 다른 걸로 가자."
+            "scouting.pitch_weakness" in reasonCodes -> "이 타자 약점 코스야. 여기로 가자."
+            else -> "강한 코스는 피하고 타이밍을 흔들자."
         }
         reason += when {
-            "build.power" in reasonCodes -> " 강속구형의 포심·구속 강점을 반영한 사인입니다."
-            "build.command" in reasonCodes -> " 정밀 제구형의 코스 반복 정확도를 반영한 사인입니다."
-            "build.movement" in reasonCodes -> " 변화구형의 결정구 움직임을 반영한 사인입니다."
-            "build.stamina" in reasonCodes -> " 이닝 소화형의 효율 좋은 구종을 반영한 사인입니다."
+            "build.power" in reasonCodes -> " 네 포심이면 밀어붙일 수 있어."
+            "build.command" in reasonCodes -> " 네 제구면 구석에 꽂힌다."
+            "build.movement" in reasonCodes -> " 네 결정구면 헛돌린다."
+            "build.stamina" in reasonCodes -> " 힘 아끼는 공으로 가자. 아직 갈 길이 멀어."
             else -> ""
         }
         if (situationNote.isNotEmpty()) reason += " $situationNote"

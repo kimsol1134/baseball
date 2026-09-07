@@ -304,14 +304,14 @@ public object HighSchoolContentCatalog {
     )
 
     public val rivals: List<HighSchoolRival> = listOf(
-        HighSchoolRival("rival-seo", "서하준", "천재 교타형", 47, 44, 39, "배트가 공을 끝까지 따라갑니다. 같은 코스를 두 번 놓치지 않는 왼손 타자입니다.", "봄 대회 타율 .421 · 31안타"),
-        HighSchoolRival("rival-lee", "권태오", "초구 거포형", 42, 37, 49, "느린 발을 감출 만큼 타구 판단이 빠릅니다. 초구 실투를 그냥 보내지 않습니다.", "전국대회 7홈런 · 22타점"),
+        HighSchoolRival("rival-seo", "서하준", "천재 교타형", 47, 44, 39, "배트가 공을 끝까지 따라간다. 같은 코스를 두 번 놓치지 않는 왼손 타자.", "봄 대회 타율 .421 · 31안타"),
+        HighSchoolRival("rival-lee", "권태오", "초구 거포형", 42, 37, 49, "느린 발을 감출 만큼 타구 판단이 빠르다. 초구 실투를 그냥 보내지 않는다.", "전국대회 7홈런 · 22타점"),
         HighSchoolRival("rival-park", "남도현", "안타 제조형", 46, 45, 37, "파울로 버티며 투구 수를 늘리고 마지막에는 짧은 스윙으로 안타를 만듭니다.", "11경기 연속 안타 · 출루율 .492"),
-        HighSchoolRival("rival-kang", "배시우", "외다리 장타형", 39, 40, 50, "높게 떠오른 공을 우측 담장으로 보내는 왼손 거포입니다. 실투 하나가 곧 실점입니다.", "장타율 .711 · 8홈런"),
+        HighSchoolRival("rival-kang", "배시우", "외다리 장타형", 39, 40, 50, "높게 떠오른 공을 우측 담장으로 보내는 왼손 거포. 실투 하나가 곧 실점이다.", "장타율 .711 · 8홈런"),
         HighSchoolRival("rival-yoon", "류건우", "장신 호타준족형", 44, 40, 43, "큰 스윙 궤도와 빠른 발을 함께 씁니다. 변화구가 뜨면 주저 없이 당겨칩니다.", "18경기 14도루 · 5홈런"),
-        HighSchoolRival("rival-choi", "정세현", "득점권 해결사형", 44, 43, 48, "늦은 카운트와 득점권에서 오히려 스윙이 짧아지는 해결사입니다.", "득점권 타율 .438 · 끝내기 3회"),
-        HighSchoolRival("rival-home-run", "강이안", "몸쪽 사냥형", 41, 44, 50, "몸쪽 공도 피하지 않고 잡아당깁니다. 불리한 카운트에서도 장타를 버리지 않습니다.", "봄·여름 대회 14홈런 · 장타율 .804"),
-        HighSchoolRival("rival-speed", "문재윤", "질주형 중심타자", 47, 40, 46, "타구가 뜨는 순간 2루를 노립니다. 실투 하나로 경기 흐름을 바꾸는 호타준족입니다.", "20도루 · 6홈런 · 21득점"),
+        HighSchoolRival("rival-choi", "정세현", "득점권 해결사형", 44, 43, 48, "늦은 카운트와 득점권에서 오히려 스윙이 짧아지는 해결사.", "득점권 타율 .438 · 끝내기 3회"),
+        HighSchoolRival("rival-home-run", "강이안", "몸쪽 사냥형", 41, 44, 50, "몸쪽 공도 피하지 않고 잡아당긴다. 불리한 카운트에서도 장타를 버리지 않는다.", "봄·여름 대회 14홈런 · 장타율 .804"),
+        HighSchoolRival("rival-speed", "문재윤", "질주형 중심타자", 47, 40, 46, "타구가 뜨는 순간 2루를 노린다. 실투 하나로 경기 흐름을 바꾸는 호타준족.", "20도루 · 6홈런 · 21득점"),
     )
 
     /** Current Swift CareerEventContent catalog. Keep IDs and ordering stable for replay. */
@@ -382,36 +382,44 @@ public object HighSchoolContentCatalog {
 
     /** Current Swift ImportantGameScenarioContent catalog, including all thirty scenarios. */
     public val scenarios: List<HighSchoolGameScenario> = listOf(
-        scenario("game-debut", "고교 데뷔", 3, 0, false, false, false, 55, 350, "첫 공식 등판. 한 점 뒤진 채 받은 기회지만, 상대 타자도 아직 내 공을 본 적이 없습니다.", -1),
-        scenario("game-runner-first", "1사 1루", 5, 1, true, false, false, 64, 610, "빠른 주자가 1루에서 리드를 길게 잡고 있습니다.", 1),
+        scenario("game-debut", "고교 데뷔", 3, 0, false, false, false, 55, 350, "첫 공식 등판. 한 점 뒤진 채 받은 기회지만, 상대 타자도 아직 내 공을 본 적이 없다.", -1),
+        scenario("game-runner-first", "1사 1루", 5, 1, true, false, false, 64, 610, "빠른 주자가 1루에서 리드를 길게 잡고 있다.", 1),
         scenario("game-rival-rematch", "라이벌 재대결", 6, 1, false, true, false, 61, 760, "동점 6회, 지난 경기의 구종 순서를 기억하는 중심타자가 들어섭니다.", 0),
-        scenario("game-corners", "1사 1·3루", 7, 1, true, false, true, 67, 900, "땅볼 하나면 병살이지만 외야로 뜨면 동점입니다.", 1),
+        scenario("game-corners", "1사 1·3루", 7, 1, true, false, true, 67, 900, "땅볼 하나면 병살, 외야로 뜨면 동점.", 1),
         scenario("game-loaded", "무사 만루", 4, 0, true, true, true, 60, 950, "볼넷을 피하면서 약한 타구가 필요한 상황", 2),
         scenario("game-two-outs", "2사 2루", 8, 2, false, true, false, 65, 880, "한 타자에 이닝이 걸린 승부", 1),
-        scenario("game-fatigue", "피로한 7회", 7, 0, true, false, false, 59, 720, "직구가 느려진 7회, 어떤 공으로 버틸지 정해야 합니다.", 1),
+        scenario("game-fatigue", "피로한 7회", 7, 0, true, false, false, 59, 720, "직구가 느려진 7회. 어떤 공으로 버틸지 정해야 한다.", 1),
         scenario("game-scout", "스카우트 관전", 5, 1, false, false, false, 55, 690, "팀은 한 점 뒤져 있지만, 스카우트는 점수가 아니라 같은 코스를 반복하는지 지켜봅니다.", -1),
-        scenario("game-rain", "우천 중단 뒤", 6, 0, false, false, false, 55, 540, "두 시간 동안 경기가 멈춰 몸이 식은 뒤 만나는 첫 타자입니다.", 0),
+        scenario("game-rain", "우천 중단 뒤", 6, 0, false, false, false, 55, 540, "두 시간 동안 경기가 멈춰 몸이 식었다. 그 뒤 만나는 첫 타자.", 0),
         scenario("game-one-run", "한 점 차", 9, 0, false, true, false, 68, 980, "드래프트 전 마지막 고교 이닝", 1, 7),
-        scenario("game-new-catcher", "새 포수와 첫 경기", 4, 1, true, false, false, 62, 570, "새 포수와 아직 구종 사인을 충분히 맞추지 못했습니다.", 1),
-        scenario("game-national-final", "전국 결승", 8, 2, true, true, false, 66, 1_000, "2사 1·2루. 마지막 아웃 하나에 우승이 걸렸습니다.", 1, 4),
+        scenario("game-new-catcher", "새 포수와 첫 경기", 4, 1, true, false, false, 62, 570, "새 포수와 아직 사인을 충분히 맞추지 못했다.", 1),
+        scenario("game-national-final", "전국 결승", 8, 2, true, true, false, 66, 1_000, "2사 1·2루. 마지막 아웃 하나에 우승이 걸렸다.", 1, 4),
         scenario("game-walkoff-defense", "9회말 리드 방어", 9, 1, false, true, true, 63, 985, "한 점 앞선 9회말 1사 2·3루. 외야로 뜨기만 해도 동점, 안타면 경기가 끝납니다.", 1),
-        scenario("game-extra-tiebreak", "연장 승부치기", 10, 0, true, true, false, 67, 940, "연장 승부치기. 무사 1·2루에서 시작합니다. 아웃부터 잡지 못하면 큰 이닝이 됩니다.", 0),
-        scenario("game-ace-duel", "0-0 투수전", 8, 0, false, false, false, 55, 810, "8회까지 0의 행진. 상대 에이스도 지지 않습니다. 먼저 실수하는 쪽이 집니다.", 0),
-        scenario("game-damage-control", "실점 뒤 수습", 6, 1, true, true, true, 58, 875, "이 이닝에만 석 점을 내줘 동점이 됐습니다. 다시 만루. 여기서 더 내주면 경기가 넘어갑니다.", 0),
+        scenario("game-extra-tiebreak", "연장 승부치기", 10, 0, true, true, false, 67, 940, "연장 승부치기. 무사 1·2루에서 시작한다. 아웃부터 못 잡으면 큰 이닝이 된다.", 0),
+        scenario("game-ace-duel", "0-0 투수전", 8, 0, false, false, false, 55, 810, "8회까지 0의 행진. 상대 에이스도 지지 않는다. 먼저 실수하는 쪽이 진다.", 0),
+        scenario("game-damage-control", "실점 뒤 수습", 6, 1, true, true, true, 58, 875, "이 이닝에만 석 점을 내줘 동점. 다시 만루. 여기서 더 내주면 경기가 넘어간다.", 0),
         scenario("game-rain-grip", "빗속의 공", 2, 0, true, false, false, 60, 470, "빗물을 머금은 공이 손끝에서 자꾸 미끄러집니다. 노린 코스보다 한 뼘씩 벗어납니다.", 0),
-        scenario("game-doubleheader", "더블헤더 2차전", 4, 2, false, true, false, 64, 640, "오늘 두 번째 경기. 한 점 뒤진 채, 낮 경기에서 이미 던진 팔이 무겁게 남아 있습니다.", -1),
-        scenario("game-scout-showcase", "스카우트 총출동", 7, 2, false, false, false, 55, 960, "팀은 두 점 뒤졌지만 관중석 첫 줄은 스카우트로 가득합니다. 공 하나하나가 순위표에 적힙니다.", -2),
-        scenario("game-rival-away", "라이벌 원정", 6, 2, true, false, false, 61, 830, "라이벌 학교 원정, 한 점 뒤진 6회. 마운드에 설 때마다 스탠드가 야유로 덮습니다. 소리를 지워야 공이 보입니다.", -1),
-        scenario("game-cold-spring", "이른 봄의 손끝", 2, 0, false, false, false, 55, 420, "3월의 첫 대회. 입김이 보이는 추위에 공이 돌덩이처럼 미끄럽고, 손끝의 감각이 절반만 돌아와 있습니다.", 0),
-        scenario("game-fireman", "떠안은 주자", 6, 0, false, true, true, 66, 930, "앞선 투수가 남긴 무사 2·3루를 떠안고 오릅니다. 여기서 들어오는 점수는 내 기록이 아니지만, 경기는 내 손에 있습니다.", -1),
+        scenario("game-doubleheader", "더블헤더 2차전", 4, 2, false, true, false, 64, 640, "오늘 두 번째 경기. 한 점 뒤진 채, 낮 경기에서 이미 던진 팔이 무겁다.", -1),
+        scenario("game-scout-showcase", "스카우트 총출동", 7, 2, false, false, false, 55, 960, "팀은 두 점 뒤졌지만 관중석 첫 줄은 스카우트로 가득하다. 공 하나하나가 순위표에 적힌다.", -2),
+        scenario("game-rival-away", "라이벌 원정", 6, 2, true, false, false, 61, 830, "라이벌 학교 원정, 한 점 뒤진 6회. 마운드에 설 때마다 스탠드가 야유로 덮인다. 소리를 지워야 공이 보인다.", -1),
+        scenario("game-cold-spring", "이른 봄의 손끝", 2, 0, false, false, false, 55, 420, "3월의 첫 대회. 입김이 보이는 추위에 공이 돌덩이처럼 미끄럽다. 손끝의 감각은 절반만 돌아와 있다.", 0),
+        scenario("game-fireman", "떠안은 주자", 6, 0, false, true, true, 66, 930, "앞선 투수가 남긴 무사 2·3루를 떠안고 오른다. 여기서 들어오는 점수는 내 기록이 아니지만, 경기는 내 손에 있다.", -1),
         scenario("game-mercy-watch", "다섯 점의 함정", 5, 0, true, false, false, 57, 380, "다섯 점 리드. 긴장이 풀리는 딱 그 지점에서 실점이 시작됩니다. 스카우트는 큰 리드에서의 집중력을 봅니다.", 5),
-        scenario("game-nightfall", "일몰 직전", 7, 1, false, true, false, 62, 700, "조명 없는 구장, 해가 산 뒤로 넘어가고 있습니다. 심판이 이 이닝이 오늘의 마지막이라고 알렸습니다. 동점이면 내일 처음부터 다시입니다.", 0),
-        scenario("game-heatwave", "한여름 낮 경기", 6, 0, true, false, false, 60, 660, "35도의 낮 경기. 유니폼이 몸에 감기고 로진백도 눅눅합니다. 한 점 리드가 이 더위 속에서 여덟 아웃만큼 멀어 보입니다.", 1, 2),
-        scenario("game-third-look", "세 번째 만나는 4번", 6, 2, false, true, false, 63, 850, "오늘 세 번째로 만나는 상대 4번 타자. 앞선 두 타석의 공을 전부 기억하고 있을 겁니다. 같은 순서는 이제 통하지 않습니다.", -1),
-        scenario("game-perfect-bid", "5회까지 완전", 6, 1, false, false, false, 55, 780, "5회까지 한 명도 내보내지 않았습니다. 더그아웃이 조용해졌습니다 — 아무도 그 단어를 입에 올리지 않습니다.", 3, 4),
-        scenario("game-backup-catcher", "백업 포수와의 승부", 7, 1, true, false, false, 61, 740, "주전 포수가 파울 타구에 손가락을 맞아 교체됐습니다. 백업 포수와는 불펜 한 번 맞춰 본 게 전부입니다.", 0),
-        scenario("game-seniors-last", "선배들의 마지막", 8, 1, true, true, false, 64, 890, "두 점 뒤진 8회. 지면 3학년 선배들의 고교 야구가 오늘로 끝납니다. 더그아웃의 눈이 전부 마운드를 보고 있습니다.", -2, 2),
-        scenario("game-sign-leak", "새는 사인", 5, 0, false, true, false, 65, 720, "상대 2루 주자가 타자에게 무언가를 전달하는 정황. 사인이 읽히고 있다면, 이제부터는 코스보다 배짱의 승부입니다.", -1),
+        scenario("game-nightfall", "일몰 직전", 7, 1, false, true, false, 62, 700, "조명 없는 구장, 해가 산 뒤로 넘어간다. 심판이 이 이닝이 오늘의 마지막이라고 알렸다. 동점이면 내일 처음부터 다시.", 0),
+        scenario("game-heatwave", "한여름 낮 경기", 6, 0, true, false, false, 60, 660, "35도의 낮 경기. 유니폼이 몸에 감기고 로진백도 눅눅하다. 한 점 리드가 이 더위 속에서 여덟 아웃만큼 멀어 보인다.", 1, 2),
+        scenario("game-third-look", "세 번째 만나는 4번", 6, 2, false, true, false, 63, 850, "오늘 세 번째로 만나는 상대 4번 타자. 앞선 두 타석의 공을 전부 기억하고 있을 거다. 같은 순서는 이제 안 통한다.", -1),
+        scenario("game-perfect-bid", "5회까지 완전", 6, 1, false, false, false, 55, 780, "5회까지 한 명도 내보내지 않았다. 더그아웃이 조용해졌다. 아무도 그 단어를 입에 올리지 않는다.", 3, 4),
+        scenario("game-backup-catcher", "백업 포수와의 승부", 7, 1, true, false, false, 61, 740, "주전 포수가 파울 타구에 손가락을 맞아 교체됐다. 백업 포수와는 불펜 한 번 맞춰 본 게 전부다.", 0),
+        scenario("game-seniors-last", "선배들의 마지막", 8, 1, true, true, false, 64, 890, "두 점 뒤진 8회. 지면 3학년 선배들의 고교 야구가 오늘로 끝난다. 더그아웃의 눈이 전부 마운드를 보고 있다.", -2, 2),
+        scenario("game-sign-leak", "새는 사인", 5, 0, false, true, false, 65, 720, "상대 2루 주자가 타자에게 무언가를 전달하는 정황. 사인이 읽히고 있다면, 이제부터는 코스보다 배짱의 승부다.", -1),
+    )
+
+    /** Regular-season games the player may claim once per chapter. Kept apart from [scenarios] so milestone picks never shift. */
+    public val regularScenarios: List<HighSchoolGameScenario> = listOf(
+        scenario("regular-midweek", "주중 리그전", 4, 0, false, false, false, 55, 380, "평일 오후의 리그전. 관중은 적고 스카우트도 없다. 그래서 더 솔직한 공이 나온다.", 0),
+        scenario("regular-one-up", "한 점 앞선 5회", 5, 1, true, false, false, 60, 460, "한 점 리드에 1사 1루. 여기서 막으면 승리 투수 요건이 보인다.", 1),
+        scenario("regular-one-down", "한 점 뒤진 6회", 6, 0, false, true, false, 62, 500, "한 점 뒤진 채 무사 2루를 떠안았다. 더 벌어지면 경기가 넘어간다.", -1),
+        scenario("regular-tie-late", "동점 6회 2사", 6, 2, false, false, false, 55, 420, "동점 6회 2사. 한 타자만 잡으면 이닝이 끝난다. 정규 경기지만 공은 정규가 아니다.", 0),
     )
 
     public fun eligibleRebirthEvents(echo: HighSchoolRebirthEcho?): List<HighSchoolRelationshipEvent> {
@@ -451,27 +459,27 @@ public object HighSchoolContentCatalog {
         return listOf(
             HighSchoolSchool(
                 HighSchoolSchoolId.HANBIT_TRADITIONAL, names[0], "기본기와 긴 이닝", coach(0), "원칙형",
-                catcher(0), "안정형", HighSchoolTrainingFocus.STAMINA, "새 구종을 시험할 기회가 적습니다.",
-                "새벽 반복 훈련을 고집하며 핑계보다 공 하나를 더 던지게 합니다.", "재임 14년 · 전국대회 4강 6회",
-                "실투 뒤에도 먼저 투수에게 공을 돌려주는 매일 출전형 포수입니다.", "중학 마지막 시즌 26경기 · 도루저지율 .438",
+                catcher(0), "안정형", HighSchoolTrainingFocus.STAMINA, "새 구종을 시험할 기회가 적다.",
+                "새벽 반복 훈련을 고집한다. 핑계보다 공 하나를 더 던지게 하는 감독.", "재임 14년 · 전국대회 4강 6회",
+                "실투 뒤에도 먼저 투수에게 공을 돌려주는 매일 출전형 포수.", "중학 마지막 시즌 26경기 · 도루저지율 .438",
             ),
             HighSchoolSchool(
                 HighSchoolSchoolId.MIRAE_ANALYTICS, names[1], "기록을 활용한 타자 상대법", coach(1), "분석형",
-                catcher(1), "분석형", HighSchoolTrainingFocus.GAME_PLANNING, "데이터가 적을 때 판단이 흔들릴 수 있습니다.",
-                "확률표를 들고 한 베이스와 불펜 교체 시점을 끝까지 계산합니다.", "데이터 코치 경력 11년 · 지역대회 우승 4회",
-                "말수는 적지만 타자의 노림수를 먼저 읽고 결정적인 순간 직접 해결합니다.", "전국중학대회 포수상 · 8홈런",
+                catcher(1), "분석형", HighSchoolTrainingFocus.GAME_PLANNING, "데이터가 적으면 판단이 흔들릴 수 있다.",
+                "확률표를 들고 한 베이스와 불펜 교체 시점을 끝까지 계산하는 감독.", "데이터 코치 경력 11년 · 지역대회 우승 4회",
+                "말수는 적지만 타자의 노림수를 먼저 읽고 결정적인 순간 직접 해결하는 포수.", "전국중학대회 포수상 · 8홈런",
             ),
             HighSchoolSchool(
                 HighSchoolSchoolId.HAEDONG_POWER, names[2], "빠른 직구와 공격적인 승부", coach(2), "승부형",
                 catcher(2), "공격형", HighSchoolTrainingFocus.VELOCITY, "빠른 공을 많이 던질수록 피로가 쌓이고 제구가 흔들립니다.",
-                "에이스에게 가장 엄격하며 위기일수록 몸쪽 정면승부를 요구합니다.", "전국대회 결승 3회 · 프로 지명 투수 5명",
+                "에이스에게 가장 엄격하다. 위기일수록 몸쪽 정면승부를 요구하는 감독.", "전국대회 결승 3회 · 프로 지명 투수 5명",
                 "몸쪽 사인을 두려워하지 않고 큰 경기에서 투수를 강하게 끌고 갑니다.", "중학 마지막 시즌 24경기 선발 · 도루저지 11회",
             ),
             HighSchoolSchool(
                 HighSchoolSchoolId.CHEONGAM_DEVELOPMENT, names[3], "개인별 투구 동작과 변화구 훈련", coach(3), "육성형",
                 catcher(3), "공감형", HighSchoolTrainingFocus.BREAKING_BALL, "팀이 연패하면 개인 훈련 시간이 줄어듭니다.",
-                "무심한 표정으로 결단을 내리지만 큰 경기에서는 선수를 먼저 믿습니다.", "7년간 프로 지명 12명 · 변화구 캠프 9회",
-                "블로킹 천 번을 기본으로 여기며 투수의 버릇까지 잡아내는 완벽주의자입니다.", "중학 마지막 시즌 무실책 · 4경기 연속 장타",
+                "무심한 표정으로 결단을 내리지만 큰 경기에서는 선수를 먼저 믿는 감독.", "7년간 프로 지명 12명 · 변화구 캠프 9회",
+                "블로킹 천 번을 기본으로 여기고 투수의 버릇까지 잡아내는 완벽주의 포수.", "중학 마지막 시즌 무실책 · 4경기 연속 장타",
             ),
         )
     }

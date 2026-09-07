@@ -173,6 +173,7 @@ public data class HighSchoolArchiveRecord(
     val pledgeAchieved: Boolean,
     val soulEarned: Int,
     val completedGameCounterAtArchive: ULong,
+    val perfectReleases: Int = 0,
 )
 
 public enum class HighSchoolPitchingDecision(public val wire: String) {
@@ -205,6 +206,9 @@ public data class HighSchoolSeasonLine(
     val played: Boolean = true,
     val hits: Int = 0,
     val homeRuns: Int = 0,
+    /** A claimed chapter game (정규 경기) rather than a milestone 승부처. */
+    val regular: Boolean = false,
+    val perfectReleases: Int = 0,
 )
 
 public data class HighSchoolTournamentSnapshot(
@@ -295,6 +299,7 @@ public data class HighSchoolPitchSession(
     val sequenceMasteryCount: Int = 0,
     /** Current plate appearance only; it is reset after a terminal plate appearance. */
     val sequencePitches: List<com.solkim.baseball.core.pitch.PitchSequencePitch> = emptyList(),
+    val perfectReleases: Int = 0,
 )
 
 public data class HighSchoolPitchContext(

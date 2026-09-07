@@ -110,10 +110,14 @@ public object HighSchoolStateCodec {
         "legacyOptions" to strings(state.legacyOptions),
         "selectedMemories" to strings(state.selectedMemories),
         "pitchLearningProject" to (state.pitchLearningProject?.token()?.let(::str) ?: JsonValue.Null),
+        "chapterGameClaimed" to bool(state.chapterGameClaimed),
         "stateCommitment" to str(state.stateCommitment),
     ).let { encoded ->
-        // Phase 4 commits these exact bytes. Legacy runs must not gain a null field.
-        if (state.pitchLearningProject == null) JsonValue.Obj(LinkedHashMap(encoded.entries).apply { remove("pitchLearningProject") }) else encoded
+        // Phase 4 commits these exact bytes. Legacy runs must not gain a null or default field.
+        val trimmed = LinkedHashMap(encoded.entries)
+        if (state.pitchLearningProject == null) trimmed.remove("pitchLearningProject")
+        if (!state.chapterGameClaimed) trimmed.remove("chapterGameClaimed")
+        JsonValue.Obj(trimmed)
     }
 
     private fun readState(value: JsonValue.Obj): HighSchoolState {
@@ -183,6 +187,7 @@ public object HighSchoolStateCodec {
             legacyOptions = value.strings("legacyOptions"),
             selectedMemories = value.strings("selectedMemories"),
             pitchLearningProject = value.optionalAdditiveString("pitchLearningProject")?.let(PitchLearningProject::decode),
+            chapterGameClaimed = value.optionalAdditiveBoolean("chapterGameClaimed") ?: false,
             stateCommitment = value.string("stateCommitment"),
         )
     }
@@ -383,11 +388,16 @@ public object HighSchoolStateCodec {
         "strikeouts" to num(value.strikeouts), "walks" to num(value.walks), "runsAllowed" to num(value.runsAllowed),
         "expectedDamage" to num(value.expectedDamage), "actualDamage" to num(value.actualDamage),
         "outs" to num(value.outs), "hits" to num(value.hits),
-    )
+    ).let { encoded ->
+        // Default 0 is omitted so pre-perfect snapshots keep their exact bytes.
+        if (value.perfectReleases > 0) JsonValue.Obj(LinkedHashMap(encoded.entries).apply { put("perfectReleases", num(value.perfectReleases)) }) else encoded
+    }
 
     private fun readPerformance(value: JsonValue.Obj): HighSchoolPerformance {
-        value.requireExact(setOf("importantGamesCompleted", "pitches", "strikeouts", "walks", "runsAllowed", "expectedDamage", "actualDamage", "outs", "hits"), "performance")
-        return HighSchoolPerformance(value.integer("importantGamesCompleted"), value.integer("pitches"), value.integer("strikeouts"), value.integer("walks"), value.integer("runsAllowed"), value.integer("expectedDamage"), value.integer("actualDamage"), value.integer("outs"), value.integer("hits"))
+        val required = setOf("importantGamesCompleted", "pitches", "strikeouts", "walks", "runsAllowed", "expectedDamage", "actualDamage", "outs", "hits")
+        value.requireExact(if (value.entries.containsKey("perfectReleases")) required + "perfectReleases" else required, "performance")
+        return HighSchoolPerformance(value.integer("importantGamesCompleted"), value.integer("pitches"), value.integer("strikeouts"), value.integer("walks"), value.integer("runsAllowed"), value.integer("expectedDamage"), value.integer("actualDamage"), value.integer("outs"), value.integer("hits"),
+            perfectReleases = value.optionalAdditiveInteger("perfectReleases") ?: 0)
     }
 
     private fun writeScenario(value: HighSchoolGameScenario): JsonValue.Obj = obj(
@@ -601,6 +611,10 @@ public object HighSchoolStateCodec {
         null, JsonValue.Null -> null
         else -> value.integerValue(name)
     }
+    private fun JsonValue.Obj.optionalAdditiveBoolean(name: String): Boolean? = when (val value = this[name]) {
+        null, JsonValue.Null -> null
+        else -> (value as? JsonValue.Bool)?.value ?: throw HighSchoolStateCodecException("$name.boolean_required")
+    }
 
     private fun JsonValue.Obj.optionalAdditiveObject(name: String): JsonValue.Obj? = when (val value = this[name]) {
         null, JsonValue.Null -> null
@@ -668,9 +682,9 @@ public object HighSchoolStateCodec {
         "managerTrust", "catcherTrust", "rivalTrust", "selectedAwakenings", "awakeningOptions", "awakeningSparks", "fatigue",
         "performance", "currentGameScenarioId", "currentGameScenario", "currentRelationshipTarget", "currentRelationshipEvent", "news", "balanceVersion", "worldRulesVersion", "rebirthEcho", "recentRelationshipEventIds", "trainingOpportunity", "lastTraining", "lastRelationship",
         "fanInterest", "armRisk", "injuryRecovery", "automaticGames", "automaticOuts", "automaticRunsAllowed", "draftResult",
-        "legacyOptions", "selectedMemories", "currentRelationshipCategory", "stateCommitment", "pitchLearningProject",
+        "legacyOptions", "selectedMemories", "currentRelationshipCategory", "stateCommitment", "pitchLearningProject", "chapterGameClaimed",
     )
-    private val STATE_REQUIRED_FIELDS = STATE_FIELDS - setOf("pitchLearningProject",
+    private val STATE_REQUIRED_FIELDS = STATE_FIELDS - setOf("pitchLearningProject", "chapterGameClaimed",
         "currentRelationshipCategory", "currentGameScenario", "currentRelationshipEvent", "news", "balanceVersion",
         "worldRulesVersion", "rebirthEcho", "recentRelationshipEventIds",
     )

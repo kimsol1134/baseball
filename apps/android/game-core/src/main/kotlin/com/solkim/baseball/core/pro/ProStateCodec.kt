@@ -127,11 +127,11 @@ public object ProStateCodec {
         val careerId = input.readString(); val revision = input.readULong(); val mode = startMode(input.readString()); val source = input.readNullableString(); val legacyContext = input.readNullable { readLegacyContext(includeMastery) }; val activePreserved = input.readBoolean(); val seed = input.readString(); val name = input.readString(); val pitcher = input.readPitcher(includeMastery); val team = input.readTeam(); val entitlement = input.readEntitlement()
         val age = input.readInt(); val season = input.readInt(); val week = input.readInt(); val phase = careerPhase(input.readString()); val level = level(input.readString()); val role = role(input.readString()); val rolePreference = input.readNullableString()?.let(::role)
         val managerTrust = input.readInt(); val catcherTrust = input.readInt(); val fatigue = input.readInt(); val injuryWeeks = input.readInt(); val serviceYears = input.readInt(); val military = input.readBoolean(); val contract = input.readNullable { readContract() }
-        val currentStats = input.readStats(version); val currentLines = input.readList { readGameLine() }; val careerStats = input.readList { readStats(version) }; val ledgers = input.readList { readLedger(version) }
+        val currentStats = input.readStats(version); val currentLines = input.readList { readGameLine(version) }; val careerStats = input.readList { readStats(version) }; val ledgers = input.readList { readLedger(version) }
         val awards = input.readStrings(); val milestones = input.readStrings(); val decisions = input.readList { readDecisionRecord() }; val pending = input.readNullable { readDecision() }
         val development = input.readDevelopment(); val segment = segment(input.readString()); val trigger = input.readNullableString()?.let(::trigger); val rival = input.readNullable { readRival() }; val tensions = input.readList { readTension() }
         val importantGames = input.readInt(); val standings = input.readList { readStanding() }; val leaderboards = input.readList { readLeaderboard() }; val legacy = input.readList { readLegacy() }; val selectedLegacy = input.readNullableString()
-        val settlement = input.readNullable { readSettlement() }; val activePitch = input.readNullable { readPitchSession() }; val presentation = input.readNullable { readPresentation() }; val lastSegment = input.readNullable { readSegmentProgress() }; val hof = input.readNullableInt(); val news = input.readStrings()
+        val settlement = input.readNullable { readSettlement() }; val activePitch = input.readNullable { readPitchSession(version) }; val presentation = input.readNullable { readPresentation() }; val lastSegment = input.readNullable { readSegmentProgress() }; val hof = input.readNullableInt(); val news = input.readStrings()
         val receipts = input.readList { readReceipt() }; val commitment = input.readString()
         val proRulesVersion = if (input.available() >= 4) input.readInt() else 1
         val postseason = if (input.available() > 0) input.readNullable { readPostseason() } else null
@@ -180,14 +180,19 @@ public object ProStateCodec {
     private fun DataOutputStream.writeStats(value: ProSeasonStats) {
         writeInt(value.season); writeString(value.teamId); writeInt(value.games); writeInt(value.starts); writeInt(value.inningsOuts); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.hits); writeInt(value.homeRuns); writeInt(value.pitches); writeInt(value.wins); writeInt(value.losses); writeInt(value.saves)
         writeNullable(value.postseasonGames) { writeList(it) { writePostseasonLine(it) } }
+        writeInt(value.perfectReleases)
     }
     private fun DataInputStream.readStats(version: Int): ProSeasonStats {
         val stats = ProSeasonStats(readInt(), readString(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt())
         val postseasonGames = if (version >= 3) readNullable { readList { readPostseasonLine() } } else null
-        return stats.copy(postseasonGames = postseasonGames)
+        val perfectReleases = if (version >= 4) readInt() else 0
+        return stats.copy(postseasonGames = postseasonGames, perfectReleases = perfectReleases)
     }
-    private fun DataOutputStream.writeGameLine(value: ProGameLine) { writeInt(value.season); writeInt(value.week); writeInt(value.outingNumber); writeBoolean(value.started); writeInt(value.outs); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.pitches); writeInt(value.teamRuns); writeInt(value.opponentRuns); writeString(value.decision.wire); writeBoolean(value.played); writeInt(value.hits); writeInt(value.homeRuns) }
-    private fun DataInputStream.readGameLine(): ProGameLine = ProGameLine(readInt(), readInt(), readInt(), readBoolean(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), pitchingDecision(readString()), readBoolean(), readInt(), readInt())
+    private fun DataOutputStream.writeGameLine(value: ProGameLine) { writeInt(value.season); writeInt(value.week); writeInt(value.outingNumber); writeBoolean(value.started); writeInt(value.outs); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.pitches); writeInt(value.teamRuns); writeInt(value.opponentRuns); writeString(value.decision.wire); writeBoolean(value.played); writeInt(value.hits); writeInt(value.homeRuns); writeInt(value.perfectReleases) }
+    private fun DataInputStream.readGameLine(version: Int): ProGameLine {
+        val line = ProGameLine(readInt(), readInt(), readInt(), readBoolean(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), pitchingDecision(readString()), readBoolean(), readInt(), readInt())
+        return if (version >= 4) line.copy(perfectReleases = readInt()) else line
+    }
 
     private fun DataOutputStream.writeEffect(value: ProDecisionEffect) { writeInt(value.stuffDelta); writeInt(value.commandDelta); writeInt(value.movementDelta); writeInt(value.staminaDelta); writeInt(value.managerTrustDelta); writeInt(value.catcherTrustDelta); writeInt(value.fatigueDelta); writeNullableString(value.roleTarget?.wire) }
     private fun DataInputStream.readEffect(): ProDecisionEffect = ProDecisionEffect(readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readNullableString()?.let(::role))
@@ -284,12 +289,12 @@ public object ProStateCodec {
 
     private fun DataOutputStream.writePitchSession(value: ProPitchSession) {
         writeString(value.sessionId); writeInt(value.week); writeString(value.seed); writeInt(value.pitchIndex); writeString(value.preparationToken); writeContext(value.context); writeMemory(value.memory); writeGame(value.game); writeLog(value.log); writeBatter(value.batter); writeScouting(value.scouting)
-        writeInt(value.pitches); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.expectedDamage); writeInt(value.actualDamage); writeInt(value.recommendationAccepted); writeInt(value.outs); writeInt(value.hits); writeInt(value.homeRuns); writeStrings(value.abilityMoments); writeInt(value.sequenceMasteryCount); writeList(value.sequencePitches) { writeSequence(it) }; writeBoolean(value.ended); writeString(value.boundary.wire)
+        writeInt(value.pitches); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.expectedDamage); writeInt(value.actualDamage); writeInt(value.recommendationAccepted); writeInt(value.outs); writeInt(value.hits); writeInt(value.homeRuns); writeStrings(value.abilityMoments); writeInt(value.sequenceMasteryCount); writeList(value.sequencePitches) { writeSequence(it) }; writeBoolean(value.ended); writeString(value.boundary.wire); writeInt(value.perfectReleases)
     }
-    private fun DataInputStream.readPitchSession(): ProPitchSession {
+    private fun DataInputStream.readPitchSession(version: Int): ProPitchSession {
         val sessionId = readString(); val week = readInt(); val seed = readString(); val pitchIndex = readInt(); val token = readString(); val context = readContext(); val memory = readMemory(); val game = readGame(); val log = readLog(); val batter = readBatter(); val scouting = readScouting()
-        val pitches = readInt(); val strikeouts = readInt(); val walks = readInt(); val runsAllowed = readInt(); val expected = readInt(); val actual = readInt(); val accepted = readInt(); val outs = readInt(); val hits = readInt(); val homeRuns = readInt(); val moments = readStrings(); val mastery = readInt(); val sequence = readList { readSequence() }; val ended = readBoolean(); val boundary = boundary(readString())
-        return ProPitchSession(sessionId, week, seed, pitchIndex, token, context, memory, game, log, batter, scouting, pitches, strikeouts, walks, runsAllowed, expected, actual, accepted, outs, hits, homeRuns, moments, mastery, sequence, ended, boundary)
+        val pitches = readInt(); val strikeouts = readInt(); val walks = readInt(); val runsAllowed = readInt(); val expected = readInt(); val actual = readInt(); val accepted = readInt(); val outs = readInt(); val hits = readInt(); val homeRuns = readInt(); val moments = readStrings(); val mastery = readInt(); val sequence = readList { readSequence() }; val ended = readBoolean(); val boundary = boundary(readString()); val perfectReleases = if (version >= 4) readInt() else 0
+        return ProPitchSession(sessionId, week, seed, pitchIndex, token, context, memory, game, log, batter, scouting, pitches, strikeouts, walks, runsAllowed, expected, actual, accepted, outs, hits, homeRuns, moments, mastery, sequence, ended, boundary, perfectReleases)
     }
     private fun DataOutputStream.writeContext(value: PlateAppearanceContext) { writeString(value.plateAppearanceId); writeULong(value.revision); writeInt(value.inning); writeInt(value.outs); writeInt(value.balls); writeInt(value.strikes); writeInt(value.pitchNumber); writeInt(value.scoreDifferential); writeInt(value.leverage); writeInt(value.fatigue) }
     private fun DataInputStream.readContext(): PlateAppearanceContext = PlateAppearanceContext(readString(), readULong(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt())

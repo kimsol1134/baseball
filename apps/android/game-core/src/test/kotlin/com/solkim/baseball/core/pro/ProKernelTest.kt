@@ -396,6 +396,38 @@ class ProKernelTest {
     }
 
     @Test
+    fun perfectReleasesAreRecordedThroughTheProOutingAndSurviveTheCodec() {
+        val base = direct("140")
+        val forced = base.copy(
+            phase = ProCareerPhase.IMPORTANT_GAME,
+            week = 1,
+            seasonSegment = ProCatalog.segment(1),
+            seasonTrigger = ProSeasonTrigger.OPENING_STATEMENT,
+            currentRival = ProCatalog.rivalFor(base.team.id, base.season, 1, ProSeasonTrigger.OPENING_STATEMENT),
+            commitment = "",
+        ).let { it.copy(commitment = kernel.commitment(it)) }
+        var state = kernel.reserveImportantGame(forced, "140").state
+        var guard = 0
+        while (state.activePitch?.ended != true && guard < 80) {
+            val session = state.activePitch ?: error("missing pitch session")
+            val prep = com.solkim.baseball.core.pitch.PitchKernel().prepare(
+                com.solkim.baseball.core.pitch.PitchKernel.PrepareRequest(session.seed, state.pitcher, session.batter, session.scouting, session.context, session.memory, session.game, session.log),
+            )
+            state = kernel.submitPitch(state, session.sessionId, prep.primaryRecommendation.call, PitchDelivery(1_000, 900)).state
+            state = ProStateCodec.decode(ProStateCodec.encode(state))
+            guard += 1
+        }
+        assertTrue(guard < 80)
+        val thrown = requireNotNull(state.activePitch).pitches
+        assertEquals(thrown, requireNotNull(state.activePitch).perfectReleases, "every 1000 release is perfect")
+        state = kernel.finishImportantGame(state).state
+        state = ProStateCodec.decode(ProStateCodec.encode(state))
+        val line = state.currentGameLines.last { it.played }
+        assertEquals(thrown, line.perfectReleases)
+        assertEquals(thrown, state.currentStats.perfectReleases)
+    }
+
+    @Test
     fun importantGameUsesPitchKernelBoundaryAndSurvivesRestart() {
         val base = direct("100")
         val forced = base.copy(
