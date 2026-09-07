@@ -12,9 +12,9 @@ import org.junit.Test
 class PitchDramaViewTest {
 
     @Test fun stableReleaseFeedbackMatchesTheVisibleGreenThreshold() {
-        assertEquals("안정 릴리스", releaseTimingLabel(820))
-        assertEquals("안정 구간에 가까웠어요", releaseTimingLabel(819))
-        assertEquals("안정 릴리스 · 조준은 흔들렸어요", releaseTimingLabel(820, 500))
+        assertEquals("릴리스 좋았다", releaseTimingLabel(820))
+        assertEquals("타이밍이 살짝 어긋났다", releaseTimingLabel(819))
+        assertEquals("릴리스는 좋았다. 조준이 흔들렸다", releaseTimingLabel(820, 500))
         assertEquals("★ 퍼펙트 릴리스", releaseTimingLabel(975))
         assertFalse(releaseTimingLabel(974).contains("퍼펙트"))
     }
@@ -120,7 +120,10 @@ class PitchDramaViewTest {
         assertFalse(keepFullIncomingTrail(PitchOutcome.CALLED_STRIKE, 0.1f))
         assertTrue(RESULT_LANDING_DOT_RADIUS_DP in 4f..6f)
         assertTrue(RESULT_LANDING_RING_RADIUS_DP > RESULT_LANDING_DOT_RADIUS_DP)
-        assertEquals(0.18f, RESULT_TRAIL_START_ALPHA, 0.001f)
+        // The trail fades in toward the plate so the crossing point, which is what the call reads,
+        // stays the brightest thing on the freeze.
+        assertEquals(0.08f, RESULT_TRAIL_START_ALPHA, 0.001f)
         assertEquals(0.90f, RESULT_TRAIL_END_ALPHA, 0.001f)
+        assertTrue(RESULT_TRAIL_END_ALPHA > RESULT_TRAIL_START_ALPHA * 8f)
     }
 }

@@ -38,6 +38,7 @@ import com.solkim.baseball.application.BatSide
 import com.solkim.baseball.application.BattedBall
 import com.solkim.baseball.application.FieldingResolutionSnapshot
 import com.solkim.baseball.application.PitchDramaCamera
+import com.solkim.baseball.application.PitchFlightProjection
 import com.solkim.baseball.application.PitchOutcome
 import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.model.PitchPresentationRequest
@@ -62,12 +63,16 @@ public fun PitchDramaView(
     battedBall: BattedBall? = null,
     fielding: FieldingResolutionSnapshot? = null,
     batSide: BatSide = BatSide.RIGHT,
-    progress: Float,
+    progress: Float = 0f,
     modifier: Modifier = Modifier,
+    perfect: Boolean = false,
+    movement: Int? = null,
+    reduceMotion: Boolean = false,
 ) {
     val textMeasurer = rememberTextMeasurer()
     val copy = rememberGameCopy()
-    val verdict = outcome?.let { copy.legacy(localizedVerdict(it, battedBall)) }.orEmpty()
+    val verdict = remember(outcome, battedBall, copy) { outcome?.let { copy.legacy(localizedVerdict(it, battedBall)) }.orEmpty() }
+    val replayPoints = remember(request, movement) { calculateReplayPoints(request, movement) }
     val displayFielding = remember(fielding, copy) {
         fielding?.copy(fielderName = fielding.fielderName?.let { copy.legacy(it) })
     }
@@ -113,6 +118,7 @@ public fun PitchDramaView(
         } else {
             drawPitchShot(
                 request = request,
+                replayPoints = replayPoints,
                 outcome = outcome,
                 battedBall = battedBall,
                 batSide = batSide,
@@ -120,6 +126,8 @@ public fun PitchDramaView(
                 catcherBitmap = catcherBitmap,
                 progress = progress,
                 canvasSize = size,
+                perfect = perfect,
+                reduceMotion = reduceMotion,
             )
         }
 
@@ -138,6 +146,7 @@ public fun PitchDramaView(
 
 private fun DrawScope.drawPitchShot(
     request: PitchPresentationRequest?,
+    replayPoints: List<Offset>,
     outcome: PitchOutcome?,
     battedBall: BattedBall?,
     batSide: BatSide,
@@ -145,6 +154,8 @@ private fun DrawScope.drawPitchShot(
     catcherBitmap: ImageBitmap?,
     progress: Float,
     canvasSize: Size,
+    perfect: Boolean = false,
+    reduceMotion: Boolean = false,
 ) {
     val scale = min(canvasSize.width / PITCH_BOX_WIDTH, canvasSize.height / PITCH_BOX_HEIGHT)
     val shake = calculateShakeOffset(outcome, battedBall, progress, scale)
@@ -171,7 +182,7 @@ private fun DrawScope.drawPitchShot(
     }
 
     // 날아오는 공 & 맞은 뒤 떠나는 공
-    drawIncomingBall(request, outcome, battedBall, progress, scale, ::place)
+    drawIncomingBall(replayPoints, outcome, battedBall, progress, scale, ::place, perfect, reduceMotion)
 
     if (takenFreeze) {
         drawCatcherMitt(outcome, progress, actualX, actualY, scale, ::place)
@@ -368,37 +379,41 @@ private fun DrawScope.drawCatcherMitt(
 }
 
 private fun DrawScope.drawIncomingBall(
-    request: PitchPresentationRequest?,
+    points: List<Offset>,
     outcome: PitchOutcome?,
     battedBall: BattedBall?,
     progress: Float,
     scale: Float,
     place: (Offset) -> Offset,
+    perfect: Boolean = false,
+    reduceMotion: Boolean = false,
 ) {
-    val points = calculateReplayPoints(request)
     if (points.size < 2) return
 
     val flight = PitchDramaCamera.incomingFlight(progress)
     val takenFreeze = isTakenPitchCatcherFreeze(outcome, progress)
     val freezeTrail = keepFullIncomingTrail(outcome, progress)
-    val visiblePoints = if (takenFreeze) {
-        points
-    } else {
-        val shownCount = max(2, (points.size * flight).roundToInt())
-        points.take(shownCount)
+    val position = (if (takenFreeze) 1f else flight.coerceIn(0f, 1f)) * points.lastIndex
+    val lastIndex = position.toInt().coerceAtMost(points.lastIndex)
+    val partialHead = if (lastIndex == points.lastIndex) points.last() else {
+        val a = points[lastIndex]; val b = points[lastIndex + 1]; val t = position - lastIndex
+        Offset(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
     }
-    val tone = outcomeTone(outcome)
+    // A perfect release flies gold until the mitt; the result colour takes over at the freeze.
+    val tone = if (perfect && !takenFreeze) BaseballColors.milestone else outcomeTone(outcome)
     val departingT = PitchDramaCamera.departureProgress(outcome, progress)
 
     val trailPath = Path().apply {
-        moveTo(place(visiblePoints[0]).x, place(visiblePoints[0]).y)
-        for (i in 1 until visiblePoints.size) {
-            val pt = place(visiblePoints[i])
+        moveTo(place(points[0]).x, place(points[0]).y)
+        for (i in 1..lastIndex) {
+            val pt = place(points[i])
             lineTo(pt.x, pt.y)
         }
+        val head = place(partialHead)
+        lineTo(head.x, head.y)
     }
-    val startPt = place(visiblePoints.first())
-    val endPt = place(visiblePoints.last())
+    val startPt = place(points.first())
+    val endPt = place(partialHead)
     val trailStartAlpha = if (takenFreeze) RESULT_TRAIL_START_ALPHA else 0.04f
     val trailEndAlpha = if (takenFreeze) RESULT_TRAIL_END_ALPHA else (0.55f + 0.4f * flight)
     val trailWidth = if (takenFreeze) {
@@ -415,10 +430,10 @@ private fun DrawScope.drawIncomingBall(
         ),
         style = Stroke(width = trailWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
     )
-    if (!takenFreeze && visiblePoints.size >= 4 && departingT <= 0f) {
-        val streakFrom = place(visiblePoints[visiblePoints.size - 4])
+    if (!takenFreeze && lastIndex >= 3 && departingT <= 0f) {
+        val streakFrom = place(points[lastIndex - 3])
         drawLine(
-            color = BaseballColors.fieldChalk.copy(alpha = 0.35f + 0.45f * flight),
+            color = (if (perfect) BaseballColors.milestone else BaseballColors.fieldChalk).copy(alpha = 0.35f + 0.45f * flight),
             start = streakFrom,
             end = endPt,
             strokeWidth = max(2.4f, (3.2f + 4.8f * flight) * scale),
@@ -431,7 +446,7 @@ private fun DrawScope.drawIncomingBall(
         val delta = PitchDramaCamera.departingBallDelta(outcome, battedBall, departingT)
         Offset(plate.x + delta.x, plate.y + delta.y)
     } else {
-        visiblePoints.last()
+        partialHead
     }
     if (departingT > 0f) {
         val from = place(plate)
@@ -467,6 +482,34 @@ private fun DrawScope.drawIncomingBall(
         radius = radius,
         center = center,
     )
+    if (!reduceMotion) drawBallSeams(center, radius, progress, perfect)
+}
+
+/**
+ * Two seams turning with the flight. A plain white dot reads as a marker; a turning ball reads as a
+ * pitch, and it is the cheapest way to sell speed on a flat 2D field.
+ */
+private fun DrawScope.drawBallSeams(center: Offset, radius: Float, progress: Float, perfect: Boolean) {
+    if (radius < 3.2f) return
+    val turn = progress * 1_080f
+    val seam = if (perfect) BaseballColors.milestone else BaseballColors.fieldDirt
+    val box = androidx.compose.ui.geometry.Rect(
+        center.x - radius * 0.82f,
+        center.y - radius * 0.82f,
+        center.x + radius * 0.82f,
+        center.y + radius * 0.82f,
+    )
+    for (side in 0..1) {
+        drawArc(
+            color = seam.copy(alpha = 0.85f),
+            startAngle = turn + side * 180f,
+            sweepAngle = 76f,
+            useCenter = false,
+            topLeft = box.topLeft,
+            size = box.size,
+            style = Stroke(width = kotlin.math.max(1f, radius * 0.22f), cap = StrokeCap.Round),
+        )
+    }
 }
 
 private fun DrawScope.drawImpactBurst(
@@ -689,13 +732,19 @@ private fun DrawScope.drawVerdict(
         ),
     )
     val rise = (1f - flash) * 16f * scale
-    drawText(
-        textLayoutResult = textLayout,
-        topLeft = Offset(
-            (canvasSize.width - textLayout.size.width) / 2f,
-            canvasSize.height * 0.12f + rise,
-        ),
-    )
+    // A call should land like a stamp: it arrives slightly oversized and settles.
+    val settle = ((progress - CONTACT_PROGRESS) / 0.10f).coerceIn(0f, 1f)
+    val stamp = 1f + (1f - settle) * 0.18f
+    val width = textLayout.size.width * stamp
+    val height = textLayout.size.height * stamp
+    val left = (canvasSize.width - width) / 2f
+    val top = canvasSize.height * 0.12f + rise
+    withTransform({ scale(stamp, stamp, pivot = Offset(left + width / 2f, top + height / 2f)) }) {
+        drawText(
+            textLayoutResult = textLayout,
+            topLeft = Offset((canvasSize.width - textLayout.size.width) / 2f, top),
+        )
+    }
 }
 
 // MARK: - 유틸리티 및 좌표 변환
@@ -712,7 +761,7 @@ internal const val LIVE_ZONE_STROKE_ALPHA = 0.50f
 internal const val LIVE_ZONE_GRID_ALPHA = 0.16f
 internal const val RESULT_ZONE_STROKE_ALPHA = 0.85f
 internal const val RESULT_ZONE_GRID_ALPHA = 0.40f
-internal const val RESULT_TRAIL_START_ALPHA = 0.18f
+internal const val RESULT_TRAIL_START_ALPHA = 0.08f
 internal const val RESULT_TRAIL_END_ALPHA = 0.90f
 internal const val RESULT_LANDING_DOT_RADIUS_DP = 5f
 internal const val RESULT_LANDING_RING_RADIUS_DP = 12f
@@ -750,41 +799,10 @@ private fun platePoint(x: Double, y: Double): Offset {
     return Offset(px, py)
 }
 
-private fun calculateReplayPoints(request: PitchPresentationRequest?): List<Offset> {
-    val release = Offset(160f, 116f)
-    val actual = platePoint(
-        request?.plateXMm?.toDouble() ?: 0.0,
-        request?.plateYMm?.toDouble() ?: 0.0,
-    )
-    val trajectory = request?.trajectory
-    if (trajectory == null || trajectory.size < 2) {
-        return (0..24).map { step ->
-            val t = step / 24f
-            Offset(release.x + (actual.x - release.x) * t, release.y + (actual.y - release.y) * t)
-        }
-    }
-
-    val first = trajectory.first()
-    val last = trajectory.last()
-    val spanZ = max(1f, (first.zMm - last.zMm).toFloat())
-
-    val rawProjected = trajectory.map { pt ->
-        val t = min(1f, max(0f, (first.zMm - pt.zMm) / spanZ))
-        val lateralScale = 0.035f + (0.093f - 0.035f) * t
-        val refHeight = first.yMm + (750 - first.yMm) * t
-        val verticalScale = 0.070f + (0.160f - 0.070f) * t
-        val x = 160f + pt.xMm * lateralScale
-        val y = (116f + (PLATE_PLANE_Y - 116f) * t) - (pt.yMm - refHeight) * verticalScale
-        Offset(x, y)
-    }
-
-    val tail = rawProjected.last()
-    val dx = actual.x - tail.x
-    val dy = actual.y - tail.y
-    return rawProjected.mapIndexed { index, pt ->
-        val weight = index / max(1f, (rawProjected.size - 1).toFloat())
-        Offset(pt.x + dx * weight, pt.y + dy * weight)
-    }
+private fun calculateReplayPoints(request: PitchPresentationRequest?, movement: Int? = null): List<Offset> {
+    if (request == null) return listOf(Offset(160f, 116f), platePoint(0.0, 0.0))
+    val scale = movement?.let(PitchFlightProjection::movementScale) ?: 1f
+    return PitchFlightProjection.points(request, scale).map { Offset(it.x, it.y) }
 }
 
 private fun calculateImpactPulse(progress: Float): Float {

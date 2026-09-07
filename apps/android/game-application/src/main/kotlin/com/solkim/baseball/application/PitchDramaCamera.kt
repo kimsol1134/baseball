@@ -18,17 +18,21 @@ public object PitchDramaCamera {
     public const val MAX_REPLAY_MS: Int = 960
     /** iOS `PitchFeedbackTimeline.clutchTempo` — 풀카운트·2아웃 2S만 늘린다. */
     public const val CLUTCH_TEMPO: Float = 1.625f
+    /** A perfect release flies 15% faster — the ball looks like it jumps out of the hand. */
+    public const val PERFECT_TEMPO: Float = 0.85f
 
     /** Whole-clip length so the pitch reaches the plate in about the kernel flight time. */
     public fun replayDurationMs(
         flightDurationMs: Int,
         reducedMotion: Boolean,
         clutch: Boolean = false,
+        perfect: Boolean = false,
     ): Int {
         if (reducedMotion) return REDUCED_MOTION_REPLAY_MS
         val flight = flightDurationMs.coerceIn(300, 520)
         val base = (flight / CONTACT_PROGRESS).roundToInt().coerceIn(MIN_REPLAY_MS, MAX_REPLAY_MS)
-        return if (clutch) (base * CLUTCH_TEMPO).roundToInt() else base
+        val timed = if (perfect) (base * PERFECT_TEMPO).roundToInt() else base
+        return if (clutch) (timed * CLUTCH_TEMPO).roundToInt() else timed
     }
 
     /**
