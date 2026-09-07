@@ -2,6 +2,7 @@ package com.solkim.baseball.core.pitch
 
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.min
@@ -53,13 +54,47 @@ public object PitchReleaseMeter {
         return amplitude * x to amplitude * y
     }
 
-    public fun phase(elapsedSeconds: Double, sweepSeconds: Double = BASE_SWEEP_SECONDS): Double {
+    /**
+     * How far from the middle the needle slows down, in meter units. It is wide enough to cover the
+     * gold window and narrow enough that the green window keeps the timing it has always had.
+     */
+    public const val RELEASE_DWELL_SPAN: Double = 0.09
+
+    /**
+     * The gold window is 2.5% of the meter, which a linear sweep crosses in about 25ms — too fast to
+     * aim at. The needle keeps its period but lingers at the release point, and lingers longer as
+     * command grows, so the hardest thing to hit is the thing that improves most with the pitcher.
+     */
+    public fun releaseDwell(command: Int): Double =
+        0.60 + (command.coerceIn(PitchReleaseWindow.BASELINE_COMMAND, 80) - PitchReleaseWindow.BASELINE_COMMAND) / 45.0 * 0.18
+
+    /**
+     * Seconds until the needle next sits on the release point. The dwell keeps the middle at the
+     * middle, so the crossing times are the plain sweep's and a warning cue can be placed exactly.
+     */
+    public fun secondsToRelease(elapsedSeconds: Double, sweepSeconds: Double = BASE_SWEEP_SECONDS): Double {
+        require(elapsedSeconds.isFinite() && elapsedSeconds >= 0.0) { "pitch.release.elapsed" }
+        require(sweepSeconds.isFinite() && sweepSeconds > 0.0) { "pitch.release.sweep" }
+        val legs = elapsedSeconds / sweepSeconds
+        val next = floor(legs - 0.5) + 1.5
+        return (next * sweepSeconds - elapsedSeconds).coerceAtLeast(0.0)
+    }
+
+    public fun phase(
+        elapsedSeconds: Double,
+        sweepSeconds: Double = BASE_SWEEP_SECONDS,
+        command: Int = PitchReleaseWindow.BASELINE_COMMAND,
+    ): Double {
         require(elapsedSeconds.isFinite() && elapsedSeconds >= 0.0) { "pitch.release.elapsed" }
         require(sweepSeconds.isFinite() && sweepSeconds > 0.0) { "pitch.release.sweep" }
         val sweep = elapsedSeconds / sweepSeconds
         val whole = floor(sweep).toLong()
         val fraction = sweep - whole
-        return if (whole and 1L == 0L) fraction else 1.0 - fraction
+        val linear = if (whole and 1L == 0L) fraction else 1.0 - fraction
+        val offset = 2.0 * linear - 1.0
+        val ratio = offset / RELEASE_DWELL_SPAN
+        val eased = offset * (1.0 - releaseDwell(command) * exp(-ratio * ratio))
+        return (eased + 1.0) / 2.0
     }
 
     public fun delivery(
@@ -101,7 +136,19 @@ public object PitchReleaseWindow {
     public const val STABLE_RELEASE_THRESHOLD: Int = 820
     public const val BASELINE_COMMAND: Int = 35
 
-    public fun widthPermille(command: Int): Int = BASE_WIDTH_PERMILLE + (command.coerceIn(BASELINE_COMMAND, 80) - BASELINE_COMMAND) * 60 / 45
+    public val milestones: List<Int> = listOf(40, 50, 65, 80)
+    public fun nextMilestone(command: Int): Int? = milestones.firstOrNull { it > command }
+    public fun crossesMilestone(before: Int, after: Int): Boolean = after > before && milestones.any { before < it && after >= it }
+    private val anchors = listOf(35 to 180, 40 to 195, 50 to 210, 65 to 225, 80 to 240)
+    public fun widthPermille(command: Int): Int {
+        val value = command.coerceIn(BASELINE_COMMAND, 80)
+        for (index in 1 until anchors.size) {
+            val (upper, end) = anchors[index]
+            val (lower, start) = anchors[index - 1]
+            if (value <= upper) return start + (value - lower) * (end - start) / (upper - lower)
+        }
+        return MAXIMUM_WIDTH_PERMILLE
+    }
     public fun width(command: Int): Double = widthPermille(command) / 1_000.0
     public fun calibratedAccuracy(raw: Int, command: Int): Int {
         val score = raw.coerceIn(0, 1_000)

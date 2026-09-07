@@ -70,11 +70,13 @@ public fun PitchDeliveryControl(
     autoRelease: Boolean,
     enabled: Boolean,
     onDeliver: (PitchDelivery) -> Unit,
+    onPressingChange: (Boolean) -> Unit = {},
     holdPrompt: String = "길게 눌러 와인드업",
     modifier: Modifier = Modifier,
     velocityTenthsKph: Int = 1_350,
     fatigue: Int = 0,
     commandRating: Int = PitchReleaseWindow.BASELINE_COMMAND,
+    previousCommand: Int? = null,
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
     soundEnabled: Boolean = true,
@@ -91,10 +93,18 @@ public fun PitchDeliveryControl(
     val aimRadiusPx = with(density) { PitchReleaseMeter.AIM_RADIUS_POINTS.toFloat().dp.toPx() }
     val context = LocalContext.current
     val touchView = LocalView.current
+    var windowFocused by remember(touchView) { mutableStateOf(touchView.hasWindowFocus()) }
+    DisposableEffect(touchView) {
+        val observer = touchView.viewTreeObserver
+        val listener = android.view.ViewTreeObserver.OnWindowFocusChangeListener { windowFocused = it }
+        observer.addOnWindowFocusChangeListener(listener)
+        onDispose { if (observer.isAlive) observer.removeOnWindowFocusChangeListener(listener) }
+    }
     val windUp = remember(touchView) { PitchWindUpFeedback(touchView) }
     DisposableEffect(windUp) { onDispose { windUp.stop() } }
     val audio = remember(context) { context.pitchAudio() }
     val playback = NativePlaybackSettings(soundEnabled, false, hapticsEnabled, reduceMotion)
+    val latestPressingChange by rememberUpdatedState(onPressingChange)
     val latestCommand by rememberUpdatedState(commandRating)
     var heldCommand by remember { mutableStateOf(commandRating) }
     var pressing by remember { mutableStateOf(false) }
@@ -105,25 +115,46 @@ public fun PitchDeliveryControl(
     var holdHint by remember { mutableStateOf(false) }
     var pressStartedAtNanos by remember { mutableStateOf(0L) }
     var wasInSweetSpot by remember { mutableStateOf(false) }
+    var baseMeter by remember { mutableStateOf(0.5) }
+    var leadWarned by remember { mutableStateOf(false) }
+    var perfectRing by remember { mutableStateOf(0) }
+    val ringProgress = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(perfectRing) {
+        if (perfectRing <= 0) return@LaunchedEffect
+        ringProgress.snapTo(0.001f)
+        ringProgress.animateTo(1f, androidx.compose.animation.core.tween(durationMillis = if (reduceMotion) 160 else 520))
+    }
+    // The old window stays on the bar for a moment after 제구 grows, so the wider green is visible.
+    var showPrevious by remember(previousCommand) { mutableStateOf(previousCommand != null) }
+    LaunchedEffect(previousCommand) {
+        if (previousCommand == null) return@LaunchedEffect
+        delay(2_500L)
+        showPrevious = false
+    }
     var lastHint by remember { mutableStateOf<String?>(null) }
     val sweep = PitchReleaseMeter.sweepSeconds(velocityTenthsKph, fatigue, reduceMotion)
     val amplitude = PitchReleaseMeter.swayAmplitude(fatigue, reduceMotion)
     val amplitudePx = with(density) { amplitude.toFloat().dp.toPx() }.toDouble()
 
     val idleBeats = remember { mutableListOf<Double>() }
-    LaunchedEffect(enabled, pressing, tension, disturbanceSeed, hapticsEnabled, soundEnabled, adverseEpisode) {
-        if (!enabled || pressing) {
+    LaunchedEffect(enabled, pressing, tension, disturbanceSeed, hapticsEnabled, soundEnabled, adverseEpisode, windowFocused) {
+        if (!enabled || pressing || !windowFocused) {
             audio?.stopHeartbeat()
             return@LaunchedEffect
         }
+        val heartbeatPcm = if (MoundHeartbeatSettings.heartbeatAudioEnabled(soundEnabled)) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                Pair(MoundHeartbeatAudio.renderPcm(tension, false), MoundHeartbeatAudio.renderPcm(tension, true))
+            }
+        } else null
         val startNanos = System.nanoTime()
         try {
             runMoundHeartbeat(tension, disturbanceSeed, includeEntry = true, adverseEpisode) { eventTension, irregular ->
                 val elapsed = (System.nanoTime() - startNanos) / 1_000_000_000.0
                 idleBeats.add(elapsed)
                 if (idleBeats.size > 24) idleBeats.removeAt(0)
-                if (MoundHeartbeatSettings.heartbeatAudioEnabled(soundEnabled)) {
-                    audio?.playHeartbeat(MoundHeartbeatAudio.renderPcm(eventTension, irregular), MoundHeartbeatAudio.SAMPLE_RATE, playback)
+                if (heartbeatPcm != null) {
+                    audio?.playHeartbeat(if (irregular) heartbeatPcm.second else heartbeatPcm.first, MoundHeartbeatAudio.SAMPLE_RATE, playback)
                 }
                 if (hapticsEnabled) {
                     val intensity = MoundTensionModel.heartbeatHapticIntensity(eventTension) * if (irregular) 1.08 else 1.0
@@ -143,12 +174,18 @@ public fun PitchDeliveryControl(
         var direction = 0
         try { while (true) {
             val now = withFrameNanos { it }
+            // A frame queued before release must not overwrite its haptic with a late tick.
+            if (!pressing || !touchView.hasWindowFocus()) break
             val elapsed = ((System.nanoTime() - startNanos).coerceAtLeast(0L)) / 1_000_000_000.0
             val delta = ((now - last).coerceAtLeast(0L)) / 1_000_000_000.0
             last = now
             val step = minOf(0.1, delta)
-            val base = PitchReleaseMeter.phase(elapsed, sweep)
-            meter = MoundMeterDisturbance.position(base, elapsed, tension, idleBeats, hapticsEnabled, reduceMotion, disturbanceSeed)
+            val base = PitchReleaseMeter.phase(elapsed, sweep, heldCommand)
+            // Tension may shake the needle, but never by more than a quarter of the player's own
+            // window: a mastered pitcher's hand shakes less relative to what they can hit.
+            val shaken = MoundMeterDisturbance.position(base, elapsed, tension, idleBeats, hapticsEnabled, reduceMotion, disturbanceSeed)
+            val shakeLimit = PitchReleaseWindow.width(heldCommand) / 4.0
+            meter = (base + (shaken - base).coerceIn(-shakeLimit, shakeLimit)).coerceIn(0.0, 1.0)
             val nextDirection = if (base > previousBase) 1 else if (base < previousBase) -1 else direction
             if (direction != 0 && nextDirection != direction) windUp.cue(HapticFeedbackConstants.CLOCK_TICK, hapticsEnabled, edge = true)
             direction = nextDirection
@@ -160,6 +197,15 @@ public fun PitchDeliveryControl(
                 windUp.cue(HapticFeedbackConstants.CLOCK_TICK, hapticsEnabled)
             }
             wasInSweetSpot = inSweet
+            // 금색 구간은 들어간 뒤 알리면 늦다. 릴리스 지점 도착 시각을 정확히 계산해 앞당겨 알린다.
+            baseMeter = base
+            val toCenter = PitchReleaseMeter.secondsToRelease(elapsed, sweep)
+            val lead = perfectLeadSeconds(heldCommand)
+            if (toCenter > lead * 1.5) leadWarned = false
+            else if (!leadWarned && toCenter <= lead) {
+                leadWarned = true
+                windUp.perfectZone(hapticsEnabled)
+            }
             windUp.update(1.0 - kotlin.math.abs(meter - 0.5) * 2.0, hapticsEnabled)
             if (step < 0) break
         } } finally { windUp.stop() }
@@ -168,25 +214,27 @@ public fun PitchDeliveryControl(
     val aim = clampAim(sway + drag, aimRadiusPx)
     val live = PitchReleaseMeter.delivery(meter, aim.x.toDouble(), aim.y.toDouble(), aimRadiusPx.toDouble(), windowCommand)
     val onTarget = hypot(aim.x.toDouble(), aim.y.toDouble()) <= with(density) { 14.dp.toPx() }
-    val inPerfect = pressing && live.isPerfectRelease
+    val timedLive = PitchReleaseMeter.delivery(baseMeter, aim.x.toDouble(), aim.y.toDouble(), aimRadiusPx.toDouble(), windowCommand)
+    val inPerfect = pressing && (live.isPerfectRelease || timedLive.isPerfectRelease)
     val inSweet = pressing && PitchReleaseWindow.contains(meter, windowCommand)
     val prompt = when {
-        !enabled -> "연출 준비 중"
-        pressing && onTarget && inPerfect -> "지금 놓으면 완벽합니다"
+        !enabled -> "잠깐"
+        pressing && onTarget && inPerfect -> "지금! 퍼펙트"
         pressing && onTarget && inSweet -> "지금"
-        pressing && onTarget -> "미터를 기다리세요"
-        pressing -> "과녁에 맞춰 주세요"
-        holdHint -> "짧게 탭하면 던져지지 않습니다. 누르고 있다가 놓으세요."
+        pressing && onTarget -> "초록까지 기다려"
+        pressing -> "조준점을 가운데로"
+        holdHint -> "짧게 탭하면 안 던져진다. 누르고 있다가 놓자."
         lastHint != null -> lastHint!!
         else -> holdPrompt
     }
 
-    val tempoLabel = when {
-        velocityTenthsKph >= 1_400 -> "빠름"
-        velocityTenthsKph < 1_230 -> "느림"
+    val tempo = when {
+        sweep <= 0.90 -> "빠름"
+        sweep >= 1.06 -> "느림"
         else -> "보통"
     }
-    val velocityLabel = "${velocityTenthsKph / 10}.${velocityTenthsKph % 10} km/h"
+    val meterCopy = rememberGameCopy()
+    val tempoLabel = meterCopy.resolve(if (fatigue > 0) "loop.meter.tired" else "loop.meter.rested", com.solkim.baseball.application.GameCopyArgument.UserText(meterCopy.legacy(tempo)))
 
     LaunchedEffect(autoRelease) {
         if (autoRelease) pressing = false
@@ -222,7 +270,7 @@ public fun PitchDeliveryControl(
                 color = BaseballColors.textSecondary,
             )
             Text(
-                "$tempoLabel · $velocityLabel",
+                tempoLabel, verbatim = true,
                 modifier = Modifier.weight(1f),
                 textAlign = androidx.compose.ui.text.style.TextAlign.End,
                 style = MaterialTheme.typography.labelMedium,
@@ -232,7 +280,16 @@ public fun PitchDeliveryControl(
             )
         }
         Spacer(Modifier.height(8.dp))
-        ReleaseMeterBar(meter = meter, pressing = pressing, inPerfect = inPerfect, commandRating = windowCommand)
+        ReleaseMeterBar(meter = meter, pressing = pressing, inPerfect = inPerfect, commandRating = windowCommand, previousCommand = previousCommand.takeIf { showPrevious })
+        if (showPrevious && previousCommand != null && previousCommand < commandRating) {
+            Text(
+                "제구가 올랐다. 초록 구간 ${PitchReleaseWindow.widthPermille(previousCommand) / 10}% → ${PitchReleaseWindow.widthPermille(commandRating) / 10}%",
+                color = BaseballColors.milestone,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 4.dp).testTag("pitch.controlWindow.growth"),
+            )
+        }
         Spacer(Modifier.height(12.dp))
         Box(
             modifier = Modifier
@@ -248,15 +305,18 @@ public fun PitchDeliveryControl(
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = true)
                         down.consume()
+                        audio?.stopHeartbeat()
                         windUp.cue(HapticFeedbackConstants.LONG_PRESS, hapticsEnabled)
                         holdHint = false
                         lastHint = null
                         drag = Offset.Zero
                         sway = Offset.Zero
                         wasInSweetSpot = false
+                        leadWarned = false
                         heldCommand = latestCommand
                         pressStartedAtNanos = System.nanoTime()
                         pressing = true
+                        latestPressingChange(true)
                         var released = false
                         try {
                             while (!released) {
@@ -271,6 +331,7 @@ public fun PitchDeliveryControl(
                         } finally {
                             val held = (System.nanoTime() - pressStartedAtNanos) / 1_000_000_000.0
                             pressing = false
+                            latestPressingChange(false)
                             windUp.stop()
                             if (!released || held < PitchReleaseMeter.MINIMUM_HOLD_SECONDS) {
                                 holdHint = released
@@ -278,21 +339,32 @@ public fun PitchDeliveryControl(
                                 sway = Offset.Zero
                             } else {
                                 val releasedAim = clampAim(sway + drag, aimRadiusPx)
-                                val scored = PitchReleaseMeter.delivery(
+                                val shown = PitchReleaseMeter.delivery(
                                     meter,
                                     releasedAim.x.toDouble(),
                                     releasedAim.y.toDouble(),
                                     aimRadiusPx.toDouble(),
                                     heldCommand,
                                 )
-                                if (hapticsEnabled) {
-                                    val feedback = when {
-                                        scored.isPerfectRelease && Build.VERSION.SDK_INT >= 30 -> HapticFeedbackConstants.CONFIRM
-                                        Build.VERSION.SDK_INT >= 27 -> HapticFeedbackConstants.VIRTUAL_KEY_RELEASE
-                                        else -> HapticFeedbackConstants.VIRTUAL_KEY
-                                    }
-                                    windUp.cue(feedback, hapticsEnabled)
+                                // 흔들림은 정확도에 남기되, 손끝이 정확히 가운데였던 퍼펙트까지 뺏지는 않는다.
+                                val timed = PitchReleaseMeter.delivery(
+                                    baseMeter,
+                                    releasedAim.x.toDouble(),
+                                    releasedAim.y.toDouble(),
+                                    aimRadiusPx.toDouble(),
+                                    heldCommand,
+                                )
+                                val scored = if (timed.isPerfectRelease) {
+                                    shown.copy(releaseAccuracy = maxOf(shown.releaseAccuracy, timed.releaseAccuracy))
+                                } else {
+                                    shown
                                 }
+                                windUp.release((scored.releaseAccuracy + scored.aimAccuracy) / 2_000.0, scored.isPerfectRelease, hapticsEnabled)
+                                if (scored.isPerfectRelease) {
+                                    perfectRing += 1
+                                    audio?.playPitchCue(com.solkim.baseball.model.PitchAudioCue.PERFECT_RELEASE, playback, disturbanceSeed)
+                                }
+                                showPrevious = false
                                 lastHint = PitchReleaseMeter.coachingHint(scored)
                                 onDeliver(scored)
                                 drag = Offset.Zero
@@ -322,6 +394,15 @@ public fun PitchDeliveryControl(
                 }
             } else {
                 Text(holdPrompt, color = BaseballColors.actionInk, style = MaterialTheme.typography.titleMedium)
+            }
+            val ring = ringProgress.value
+            if (ring > 0f && ring < 1f) {
+                Canvas(Modifier.matchParentSize()) {
+                    val center = Offset(size.width / 2f, size.height / 2f)
+                    val radius = 18.dp.toPx() + (size.width * 0.55f) * ring
+                    drawCircle(BaseballColors.milestone.copy(alpha = (1f - ring) * 0.9f), radius = radius, center = center, style = Stroke(width = (7f - 5f * ring).dp.toPx()))
+                    drawCircle(BaseballColors.milestone.copy(alpha = (1f - ring) * 0.22f), radius = radius * 0.7f, center = center)
+                }
             }
         }
         }
@@ -365,7 +446,7 @@ private fun AutoReleaseToggle(
 }
 
 @Composable
-private fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolean, commandRating: Int) {
+private fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolean, commandRating: Int, previousCommand: Int? = null) {
     val perfectWidth = (1_000 - PitchDelivery.PERFECT_RELEASE_THRESHOLD) / 1_000f
     val windowWidth = PitchReleaseWindow.width(commandRating).toFloat()
     val copy = rememberGameCopy()
@@ -387,6 +468,16 @@ private fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolean
             size = androidx.compose.ui.geometry.Size(sweet, height),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f),
         )
+        previousCommand?.let { previous ->
+            val previousWidth = PitchReleaseWindow.width(previous).toFloat()
+            drawRoundRect(
+                BaseballColors.fieldChalk.copy(alpha = 0.85f),
+                topLeft = Offset(width * (0.5f - previousWidth / 2f), 1f),
+                size = androidx.compose.ui.geometry.Size(width * previousWidth, height - 2f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f),
+                style = Stroke(width = 2f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(6f, 5f))),
+            )
+        }
         val perfect = (width * perfectWidth).coerceAtLeast(3f)
         drawRoundRect(
             BaseballColors.milestone.copy(alpha = if (inPerfect) 1f else 0.92f),
@@ -411,6 +502,10 @@ private fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolean
         )
     }
 }
+
+/** 제구가 오를수록 예고가 일찍 온다. 35에서 120ms, 80에서 220ms. */
+internal fun perfectLeadSeconds(command: Int): Double =
+    0.12 + (command.coerceIn(PitchReleaseWindow.BASELINE_COMMAND, 80) - PitchReleaseWindow.BASELINE_COMMAND) / 45.0 * 0.10
 
 private fun clampAim(aim: Offset, radius: Float): Offset {
     val length = hypot(aim.x.toDouble(), aim.y.toDouble()).toFloat()

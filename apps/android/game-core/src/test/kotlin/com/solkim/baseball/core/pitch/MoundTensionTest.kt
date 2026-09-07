@@ -99,9 +99,14 @@ class MoundTensionTest {
         assertEquals(first, second)
     }
 
+    /** 흔들림은 릴리스 판정에 들어가므로 진동 설정으로 난이도가 갈리면 안 된다. */
     @Test
-    fun hapticsOffRemovesTensionJitter() {
-        assertEquals(0.0, MoundMeterDisturbance.offset(0.1, 1.0, listOf(0.0), false, false, 3UL), 1e-9)
+    fun hapticsToggleDoesNotChangeTensionJitter() {
+        val on = MoundMeterDisturbance.offset(0.1, 1.0, listOf(0.0), true, false, 3UL)
+        val off = MoundMeterDisturbance.offset(0.1, 1.0, listOf(0.0), false, false, 3UL)
+        assertEquals(on, off, 1e-9)
+        assertTrue(kotlin.math.abs(on) > 0.0)
+        assertTrue(MoundHeartbeatSettings.meterJitterEnabled(false))
     }
 
     @Test

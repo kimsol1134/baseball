@@ -148,7 +148,12 @@ public object MoundTensionModel {
 }
 
 public object MoundHeartbeatSettings {
-    public fun meterJitterEnabled(hapticsEnabled: Boolean): Boolean = hapticsEnabled
+    /**
+     * 미터 흔들림은 릴리스 판정에 그대로 들어가므로 편의 설정에 묶으면 진동을 끈 쪽이 유리해진다.
+     * 설정과 무관하게 항상 적용한다.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    public fun meterJitterEnabled(hapticsEnabled: Boolean): Boolean = true
     public fun heartbeatAudioEnabled(soundEnabled: Boolean): Boolean = soundEnabled
 }
 

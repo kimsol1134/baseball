@@ -19,6 +19,7 @@ internal class PitchWindUpFeedback(private val view: View) {
     private var ownsEffect = false
     private var nextUpdate = 0L
     private var lastEdge = 0L
+    private var releaseProtectedUntil = 0L
     private val supportsSoftTick = Build.VERSION.SDK_INT >= 31 && vibrator?.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_LOW_TICK) == true
 
     fun update(closeness: Double, enabled: Boolean) {
@@ -46,11 +47,35 @@ internal class PitchWindUpFeedback(private val view: View) {
 
     fun cue(event: Int, enabled: Boolean, edge: Boolean = false) {
         val now = android.os.SystemClock.uptimeMillis()
+        if (event == HapticFeedbackConstants.LONG_PRESS) releaseProtectedUntil = 0L
+        else if (now < releaseProtectedUntil) return
         if (edge && now - lastEdge < 200L) return
         if (edge) lastEdge = now
         stop()
         nextUpdate = now + 90L
-        view.pitchTouchFeedback(event, enabled)
+        if (edge) com.solkim.baseball.platform.NativePitchHaptics.play(view.context, com.solkim.baseball.model.PitchHapticCue.EDGE, enabled && view.isHapticFeedbackEnabled)
+        else view.pitchTouchFeedback(event, enabled)
+    }
+
+    /** One heavy click the instant the needle enters the gold window — the warning before a perfect. */
+    fun perfectZone(enabled: Boolean) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now < releaseProtectedUntil) return
+        stop()
+        nextUpdate = now + 120L
+        com.solkim.baseball.platform.NativePitchHaptics.play(view.context, com.solkim.baseball.model.PitchHapticCue.PERFECT_ZONE, enabled && view.isHapticFeedbackEnabled)
+    }
+
+    fun release(quality: Double, perfect: Boolean, enabled: Boolean) {
+        stop()
+        releaseProtectedUntil = android.os.SystemClock.uptimeMillis() + 180L
+        nextUpdate = releaseProtectedUntil
+        val cue = when {
+            perfect -> com.solkim.baseball.model.PitchHapticCue.PERFECT
+            quality < 0.45 -> com.solkim.baseball.model.PitchHapticCue.ERROR
+            else -> com.solkim.baseball.model.PitchHapticCue.RELEASE
+        }
+        com.solkim.baseball.platform.NativePitchHaptics.play(view.context, cue, enabled && view.isHapticFeedbackEnabled)
     }
 
     fun stop() {
@@ -63,28 +88,13 @@ internal class PitchWindUpFeedback(private val view: View) {
     }.getOrDefault(true)
 }
 
-/** Touch usage honors device intensity. Predefined effects include Android's hardware fallback. */
+/** Touch feedback follows the app/system switches and the real motor capabilities. */
 internal fun View.pitchTouchFeedback(event: Int, enabled: Boolean): Boolean {
-    val systemEnabled = runCatching { Settings.System.getInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) == 1 }.getOrDefault(true)
-    if (!enabled || !isHapticFeedbackEnabled || !systemEnabled) return false
-    val accepted = runCatching {
-        if (Build.VERSION.SDK_INT < 29) {
-            performHapticFeedback(if (event == HapticFeedbackConstants.CLOCK_TICK) event else HapticFeedbackConstants.LONG_PRESS)
-        } else {
-            val vibrator = if (Build.VERSION.SDK_INT >= 31) context.getSystemService(VibratorManager::class.java)?.defaultVibrator
-                else context.getSystemService(Vibrator::class.java)
-            if (vibrator?.hasVibrator() != true) return@runCatching false
-            val effect = VibrationEffect.createPredefined(when (event) {
-                HapticFeedbackConstants.CLOCK_TICK -> VibrationEffect.EFFECT_TICK
-                HapticFeedbackConstants.CONFIRM -> VibrationEffect.EFFECT_DOUBLE_CLICK
-                HapticFeedbackConstants.LONG_PRESS -> VibrationEffect.EFFECT_HEAVY_CLICK
-                else -> VibrationEffect.EFFECT_CLICK
-            })
-            if (Build.VERSION.SDK_INT >= 33) vibrator.vibrate(effect, VibrationAttributes.Builder().setUsage(VibrationAttributes.USAGE_TOUCH).build())
-            else vibrator.vibrate(effect, AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION).build())
-            true
-        }
-    }.getOrDefault(false)
-    if (BuildConfig.DEBUG) Log.i("BaseballPitchHaptics", "event=$event requested=$accepted predefined=${Build.VERSION.SDK_INT >= 29}")
-    return accepted
+    val cue = when (event) {
+        HapticFeedbackConstants.CLOCK_TICK -> com.solkim.baseball.model.PitchHapticCue.SWEET
+        HapticFeedbackConstants.CONFIRM -> com.solkim.baseball.model.PitchHapticCue.PERFECT
+        HapticFeedbackConstants.LONG_PRESS -> com.solkim.baseball.model.PitchHapticCue.GRIP
+        else -> com.solkim.baseball.model.PitchHapticCue.RELEASE
+    }
+    return com.solkim.baseball.platform.NativePitchHaptics.play(context, cue, enabled && isHapticFeedbackEnabled)
 }
