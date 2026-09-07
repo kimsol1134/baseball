@@ -57,8 +57,21 @@ public enum PitchReleaseWindow {
     public static let stableReleaseThreshold = 820
     public static let baselineCommand = 35
 
+    /// More of the bounded margin arrives early; all anchors remain within the original 18–24% cap.
+    public static let milestones = [40, 50, 65, 80]
+    public static func nextMilestone(command: Int) -> Int? { milestones.first { $0 > command } }
+    public static func crossesMilestone(before: Int, after: Int) -> Bool {
+        after > before && milestones.contains { before < $0 && after >= $0 }
+    }
+    private static let anchors = [(35, 180), (40, 195), (50, 210), (65, 225), (80, 240)]
     public static func widthPermille(command: Int) -> Int {
-        baseWidthPermille + (min(80, max(baselineCommand, command)) - baselineCommand) * 60 / 45
+        let value = min(80, max(baselineCommand, command))
+        for index in 1..<anchors.count {
+            let (upper, end) = anchors[index]
+            let (lower, start) = anchors[index - 1]
+            if value <= upper { return start + (value - lower) * (end - start) / (upper - lower) }
+        }
+        return maximumWidthPermille
     }
 
     public static func width(command: Int) -> Double { Double(widthPermille(command: command)) / 1_000 }

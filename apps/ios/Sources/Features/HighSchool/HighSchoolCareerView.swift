@@ -291,6 +291,7 @@ struct HighSchoolCareerView: View {
     @State private var trainingSelection = TrainingSelection.placeholder
     /// 드래프트 결과 1화면 → 유산 2화면. 저장하지 않는다 — 앱을 다시 열면 1화면부터.
     @State private var draftLegacyStep = 0
+    @State private var optionalPledgeCareerID: String?
     @State private var dismissedArmHealth = false
     @State private var dismissedSummary: String?
 
@@ -356,6 +357,7 @@ struct HighSchoolCareerView: View {
             if state.phase == .prologue, let session = career.tutorialSession {
                 PitchView(session: session, onFinish: career.finishTutorialPitch,
                           onAbort: career.finishTutorialPitch, isPractice: true,
+                          practiceFinishTitle: copyResolver.resolve(.localizable("loop.reborn.continue")),
                           onRetry: career.retryTutorialPitch)
             } else if state.phase == .importantGame, let session = career.pitchSession {
                 PitchView(session: session, onFinish: career.finishImportantGame,
@@ -643,6 +645,7 @@ struct HighSchoolCareerView: View {
         if career.trainingReceipt != nil { return .trainingResult }
         if career.pendingBloom != nil { return .bloom }
         if !career.pendingGains.isEmpty { return .growth }
+        if let state = career.state, state.phase == .prologue, state.lifeNumber > 1 { return nil }
         if let summary = career.lastSummary, dismissedSummary != summary { return .summary }
         return nil
     }
@@ -698,6 +701,7 @@ struct HighSchoolCareerView: View {
             GrowthCelebrationView(
                 gains: career.pendingGains,
                 jackpot: career.result?.snapshot.lastTraining?.jackpot ?? false,
+                fatigue: state.fatigue,
                 onDismiss: career.acknowledgeGains
             )
             .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
@@ -726,32 +730,36 @@ struct HighSchoolCareerView: View {
     @ViewBuilder private func phaseBody(state: HighSchoolCareerSnapshot) -> some View {
         switch state.phase {
         case .prologue:
-            if !career.isChallengeRun,
-               let previous = career.archive.first,
-               previous.lifeNumber < state.lifeNumber {
-                PreviousPlayerLetterCard(record: previous, currentPlayerName: state.identity.name)
-                if let comparison = career.inheritedStartComparison(for: state, previous: previous) {
-                    InheritedStartComparisonCard(comparison: comparison)
+            if state.lifeNumber > 1, !career.isChallengeRun {
+                RebornReadyCard(state: state, previous: career.archive.first,
+                    onContinue: career.completePrologue, onPractice: career.beginTutorialPitch) {
+                    if let previous = career.archive.first, previous.lifeNumber < state.lifeNumber {
+                        PreviousPlayerLetterCard(record: previous, currentPlayerName: state.identity.name)
+                        if let comparison = career.inheritedStartComparison(for: state, previous: previous) {
+                            InheritedStartComparisonCard(comparison: comparison)
+                        }
+                    }
                 }
+            } else {
+                PrologueCard(state: state, lifeNumber: state.lifeNumber,
+                    onThrow: career.finishedOnboardingBullpen ? career.completePrologue : career.beginTutorialPitch,
+                    onSkip: career.completePrologue,
+                    throwTitleKey: career.finishedOnboardingBullpen ? AppCopyKey.prologueFirstSchool : AppCopyKey.prologueThrow)
             }
-            PrologueCard(
-                state: state,
-                lifeNumber: state.lifeNumber,
-                onThrow: career.finishedOnboardingBullpen
-                    ? career.completePrologue
-                    : career.beginTutorialPitch,
-                onSkip: career.completePrologue,
-                throwTitleKey: career.finishedOnboardingBullpen
-                    ? AppCopyKey.prologueFirstSchool
-                    : AppCopyKey.prologueThrow
-            )
         case .schoolSelection:
             if !career.isChallengeRun && !career.pledgeDecided {
-                PledgeCard(state: state, intent: career.nextRunIntent,
-                           rivalLedger: career.rivalLedger, isFirstLife: state.lifeNumber == 1,
-                           onChoose: { pledgeID in
-                               _ = career.choosePledge(pledgeID)
-                           })
+                if state.lifeNumber > 1 {
+                    Button(copyResolver.resolve(.localizable("loop.reborn.pledge"))) {
+                        optionalPledgeCareerID = optionalPledgeCareerID == state.careerID ? nil : state.careerID
+                    }.frame(minHeight: BaseballMetrics.minimumTapTarget).accessibilityIdentifier("hs.reborn.pledge")
+                }
+                if state.lifeNumber == 1 || optionalPledgeCareerID == state.careerID {
+                    PledgeCard(state: state, intent: career.nextRunIntent,
+                               rivalLedger: career.rivalLedger, isFirstLife: state.lifeNumber == 1,
+                               onChoose: { pledgeID in
+                                   _ = career.choosePledge(pledgeID)
+                               })
+                }
             }
             SchoolSelectionCard(
                 options: state.schoolOptions,

@@ -49,6 +49,8 @@ struct BaseballApp: App {
     nonisolated static let postseasonFixtureLaunchArgument = "-uiTestPostseasonFixture"
     /// 고교 1장 훈련 국면 첫 주를 바로 여는 Debug 전용 픽스처.
     nonisolated static let trainingFixtureLaunchArgument = "-uiTestTrainingFixture"
+    nonisolated static let commandMilestoneFixtureLaunchArgument = "-uiTestCommandMilestoneFixture"
+    nonisolated static let rebornFixtureLaunchArgument = "-uiTestRebornFixture"
     /// 프로 1시즌 6주차 결정 대기를 바로 여는 Debug 전용 픽스처.
     nonisolated static let seasonDecisionFixtureLaunchArgument = "-uiTestSeasonDecisionFixture"
     /// 프로 1시즌 24주차 시즌 리뷰 대기(계약 있음). 결산·오프시즌 스모크용.
@@ -366,6 +368,10 @@ struct BaseballApp: App {
                             _ = pro.installReviewImprovementFixtureForUITesting()
                         } else if arguments.contains(Self.postseasonFixtureLaunchArgument) {
                             _ = pro.installPostseasonFixtureForUITesting()
+                        } else if arguments.contains(Self.rebornFixtureLaunchArgument) {
+                            _ = highSchool.installRebornFixtureForUITesting()
+                        } else if arguments.contains(Self.commandMilestoneFixtureLaunchArgument) {
+                            _ = highSchool.installTrainingFixtureForUITesting(presetID: "breaking_ball_artist", commandMilestone: true)
                         } else if arguments.contains(Self.trainingFixtureLaunchArgument) {
                             SeenContentStore.reset()
                             SeenContentStore.markSeen("hs.training.repeat.explained")

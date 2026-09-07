@@ -5,9 +5,22 @@ import XCTest
 /// the system depends on: absent/neutral deliveries change nothing at all, and a real delivery
 /// changes execution without touching the judgment path.
 final class PitchDeliveryTests: XCTestCase {
+    func testEarlyGrowthNeverNarrowsExistingWindowsAndMilestonesAreEarned() {
+        for command in 20...80 {
+            let previousCurve = 180 + min(45, max(0, command - 35)) * 60 / 45
+            XCTAssertGreaterThanOrEqual(PitchReleaseWindow.widthPermille(command: command), previousCurve)
+        }
+        XCTAssertFalse(PitchReleaseWindow.crossesMilestone(before: 35, after: 36))
+        XCTAssertTrue(PitchReleaseWindow.crossesMilestone(before: 39, after: 40))
+        XCTAssertFalse(PitchReleaseWindow.crossesMilestone(before: 40, after: 41))
+        XCTAssertFalse(PitchReleaseWindow.crossesMilestone(before: 65, after: 60))
+        XCTAssertEqual(PitchReleaseWindow.nextMilestone(command: 36), 40)
+        XCTAssertNil(PitchReleaseWindow.nextMilestone(command: 80))
+    }
+
     func testSharedAndroidWindowVectorsMatch() {
-        XCTAssertEqual([35, 47, 50, 65, 80].map { PitchReleaseWindow.widthPermille(command: $0) }, [180, 196, 200, 220, 240])
-        XCTAssertEqual([35, 47, 50, 65, 80].map { PitchReleaseWindow.calibratedAccuracy(raw: 800, command: $0) }, [800, 815, 820, 835, 848])
+        XCTAssertEqual([35, 47, 50, 65, 80].map { PitchReleaseWindow.widthPermille(command: $0) }, [180, 205, 210, 225, 240])
+        XCTAssertEqual([35, 47, 50, 65, 80].map { PitchReleaseWindow.calibratedAccuracy(raw: 800, command: $0) }, [800, 824, 828, 839, 848])
     }
 
     func testCommandWindowPreservesBeginnersNeutralAndPerfectAcrossEveryInputScore() {

@@ -9,12 +9,13 @@ extension HighSchoolCareerStore {
     /// 고정 시드로 start → 프롤로그 완료 → 학교 선택만 수행한다. 훈련 루프를 돌리지 않아
     /// 커리어 RNG를 소비하지 않고, 엔진이 서명한 스냅샷을 그대로 설치한다.
     @discardableResult
-    func installTrainingFixtureForUITesting(seed: String = "20260903") -> Bool {
+    func installTrainingFixtureForUITesting(seed: String = "20260903", presetID: String = "power_prospect", commandMilestone: Bool = false) -> Bool {
         let fixtureEngine = HighSchoolCareerEngine()
         do {
             var fixture = try fixtureEngine.start(.init(
                 seed: seed,
-                presetID: "power_prospect",
+                presetID: presetID,
+                creationAllocation: commandMilestone ? .init(stuff: 0, command: 5, movement: 0, stamina: 0) : .balanced,
                 identity: PlayerIdentitySnapshot(
                     name: "민서준", throwingHand: .right, bodyType: .balanced, region: "서울"
                 )
@@ -63,6 +64,24 @@ extension HighSchoolCareerStore {
             loadState = .failed("UI 테스트용 훈련 상태를 만들지 못했습니다: \(error.localizedDescription)")
             return false
         }
+    }
+    /// Uses ordinary engine/store transitions to create a disposable returning-life UI fixture.
+    @discardableResult
+    func installRebornFixtureForUITesting() -> Bool {
+        guard installUndraftedDraftFixtureForUITesting() else { return false }
+        updatePersisted { $0.signatureLegacyRulesVersion = Self.currentSignatureLegacyRulesVersion }
+        lastSetup = .init(presetID: "precision_commander", playerName: "Alex Han", region: "서울", harshness: "standard", karmas: [], soulDomain: nil,
+            startingRepertoire: PitchLearningRules.recommendedSelection(presetID: "precision_commander"), throwingHand: .right)
+        resolveDraft()
+        guard state?.phase == .legacy, prepareSignatureLegacyCandidates(), let state,
+              let legacy = signatureLegacyCandidates(for: state).first else { return false }
+        selectSignatureLegacy(legacy.id)
+        confirmLegacy()
+        guard self.state?.phase == .completed else { return false }
+        beginNextLife()
+        pendingRecap = nil
+        startQuickRebirth(entryPoint: "qa_fixture")
+        return self.state?.phase == .prologue && self.state?.lifeNumber == 2
     }
 #endif
 }

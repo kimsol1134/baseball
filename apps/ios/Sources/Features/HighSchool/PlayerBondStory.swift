@@ -475,6 +475,7 @@ struct PlayerHeartCard: View {
 struct PlayerLegacyQuote: View {
     let legacy: PlayerLegacy
     var heading: String? = nil
+    var farewellOverride: String? = nil
 
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -485,7 +486,7 @@ struct PlayerLegacyQuote: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(verbatim: localizedHeading).eyebrowStyle(BaseballTheme.milestone)
-            Text(verbatim: "“\(legacy.farewell)”")
+            Text(verbatim: "“\(farewellOverride ?? legacy.farewell)”")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(BaseballTheme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -509,7 +510,7 @@ struct PlayerLegacyQuote: View {
             copyResolver.resolve(
                 .quoteAccessibility,
                 arguments: [
-                    .userText(localizedHeading), .userText(legacy.farewell),
+                    .userText(localizedHeading), .userText(farewellOverride ?? legacy.farewell),
                     .userText(legacy.definingMoment),
                 ]
             )
@@ -642,6 +643,10 @@ struct PreviousPlayerLetterCard: View {
         LegacyPresentation.playerLegacy(for: record, resolver: copyResolver)
     }
 
+    private var samePlayer: Bool { PlayerContinuityRules.sameName(record.playerName, currentPlayerName) }
+    private var letterBody: String {
+        samePlayer ? HighSchoolConclusionPresentation.selfMessage(record: record, resolver: copyResolver) : legacy.farewell
+    }
     private var recipientLine: String {
         let previous = record.playerName.trimmingCharacters(in: .whitespacesAndNewlines)
         let current = currentPlayerName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -655,14 +660,14 @@ struct PreviousPlayerLetterCard: View {
         let previous = previousName.trimmingCharacters(in: .whitespacesAndNewlines)
         let current = currentName.trimmingCharacters(in: .whitespacesAndNewlines)
         if !previous.isEmpty, previous.localizedCaseInsensitiveCompare(current) == .orderedSame {
-            return "같은 이름을 이어받은 새 선수에게"
+            return "다시 태어난 나에게"
         }
         return "새로 시작하는 \(currentName)에게"
     }
 
     var body: some View {
         BaseballCard(
-            title: copyResolver.resolve(.previousTitle, arguments: [.userText(record.playerName)]),
+            title: samePlayer ? copyResolver.resolve(.localizable("loop.letter.self-title")) : copyResolver.resolve(.previousTitle, arguments: [.userText(record.playerName)]),
             tone: .milestone
         ) {
             HStack(alignment: .top, spacing: 12) {
@@ -676,17 +681,17 @@ struct PreviousPlayerLetterCard: View {
                     Text(verbatim: recipientLine)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(BaseballTheme.textSecondary)
-                    Text(verbatim: legacy.title)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(BaseballTheme.milestone)
-                    Text(verbatim: "“\(legacy.farewell)”")
+                    if !samePlayer {
+                        Text(verbatim: legacy.title).font(.caption.weight(.bold)).foregroundStyle(BaseballTheme.milestone)
+                    }
+                    Text(verbatim: "“\(letterBody)”")
                         .font(.subheadline)
                         .foregroundStyle(BaseballTheme.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                     if !record.memories.isEmpty {
                         Text(
                             verbatim: copyResolver.resolve(
-                                .previousMemories,
+                                .localizable(samePlayer ? "loop.letter.self-memories" : LegacyUICopyKey.previousMemories.rawValue),
                                 arguments: [
                                     .userText(record.memories.map {
                                         HighSchoolConclusionPresentation.localizedMemory($0, resolver: copyResolver).title
@@ -701,7 +706,7 @@ struct PreviousPlayerLetterCard: View {
                     if let signatureLegacy = record.signatureLegacy {
                         Text(
                             verbatim: copyResolver.resolve(
-                                .previousSignature,
+                                .localizable(samePlayer ? "loop.letter.self-signature" : LegacyUICopyKey.previousSignature.rawValue),
                                 arguments: [
                                     .userText(HighSchoolConclusionPresentation.localizedSignature(
                                         signatureLegacy, resolver: copyResolver
@@ -726,9 +731,9 @@ struct PreviousPlayerLetterCard: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(
                 copyResolver.resolve(
-                    .previousAccessibility,
-                    arguments: [
-                        .userText(record.playerName), .userText(recipientLine), .userText(legacy.farewell),
+                    .localizable(samePlayer ? "loop.letter.self-accessibility" : LegacyUICopyKey.previousAccessibility.rawValue),
+                    arguments: samePlayer ? [.userText(record.playerName), .userText(letterBody)] : [
+                        .userText(record.playerName), .userText(recipientLine), .userText(letterBody),
                     ]
                 )
             )

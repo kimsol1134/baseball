@@ -7,6 +7,37 @@ import BaseballIOSPersistence
 
 @MainActor
 final class SignatureLegacyIntegrationTests: XCTestCase {
+    func testReturningPracticeUsesNewAbilitiesForOnePitchWithoutCareerRewards() throws {
+        let sync = SaveSync(key: "reborn-practice-\(UUID().uuidString).json")
+        defer { sync.clear() }
+        let store = HighSchoolCareerStore(sync: sync)
+        let priorSetup = store.lastSetup
+        defer { store.lastSetup = priorSetup }
+        XCTAssertTrue(store.installRebornFixtureForUITesting())
+        let before = try XCTUnwrap(store.state)
+        let archive = store.archive
+        let inheritance = store.inheritance
+        store.beginTutorialPitch()
+        let session = try XCTUnwrap(store.tutorialSession)
+        XCTAssertEqual(session.releaseCommandRating, before.pitcher.command)
+        let scenario = PitchScenario.tutorial(state: before)
+        XCTAssertEqual(scenario.fatigue, 0)
+        for language in AppLanguage.allCases {
+            let resolver = GameCopyResolver(language: language, policy: .strict)
+            XCTAssertEqual(PitchPresentation.scenarioDetail(scenario, resolver: resolver),
+                resolver.resolve(.localizable("loop.reborn.practice-note")))
+        }
+        session.throwPitch(delivery: .init(releaseAccuracy: 1_000, aimAccuracy: 1_000), automaticRelease: false)
+        if case .finished = session.stage {} else { XCTFail("Returning practice should finish after one pitch") }
+        XCTAssertEqual(store.state, before)
+        store.finishTutorialPitch()
+        XCTAssertEqual(store.state?.phase, .schoolSelection)
+        XCTAssertEqual(store.state?.pitcher, before.pitcher)
+        XCTAssertEqual(store.archive, archive)
+        XCTAssertEqual(store.inheritance, inheritance)
+        XCTAssertEqual(store.state?.performance, before.performance)
+    }
+
     func testQuickRebirthPreviewMatchesActualStartAndNeverChangesCurrentCareer() throws {
         let defaults = UserDefaults.standard
         let keys = ["baseball.lastSetup", "baseball.quickRebirth.seedReservation"]

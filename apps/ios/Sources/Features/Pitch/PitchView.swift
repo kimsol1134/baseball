@@ -10,6 +10,7 @@ struct PitchView: View {
     /// 연습 타석(프롤로그 불펜). 기록에 안 남는 판에 '각성의 전조 +2' 같은
     /// 정산을 그리면 첫 5분에 거짓 영수증을 발행하는 셈이다.
     var isPractice = false
+    var practiceFinishTitle: String? = nil
     /// 연습 타석 다시 던지기. 배우는 자리는 한 번에 끝내라고 강요하지 않는다.
     var onRetry: (() -> Void)? = nil
 
@@ -1091,7 +1092,7 @@ struct PitchView: View {
                     session.advanceToNextBatter()
                 }
             case .finished, .failed:
-                PrimaryPill(title: copyResolver.resolve(isPractice ? .startCareer : .finishOuting),
+                PrimaryPill(title: isPractice ? (practiceFinishTitle ?? copyResolver.resolve(.startCareer)) : copyResolver.resolve(.finishOuting),
                             identifier: "pitch.finish", action: onFinish)
             }
         }

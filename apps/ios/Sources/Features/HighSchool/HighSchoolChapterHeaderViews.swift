@@ -57,7 +57,7 @@ struct ChapterHeader: View {
 
     var body: some View {
         Group {
-            if [.training, .relationship, .importantGame, .awakening, .chapterReview, .schoolSelection].contains(state.phase) {
+            if [.training, .relationship, .importantGame, .awakening, .chapterReview, .schoolSelection].contains(state.phase) || (state.phase == .prologue && state.lifeNumber > 1) {
                 VStack(alignment: .leading, spacing: 10) {
                     Button { showsPlayerDetails = true } label: {
                         HStack(spacing: 10) {

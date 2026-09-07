@@ -1964,19 +1964,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This player scored %lld. Beat that mark with the next one."
+            "value": "This life scored %lld. Challenge your own record in the next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今回の選手は %lld 点。次の選手でこの記録を超えよう。"
+            "value": "今回の人生は%lld点。次の人生で自分の記録に再挑戦しましょう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이번 선수는 %lld점. 다음 선수로 이 기록을 넘어 보세요."
+            "value": "이번 생은 %lld점. 다음 생에서 내 기록에 다시 도전하세요."
           }
         }
       }
@@ -2426,19 +2426,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Undrafted. But these three years become the next player's foundation."
+            "value": "Undrafted. The feel of these three years stays with you in the next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ドラフト外。しかし、この３年間が次の選手の基礎となる。"
+            "value": "ドラフト外。この3年間の感覚は次の人生に残ります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "드래프트 미지명. 하지만 이 3년은 새 선수의 밑천이 됩니다."
+            "value": "드래프트 미지명. 이 3년의 감각은 다음 생에 남습니다."
           }
         }
       }
@@ -2734,19 +2734,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Three years end here. Choose what to leave the next player."
+            "value": "These three years are over. Choose the feel you’ll remember in your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "3年間はここで終わり。次の選手に残すものを選んでください。"
+            "value": "今回の3年間は終わり。次の人生でも覚えていたい感覚を選びましょう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "3년은 여기서 끝. 새 선수에게 남길 것을 고르세요."
+            "value": "이번 3년은 끝. 다음 생에도 기억할 감각을 고르세요."
           }
         }
       }
@@ -2800,19 +2800,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your name was not called by the final round. Choose what this player leaves for the next one."
+            "value": "Your name wasn’t called. Choose the feel you’ll carry into your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "最終ラウンドまで名前は呼ばれませんでした。この選手が次の選手へ残すものを選んでください。"
+            "value": "最後まで名前は呼ばれませんでした。次の人生へつなぐ感覚を選びましょう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
+            "value": "마지막까지 이름이 불리지 않았습니다. 다음 생에 이어갈 감각을 고르세요."
           }
         }
       }
@@ -3218,19 +3218,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Skip the pro path and start a new player. Choose what to leave behind."
+            "value": "Give up this life’s pro path and be reborn. Choose the memories to carry forward."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プロを諦めて新しい選手で始めます。残す記憶を選んでください。"
+            "value": "この人生のプロ入りを諦めて生まれ変わります。引き継ぐ記憶を選びましょう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "프로를 포기하고 새 선수로 시작합니다. 남길 기억을 고르세요."
+            "value": "이번 생의 프로 진출을 포기하고 다시 태어납니다. 이어갈 기억을 고르세요."
           }
         }
       }
@@ -3328,19 +3328,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "One of these will pass to the next player. The choice comes after the pro story."
+            "value": "You’ll remember one of these in your next life. Choose after your pro career."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このうち1つが次の選手に受け継がれます。選ぶのはプロ編を終えた後です。"
+            "value": "このうち1つを次の人生でも覚えています。プロでの物語を終えてから選びます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 중 하나가 다음 선수에게 이어집니다. 선택은 프로 이야기를 마친 뒤입니다."
+            "value": "이 중 하나를 다음 생에서도 기억합니다. 프로 이야기를 마친 뒤 고릅니다."
           }
         }
       }
@@ -3394,19 +3394,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The high-school years close for good. Only the chosen legacy passes to the next player."
+            "value": "The high-school years end permanently. Carry one chosen legacy into your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "高校3年間が閉じ、元に戻せません。選んだ遺産1つだけが次の選手に受け継がれます。"
+            "value": "高校3年間が終わり、元には戻せません。選んだ遺産1つを次の人生へつなぎます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "고교 3년이 닫히고 되돌릴 수 없습니다. 고른 유산 하나만 새 선수에게 이어집니다."
+            "value": "고교 3년이 끝나며 되돌릴 수 없습니다. 고른 유산 하나를 다음 생으로 이어갑니다."
           }
         }
       }
@@ -3416,19 +3416,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pass %@ to the next player?"
+            "value": "Remember %@ in your next life?"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ を次のプレイヤーに渡しますか?"
+            "value": "%@の感覚を次の人生でも覚えておきますか？"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ 새 선수에게 남길까요?"
+            "value": "%@의 감각을 다음 생에도 기억할까요?"
           }
         }
       }
@@ -4406,19 +4406,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This player began before the feature update. Only the memories chosen under those rules pass forward."
+            "value": "Only the memories chosen in this life carry into the next."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "アップデート前に始めた選手です。当時のルールで選んだ記憶だけが次の選手に受け継がれます。"
+            "value": "この人生で選んだ記憶だけが次の人生に受け継がれます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "기능 업데이트 전에 시작한 선수입니다. 당시 규칙대로 고른 기억만 새 선수에게 이어집니다."
+            "value": "이번 생에서 고른 기억만 다음 생으로 이어집니다."
           }
         }
       }
@@ -4494,19 +4494,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Memories for the Next Player · %lld/%lld"
+            "value": "Memories for my next life · %lld/%lld"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次のプレイヤーへの思い出 · %lld/%lld"
+            "value": "次の人生でも覚えていたいこと・%lld/%lld"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "새 선수에게 남길 기억 · %lld/%lld"
+            "value": "다음 생에도 기억할 것 · %lld/%lld"
           }
         }
       }
@@ -4538,19 +4538,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "After the pro career, review the high-school years and career line, then choose a legacy for the next player."
+            "value": "After your pro career, look back on this life and choose the legacy to carry into the next."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プロ引退後、高校時代と通算成績を振り返り、次の選手に残す遺産を選びます。"
+            "value": "プロでの人生を終えたら今回の人生を振り返り、次へつなぐ遺産を選びます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "프로 커리어를 마치면 고교 시절과 통산 기록을 돌아보고, 다음 선수에게 남길 유산을 고릅니다."
+            "value": "프로 커리어를 마치면 이번 생을 돌아보고, 다음 생에 이어갈 유산을 고릅니다."
           }
         }
       }
@@ -5220,19 +5220,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "One choice passes directly to the next player. The others stay discovered so they can return in a later run."
+            "value": "Carry the chosen feel into your next life. Other discoveries remain available for later reincarnations."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 つの選択は次のプレイヤーに直接渡されます。他のものは検出されたままなので、後の実行で戻ることができます。"
+            "value": "選んだ感覚を次の人生へつなぎます。他の発見も残り、以後の転生で選べます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "고른 하나는 새 선수에게 바로 이어지고, 나머지도 발견 목록에 남아 다음에 다시 고를 수 있습니다."
+            "value": "고른 감각은 다음 생으로 이어집니다. 나머지도 발견 목록에 남아 이후 환생에서 다시 고를 수 있습니다."
           }
         }
       }
@@ -8938,19 +8938,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You leave %lld memories to the next player."
+            "value": "Leave %lld memories for your next self."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld の思い出を次のプレイヤーに残します。"
+            "value": "%lld枚の記憶を次の人生の自分へ残します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "기억 %lld장을 새 선수에게 남깁니다."
+            "value": "기억 %lld장을 다음 생의 나에게 남깁니다."
           }
         }
       }
@@ -9268,19 +9268,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You leave ‘%@’ to the next player."
+            "value": "Carry the feel of %@ into your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@」を次のプレイヤーに任せます。"
+            "value": "%@の感覚を次の人生へつなぎます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@을 새 선수에게 남깁니다."
+            "value": "%@의 감각을 다음 생으로 이어갑니다."
           }
         }
       }
@@ -10104,19 +10104,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pick one. We check it after three years. Succeed and the next player starts stronger."
+            "value": "Choose one to revisit after three years. Achieve it and start your next life stronger."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "1つ選ぶと3年後に振り返ります。達成すれば次の選手の出発が強くなります。"
+            "value": "1つ選び、3年後に振り返ります。達成すれば次の人生をより強く始められます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "하나 고르면 3년 뒤 돌아봅니다. 이루면 새 선수 출발이 강해집니다."
+            "value": "하나 고르면 3년 뒤 돌아봅니다. 이루면 다음 생을 더 강하게 시작합니다."
           }
         }
       }
@@ -10346,19 +10346,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "To the new pitcher carrying the same name"
+            "value": "To my reborn self"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "同名新人投手へ"
+            "value": "生まれ変わった自分へ"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "같은 이름을 이어받은 새 선수에게"
+            "value": "다시 태어난 나에게"
           }
         }
       }
@@ -10522,19 +10522,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Carry the Legacy to a New Player"
+            "value": "Carry my legacy into the next life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "新しいプレイヤーにレガシーを引き継ぐ"
+            "value": "遺産を胸に次の人生へ"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "유산을 안고 새 선수로"
+            "value": "유산을 안고 다음 생으로"
           }
         }
       }
@@ -10632,19 +10632,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ goal, %2$@, Legacy Point reward +%3$lld percent. Save as the next player's goal."
+            "value": "%1$@ goal, %2$@, inheritance reward +%3$lld percent. Save for your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ 目標、%2$@、レガシー ポイント報酬 +%3$lld パーセント。次のプレイヤーのゴールとして保存します。"
+            "value": "%1$@の目標、%2$@、継承ポイント報酬%3$lldパーセント追加。次の人生の目標として保存。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ 목표, %2$@, 보상 계승 포인트 %3$lld퍼센트 추가, 새 선수 목표로 저장"
+            "value": "%1$@ 목표, %2$@, 계승 포인트 보상 %3$lld퍼센트 추가, 다음 생 목표로 저장"
           }
         }
       }
@@ -10698,19 +10698,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save as Next Player's Goal"
+            "value": "Save for my next life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次のプレイヤーの目標として保存"
+            "value": "次の人生の目標にする"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "새 선수 목표로 저장"
+            "value": "다음 생 목표로 저장"
           }
         }
       }
@@ -10720,19 +10720,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Saved as Next Player's Goal"
+            "value": "Saved for my next life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次のプレイヤーの目標として保存されました"
+            "value": "次の人生の目標に保存済み"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "새 선수 목표로 저장됨"
+            "value": "다음 생 목표로 저장됨"
           }
         }
       }
@@ -10742,19 +10742,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "TRY AGAIN WITH THE NEXT PLAYER"
+            "value": "Try again in my next life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次のプレイヤーでもう一度お試しください"
+            "value": "次の人生でもう一度挑戦"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "새 선수로 다시 도전"
+            "value": "다음 생에서 다시 도전"
           }
         }
       }
@@ -10786,19 +10786,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Points left by your last player. Save up and buy rules for the next player in the Legacy Shop."
+            "value": "Points earned in your past life. Use them in the Legacy Shop to choose rules for your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前の選手が残したポイント。貯めて継承ショップで次の選手のルールを買います。"
+            "value": "前の人生で集めたポイント。継承ショップで次の人生のルールを選ぶ時に使います。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "지난 선수가 남긴 포인트. 모아서 계승 상점에서 새 선수의 규칙을 삽니다."
+            "value": "지난 생에서 모은 포인트. 계승 상점에서 다음 생의 규칙을 고를 때 씁니다."
           }
         }
       }
@@ -10918,19 +10918,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "SIGNATURE LEGACY PASSED TO THE NEXT PLAYER"
+            "value": "My signature feel for the next life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次のプレイヤーに引き継がれるシグネチャーレガシー"
+            "value": "次の人生にも残る自分の感覚"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "새 선수에게 직접 이어진 대표 유산"
+            "value": "다음 생에도 남을 나의 감각"
           }
         }
       }
@@ -33754,19 +33754,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Baseball Spirit and carried memories"
+            "value": "Baseball Spirit and memories of my past life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "野球魂と持ち込まれた思い出"
+            "value": "野球魂と前の人生の記憶"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "야구혼과 이전 선수의 기억"
+            "value": "야구혼과 지난 생의 기억"
           }
         }
       }
@@ -37868,19 +37868,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Up to two. Each makes this three-year career harder, but gives the next player more to inherit. Current bonus: +%lld%%"
+            "value": "Up to two. Make these three school years harder to carry more strength into your next life. Current bonus: +%lld%%"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "2つまで。それぞれがこの3年間のキャリアをより困難なものにするが、次の選手に受け継ぐものはさらに多くなる。現在のボーナス: +%lld%%"
+            "value": "2つまで。この高校3年間が難しくなる代わりに、次の人生へつなぐ力が増えます。現在 +%lld%%"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "최대 2개. 고르면 이번 고교 3년이 어려워집니다. 대신 새 선수가 이어받는 힘이 커집니다. 지금 +%lld%%"
+            "value": "최대 2개. 이번 고교 3년이 어려워지는 대신 다음 생에 이어갈 힘이 커집니다. 지금 +%lld%%"
           }
         }
       }
@@ -38066,19 +38066,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Inheritance points are the reward one player's career leaves for the next. Spend them here on rules that apply to this three-year high school career; your accumulated automatic-growth bonus stays intact."
+            "value": "Use inheritance points earned in past lives to choose rules for this life. Your accumulated automatic-growth bonus stays intact."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "継承ポイントは、あるプレイヤーのキャリアが次のプレイヤーに残される報酬です。この 3 年間の高校生活に適用されるルールについてここで学びましょう。蓄積された自動成長ボーナスはそのまま残ります。"
+            "value": "過去の人生で集めた継承ポイントで今回のルールを選びます。蓄積した自動成長ボーナスは減りません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "계승 포인트는 이전 선수의 커리어가 다음 선수에게 남긴 보상입니다. 여기서 이번 고교 3년에 적용할 규칙을 사고, 이미 쌓인 자동 성장 보너스는 줄지 않습니다."
+            "value": "지난 생에서 모은 계승 포인트로 이번 생의 규칙을 고릅니다. 이미 쌓인 자동 성장 보너스는 줄지 않습니다."
           }
         }
       }
@@ -38110,19 +38110,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Spend what the last player left on rules for this run."
+            "value": "Use points earned in your past life to choose this run’s rules."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前の選手が残したポイントで、この3年のルールを買います。"
+            "value": "前の人生で集めたポイントで今回の3年間のルールを選びます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이전 선수가 남긴 포인트로 이번 3년의 규칙을 삽니다."
+            "value": "지난 생에서 모은 포인트로 이번 3년의 규칙을 고릅니다."
           }
         }
       }
@@ -44197,6 +44197,857 @@
           "stringUnit": {
             "state": "translated",
             "value": "タイミングを逃しました"
+          }
+        }
+      }
+    },
+    "loop.growth.change": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "성장"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Growth"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長"
+          }
+        }
+      }
+    },
+    "loop.growth.row": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "성장 · %@ %lld → %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Growth · %@ %lld → %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長・%@ %lld → %lld"
+          }
+        }
+      }
+    },
+    "loop.growth.milestone": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제구 목표 달성"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control milestone reached"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "制球の目標達成"
+          }
+        }
+      }
+    },
+    "loop.growth.next": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 제구 목표까지 +%lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next control target: +%lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の制球目標まで +%lld"
+          }
+        }
+      }
+    },
+    "loop.growth.base-window": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기본 안정 구간"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Base stable window"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本の安定ゾーン"
+          }
+        }
+      }
+    },
+    "loop.growth.details": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "성장·컨디션 자세히"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Growth and condition details"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長・コンディションの詳細"
+          }
+        }
+      }
+    },
+    "loop.condition.up": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금: 피로 %lld (+%lld) · 미터가 빨라져요"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now: fatigue %lld (+%lld) · faster meter"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在：疲労 %lld（+%lld）・メーターが速くなります"
+          }
+        }
+      }
+    },
+    "loop.condition.down": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금: 피로 %lld (%lld) · 회복했어요"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now: fatigue %lld (%lld) · recovered"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在：疲労 %lld（%lld）・回復しました"
+          }
+        }
+      }
+    },
+    "loop.condition.current": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금: 피로 %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now: fatigue %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在：疲労 %lld"
+          }
+        }
+      }
+    },
+    "loop.condition.explanation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "성장은 남고, 훈련 피로는 회복됩니다. 같은 구속·피로에서 제구가 높을수록 안정 구간이 넓어집니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Growth stays; training fatigue can recover. At the same velocity and fatigue, higher control gives a wider stable window."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長は残り、練習の疲労は回復できます。同じ球速・疲労なら、制球が高いほど安定ゾーンが広がります。"
+          }
+        }
+      }
+    },
+    "loop.meter.tired": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · 피로 영향"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · fatigue affects timing"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@・疲労の影響あり"
+          }
+        }
+      }
+    },
+    "loop.meter.rested": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · 피로 없음"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · no fatigue"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@・疲労なし"
+          }
+        }
+      }
+    },
+    "loop.reborn.same": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다시 태어난 나"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reborn, still me"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生まれ変わった自分"
+          }
+        }
+      }
+    },
+    "loop.reborn.different": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새로운 투수의 시작"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A new pitcher begins"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しい投手の始まり"
+          }
+        }
+      }
+    },
+    "loop.reborn.next": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 생의 첫 등판을 준비합니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare for this life’s first appearance."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この人生の初登板に備えましょう。"
+          }
+        }
+      }
+    },
+    "loop.reborn.continue": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "학교를 고르고 시작"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a school and begin"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "学校を選んで始める"
+          }
+        }
+      }
+    },
+    "loop.reborn.practice": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금 몸으로 한 구 던지기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try one pitch in this body"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今の体で1球投げる"
+          }
+        }
+      }
+    },
+    "loop.reborn.memories": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 생의 기억"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memories of my past life"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の人生の記憶"
+          }
+        }
+      }
+    },
+    "loop.reborn.other-record": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이전 선수의 기록"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous pitcher’s record"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の投手の記録"
+          }
+        }
+      }
+    },
+    "loop.reborn.inherited": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이어온 감각: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carried forward: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "受け継いだ感覚：%@"
+          }
+        }
+      }
+    },
+    "loop.letter.self-title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 생의 나"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My past self"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の人生の自分"
+          }
+        }
+      }
+    },
+    "loop.letter.self-body": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@의 감각은 내 안에 남아 있다. 이번 생에서도 내 공으로 다시 도전한다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The feel of %@ stays with me. In this life, I’ll take the mound again with my own pitch."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の感覚は自分の中に残っている。この人生でも、自分の球でもう一度挑む。"
+          }
+        }
+      }
+    },
+    "loop.letter.self-basic": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 생에서 익힌 야구의 감각이 내 안에 남아 있다. 다시 내 공으로 도전한다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The baseball instincts I learned in my past life stay with me. I’ll challenge myself again with my own pitch."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の人生で身につけた野球の感覚は自分の中に残っている。自分の球でもう一度挑む。"
+          }
+        }
+      }
+    },
+    "loop.letter.self-signature": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내가 이어온 감각 · %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The feel I carried forward · %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自分が受け継いだ感覚・%@"
+          }
+        }
+      }
+    },
+    "loop.letter.self-memories": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내 안에 남은 기억 · %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memories that stay with me · %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自分の中に残る記憶・%@"
+          }
+        }
+      }
+    },
+    "loop.letter.self-accessibility": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@의 지난 생의 기억. %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memories of %@’s past life. %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の前の人生の記憶。%@"
+          }
+        }
+      }
+    },
+    "loop.reborn.handicaps": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "유지 중인 핸디캡 %lld개"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld active handicaps"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "継続中のハンディキャップ %lld個"
+          }
+        }
+      }
+    },
+    "loop.reborn.record-line": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 생: %lld경기 · %lld탈삼진"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past life: %lld games · %lld strikeouts"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の人生：%lld試合・%lld奪三振"
+          }
+        }
+      }
+    },
+    "loop.reborn.other-history": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@의 기록과 기억을 간직하고 새 투수로 시작한다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begin as a new pitcher, carrying %@’s records and memories."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の記録と記憶を受け継いで、新しい投手として始める。"
+          }
+        }
+      }
+    },
+    "loop.reborn.practice-note": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "공식 경기 기록과 성장 보상에는 반영되지 않습니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This practice does not grant official game stats or growth rewards."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公式戦の記録や成長報酬には反映されません。"
+          }
+        }
+      }
+    },
+    "loop.letter.to-next-self": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 생의 나에게"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To my next self"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の人生の自分へ"
+          }
+        }
+      }
+    },
+    "loop.letter.to-next-body": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@의 감각을 다음 생에서도 잊지 않겠다. 다시 내 공으로 도전하겠다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I’ll remember the feel of %@ in my next life and challenge myself again with my own pitch."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の感覚を次の人生でも忘れない。自分の球でもう一度挑む。"
+          }
+        }
+      }
+    },
+    "loop.letter.to-next-basic": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 생에서 익힌 감각을 다음 생에서도 잊지 않겠다. 다시 내 공으로 도전하겠다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I’ll remember what I learned in this life and challenge myself again with my own pitch."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この人生で身につけた感覚を次の人生でも忘れない。自分の球でもう一度挑む。"
+          }
+        }
+      }
+    },
+    "loop.reborn.memories-carry": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 기억을 다음 생으로 이어갑니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carry chosen memories into your next life."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選んだ記憶を次の人生へつなぎます。"
+          }
+        }
+      }
+    },
+    "loop.reborn.subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "남은 기억을 품고 다음 생을 시작합니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begin your next life with the memories you carry."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "残る記憶を胸に次の人生を始めます。"
+          }
+        }
+      }
+    },
+    "loop.reborn.archive-start": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "남긴 기록과 야구혼을 간직하고 다음 생에서 시작합니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begin your next life with your records and Baseball Spirit."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録と野球魂を胸に次の人生を始めます。"
+          }
+        }
+      }
+    },
+    "loop.reborn.pledge": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 생의 목표 고르기 · 선택"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose this life’s goal · optional"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この人生の目標を選ぶ・任意"
           }
         }
       }

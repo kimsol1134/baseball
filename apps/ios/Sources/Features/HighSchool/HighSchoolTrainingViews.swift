@@ -444,6 +444,7 @@ struct TrainingCard: View {
                 .frame(minHeight: BaseballMetrics.minimumTapTarget)
                 .accessibilityIdentifier("training.change")
             focusOptionButton(focus)
+            if focus == .command || focus == .gamePlanning { ControlMilestoneGoal(command: state.pitcher.command) }
             Text(verbatim: copyResolver.resolve(.localizable("mobile.polish.intensity")))
                 .font(BaseballType.detail.weight(.semibold))
             HStack(spacing: 6) {

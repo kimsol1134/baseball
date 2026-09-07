@@ -337,6 +337,7 @@ struct CareerFlowNotices: View {
                     GrowthCelebrationView(
                         gains: career.pendingGains,
                         stageContext: .pro,
+                        fatigue: state.fatigue,
                         onDismiss: career.acknowledgeGains
                     )
                     .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))

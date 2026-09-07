@@ -32,6 +32,7 @@ struct ProSeasonSettlementView: View {
                     GrowthCelebrationView(
                         gains: pendingGains,
                         stageContext: .pro,
+                        fatigue: state.fatigue,
                         onDismiss: onAcknowledgeGains
                     )
                     .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))

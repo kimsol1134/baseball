@@ -106,11 +106,9 @@ struct DeliveryControl: View {
     }
 
     private var tempoLabel: String {
-        switch velocityTenthsKPH {
-        case 1_400...: copyResolver.resolve(.deliveryTempoFast)
-        case ..<1_230: copyResolver.resolve(.deliveryTempoSlow)
-        default: copyResolver.resolve(.deliveryTempoNormal)
-        }
+        let tempo = sweepSeconds <= 0.90 ? copyResolver.resolve(.deliveryTempoFast)
+            : sweepSeconds >= 1.06 ? copyResolver.resolve(.deliveryTempoSlow) : copyResolver.resolve(.deliveryTempoNormal)
+        return copyResolver.resolve(.localizable(fatigue > 0 ? "loop.meter.tired" : "loop.meter.rested"), arguments: [.userText(tempo)])
     }
 
     /// 조준을 최대로 흔들 수 있는 반경(pt). 이 거리에서 aimAccuracy가 0이 된다.
@@ -167,10 +165,7 @@ struct DeliveryControl: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(BaseballTheme.textSecondary)
                 Spacer(minLength: 0)
-                Text(verbatim: tempoLabel + " · " + GameFormatters.velocity(
-                    tenthsKPH: velocityTenthsKPH,
-                    language: copyResolver.language
-                ))
+                Text(verbatim: tempoLabel)
                     .font(.caption.monospacedDigit().weight(.semibold))
                     .foregroundStyle(BaseballTheme.milestone)
             }

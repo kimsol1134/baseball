@@ -416,11 +416,68 @@ final class CareerSmokeUITests: XCTestCase {
         XCTAssertTrue(tapIfPresent(app.buttons["hs.focus.command"]))
         XCTAssertTrue(tapIfPresent(app.buttons["hs.training.commit"]))
         assertTrainingResultIsImmediatelyUsable(app)
+        let condition = app.descendants(matching: .any).matching(identifier: "hs.training.result.condition").firstMatch
+        XCTAssertTrue(condition.waitForExistence(timeout: timeout))
+        XCTAssertTrue(condition.label.contains("피로"))
         let window = app.descendants(matching: .any).matching(identifier: "growth.controlWindow").firstMatch
-        XCTAssertTrue(window.waitForExistence(timeout: timeout), "제구 성장에 실제 릴리스 범위 비교가 빠졌습니다.")
-        XCTAssertTrue(bringIntoView(window))
+        XCTAssertFalse(window.exists, "작은 성장마다 전체 비교 그래프를 펼치면 안 됩니다.")
+        capture(app, name: "loop-small-growth")
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.training.result.details"]))
+        XCTAssertTrue(window.waitForExistence(timeout: timeout), "실제 전후 비교는 상세에서 확인할 수 있어야 합니다.")
         XCTAssertTrue(window.label.contains("퍼펙트"))
-        capture(app, name: "control-window-training-growth")
+    }
+
+    func testControlMilestoneShowsMeaningfulCelebration() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestResetCareer", "-uiTestCommandMilestoneFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
+        app.launch()
+        XCTAssertTrue(app.buttons["training.change"].waitForExistence(timeout: timeout))
+        app.buttons["training.change"].tap()
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.focus.command"]))
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.training.commit"]))
+        assertTrainingResultIsImmediatelyUsable(app)
+        let window = app.descendants(matching: .any).matching(identifier: "growth.controlWindow").firstMatch
+        XCTAssertTrue(window.waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.staticTexts["제구 목표 달성"].exists)
+        capture(app, name: "loop-control-milestone")
+    }
+
+    func testRebornReadyOffersImmediateContinueAndOptionalMemoriesInJapanese() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestResetCareer", "-uiTestRebornFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        let proceed = app.buttons["hs.reborn.continue"]
+        XCTAssertTrue(proceed.waitForExistence(timeout: timeout))
+        XCTAssertTrue(proceed.isHittable)
+        XCTAssertTrue(app.buttons["hs.reborn.practice"].isHittable)
+        let letter = app.descendants(matching: .any).matching(identifier: "hs.previousPlayerLetter").firstMatch
+        XCTAssertFalse(letter.exists)
+        assertVisibleCopyContainsNoHangul(app, context: "Japanese reborn ready")
+        capture(app, name: "loop-reborn-ready-ja")
+        app.buttons["hs.reborn.memories"].tap()
+        XCTAssertTrue(letter.waitForExistence(timeout: timeout))
+        XCTAssertTrue(letter.label.contains("前の人生"))
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.reborn.memories"]))
+        XCTAssertTrue(tapIfPresent(proceed))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "hs.school.")).firstMatch.waitForExistence(timeout: timeout))
+    }
+
+    func testRebornOptionalPracticeFinishesAfterOneManualPitch() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestResetCareer", "-uiTestRebornFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
+        app.launch()
+        XCTAssertTrue(app.buttons["hs.reborn.practice"].waitForExistence(timeout: timeout))
+        capture(app, name: "loop-reborn-ready-ko")
+        app.buttons["hs.reborn.practice"].tap()
+        let pad = windUpPad(app)
+        XCTAssertTrue(pad.waitForExistence(timeout: timeout))
+        XCTAssertFalse(app.buttons["pitch.throw"].exists)
+        pad.press(forDuration: 0.6, thenDragTo: pad, withVelocity: .slow, thenHoldForDuration: 0.1)
+        let finish = app.buttons["pitch.finish"]
+        XCTAssertTrue(finish.waitForExistence(timeout: timeout), "한 구 연습이 끝나야 합니다.")
+        capture(app, name: "loop-reborn-practice-finished")
+        XCTAssertTrue(tapIfPresent(finish))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "hs.school.")).firstMatch.waitForExistence(timeout: timeout))
     }
 
     func testTrainingCompletionKeepsResultOnScreen() {
@@ -1603,6 +1660,13 @@ final class CareerSmokeUITests: XCTestCase {
             guard completeSetup(app) else { return false }
         }
 
+        let ready = app.buttons["hs.reborn.continue"]
+        if ready.waitForExistence(timeout: 3) {
+            XCTAssertTrue(ready.isHittable, "환생 직후 주요 행동이 먼저 보여야 합니다.")
+            capture(app, name: "loop-reborn-ready")
+            let memories = app.buttons["hs.reborn.memories"]
+            if memories.exists { memories.tap() }
+        }
         let inheritedLetter = app.descendants(matching: .any)
             .matching(identifier: "hs.previousPlayerLetter").firstMatch
         guard inheritedLetter.waitForExistence(timeout: timeout) else { return false }

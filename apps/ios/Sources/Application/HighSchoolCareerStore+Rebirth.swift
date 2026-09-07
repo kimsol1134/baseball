@@ -324,7 +324,7 @@ extension HighSchoolCareerStore {
     /// This runs at new-life creation; existing lives and archived faces are never rewritten.
     nonisolated static func continuedPortraitSeed(playerName: String, previous: LifeRecord?) -> String? {
         guard let previous,
-              previous.playerName.trimmingCharacters(in: .whitespacesAndNewlines) == playerName.trimmingCharacters(in: .whitespacesAndNewlines)
+              PlayerContinuityRules.sameName(previous.playerName, playerName)
         else { return nil }
         return previous.portraitSeed
     }
@@ -635,4 +635,12 @@ struct RebirthStartPreview: Equatable {
     let previousLife: Int
     let nextLife: Int
     let previousStrikeouts: Int
+}
+
+enum PlayerContinuityRules {
+    nonisolated static func sameName(_ previous: String, _ current: String) -> Bool {
+        let previous = previous.trimmingCharacters(in: .whitespacesAndNewlines)
+        let current = current.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !previous.isEmpty && previous.localizedCaseInsensitiveCompare(current) == .orderedSame
+    }
 }

@@ -208,10 +208,10 @@ final class PlayerBondStoryTests: XCTestCase {
         XCTAssertTrue(fallback.definingMoment.contains("마지막 공"))
     }
 
-    func testSameNameLetterCallsOutASeparateNextPlayer() {
+    func testSameNameLetterAddressesTheRebornSelfAndDifferentNamesStayDistinct() {
         XCTAssertEqual(
             PreviousPlayerLetterCard.recipientLine(previousName: "김마루", currentName: "김마루"),
-            "같은 이름을 이어받은 새 선수에게"
+            "다시 태어난 나에게"
         )
         XCTAssertEqual(
             PreviousPlayerLetterCard.recipientLine(previousName: "김마루", currentName: "이하늘"),

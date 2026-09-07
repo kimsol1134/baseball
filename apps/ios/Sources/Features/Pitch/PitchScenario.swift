@@ -342,7 +342,8 @@ struct PitchScenario {
             pitcher: state.pitcher,
             awakenings: state.selectedAwakenings,
             memories: state.selectedMemories,
-            balanceVersion: state.balanceVersion ?? 1
+            balanceVersion: state.balanceVersion ?? 1,
+            pitchLimit: state.lifeNumber > 1 ? 1 : 8
         )
     }
 
@@ -351,7 +352,8 @@ struct PitchScenario {
         pitcher: PitcherSnapshot,
         awakenings: [AwakeningID],
         memories: [MemoryCardID],
-        balanceVersion: Int
+        balanceVersion: Int,
+        pitchLimit: Int = 8
     ) -> PitchScenario {
         PitchScenario(
             id: "hs-bullpen-\(careerID)",
@@ -395,7 +397,7 @@ struct PitchScenario {
             // 실측에서 첫 불펜이 13구까지 갔다(주석의 "통상 6구 안팎"과 두 배 이상 차이).
             // 게다가 기본값이 사인 추종이라 13구가 전부 같은 코스였다 — 배우는 자리가
             // 아니라 같은 버튼을 열세 번 누르는 자리였다. 8구면 3구 스크립트가 두 바퀴 돈다.
-            maximumPitches: 8,
+            maximumPitches: pitchLimit,
             developmentRulesVersion: balanceVersion
         )
     }
