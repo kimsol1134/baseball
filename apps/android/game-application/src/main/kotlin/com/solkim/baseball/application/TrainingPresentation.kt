@@ -26,12 +26,12 @@ public object TrainingPresentation {
         TrainingFocus.RECOVERY -> "회복"
     }
     public fun detail(focus: TrainingFocus): String = when (focus) {
-        TrainingFocus.VELOCITY -> "구위와 구속을 키워요. 강하게 훈련하면 팔에 부담이 커져요."
-        TrainingFocus.COMMAND -> "원하는 코스로 던지는 능력을 키워요. 피로 부담이 비교적 적어요."
-        TrainingFocus.BREAKING_BALL -> "연습할 구종을 골라 공의 움직임과 헛스윙을 유도하는 능력을 키워요."
-        TrainingFocus.STAMINA -> "오래 던질 수 있도록 체력을 키워요."
-        TrainingFocus.RECOVERY -> "능력 성장 대신 피로를 줄여요. 재활 중이라면 팔도 회복돼요."
-        TrainingFocus.GAME_PLANNING -> "타자 공략을 연습하며 제구를 키워요."
+        TrainingFocus.VELOCITY -> "공에 힘을 싣는다. 세게 던질수록 팔이 무거워진다."
+        TrainingFocus.COMMAND -> "원하는 코스에 꽂는 감각. 다음 공의 초록 구간이 넓어진다."
+        TrainingFocus.BREAKING_BALL -> "구종 하나를 골라 공 끝을 더 흔든다. 헛스윙이 늘어난다."
+        TrainingFocus.STAMINA -> "긴 이닝을 버티는 몸을 만든다."
+        TrainingFocus.RECOVERY -> "성장 대신 피로를 던다. 재활 중이면 팔도 돌아온다."
+        TrainingFocus.GAME_PLANNING -> "타자를 읽는 연습. 제구가 같이 는다."
     }
     public fun intensityTitle(value: TrainingIntensity, focus: TrainingFocus): String =
         if (focus == TrainingFocus.RECOVERY) when (value) {
@@ -94,6 +94,15 @@ public object TrainingPresentation {
         val before = when(focus) { TrainingFocus.VELOCITY -> p.stuff; TrainingFocus.COMMAND, TrainingFocus.GAME_PLANNING -> p.command; TrainingFocus.BREAKING_BALL -> p.movement; else -> p.stamina }
         return AbilityDisplayScale.delta(before, before + growth)
     }
+    public fun growthOutlook(state: GameAggregateState, focus: TrainingFocus, preview: TrainingPreview, copy: GameCopy): String {
+        val minimum = displayGrowth(state, focus, preview.minimumGrowth)
+        val maximum = displayGrowth(state, focus, preview.maximumGrowth)
+        if (maximum == 0) return copy.resolve("training.clear.no-growth")
+        val ability = GameCopyArgument.UserText(copy.legacy(metric(focus)))
+        return if (minimum == maximum) copy.resolve("training.clear.fixed", ability, GameCopyArgument.Whole(maximum.toLong()))
+        else copy.resolve("training.clear.range", ability, GameCopyArgument.Whole(minimum.toLong()), GameCopyArgument.Whole(maximum.toLong()))
+    }
+
     public fun payloads(state: GameAggregateState, context: Phase8CommandContext, focus: TrainingFocus,
                         intensity: TrainingIntensity, target: PitchKind?, repeat: Boolean): List<Phase8CommandPayload> {
         val run = requireNotNull(state.highSchool).run
@@ -106,6 +115,27 @@ public object TrainingPresentation {
             else HighSchoolPhase4Command.Training(seed, effective, intensity, pitch)
         return Phase8Payloads.batch(state, Phase8ScreenId.P006_TRAINING, "train:${effective.wire}", listOf(GameCommand.HighSchool(command)))
     }
+    /** One line from the coach after training. Speaks to the player; never restates the numbers. */
+    public fun coachLine(state: GameAggregateState): String? {
+        val run = state.highSchool?.run ?: return null
+        val last = run.lastTraining ?: return null
+        if (last.bloomed) return "코치: 벽을 넘었다. 이제 다른 투수다."
+        return when (last.focus) {
+            TrainingFocus.VELOCITY -> if (last.growth > 0) "코치: 공이 무거워졌다. 다음 공에서 느껴 봐." else "코치: 오늘은 몸이 안 따라왔다. 내일 다시."
+            TrainingFocus.COMMAND -> if (last.growth > 0) "코치: 코스가 손에 붙었다. 초록이 넓어졌을 거다." else "코치: 아직 손끝이 흔들린다. 반복이 답이다."
+            TrainingFocus.BREAKING_BALL -> if (last.growth > 0) "코치: 공 끝이 살아났다. 실전에서 한번 던져 봐." else "코치: 그립부터 다시. 급하게 굴리지 마."
+            TrainingFocus.STAMINA -> if (last.growth > 0) "코치: 6회에도 같은 공을 던질 몸이 된다." else "코치: 오늘은 여기까지. 무리하면 팔이 먼저 간다."
+            TrainingFocus.RECOVERY -> "코치: 잘 쉬었다. 쉬는 것도 훈련이다."
+            TrainingFocus.GAME_PLANNING -> if (last.growth > 0) "코치: 타자가 보이기 시작했지. 다음 승부에서 써먹자." else "코치: 타자를 더 봐. 공만 보면 안 된다."
+        }
+    }
+    public fun fatigueChange(state: GameAggregateState, afterNumber: Int): Int {
+        val school = state.highSchool ?: return 0
+        val last = school.run.lastTraining ?: return 0
+        val from = if (afterNumber in 0 until last.number) afterNumber else last.number - 1
+        val evidence = school.trainingEvidence.filter { it.trainingNumber > from }
+        return if (evidence.isEmpty()) last.fatigueChange else evidence.sumOf { it.fatigueDelta }
+    }
     public fun resultLines(state: GameAggregateState, afterNumber: Int): List<String> {
         val school = state.highSchool ?: return emptyList()
         val last = school.run.lastTraining ?: return emptyList()
@@ -117,7 +147,7 @@ public object TrainingPresentation {
             "$label +${AbilityDisplayScale.delta(after - items.sumOf { it.growthPoints }, after)}"
         } }
         val fatigue = if (evidence.isEmpty()) last.fatigueChange else evidence.sumOf { it.fatigueDelta }
-        return listOf("훈련 ${evidence.size.coerceAtLeast(1)}회 완료") +
+        return listOf("훈련 ${evidence.size.coerceAtLeast(1)}회") +
             (gains.ifEmpty { listOf(if (last.focus == TrainingFocus.RECOVERY) "휴식 완료" else "${metric(last.focus)} +${last.growth}") }) +
             listOf("피로 ${if (fatigue >= 0) "+" else ""}$fatigue") +
             listOfNotNull("재능의 한계를 넘었어요!".takeIf { last.bloomed },

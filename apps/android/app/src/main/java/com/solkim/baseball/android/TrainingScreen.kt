@@ -20,6 +20,7 @@ import com.solkim.baseball.application.*
 import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.android.LocalizedGameText as Text
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandContext, busy: Boolean,
                             error: String?, insets: PaddingValues, resultStart: Int, dismissedResult: Int,
@@ -40,9 +41,7 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
         selectedLabelColor = BaseballColors.action, selectedLeadingIconColor = BaseballColors.action)
     val scroll = rememberScrollState()
     var showsFocusDetails by rememberSaveable(run.careerId, focusWire) { mutableStateOf(false) }
-    var showsRepeatHelp by rememberSaveable { mutableStateOf(false) }
     var showsLearningDetails by rememberSaveable(run.careerId) { mutableStateOf(false) }
-    var showsOtherTraining by rememberSaveable(run.careerId) { mutableStateOf(false) }
     LaunchedEffect(run.totalTrainingsCompleted) {
         if ((run.lastTraining?.number ?: 0) > dismissedResult) scroll.animateScrollTo(0)
     }
@@ -55,20 +54,30 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
             if (error != null) Text(error, color = MaterialTheme.colorScheme.error)
             CorePlayerHeader(state, compact = true)
             Text("피로 ${run.fatigue} · 팔 부담 ${run.armRisk}", color = if (run.fatigue >= 70 || run.armRisk >= 55) BaseballColors.warning else BaseballColors.textSecondary)
-            if (rehab) Text("재활 중에는 회복 훈련을 합니다.", color = BaseballColors.warning)
-            else if (recommended == TrainingFocus.RECOVERY) Text("몸이 많이 지쳤어요. 이번에는 회복을 추천해요.", color = BaseballColors.warning)
+            if (rehab) Text("재활 중이다. 오늘은 회복만.", color = BaseballColors.warning)
+            else if (recommended == TrainingFocus.RECOVERY) Text("코치: 몸이 무겁다. 오늘은 쉬자.", color = BaseballColors.warning)
             if ((run.lastTraining?.number ?: 0) > dismissedResult) TrainingResultCard(state, resultStart, !spotlight, onDismiss)
             Text(copy.resolve("training.prompt"), verbatim = true, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            TextButton(onClick = { showsOtherTraining = !showsOtherTraining }, modifier = Modifier.testTag("training.change")) {
-                Text(rememberGameCopy().resolve("mobile.core.change-training"), verbatim = true)
+            FlowRow(Modifier.fillMaxWidth().testTag("training.choices"), maxItemsInEachRow = 3, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                TrainingFocus.entries.forEach { option ->
+                    val title = when (option) {
+                        TrainingFocus.VELOCITY -> "구위"
+                        TrainingFocus.COMMAND -> "제구"
+                        TrainingFocus.BREAKING_BALL -> "변화구"
+                        TrainingFocus.STAMINA -> "체력"
+                        TrainingFocus.RECOVERY -> "회복"
+                        TrainingFocus.GAME_PLANNING -> "수싸움"
+                    }
+                    FilterChip(selected = focus == option, onClick = { focusWire = option.wire },
+                        enabled = !busy && (!rehab || option == TrainingFocus.RECOVERY), colors = chipColors,
+                        label = { Text(title) }, modifier = Modifier.heightIn(min = 48.dp).testTag("training.focus.${option.wire}"))
+                }
             }
-            (listOf(focus) + if (showsOtherTraining) TrainingFocus.entries.filter { it != focus } else emptyList()).forEach { option ->
+            listOf(focus).forEach { option ->
                 val selected = option == focus
                 val preview = TrainingPresentation.preview(state, option, intensity)
                 Card(
-                    modifier = Modifier.fillMaxWidth().testTag("training.focus.${option.wire}")
-                        .clickable(enabled = !busy && (!rehab || option == TrainingFocus.RECOVERY)) { focusWire = option.wire }
-                        .semantics { this.selected = selected; role = Role.RadioButton },
+                    modifier = Modifier.fillMaxWidth().testTag("training.selectedDetail"),
                     border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) BaseballColors.action else BaseballColors.border),
                     colors = CardDefaults.cardColors(containerColor = if (selected) BaseballColors.surfaceRaised else BaseballColors.surface),
                 ) {
@@ -80,29 +89,30 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                             if (preview.opportunityBonus) add("오늘의 기회")
                         }
                         if (badges.isNotEmpty()) Text(badges.joinToString(" · "), style = MaterialTheme.typography.labelSmall, color = BaseballColors.milestone)
-                        Text("피로 ${if (preview.fatigueChange >= 0) "+" else ""}${preview.fatigueChange} · 팔 부담 ${if (preview.armRiskChange >= 0) "+" else ""}${preview.armRiskChange}", style = MaterialTheme.typography.bodySmall)
+                        StatChangeText("피로 ${if (preview.fatigueChange >= 0) "+" else ""}${preview.fatigueChange} · 팔 부담 ${if (preview.armRiskChange >= 0) "+" else ""}${preview.armRiskChange}", style = MaterialTheme.typography.bodySmall)
                         if (selected) {
                             if (option == TrainingFocus.BREAKING_BALL) {
                                 Text("연습할 구종", fontWeight = FontWeight.SemiBold)
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) { targets.forEach { pitch ->
+                                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { targets.forEach { pitch ->
                                     FilterChip(selected = target == pitch, onClick = { targetWire = pitch.wire }, enabled = !busy, colors = chipColors,
-                                        label = { Text(TrainingPresentation.pitchLabel(pitch)) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("training.target.${pitch.wire}"))
+                                        label = { Text(TrainingPresentation.pitchLabel(pitch)) }, modifier = Modifier.heightIn(min = 48.dp).testTag("training.target.${pitch.wire}"))
                                 } }
                                 target?.let { Text(TrainingPresentation.targetStatus(state, it), style = MaterialTheme.typography.bodySmall) }
                             }
                             if (!rehab) {
                                 Text("훈련 강도", fontWeight = FontWeight.SemiBold)
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) { TrainingIntensity.entries.forEach { level ->
+                                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { TrainingIntensity.entries.forEach { level ->
                                     FilterChip(selected = intensity == level, onClick = { intensityWire = level.wire }, enabled = !busy, colors = chipColors,
-                                        label = { Text(TrainingPresentation.intensityTitle(level, option)) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("training.intensity.${level.wire}"))
+                                        label = { Text(TrainingPresentation.intensityTitle(level, option)) }, modifier = Modifier.heightIn(min = 48.dp).testTag("training.intensity.${level.wire}"))
                                 } }
                             }
                             val outlook = when {
-                                option == TrainingFocus.RECOVERY || rehab -> "휴식은 능력 성장 대신 피로를 줄여요."
-                                preview.atTalentWall -> "능력 한계에 도달했어요. 숙련이나 재능 발현을 노려보세요."
-                                else -> "성장 예상 +${TrainingPresentation.displayGrowth(state, option, preview.minimumGrowth)}~${TrainingPresentation.displayGrowth(state, option, preview.maximumGrowth)} · 대성공은 별도"
+                                option == TrainingFocus.RECOVERY || rehab -> "성장 대신 피로를 던다."
+                                preview.atTalentWall -> "재능의 벽이다. 숙련을 쌓거나 벽이 열리길 기다리자."
+                                else -> TrainingPresentation.growthOutlook(state, option, preview, copy)
                             }
-                            Text(outlook, modifier = Modifier.testTag("training.outlook"), style = MaterialTheme.typography.bodyMedium)
+                            StatChangeText(outlook, modifier = Modifier.testTag("training.outlook"), style = MaterialTheme.typography.bodyMedium)
+                            if (option == TrainingFocus.COMMAND || option == TrainingFocus.GAME_PLANNING) ControlMilestoneGoal(run.pitcher.command)
                             TextButton(onClick = { showsFocusDetails = !showsFocusDetails }) { Text(copy.resolve("mobile.polish.training-details"), verbatim = true) }
                             if (showsFocusDetails) {
                                 Text(TrainingPresentation.detail(option), style = MaterialTheme.typography.bodyMedium)
@@ -113,23 +123,26 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                 }
             }
             TrainingPresentation.learningLines(state).takeIf { it.isNotEmpty() }?.let { lines ->
-                Card(Modifier.fillMaxWidth().testTag("training.learning")) {
+                Card(Modifier.fillMaxWidth().testTag("training.learning").clickable(enabled = !busy && !rehab && run.pitchLearningProject?.completed != true) {
+                    focusWire = TrainingFocus.BREAKING_BALL.wire
+                    targetWire = run.pitchLearningProject?.pitchType?.wire
+                    showsLearningDetails = true
+                }.semantics { role = Role.Button }) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(lines.first(), fontWeight = FontWeight.SemiBold)
                         if (lines.size > 1) Text(lines[1], style = MaterialTheme.typography.bodySmall)
+                        if (!rehab && run.pitchLearningProject?.completed != true) Text(copy.resolve("training.clear.select-practice"), verbatim = true, color = BaseballColors.action, style = MaterialTheme.typography.labelLarge)
                         TextButton(onClick = { showsLearningDetails = !showsLearningDetails }) { Text(copy.resolve("mobile.polish.pitch-project"), verbatim = true) }
                         if (showsLearningDetails) lines.drop(2).forEach { Text(it) }
                     }
                 }
             }
-            TextButton(onClick = { showsRepeatHelp = !showsRepeatHelp }) { Text(copy.resolve("mobile.polish.repeat-help"), verbatim = true) }
-            if (showsRepeatHelp) Text("연속 훈련은 일정이 바뀌거나 재능이 발현되면 멈춰요. 회복 외 훈련은 피로 75 이상이거나 팔 상태가 나빠져도 멈춰요.", style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(8.dp))
         }
         HorizontalDivider()
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = { commit(false) }, enabled = !busy, modifier = Modifier.weight(1f).heightIn(min = 56.dp).testTag("training.commit")) { Text("훈련하기") }
-            OutlinedButton(onClick = { commit(true) }, enabled = !busy, modifier = Modifier.heightIn(min = 56.dp).testTag("training.repeat").gameDescription("같은 훈련 최대 3회")) { Text("×3") }
+            OutlinedButton(onClick = { commit(true) }, enabled = !busy, modifier = Modifier.heightIn(min = 56.dp).testTag("training.repeat").gameDescription("같은 훈련 3번 연속. 일정이 바뀌거나 몸이 지치면 멈춘다.")) { Text("×3") }
         }
         Spacer(Modifier.height(4.dp))
     }
@@ -139,19 +152,31 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
 internal fun TrainingResultCard(state: GameAggregateState, afterNumber: Int, compact: Boolean, onDismiss: () -> Unit) {
     val lines = TrainingPresentation.resultLines(state, afterNumber)
     if (lines.isEmpty()) return
+    val copy = rememberGameCopy()
+    val receipt = state.meta.playerGrowth?.takeIf { it.careerId == state.highSchool?.run?.careerId && it.source == "training" }
+    var details by remember(receipt?.commandId, state.highSchool?.run?.lastTraining?.number) { mutableStateOf(false) }
+    val change = TrainingPresentation.fatigueChange(state, afterNumber)
+    val fatigue = state.highSchool?.run?.fatigue ?: 0
     Card(Modifier.fillMaxWidth().testTag("training.result"), colors = CardDefaults.cardColors(containerColor = BaseballColors.surfaceRaised)) {
-        Column(Modifier.padding(if (compact) 10.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(lines.first(), fontWeight = FontWeight.Bold)
+        Column(Modifier.padding(if (compact) 10.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                if (receipt != null) CoreGrowthResult(receipt, compact, detailsToggle = false, modifier = Modifier.weight(1f))
+                else Text(lines.getOrElse(1) { lines.first() }, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 TextButton(onClick = onDismiss, modifier = Modifier.testTag("training.result.dismiss")) { Text("닫기") }
             }
-            val receipt = state.meta.playerGrowth?.takeIf { it.careerId == state.highSchool?.run?.careerId && it.source == "training" }
-            if (receipt != null) {
-                CoreGrowthResult(receipt, compact)
-                Text(lines.drop(1).filterNot { it.startsWith("구위 ") || it.startsWith("제구 ") || it.startsWith("무브먼트 ") || it.startsWith("체력 ") }.joinToString(" · "),
-                    style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("training.result.gains"))
-            } else Text(lines.drop(1).joinToString(" · "), style = if (compact) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleLarge,
-                color = BaseballColors.action, modifier = Modifier.testTag("training.result.gains"))
+            StatChangeText(GrowthFeedbackPresentation.condition(copy, fatigue, change), verbatim = true,
+                style = MaterialTheme.typography.bodyMedium, color = BaseballColors.textSecondary,
+                modifier = Modifier.testTag("training.result.gains"))
+            if (state.highSchool?.run?.lastTraining?.bloomed == true) Text("재능의 한계를 넘었어요!", color = BaseballColors.milestone)
+            TrainingPresentation.coachLine(state)?.let { Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("training.result.coach")) }
+            TextButton(onClick = { details = !details }, modifier = Modifier.testTag("training.result.details")) { Text(copy.resolve("loop.growth.details"), verbatim = true) }
+            if (details) {
+                lines.forEach { StatChangeText(it, style = MaterialTheme.typography.bodySmall) }
+                if (receipt != null && !GrowthFeedbackPresentation.controlMilestone(receipt) && receipt.before[1] != receipt.after[1]) {
+                    ControlWindowPreview(receipt.after[1], receipt.before[1], titleKey = "loop.growth.base-window")
+                }
+                Text(copy.resolve("loop.condition.explanation"), verbatim = true, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }

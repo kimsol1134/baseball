@@ -5,6 +5,38 @@ import java.nio.file.Files
 import kotlin.test.*
 
 class CareerBackupTest {
+    @Test fun backupCannotReplaceOrTransferAChallengeAndTheNormalCareerSurvives(): Unit = runBlocking {
+        val root = Files.createTempDirectory("baseball-backup-challenge-")
+        val repository = CSharpLegacyGameStoreRepository(root, "challenge-backup")
+        val store = KotlinGameStore.open("challenge-backup", repository, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
+        try {
+            val controller = Phase8Controller(store)
+            controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
+            controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
+            val normal = store.current.highSchool
+            val bytes = store.exportCareerBackup()
+            store.dispatch(GameCommandEnvelope("challenge-start", "phase8-ui", store.current.revision,
+                GameCommand.HighSchool(com.solkim.baseball.core.highschool.HighSchoolPhase4Command.StartSeedChallenge("41233", 2, "power_prospect"))))
+            val challenge = store.current
+            assertFalse(CareerBackup.isAvailable(challenge))
+            assertFalse(CareerBackup.isAvailable(challenge.copy(meta = challenge.meta.copy(seedChallenge = null))))
+            assertFails { store.exportCareerBackup() }
+            assertFails { store.importCareerBackup(bytes, challenge.revision) }
+            assertFails { repository.importCareer(bytes, challenge.revision) }
+            assertEquals(challenge, store.current)
+            val envelope = com.solkim.baseball.model.StrictJson.parseUtf8(Files.readAllBytes(root.resolve("save.json"))) as com.solkim.baseball.model.JsonValue.Obj
+            val unsafeBackup = CareerBackup.encode(envelope["payload"] as com.solkim.baseball.model.JsonValue.Obj)
+            assertFails { CareerBackup.preview(unsafeBackup) }
+            store.dispatch(GameCommandEnvelope("challenge-end", "phase8-ui", store.current.revision,
+                GameCommand.HighSchool(com.solkim.baseball.core.highschool.HighSchoolPhase4Command.EndChallenge)))
+            assertEquals(normal?.run, store.current.highSchool?.run)
+            assertNotNull(CareerBackup.preview(store.exportCareerBackup()).highSchool)
+        } finally {
+            store.close()
+            Files.walk(root).use { it.sorted(Comparator.reverseOrder()).forEach(Files::deleteIfExists) }
+        }
+    }
+
     @Test fun portableBackupRestoresOnAnotherInstallAndRejectsDamageWithoutChangingCurrentSave() = runBlocking {
         val root = Files.createTempDirectory("baseball-portable-backup-")
         val source = KotlinGameStore.open("source-install", CSharpLegacyGameStoreRepository(root.resolve("source"), "source-install"), NativeAuthorityMode.NATIVE_AUTHORITATIVE)

@@ -9,6 +9,7 @@ import com.solkim.baseball.core.highschool.HighSchoolDraftOutcome
 import com.solkim.baseball.core.highschool.HighSchoolIdentity
 import com.solkim.baseball.core.highschool.HighSchoolKarma
 import com.solkim.baseball.core.highschool.HighSchoolPhase
+import com.solkim.baseball.core.highschool.HighSchoolState
 import com.solkim.baseball.core.highschool.HighSchoolPhase4Command
 import com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel
 import com.solkim.baseball.core.highschool.HighSchoolPhase4StartRequest
@@ -16,6 +17,7 @@ import com.solkim.baseball.core.highschool.HighSchoolRebirthEntryPath
 import com.solkim.baseball.core.highschool.HighSchoolRelationshipTarget
 import com.solkim.baseball.core.highschool.HighSchoolRelationshipResponse
 import com.solkim.baseball.core.highschool.HighSchoolReturnDestination
+import com.solkim.baseball.core.highschool.HighSchoolSeasonLine
 import com.solkim.baseball.core.highschool.HighSchoolSchoolId
 import com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules
 import com.solkim.baseball.core.highschool.HighSchoolTrainingFocus
@@ -27,6 +29,8 @@ import com.solkim.baseball.core.pro.ProCommand
 import com.solkim.baseball.core.pro.ProDevelopmentFocus
 import com.solkim.baseball.core.pro.ProEntitlement
 import com.solkim.baseball.core.pro.ProFanReasonKind
+import com.solkim.baseball.core.pro.ProGameLine
+import com.solkim.baseball.core.pro.ProState
 import com.solkim.baseball.core.pro.ProMerchandiseTier
 import com.solkim.baseball.core.pro.ProSettlementNextRoute
 import com.solkim.baseball.core.pro.ProOffseasonInvestment
@@ -175,7 +179,7 @@ public object Phase9LifeCardProjection {
             "드래프트: ${if (record.drafted) "지명" else "미지명"}",
             "평가: ${record.draftEvaluation}",
             "팀: ${ProCatalog.teams.firstOrNull { it.id == record.teamId }?.name ?: "없음"}",
-            "능력: ${record.ratings.map(AbilityDisplayScale::rating).joinToString(" · ")}",
+            "능력: ${listOf("구위", "제구", "무브먼트", "체력").zip(record.ratings.map(AbilityDisplayScale::rating)).joinToString(" · ") { (label, value) -> "$label $value" }}",
             "중요 경기: ${record.importantGames}경기",
             "투구: ${record.pitches}구",
             "삼진: ${record.strikeouts}개",
@@ -185,7 +189,7 @@ public object Phase9LifeCardProjection {
             "대표 유산: ${record.selectedSignatureLegacyId?.let { runCatching { HighSchoolSignatureLegacyRules.definition(it).title }.getOrNull() } ?: "선택 없음"}",
             "약속: ${record.pledgeId?.let { runCatching { HighSchoolPledgeRules.definition(it).title }.getOrNull() } ?: "선택 없음"} · ${if (record.pledgeAchieved) "달성" else "진행 중"}",
             "야구혼: ${record.soulEarned}",
-        )
+        ) + if (record.perfectReleases > 0) listOf("퍼펙트: ${record.perfectReleases}회") else emptyList()
         return Phase9FrozenLifeCard(
             careerId = record.careerId,
             lifeNumber = record.lifeNumber,
@@ -470,44 +474,66 @@ public object Phase8ScreenProjection {
         when (id) {
             Phase8ScreenId.P001_OPENING -> {
                 addSection(Phase8Section("opening", "새로운 시작", listOf(
-                    Phase8Row("이 게임", "환생 투수 커리어", "야구가 안 되면 다음 생으로 이어집니다. 직접 던지는 기본은 투구 슬라이더입니다."),
-                    Phase8Row("기본 투구", "길게 눌러 와인드업", "손을 떼는 타이밍으로 공을 던집니다. 자동 릴리스는 보조 설정입니다."),
-                    Phase8Row("돌아오기", "저장된 장면에서 계속", "앱을 다시 열어도 마지막으로 확정된 장면에서 이어집니다."),
+                    Phase8Row("이 게임", "야구 못하면 또 환생함", "한 구씩 직접 던진다. 안 되면 다시 태어나서 더 강해진다. 기본 조작은 투구 슬라이더."),
+                    Phase8Row("기본 투구", "길게 눌러 와인드업", "손을 떼는 순간이 공을 정한다."),
+                    Phase8Row("돌아오기", "언제든 이어서", "진행은 저절로 저장된다."),
                 )))
-                addAction("enterSetup", "시작하기", "나만의 투수로 첫 이야기를 시작합니다.", state.stage == GameStage.OPENING, listOf(GameCommand.EnterSetup))
+                addAction("enterSetup", "시작하기", "내 투수를 만들고 마운드로.", state.stage == GameStage.OPENING, listOf(GameCommand.EnterSetup))
             }
             Phase8ScreenId.P002_SETUP -> {
                 addSection(Phase8Section("setup", "선수 만들기", HighSchoolContentCatalog.presets.map { preset ->
                     Phase8Row(HighSchoolDisplayRules.presetTitle(preset.id), "구위 ${AbilityDisplayScale.rating(preset.baseStuff)} · 제구 ${AbilityDisplayScale.rating(preset.baseCommand)}", "무브먼트 ${AbilityDisplayScale.rating(preset.baseMovement)} · 체력 ${AbilityDisplayScale.rating(preset.baseStamina)}")
                 } + listOf(
-                    Phase8Row("지역", "19개 지역", "지역에 따라 네 학교와 코치·포수의 이야기가 달라집니다."),
-                    Phase8Row("난이도", "표준", "상황을 읽고 직접 선택하는 기본 난이도입니다."),
-                    Phase8Row("능력 배분", "구위 · 제구 · 무브먼트 · 체력", "선택한 유형의 네 가지 시작 능력입니다."),
+                    Phase8Row("지역", "19개 지역", "지역마다 학교와 코치, 포수가 다르다."),
+                    Phase8Row("난이도", "표준", "기본 난이도."),
+                    Phase8Row("능력 배분", "구위 · 제구 · 무브먼트 · 체력", "유형이 시작 능력을 정한다."),
                 )))
-                addAction("startHighSchool", "이 투수로 시작하기", "첫 학교에서 나의 야구 이야기를 시작합니다.", state.stage == GameStage.SETUP, listOf(Phase8Payloads.startHighSchool(state, context)))
+                addAction("startHighSchool", "이 투수로 시작하기", "이 이름으로 마운드에 선다.", state.stage == GameStage.SETUP, listOf(Phase8Payloads.startHighSchool(state, context)))
             }
             Phase8ScreenId.P003_PROLOGUE -> {
                 addSection(Phase8Section("letter", "도착한 편지", listOf(
                     Phase8Row("선수", run?.identity?.name ?: "—", "이번 생의 첫 기록"),
-                    Phase8Row("편지", run?.news?.take(2)?.joinToString("\n\n") ?: "아직 편지가 도착하지 않았습니다.", "이전 선수의 마음이 다음 선택을 비춥니다."),
-                    Phase8Row("튜토리얼", if (highSchool?.tutorial?.started == true) "시작했습니다" else "시작 전", "첫 사인은 짧은 튜토리얼에서 배웁니다."),
+                    Phase8Row("편지", run?.news?.take(2)?.joinToString("\n\n") ?: "아직 편지가 오지 않았다.", "지난 생이 남긴 말."),
+                    Phase8Row("첫 공", if (highSchool?.tutorial?.started == true) "던졌다" else "아직", "불펜에서 한 구 던지고 학교를 고른다."),
                 )))
-                addAction("beginTutorial", "첫 사인 익히기", "첫 투구 튜토리얼을 시작합니다.", run?.phase == HighSchoolPhase.PROLOGUE && highSchool?.tutorial?.started != true, listOf(hs(HighSchoolPhase4Command.BeginTutorial)))
-                addAction("completeTutorial", "튜토리얼 마치기", "다음 학교 선택으로 이동합니다.", run?.phase == HighSchoolPhase.PROLOGUE && (highSchool?.tutorial?.let { it.started && !it.completed } == true || state.pitch?.boundary == PitchBoundary.COMPLETED), listOf(hs(HighSchoolPhase4Command.CompleteTutorial(context.seed(state, "tutorial-complete")))))
+                addAction("beginTutorial", "불펜으로", "첫 공을 던지러 간다.", run?.phase == HighSchoolPhase.PROLOGUE && highSchool?.tutorial?.started != true, listOf(hs(HighSchoolPhase4Command.BeginTutorial)))
+                addAction("completeTutorial", "학교 고르러 가기", "첫 공은 던졌다. 이제 3년을 보낼 학교를 고른다.", run?.phase == HighSchoolPhase.PROLOGUE && (highSchool?.tutorial?.let { it.started && !it.completed } == true || state.pitch?.boundary == PitchBoundary.COMPLETED), listOf(hs(HighSchoolPhase4Command.CompleteTutorial(context.seed(state, "tutorial-complete")))))
+                if (RebirthContinuity.resolve(state) == null) {
+                    // First life: one tap from the letter to the mound. The tutorial starts and the practice pitch opens together.
+                    val reusable = state.pitch == null || state.pitch?.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)
+                    val begin = if (highSchool?.tutorial?.started == true) emptyList() else listOf(hs(HighSchoolPhase4Command.BeginTutorial))
+                    val thrown = highSchool?.lastPresentation?.pitchNumber ?: 0
+                    addAction("openTutorialPitch", if (thrown > 0) "한 구 더 던지기" else "첫 공 던지기", if (thrown > 0) "감을 잡을 때까지. 세 구까지." else "포수 사인대로 한 구. 기록에는 안 남는다.",
+                        run?.phase == HighSchoolPhase.PROLOGUE && reusable && highSchool?.tutorial?.completed != true && (state.pitch?.boundary != PitchBoundary.COMPLETED || thrown in 1..2),
+                        begin + tutorialCommands(state, context))
+                }
+                if (RebirthContinuity.resolve(state) != null) {
+                    val reusable = state.pitch == null || state.pitch?.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)
+                    val pending = state.pitch?.boundary in setOf(PitchBoundary.COMMITTED, PitchBoundary.CONSUMED, PitchBoundary.TERMINAL)
+                    val begin = if (highSchool?.tutorial?.started == true) emptyList() else listOf(hs(HighSchoolPhase4Command.BeginTutorial))
+                    actions.removeAll { it.id == "completeTutorial" }
+                    addAction("completeTutorial", "학교를 고르고 시작", "이번 생의 첫 등판을 준비합니다.", run?.phase == HighSchoolPhase.PROLOGUE && reusable && highSchool?.tutorial?.completed != true,
+                        begin + hs(HighSchoolPhase4Command.CompleteTutorial(context.seed(state, "tutorial-complete"))))
+                    addAction("openTutorialPitch", if (pending) "투구 결과 확인하기" else "지금 몸으로 한 구 던지기", "기록에 안 남는 연습 한 구.",
+                        run?.phase == HighSchoolPhase.PROLOGUE && ((reusable && highSchool?.tutorial?.completed != true) || pending),
+                        if (pending) emptyList() else begin + tutorialCommands(state, context))
+                    addAction("resumePitch", "투구 이어 하기", "던지던 공으로 돌아간다.", state.pitch?.boundary == PitchBoundary.SUSPENDED,
+                        listOfNotNull(state.pitch?.let { GameCommand.ResumePitch(it.sessionId) }))
+                }
             }
             Phase8ScreenId.P004_PITCH_TUTORIAL -> {
                 addSection(Phase8Section("first-pitch", "첫 투구", listOf(
-                    Phase8Row("첫 공의 선택", "구종 · 코스 · 강도", "처음에는 포수의 사인을 따라 던져 보세요."),
-                    Phase8Row("직접 던지기", "누르고 초록 구간에서 놓기", "누른 채 조준을 맞추고, 슬라이더가 초록 구간에 오면 손을 뗍니다."),
+                    Phase8Row("첫 공", "포수 사인대로", "구종과 코스는 포수가 골라 뒀다."),
+                    Phase8Row("던지는 법", "길게 눌러 와인드업", "초록에서 손을 뗀다. 금색 한가운데면 퍼펙트."),
                 )))
                 val reusable = state.pitch == null || state.pitch?.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)
                 val hasPendingResult = state.pitch?.boundary in setOf(PitchBoundary.COMMITTED, PitchBoundary.CONSUMED, PitchBoundary.TERMINAL)
                 val session = tutorialSession(state)
                 val tutorialReady = (highSchool?.tutorial?.let { it.started && !it.completed } == true && reusable) || hasPendingResult
                 val commands = if (hasPendingResult) emptyList() else tutorialCommands(state, context)
-                addAction("openTutorialPitch", if (hasPendingResult) "투구 결과 확인하기" else "첫 투구 열기", if (hasPendingResult) "투구 결과를 확인하고 완료합니다." else "첫 투구 화면을 엽니다.", tutorialReady, commands)
-                addAction("resumePitch", "투구 이어 하기", "저장한 투구를 이어 합니다.", state.pitch?.boundary == PitchBoundary.SUSPENDED, listOfNotNull(state.pitch?.let { GameCommand.ResumePitch(it.sessionId) }))
-                addAction("abandonPitch", "이번 투구 포기", "이번 투구만 포기하고 다음 선택으로 돌아갑니다.", state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
+                addAction("openTutorialPitch", if (hasPendingResult) "투구 결과 확인하기" else "첫 공 던지기", if (hasPendingResult) "던진 공의 결과를 본다." else "포수 사인대로 한 구. 기록에는 안 남는다.", tutorialReady, commands)
+                addAction("resumePitch", "투구 이어 하기", "던지던 공으로 돌아간다.", state.pitch?.boundary == PitchBoundary.SUSPENDED, listOfNotNull(state.pitch?.let { GameCommand.ResumePitch(it.sessionId) }))
+                addAction("abandonPitch", "이번 투구 포기", "이 공은 없던 걸로 하고 돌아간다.", state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
             }
             Phase8ScreenId.P005_SCHOOL_SELECTION -> {
                 val schools = run?.schoolOptions?.ifEmpty { run?.let { HighSchoolContentCatalog.schools(it.identity.region) } } ?: emptyList()
@@ -520,9 +546,9 @@ public object Phase8ScreenProjection {
                 val opportunity = run?.trainingOpportunity
                 val recommended = opportunity?.focus
                 addSection(Phase8Section("training", "오늘 훈련", listOf(
-                    Phase8Row("장면", recommended?.label ?: "훈련장", opportunity?.reason ?: "코치가 오늘의 과제를 정해 두었습니다. 한 블록을 고르면 몸이 남습니다."),
+                    Phase8Row("장면", recommended?.label ?: "훈련장", opportunity?.reason ?: "코치가 오늘 과제를 정해 뒀다. 하나 골라서 몸에 남기자."),
                     Phase8Row("몸 상태", "구위 ${run?.pitcher?.stuff?.let(AbilityDisplayScale::rating) ?: 0} · 제구 ${run?.pitcher?.command?.let(AbilityDisplayScale::rating) ?: 0}", "무브먼트 ${run?.pitcher?.movement?.let(AbilityDisplayScale::rating) ?: 0} · 체력 ${run?.pitcher?.stamina?.let(AbilityDisplayScale::rating) ?: 0}"),
-                    Phase8Row("이번 블록", "${run?.chapterTrainingCount ?: 0}회", "블록이 끝나면 다음 장면으로 넘어갑니다."),
+                    Phase8Row("이번 훈련", "${run?.chapterTrainingCount ?: 0}회", "훈련이 끝나면 다음 일정으로."),
                 )))
                 val focuses = if (recommended == null) {
                     HighSchoolTrainingFocus.entries
@@ -535,9 +561,9 @@ public object Phase8ScreenProjection {
                         "train:${focus.wire}",
                         "$recommendedMark${focus.label}",
                         if (focus == recommended) {
-                            opportunity?.reason ?: "${focus.label} 중심으로 한 블록 훈련합니다."
+                            opportunity?.reason ?: "${focus.label}에 집중한다."
                         } else {
-                            "${focus.label} 중심으로 한 블록 훈련합니다."
+                            "${focus.label}에 집중한다."
                         },
                         run?.phase == HighSchoolPhase.TRAINING,
                         listOf(hs(HighSchoolPhase4Command.Training(context.seed(state, "training:${focus.wire}"), focus, HighSchoolTrainingIntensity.STANDARD, focus.pitchKindOrNull()))),
@@ -547,8 +573,8 @@ public object Phase8ScreenProjection {
             Phase8ScreenId.P007_RELATIONSHIP -> {
                 val event = run?.currentRelationshipEvent
                 addSection(Phase8Section("relationship", event?.title ?: "이번 대화", listOf(
-                    Phase8Row(run?.let(RelationshipNarrative::speaker) ?: "동료", run?.let(RelationshipNarrative::line) ?: "동료와 코치의 목소리가 들립니다.", ""),
-                    Phase8Row("상대", run?.currentRelationshipTarget?.label ?: "팀", "감독 ${run?.managerTrust ?: 0} · 포수 ${run?.catcherTrust ?: 0} · 라이벌 ${run?.rivalTrust ?: 0}"),
+                    Phase8Row(run?.let(RelationshipNarrative::speaker) ?: "동료", run?.let(RelationshipNarrative::line) ?: "동료와 코치의 목소리가 들린다.", ""),
+                    Phase8Row("상대", run?.currentRelationshipTarget?.label ?: "팀", "감독 ${trustWord(run?.managerTrust ?: 0)} · 포수 ${trustWord(run?.catcherTrust ?: 0)} · 라이벌 ${trustWord(run?.rivalTrust ?: 0)}"),
                 )))
                 HighSchoolRelationshipResponse.entries.forEach { response ->
                     addAction(
@@ -573,7 +599,7 @@ public object Phase8ScreenProjection {
                 addAction("openImportantGame", "승부처에 오르기", "중요 경기의 첫 타석을 엽니다.", canOpenImportantGame, if (canOpenImportantGame) importantGameCommands(state, context) else emptyList())
                 addAction("nextImportantPitch", "다음 타석 열기", "같은 경기의 다음 타석을 엽니다.", canOpenNextPitch, if (canOpenNextPitch) nextHighSchoolPitchCommands(state) else emptyList())
                 val canResumePitch = state.pitch?.boundary in setOf(PitchBoundary.PLAYING, PitchBoundary.SUSPENDED)
-                addAction("resumePitch", "투구 이어 하기", "저장한 투구를 이어 합니다.", canResumePitch, listOfNotNull(state.pitch?.takeIf { it.boundary == PitchBoundary.SUSPENDED }?.let { GameCommand.ResumePitch(it.sessionId) }))
+                addAction("resumePitch", "투구 이어 하기", "던지던 공으로 돌아간다.", canResumePitch, listOfNotNull(state.pitch?.takeIf { it.boundary == PitchBoundary.SUSPENDED }?.let { GameCommand.ResumePitch(it.sessionId) }))
                 addAction("abandonPitch", "이번 투구 포기", "이번 타석만 포기합니다.", state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
             }
             Phase8ScreenId.P009_AWAKENING -> {
@@ -586,16 +612,31 @@ public object Phase8ScreenProjection {
                 val chapter = run?.chapter
                 addSection(Phase8Section("chapter", "장 결산", listOf(
                     Phase8Row("장", chapter?.number?.toString() ?: "—", chapter?.title ?: "다음 장을 준비합니다."),
-                    Phase8Row("주제", chapter?.theme ?: "—", "이번 장의 목표와 성장 기록"),
-                    Phase8Row("자동 경기", "${run?.automaticGames ?: 0}경기 · ${run?.automaticOuts ?: 0}아웃", "저장된 시즌 흐름"),
-                )))
-                addAction("advanceChapter", "다음 장으로", "장 결산을 확정합니다.", run?.phase == HighSchoolPhase.CHAPTER_REVIEW, listOf(hs(HighSchoolPhase4Command.AdvanceChapter(context.seed(state, "chapter")))))
+                    Phase8Row("주제", chapter?.theme ?: "—", "이번 장의 주제"),
+                    Phase8Row("자동 경기", "${run?.automaticGames ?: 0}경기 · ${run?.automaticOuts ?: 0}아웃", "내가 안 던진 경기는 저절로 흘러갔다."),
+                ) + chapterGameRows(state)))
+                addAction("advanceChapter", "다음 장으로", "다음 장을 연다.", run?.phase == HighSchoolPhase.CHAPTER_REVIEW, listOf(hs(HighSchoolPhase4Command.AdvanceChapter(context.seed(state, "chapter")))))
+                val canClaim = run?.phase == HighSchoolPhase.CHAPTER_REVIEW && (chapter?.number ?: 8) < HighSchoolContentCatalog.chapters.size && run.chapterGameClaimed.not() && highSchool?.activePitch == null
+                if (canClaim) {
+                    addAction("claimChapterGame", "이 경기는 내가 던진다", "이 장의 정규 경기 하나를 직접 던진다. 승부처처럼 기록에 남는다.", true, listOf(hs(HighSchoolPhase4Command.ClaimChapterGame(context.seed(state, "chapter-game")))))
+                } else if (run?.chapterGameClaimed == true) {
+                    addAction("claimChapterGame", "이번 장은 던졌다", "정규 경기는 장마다 한 번.", false, emptyList())
+                }
             }
-            Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> addSection(Phase8Section("career", "고교 커리어", listOf(
-                Phase8Row("선수", run?.identity?.name ?: "—", "${run?.lifeNumber ?: 0}번째 생"),
-                Phase8Row("현재 장면", run?.chapter?.title ?: "—", run?.phase?.label ?: "—"),
-                Phase8Row("공식 경기", "${highSchool?.completedGameCounter ?: 0}경기", "한 경기의 타석을 이어서 상대합니다."),
-            )))
+            Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> {
+                val played = highSchool?.seasonLog.orEmpty().filter { it.played }
+                val pitchedOuts = played.sumOf { it.outs }
+                addSection(Phase8Section("career", "고교 커리어", listOf(
+                    Phase8Row("선수", run?.identity?.name ?: "—", "${run?.lifeNumber ?: 0}번째 생"),
+                    Phase8Row("현재 장면", run?.chapter?.title ?: "—", run?.phase?.label ?: "—"),
+                    Phase8Row("공식 경기", "${highSchool?.completedGameCounter ?: 0}경기", "직접 던진 경기"),
+                    Phase8Row("직접 던진 이닝", inningsLabel(pitchedOuts), "자동 경기는 빼고 내 손으로 던진 것만"),
+                    Phase8Row("직접 던진 기록", "${run?.performance?.strikeouts ?: 0}탈삼진 ${run?.performance?.walks ?: 0}볼넷 ${run?.performance?.runsAllowed ?: 0}실점" + perfectSuffix(run), "${run?.performance?.pitches ?: 0}구"),
+                )))
+                if (played.isNotEmpty()) {
+                    addSection(Phase8Section("game-log", "경기 기록", played.asReversed().take(10).map { line -> highSchoolGameRow(line) }))
+                }
+            }
             Phase8ScreenId.P012_TOURNAMENT_LEAGUE -> {
                 val rows = highSchool?.tournaments.orEmpty().map { tournament ->
                     Phase8Row(tournament.name, tournament.playerRound, if (tournament.completed) "완료" else "진행 중")
@@ -604,40 +645,42 @@ public object Phase8ScreenProjection {
                 }
                 addSection(Phase8Section("league", "대회와 순위", rows))
             }
-            Phase8ScreenId.P013_DRAFT -> addSection(Phase8Section("draft", "드래프트 결과", listOf(
-                Phase8Row("결과", run?.draftResult?.outcome?.label ?: "결과를 기다리는 중", run?.draftResult?.summary ?: "곧 나의 다음 무대가 정해집니다."),
-                Phase8Row("평가", run?.draftResult?.evaluationScore?.toString() ?: "—", "현재 능력과 성장의 종합 평가"),
-                Phase8Row("다음", if (run?.draftResult?.outcome?.wire == "drafted") "프로 계약" else "다음 생", "선택 가능한 길을 확인합니다."),
+            Phase8ScreenId.P013_DRAFT -> addSection(Phase8Section("draft", "드래프트", listOfNotNull(
+                if (run?.draftResult == null) Phase8Row("드래프트 당일", "이름이 불릴까.", "3년이 이 한 번의 호명에 달렸다. 숨을 참고 듣는다.")
+                else Phase8Row(run.draftResult?.outcome?.label ?: "결과", run.draftResult?.summary.orEmpty(), if (run.draftResult?.outcome?.wire == "drafted") "프로 계약이 기다린다." else "이 생은 여기까지. 기록은 다음 생으로 간다."),
             )))
             .also { run?.let { CareerChoicePresentation.conclusion(it).forEach(::addSection) } }
-            .also { addAction("resolveDraft", "드래프트 결과 확인", "마지막 평가를 저장하고 다음 장면을 엽니다.", run?.let { it.phase == HighSchoolPhase.DRAFT && it.draftResult == null } == true, listOf(hs(HighSchoolPhase4Command.ResolveDraft(context.seed(state, "draft"))))) }
+            .also { addAction("resolveDraft", "드래프트 결과 확인", "이름이 불릴까. 숨을 참고 듣는다.", run?.let { it.phase == HighSchoolPhase.DRAFT && it.draftResult == null } == true, listOf(hs(HighSchoolPhase4Command.ResolveDraft(context.seed(state, "draft"))))) }
             Phase8ScreenId.P014_RUN_RECAP -> {
                 run?.let { CareerChoicePresentation.conclusion(it).forEach(::addSection) }
                 addSection(Phase8Section("recap", "이번 생의 기록", listOf(
                     Phase8Row("선수", run?.identity?.name ?: "—", "이번 생에 남긴 기록"),
-                    Phase8Row("투구", "${run?.performance?.pitches ?: 0}구", "실점 ${run?.performance?.runsAllowed ?: 0} · 삼진 ${run?.performance?.strikeouts ?: 0}"),
-                    Phase8Row("유산", run?.legacyOptions.orEmpty().takeIf { it.isNotEmpty() }?.joinToString(" · ") { legacyTitle(it) } ?: "준비 중", "대표 유산은 한 번만 선택합니다."),
+                    Phase8Row("투구", "${run?.performance?.pitches ?: 0}구", "실점 ${run?.performance?.runsAllowed ?: 0} · 삼진 ${run?.performance?.strikeouts ?: 0}" + perfectSuffix(run)),
+                    run?.legacyOptions.orEmpty().filter { id -> HighSchoolSignatureLegacyRules.definitions.any { it.id == id } }.let { frozen ->
+                        if (frozen.isEmpty()) Phase8Row("유산", "아직 셋으로 추리기 전", "유산 후보 보기를 누르면 이 생이 남긴 셋이 정해진다.")
+                        else Phase8Row("유산", frozen.joinToString(" · ") { legacyTitle(it) }, "다음 생에 가져갈 건 하나.")
+                    },
                 )))
-                addAction("prepareLegacy", "유산 후보 보기", "이번 생에서 남길 세 가지를 준비합니다.", run?.let { it.phase == HighSchoolPhase.LEGACY || (it.phase == HighSchoolPhase.COMPLETED && it.draftResult?.outcome?.wire == "drafted") } == true, listOf(hs(HighSchoolPhase4Command.PrepareLegacy)))
+                addAction("prepareLegacy", "유산 후보 보기", "이 생이 남긴 세 가지 중 하나를 고른다.", run?.let { it.phase == HighSchoolPhase.LEGACY || (it.phase == HighSchoolPhase.COMPLETED && it.draftResult?.outcome?.wire == "drafted") } == true, listOf(hs(HighSchoolPhase4Command.PrepareLegacy)))
                 // Old base-engine memory options must first be converted into frozen signature candidates.
                 run?.legacyOptions.orEmpty().filter { id -> HighSchoolSignatureLegacyRules.definitions.any { it.id == id } }
                     .forEach { legacy -> addAction("selectLegacy:$legacy", legacyTitle(legacy), legacyEffect(legacy), run?.phase == HighSchoolPhase.LEGACY, listOf(hs(HighSchoolPhase4Command.SelectLegacy(legacy)))) }
-                addAction("finalizeArchive", "기록 보관하기", "이번 생의 기록을 보관하고 다음 선택으로 갑니다.", run?.phase == HighSchoolPhase.COMPLETED && highSchool?.selectedSignatureLegacyId != null, listOf(hs(HighSchoolPhase4Command.FinalizeArchive)))
+                addAction("finalizeArchive", "이 생을 마무리", "기록을 남기고 다음 생을 준비한다.", run?.phase == HighSchoolPhase.COMPLETED && highSchool?.selectedSignatureLegacyId != null, listOf(hs(HighSchoolPhase4Command.FinalizeArchive)))
                 val draftedReviewReceipt = "review-moment:${run?.careerId}:drafted-reveal-confirmed"
                 val recapReviewReceipt = "review-moment:${run?.careerId}:good-recap"
                 if (run?.draftResult?.outcome == HighSchoolDraftOutcome.DRAFTED) {
                     addAction(
                         "confirmDraftResult",
-                        "드래프트 결과 확인 완료",
-                        "결과를 읽고 다음 선택을 준비합니다.",
+                        "이 순간을 기억한다",
+                        "지명. 3년이 보답받았다.",
                         state.analytics.receipts.none { it.receiptId == draftedReviewReceipt },
                         listOf(GameCommand.RecordAnalytics(draftedReviewReceipt, "review_moment_drafted_reveal_confirmed")),
                     )
                 } else if (run?.draftResult != null && recapDeservesReview(state)) {
                     addAction(
                         "confirmRecap",
-                        "결산 확인 완료",
-                        "이번 생의 결산을 읽고 다음 장면을 준비합니다.",
+                        "3년, 여기까지",
+                        "기록은 남는다. 다음 생으로 가져간다.",
                         state.analytics.receipts.none { it.receiptId == recapReviewReceipt },
                         listOf(GameCommand.RecordAnalytics(recapReviewReceipt, "review_moment_good_recap")),
                     )
@@ -647,28 +690,28 @@ public object Phase8ScreenProjection {
                 val inheritedId = highSchool?.inheritance?.selectedSignatureLegacyId
                 addSection(Phase8Section("rebirth", "다음 생에도, 나의 공", listOf(
                     Phase8Row("이어지는 힘", inheritedId?.let(::legacyTitle) ?: "남은 기억", inheritedId?.let(::legacyEffect).orEmpty()),
-                    Phase8Row("남은 기억", highSchool?.inheritance?.inheritedMemories?.size?.toString() ?: "0", "선택한 기억이 다음 선수에게 남습니다."),
-                    Phase8Row("다시 시작", "고교 1학년부터 다시 시작", ""),
+                    Phase8Row("남은 기억", highSchool?.inheritance?.inheritedMemories?.size?.toString() ?: "0", "다음 생으로 가져가는 기억"),
+                    Phase8Row("다시 시작", "같은 이름, 같은 얼굴. 1학년부터.", ""),
                 )))
                 val canBeginRebirth = run?.phase == HighSchoolPhase.COMPLETED && highSchool?.archive?.any { it.careerId == run.careerId } == true
                 addAction(
                     "quickRebirth",
                     "이 힘으로 환생하기",
-                    "보관된 기록과 선택한 기억을 바로 이어 새 장면을 엽니다.",
+                    "같은 이름, 같은 얼굴로 1학년부터 다시.",
                     canBeginRebirth,
                     listOf(hs(HighSchoolPhase4Command.BeginRebirth(context.seed(state, "quick-rebirth"), context.dayKey(state), HighSchoolRebirthEntryPath.QUICK_REBIRTH))),
                 )
                 addAction(
                     "customizeRebirth",
                     "다음 생 설정하기",
-                    "이름과 구종, 이어받을 힘을 직접 고릅니다.",
+                    "이름·구종·이어받을 힘을 바꿔서 시작한다.",
                     canBeginRebirth,
                     listOf(GameCommand.EnterSetup),
                 )
                 addAction(
                     "finalizeArchive",
-                    "기록 보관하기",
-                    "이번 생의 기록을 보관하고 다음 선택으로 갑니다.",
+                    "이 생을 마무리",
+                    "기록을 남기고 다음 생을 준비한다.",
                     run?.phase == HighSchoolPhase.COMPLETED &&
                         highSchool?.selectedSignatureLegacyId != null &&
                         highSchool.archive.none { it.careerId == run.careerId },
@@ -678,7 +721,7 @@ public object Phase8ScreenProjection {
                     if (run.draftResult?.outcome == HighSchoolDraftOutcome.DRAFTED) addAction(
                         "startLinked",
                         "프로 무대로 가기",
-                        "현재 고교 기록을 보존한 채 프로로 이어 갑니다.",
+                        "지명받은 그 이름 그대로 프로에 간다.",
                         true,
                         listOf(pro(ProCommand.StartLinked(linkedRequest(state, context)))),
                     )
@@ -686,7 +729,7 @@ public object Phase8ScreenProjection {
                     addAction(
                         "startDirect",
                         "직접 프로 시작",
-                        "고교 기록과 분리된 새 프로 커리어를 시작합니다.",
+                        "고교와 상관없이 프로부터 시작한다.",
                         true,
                         listOf(pro(ProCommand.StartDirect(ProStartDirectRequest(context.seed(state, "pro-direct"), "power_prospect", name)))),
                     )
@@ -731,25 +774,31 @@ public object Phase8ScreenProjection {
                                 com.solkim.baseball.core.pro.ProCareerAmbition.ENDURING_PRO -> "오래 뛰는 선수"
                                 null -> "이룬 목표를 이어가기"
                             }
+                            val goalDetail = when (ambition) {
+                                com.solkim.baseball.core.pro.ProCareerAmbition.FRANCHISE_ICON -> "한 팀에 오래 남아 그 팀의 얼굴이 된다."
+                                com.solkim.baseball.core.pro.ProCareerAmbition.RECORD_BOOK -> "숫자로 남는다. 탈삼진과 이닝을 쌓는다."
+                                com.solkim.baseball.core.pro.ProCareerAmbition.ENDURING_PRO -> "오래 뛴다. 시즌을 거듭할수록 값이 오른다."
+                                null -> "이미 이룬 목표를 이어 간다."
+                            }
                             addAction("acceptOffer:${offer.id}:${ambition?.wire ?: "complete"}", "$teamName · $goalTitle",
-                                "이 목표를 선택하고 ${offer.years}년 계약에 서명합니다.", pro?.phase == ProCareerPhase.CONTRACT_OFFER,
+                                goalDetail, pro?.phase == ProCareerPhase.CONTRACT_OFFER,
                                 listOf(pro(ProCommand.AcceptContractOffer(context.seed(state, "accept:${offer.id}"), offer.id, ambition))))
                         }
                     }
                 } else {
                     addSection(Phase8Section("pro-contract", "프로 계약", listOf(
-                        Phase8Row("프로 무대로", "고교에서 키운 선수로 도전하기", "고교에서 쌓은 능력과 기억을 이어 갑니다."),
+                        Phase8Row("프로 무대로", "고교에서 키운 선수로 도전하기", "고교에서 키운 능력 그대로."),
                         Phase8Row("팀", pro?.team?.name ?: "팀을 고르는 중", pro?.team?.developmentPlan ?: "팀의 성장 계획"),
                         Phase8Row("계약 기간", "${contract?.yearsRemaining ?: 0}년", "제시된 계약의 남은 시즌"),
-                        Phase8Row("연봉", salaryText, "시즌 단위 연봉. 총 보장은 기간과 함께 읽습니다."),
-                        Phase8Row("보직", contract?.rolePromise?.label ?: pro?.role?.label ?: "선발", "계약이 약속한 등판 역할"),
+                        Phase8Row("연봉", salaryText, "한 시즌 연봉"),
+                        Phase8Row("보직", contract?.rolePromise?.label ?: pro?.role?.label ?: "선발", "약속받은 자리"),
                     )))
-                    addAction("signContract", "계약 서명", "제시된 계약을 확정합니다.", pro?.phase == ProCareerPhase.CONTRACT_OFFER, listOf(pro(ProCommand.SignContract)))
+                    addAction("signContract", "계약 서명", "이 계약에 사인한다.", pro?.phase == ProCareerPhase.CONTRACT_OFFER, listOf(pro(ProCommand.SignContract)))
                 }
                 val name = run?.identity?.name ?: "민서준"
-                addAction("startDirect", "직접 프로 시작", "고교 기록과 분리된 새 프로 커리어를 시작합니다.", pro == null, listOf(pro(ProCommand.StartDirect(ProStartDirectRequest(context.seed(state, "pro-direct"), "power_prospect", name)))))
+                addAction("startDirect", "직접 프로 시작", "고교와 상관없이 프로부터 시작한다.", pro == null, listOf(pro(ProCommand.StartDirect(ProStartDirectRequest(context.seed(state, "pro-direct"), "power_prospect", name)))))
                 val canLink = highSchool != null && pro == null && run?.draftResult?.outcome == HighSchoolDraftOutcome.DRAFTED && run.phase in setOf(HighSchoolPhase.DRAFT, HighSchoolPhase.COMPLETED)
-                if (highSchool != null) addAction("startLinked", "프로 무대로 가기", "현재 고교 기록을 보존한 채 프로로 이어 갑니다.", canLink,
+                if (highSchool != null) addAction("startLinked", "프로 무대로 가기", "지명받은 그 이름 그대로 프로에 간다.", canLink,
                     if (canLink) listOf(pro(ProCommand.StartLinked(linkedRequest(state, context)))) else emptyList())
             }
             Phase8ScreenId.P017_PRO_WEEK -> {
@@ -762,40 +811,38 @@ public object Phase8ScreenProjection {
                     }
                     if (com.solkim.baseball.core.pro.ProRoleRequestRules.shouldOffer(pro)) {
                         addSection(Phase8Section("role-request", "스프링캠프 보직 지원", listOf(
-                            Phase8Row("이번 시즌의 자리", "선발·중간·마무리 중 지원할 수 있습니다.", "이번 시즌 한 번 지원합니다. 조건부 지원은 6주차 면담으로 이어집니다."),
+                            Phase8Row("이번 시즌의 자리", "선발·중간·마무리 중 하나에 손을 든다", "시즌에 한 번. 조건부면 6주차에 감독과 다시 얘기한다."),
                         )))
                         com.solkim.baseball.core.pro.ProRoleRequestRules.requestableRoles.forEach { role ->
                             val outcome = com.solkim.baseball.core.pro.ProRoleRequestRules.evaluate(pro, role)
                             val outlook = when (outcome) {
-                                com.solkim.baseball.core.pro.ProRoleRequestOutcome.ACCEPTED -> "수락 가능 · 다음 등판부터 준비"
-                                com.solkim.baseball.core.pro.ProRoleRequestOutcome.CONDITIONAL -> "조건부 · 6주차 역할 면담"
-                                com.solkim.baseball.core.pro.ProRoleRequestOutcome.REJECTED -> "준비 필요 · 거절되면 감독의 믿음 -1"
+                                com.solkim.baseball.core.pro.ProRoleRequestOutcome.ACCEPTED -> "감독이 받아 줄 것 같다"
+                                com.solkim.baseball.core.pro.ProRoleRequestOutcome.CONDITIONAL -> "6주차까지 보고 정하겠다는 분위기"
+                                com.solkim.baseball.core.pro.ProRoleRequestOutcome.REJECTED -> "아직 이르다. 거절당하면 믿음이 깎인다"
                             }
                             addAction("requestRole:${role.wire}", "${role.label} 지원", outlook, true,
                                 listOf(pro(ProCommand.RequestRole(context.seed(state, "role-request"), role))))
                         }
                     } else pro.roleRequest?.let { request ->
                         val result = when (request.outcome) {
-                            com.solkim.baseball.core.pro.ProRoleRequestOutcome.ACCEPTED -> "수락됨"
-                            com.solkim.baseball.core.pro.ProRoleRequestOutcome.CONDITIONAL -> "조건부 · ${request.reviewWeek}주차 면담"
-                            com.solkim.baseball.core.pro.ProRoleRequestOutcome.REJECTED -> "준비가 더 필요합니다"
+                            com.solkim.baseball.core.pro.ProRoleRequestOutcome.ACCEPTED -> "받아들여졌다"
+                            com.solkim.baseball.core.pro.ProRoleRequestOutcome.CONDITIONAL -> "${request.reviewWeek}주차에 다시 얘기하기로"
+                            com.solkim.baseball.core.pro.ProRoleRequestOutcome.REJECTED -> "아직 이르다는 답"
                         }
-                        addSection(Phase8Section("role-result", "보직 지원 결과", listOf(Phase8Row(request.requested.label, result))))
+                        addSection(Phase8Section("role-result", "감독의 대답", listOf(Phase8Row(request.requested.label, result))))
                     }
                 }
                 val remaining = if (pro == null) 0 else ProCatalog.expectedRemainingOutings(pro.week, pro.injuryWeeks, pro.role)
                 val tensions = pro?.seasonTensions.orEmpty().take(2).map { tension ->
                     Phase8Row(tension.title, tension.detail, "시즌 긴장")
                 }
-                val newsRows = pro?.news.orEmpty().take(3).mapIndexed { index, line ->
-                    Phase8Row("뉴스 ${index + 1}", line, "최근 소식")
-                }
-                addSection(Phase8Section("pro-week", "프로 주간 계획", listOf(
+                val newsRows = pro?.news.orEmpty().take(3).map { line -> Phase8Row("", line, "") }
+                addSection(Phase8Section("pro-week", "이번 주", listOf(
                     Phase8Row("주차", pro?.week?.toString() ?: "—", ProCatalog.segmentLabel(pro?.seasonSegment ?: ProSeasonSegment.SPRING_CAMP)),
-                    Phase8Row("역할", pro?.role?.label ?: "—", "현재 ${pro?.level?.label ?: "—"}"),
-                    Phase8Row("남은 등판", "${remaining}경기", "이번 시즌 주간 일정에서 앞으로 남을 자동 등판입니다."),
-                    Phase8Row("성장", "구위 ${pro?.pitcher?.stuff?.let(AbilityDisplayScale::rating) ?: 0} · 무브먼트 ${pro?.pitcher?.movement?.let(AbilityDisplayScale::rating) ?: 0}", "표적 능력과 구종을 함께 고릅니다."),
-                    Phase8Row("피로", "${pro?.fatigue ?: 0}", "회복 계획은 다음 주 기록에도 반영됩니다."),
+                    Phase8Row("역할", pro?.role?.label ?: "—", "지금은 ${pro?.level?.label ?: "—"}"),
+                    Phase8Row("내 등판", "이번 시즌 직접 ${pro?.importantGames ?: 0}번 던졌다", "남은 일정에서 감독이 맡길 등판은 ${remaining}경기쯤. 승부처는 따로 부른다."),
+                    Phase8Row("성장", "구위 ${pro?.pitcher?.stuff?.let(AbilityDisplayScale::rating) ?: 0} · 무브먼트 ${pro?.pitcher?.movement?.let(AbilityDisplayScale::rating) ?: 0}", "이번 주에 무엇을 키울지 고른다."),
+                    Phase8Row("피로", "${pro?.fatigue ?: 0}", if ((pro?.fatigue ?: 0) >= 70) "몸이 무겁다. 이번 주는 쉬는 게 낫다." else "던질 만하다."),
                 ) + tensions + newsRows))
                 pro?.pitchLearningProject?.let { project ->
                     addSection(Phase8Section("pitch-learning", "구종 익히기", TrainingPresentation.learningLines(project).map { Phase8Row("", it, "") }))
@@ -811,17 +858,17 @@ public object Phase8ScreenProjection {
                 }
                 addAction(
                     "proAdvanceSegment",
-                    "구간 건너뛰기",
-                    "주간 선택 없이 같은 구간을 자동으로 진행합니다. 한 주씩 고르는 길이 기본입니다.",
+                    "이 구간은 감독에게 맡긴다",
+                    "남은 몇 주를 한 번에 넘긴다.",
                     pro?.phase == com.solkim.baseball.core.pro.ProCareerPhase.WEEKLY_PLAN,
                     listOf(pro(ProCommand.AdvanceSegment(context.seed(state, "pro-segment"), ProWeekPlan.DEVELOP_STUFF, null))),
                 )
             }
             Phase8ScreenId.P018_PRO_IMPORTANT_GAME -> {
-                addSection(Phase8Section("pro-game", "프로 승부처", listOf(
-                    Phase8Row("상대", pro?.currentRival?.name ?: "오늘의 상대", pro?.currentRival?.profile ?: "상대 분석을 확인합니다."),
-                    Phase8Row("기록", "${pro?.activePitch?.pitches ?: 0}구 · ${pro?.activePitch?.strikeouts ?: 0}탈삼진", "중요 경기의 저장된 기록"),
-                    Phase8Row("상태", state.pitch?.boundary?.let { pitchBoundaryLabel(it) } ?: "준비 전", "던진 공의 결과와 다음 승부를 확인합니다."),
+                val headline = pro?.let { ProKernel().importantHeadline(it.seasonTrigger ?: com.solkim.baseball.core.pro.ProSeasonTrigger.STANDINGS_RACE, it.currentRival, it.level) }
+                addSection(Phase8Section("pro-game", proScenarioTitle(pro?.seasonTrigger), listOfNotNull(
+                    Phase8Row("오늘", headline ?: "오늘 이 타석이 시즌의 무게를 가른다.", pro?.currentRival?.profile.orEmpty()),
+                    if ((pro?.activePitch?.pitches ?: 0) > 0) Phase8Row("지금까지", "${pro?.activePitch?.pitches ?: 0}구 · ${pro?.activePitch?.strikeouts ?: 0}탈삼진", "") else null,
                 )))
                 val reusable = state.pitch == null || state.pitch?.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)
                 val canOpenProImportantGame = pro?.phase == ProCareerPhase.IMPORTANT_GAME && pro.activePitch == null && reusable
@@ -830,12 +877,12 @@ public object Phase8ScreenProjection {
                 val proFinishCommands = mutableListOf<GameCommand>()
                 if (pro?.activePitch?.ended == true) proFinishCommands += pro(ProCommand.FinishImportantGame)
                 if (state.pitch?.boundary == PitchBoundary.TERMINAL) proFinishCommands += GameCommand.CompletePitch(requireNotNull(state.pitch).sessionId)
-                addAction("openProImportantGame", "프로 승부처 열기", "프로 중요 경기의 투구를 엽니다.", canOpenProImportantGame, if (canOpenProImportantGame) proImportantGameCommands(state, context) else emptyList())
-                addAction("nextProPitch", "다음 타석 열기", "같은 경기의 다음 타석을 엽니다.", canOpenNextPitch, if (canOpenNextPitch) nextProPitchCommands(state) else emptyList())
-                addAction("finishProGame", "경기 결과 확인", "승부처 경기를 마무리하고 결산합니다.", canFinishGame, proFinishCommands)
+                addAction("openProImportantGame", "마운드에 오르기", "내가 던진다.", canOpenProImportantGame, if (canOpenProImportantGame) proImportantGameCommands(state, context) else emptyList())
+                addAction("nextProPitch", "다음 타자 상대하기", "이어서 던진다.", canOpenNextPitch, if (canOpenNextPitch) nextProPitchCommands(state) else emptyList())
+                addAction("finishProGame", "이 경기의 끝을 본다", "결과를 받아들이고 시즌으로 돌아간다.", canFinishGame, proFinishCommands)
                 val canResumePitch = state.pitch?.boundary in setOf(PitchBoundary.PLAYING, PitchBoundary.SUSPENDED)
-                addAction("resumePitch", "투구 이어 하기", "저장한 투구를 이어 합니다.", canResumePitch, listOfNotNull(state.pitch?.takeIf { it.boundary == PitchBoundary.SUSPENDED }?.let { GameCommand.ResumePitch(it.sessionId) }))
-                addAction("abandonPitch", "이번 투구 포기", "이번 타석만 포기합니다.", state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
+                addAction("resumePitch", "투구 이어 하기", "던지던 공으로 돌아간다.", canResumePitch, listOfNotNull(state.pitch?.takeIf { it.boundary == PitchBoundary.SUSPENDED }?.let { GameCommand.ResumePitch(it.sessionId) }))
+                addAction("abandonPitch", "이번 투구 포기", "이 타석은 없던 걸로 한다.", state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
             }
             Phase8ScreenId.P019_PRO_SEASON -> {
                 val tournament = pro?.nationalTournament
@@ -849,22 +896,31 @@ public object Phase8ScreenProjection {
                             Phase8Row(
                                 fanReasonLabel(reason.kind),
                                 "${if (reason.delta >= 0) "+" else ""}${reason.delta}",
-                                reason.contentId,
+                                fanReasonStory(reason.contentId),
                             )
                         }
-                        addSection(Phase8Section("season-settlement", "시즌 리뷰", listOf(
-                            Phase8Row("시즌", settlement.season.toString(), settlementNextRouteLabel(settlement.nextRoute)),
+                        val arc = com.solkim.baseball.core.pro.ProSeasonArcRules.title(pro.currentGameLines, pro.postseason)
+                        val goal = settlement.goalProgressAfter
+                        val goalRow = goal?.let { progress ->
+                            val metric = progress.metrics.firstOrNull()
+                            Phase8Row(ambitionTitle(progress.ambition),
+                                if (progress.completed) "이뤘다" else metric?.let { "${it.current}/${it.target}" } ?: "진행 중",
+                                if (progress.completed) "계약에 걸었던 약속을 지켰다." else metric?.let { goalMetricStory(it) } ?: "")
+                        }
+                        val hofNow = settlement.hallOfFameAfter
+                        addSection(Phase8Section("season-settlement", "${settlement.season}시즌 · ${seasonArcTitle(arc)}", listOfNotNull(
                             Phase8Row("성적", "${stats.games}경기 · ${innings}이닝 · ${stats.strikeouts}탈삼진", "9이닝당 실점 ${"%.2f".format(java.util.Locale.ROOT, stats.runPerNinePermille / 1_000.0)}"),
-                            Phase8Row("연봉", money(settlement.salaryIncome), "이번 시즌 계약에서 들어온 금액입니다."),
-                            Phase8Row("응원상품", money(settlement.merchandiseIncome), settlement.merchandiseTier?.let { merchandiseTierLabel(it) } ?: "팬 지지에 따른 상품 수입"),
-                            Phase8Row("팬 지지", "${settlement.fanBefore} → ${settlement.fanAfter}", "시즌 변화 ${if (settlement.fanDelta >= 0) "+" else ""}${settlement.fanDelta}"),
-                            Phase8Row("구단 유산", "${settlement.teamLegacyBefore} → ${settlement.teamLegacyAfter}", "명예의 전당 예상 ${settlement.hallOfFameBefore} → ${settlement.hallOfFameAfter}"),
-                            Phase8Row("잔여 계약", "${settlement.contractYearsBefore}년 → ${settlement.contractYearsAfter}년", settlementNextRouteLabel(settlement.nextRoute)),
+                            goalRow,
+                            Phase8Row("연봉", money(settlement.salaryIncome), "올해 계약이 준 돈"),
+                            Phase8Row("응원상품", money(settlement.merchandiseIncome), settlement.merchandiseTier?.let { merchandiseTierLabel(it) } ?: "팬이 사 준 만큼"),
+                            Phase8Row("팬 지지", "${settlement.fanBefore} → ${settlement.fanAfter}", "올해 ${if (settlement.fanDelta >= 0) "+" else ""}${settlement.fanDelta}"),
+                            Phase8Row("이 팀에서의 나", "${teamLegacyTierLabel(settlement.teamLegacyBefore)} → ${teamLegacyTierLabel(settlement.teamLegacyAfter)}", if (hofNow >= 70) "명예의 전당 헌액권 안. (${hofNow}/70)" else "명예의 전당까지 ${70 - hofNow}점 (${hofNow}/70)"),
+                            Phase8Row("계약", "${settlement.contractYearsAfter}년 남음", settlementNextRouteLabel(settlement.nextRoute)),
                         ) + reasonRows))
                         addAction(
                             "acknowledgeSettlement",
-                            "결산 확인",
-                            "결산을 확인하고 다음 국면으로 갑니다.",
+                            "올해를 덮는다",
+                            "다음 겨울로.",
                             true,
                             listOf(pro(ProCommand.AcknowledgeSeasonSettlement(context.seed(state, "season-settlement"), settlement.id))),
                         )
@@ -872,22 +928,21 @@ public object Phase8ScreenProjection {
                     pro?.phase == ProCareerPhase.NATIONAL_TEAM_CALL -> {
                         val fan = pro.journeyState?.reputation?.fanSupport ?: 0
                         val market = (pro.pitcher.stuff + pro.pitcher.command + pro.pitcher.movement + pro.pitcher.stamina) / 4
-                        addSection(Phase8Section("national-call", "국가대표 소집 통보", listOf(
-                            Phase8Row("국가대표", "시즌 성적이 대표팀 레이더에 걸렸습니다.", "수락하면 조별 3경기를 치르고 결승은 직접 등판합니다."),
-                            Phase8Row("선발 이유", "시장 점수 $market · 팬 지지 $fan", "짝수 시즌, 31세 이하, 팬 지지나 수상·기량이 기준을 넘을 때 소집됩니다."),
-                            Phase8Row("대가", "다음 스프링캠프를 피로를 안고 시작합니다.", "결승에서 많이 던질수록 무겁고, 부상 판정도 한 번 있습니다."),
+                        addSection(Phase8Section("national-call", "국가대표 소집", listOf(
+                            Phase8Row("전화가 왔다", "올해 성적이 대표팀 명단에 내 이름을 올렸다.", "조별 3경기는 팀이 치른다. 2승이면 결승, 그 마운드는 내가 맡는다."),
+                            Phase8Row("대가", "다음 봄을 무거운 몸으로 시작한다.", "결승까지 가서 많이 던질수록 무겁다. 다칠 수도 있다. 조별에서 떨어지면 몸은 가볍다."),
                         )))
                         addAction(
                             "nationalTeam:accept",
                             "소집을 수락한다",
-                            "조별 3경기를 치르고 결승은 직접 등판합니다.",
+                            "국기를 달고 던진다.",
                             true,
                             listOf(pro(ProCommand.RespondNationalTeamCall(context.seed(state, "national-team:accept"), true))),
                         )
                         addAction(
                             "nationalTeam:decline",
                             "이번엔 사양한다",
-                            "소집을 거절하고 비시즌으로 갑니다. 팬 지지가 조금 내려갑니다.",
+                            "몸을 아낀다. 팬은 조금 실망한다.",
                             true,
                             listOf(pro(ProCommand.RespondNationalTeamCall(context.seed(state, "national-team:decline"), false))),
                         )
@@ -909,7 +964,7 @@ public object Phase8ScreenProjection {
                                         "조별 성적",
                                         "${tournament.groupWins}승 ${tournament.groupGames.size}경기",
                                         if (tournament.stage == ProNationalTournamentStage.AWAITING_FINAL) {
-                                            "2승 이상으로 결승에 올랐습니다. 결승은 직접 등판입니다."
+                                            "결승에 올랐다. 이번엔 내가 던진다."
                                         } else {
                                             tournament.result?.let(ProNationalTeamRules::resultLabel) ?: "대회 진행 중"
                                         },
@@ -920,8 +975,8 @@ public object Phase8ScreenProjection {
                         if (tournament.stage == ProNationalTournamentStage.AWAITING_FINAL && tournament.result == null) {
                             addAction(
                                 "nationalTeam:startFinal",
-                                "결승 직접 등판",
-                                "대표팀 결승에 직접 올라 슬라이더로 던집니다.",
+                                "결승 마운드에 오른다",
+                                "국기를 달고 마지막 공을 던진다.",
                                 true,
                                 listOf(pro(ProCommand.StartNationalFinal(context.seed(state, "national-team:start-final")))),
                             )
@@ -933,111 +988,115 @@ public object Phase8ScreenProjection {
                                     "대회 결과",
                                     listOfNotNull(
                                         Phase8Row(ProNationalTeamRules.resultLabel(outcome), ProNationalTeamRules.news(outcome), "팬 지지 ${if (tournament.fanDelta >= 0) "+" else ""}${tournament.fanDelta}"),
-                                        if (tournament.exempted) Phase8Row("병역", "병역 면제 처리됐습니다.", "금메달 한 번으로 복무를 마칩니다.") else null,
+                                        if (tournament.exempted) Phase8Row("병역", "군 문제, 이 한 경기로 끝났다.", "금메달 한 번이면 복무를 마친다.") else null,
                                     ),
                                 ),
                             )
                             addAction(
                                 "nationalTeam:acknowledge",
-                                "오프시즌으로",
-                                "대회 결과를 확인하고 비시즌 선택으로 갑니다.",
+                                "겨울로",
+                                "메달을 걸고 돌아간다.",
                                 true,
                                 listOf(pro(ProCommand.AcknowledgeNationalTeamResult(context.seed(state, "national-team:acknowledge")))),
                             )
                             CareerShareCopy.nationalMedal(state)?.let { share ->
                                 addSection(Phase8Section("national-share", "공유", listOf(
-                                    Phase8Row("대회 기록", share, "대표팀 결과를 글로 남깁니다."),
+                                    Phase8Row("대회 기록", share, ""),
                                 )))
                             }
                         }
                     }
                     else -> {
+                        val honorRows = (pro?.awards.orEmpty().takeLast(5).map { Phase8Row("수상", it, "") } +
+                            pro?.milestones.orEmpty().takeLast(5).map { Phase8Row("이정표", it, "") })
                         addSection(Phase8Section("pro-season", "프로 시즌", listOf(
                             Phase8Row("시즌", pro?.season?.toString() ?: "—", ProCatalog.segmentLabel(pro?.seasonSegment ?: ProSeasonSegment.SPRING_CAMP)),
-                            Phase8Row("개인 기록", "${pro?.currentStats?.games ?: 0}경기 · ${pro?.currentStats?.strikeouts ?: 0}탈삼진", "현재 시즌 성적"),
-                            Phase8Row("팀 순위", "${pro?.standings?.firstOrNull { it.isPlayerTeam }?.wins ?: 0}승", "리그 순위와 리더보드"),
-                            Phase8Row("수상과 이정표", "${pro?.awards?.size ?: 0} · ${pro?.milestones?.size ?: 0}", "결정 기록 ${pro?.decisionHistory?.size ?: 0}개"),
-                            Phase8Row("다음 이야기", pro?.pendingDecision?.title ?: "다음 주간 계획", pro?.pendingDecision?.detail ?: "저장된 시즌 흐름을 이어 갑니다."),
-                        )))
+                            Phase8Row("올해의 나", "${pro?.currentStats?.games ?: 0}경기 · ${pro?.currentStats?.strikeouts ?: 0}탈삼진" + proPerfectSuffix(pro?.currentStats?.perfectReleases ?: 0), "이번 시즌 성적"),
+                            Phase8Row("팀", "${pro?.standings?.firstOrNull { it.isPlayerTeam }?.wins ?: 0}승", "${pro?.standings?.firstOrNull { it.isPlayerTeam }?.rank ?: "—"}위"),
+                            Phase8Row("다음 이야기", pro?.pendingDecision?.title ?: "다음 주간 계획", pro?.pendingDecision?.detail ?: "시즌은 계속된다."),
+                        ) + honorRows))
                         pro?.pendingDecision?.let { decision ->
                             decision.choices.forEach { choice ->
                                 addAction("seasonDecision:${choice.id}", choice.title, choice.detail, pro.phase == ProCareerPhase.SEASON_DECISION, listOf(pro(ProCommand.ApplySeasonDecision(context.seed(state, "decision:${choice.id}"), decision.id, choice.id))))
                             }
                         }
-                        addAction("reviewSeason", "시즌 결산 보기", "이번 시즌의 기록과 다음 결정을 저장합니다.", pro?.phase == ProCareerPhase.SEASON_REVIEW, listOf(pro(ProCommand.ReviewSeason(context.seed(state, "season-review")))))
+                        addAction("reviewSeason", "시즌 결산 보기", "올해 남긴 것을 본다.", pro?.phase == ProCareerPhase.SEASON_REVIEW, listOf(pro(ProCommand.ReviewSeason(context.seed(state, "season-review")))))
+                        val proPlayed = pro?.currentGameLines.orEmpty().filter { it.played }
+                        if (proPlayed.isNotEmpty()) {
+                            addSection(Phase8Section("pro-game-log", "이번 시즌 등판", proPlayed.asReversed().take(10).map { line -> proGameRow(line) }))
+                        }
                     }
                 }
             }
             Phase8ScreenId.P020_OFFSEASON -> {
                 if (pro?.phase == ProCareerPhase.OFFSEASON_INVESTMENT) {
                     val funds = pro.journeyState?.finances?.availableFunds ?: 0L
-                    addSection(Phase8Section("offseason-investment", "비시즌 투자", listOf(
-                        Phase8Row("가용 자금", "%,d원".format(java.util.Locale.KOREA, funds), "다음 시즌을 앞두고 어디에 쓸지 고릅니다."),
-                        Phase8Row("피치랩", "5천만원", "능력 포커스를 정해 다음 시즌 헤드스타트를 얻습니다."),
-                        Phase8Row("리커버리", "4천만원", "부상 위험을 한 시즌 완화합니다."),
-                        Phase8Row("팬 재단", "3천만원", "팬과 커뮤니티에 남깁니다."),
+                    val won = { value: Long -> "%,d원".format(java.util.Locale.KOREA, value) }
+                    fun shortfall(cost: Long): String? = (cost - funds).takeIf { it > 0 }?.let { "자금 ${won(it)} 부족" }
+                    addSection(Phase8Section("offseason-investment", "겨울 투자", listOf(
+                        Phase8Row("쓸 수 있는 돈", won(funds), "이번 겨울, 어디에 쓸까."),
                     )))
                     val enabled = true
                     addAction(
                         "investment:pitch_lab",
-                        "피치랩",
-                        "제구를 중심으로 다음 시즌을 한 발 앞서 시작합니다.",
+                        "피치랩 · ${won(50_000_000L)}",
+                        shortfall(50_000_000L) ?: "겨울 내내 제구를 다듬는다. 봄에 한 발 앞선다.",
                         enabled && funds >= 50_000_000L,
                         listOf(pro(ProCommand.ChooseInvestment(context.seed(state, "investment:pitch_lab"), ProOffseasonInvestment.PITCH_LAB, ProDevelopmentFocus.COMMAND))),
                     )
                     addAction(
                         "investment:recovery_team",
-                        "리커버리 팀",
-                        "다음 시즌 부상 위험을 줄입니다.",
+                        "몸 관리팀 · ${won(40_000_000L)}",
+                        shortfall(40_000_000L) ?: "전문가에게 몸을 맡긴다. 다음 시즌 부상이 덜하다.",
                         enabled && funds >= 40_000_000L,
                         listOf(pro(ProCommand.ChooseInvestment(context.seed(state, "investment:recovery_team"), ProOffseasonInvestment.RECOVERY_TEAM, null))),
                     )
                     addAction(
                         "investment:fan_foundation",
-                        "팬 재단",
-                        "팬 기반을 남기고 다음 시즌으로 갑니다.",
+                        "팬 재단 · ${won(30_000_000L)}",
+                        shortfall(30_000_000L) ?: "팬들에게 돌려준다. 지지가 오래 간다.",
                         enabled && funds >= 30_000_000L,
                         listOf(pro(ProCommand.ChooseInvestment(context.seed(state, "investment:fan_foundation"), ProOffseasonInvestment.FAN_FOUNDATION, null))),
                     )
                     addAction(
                         "investment:none",
                         "이번엔 안 한다",
-                        "돈을 아껴 두고 다음 시즌 주간으로 갑니다.",
+                        "돈은 아껴 둔다.",
                         enabled,
                         listOf(pro(ProCommand.ChooseInvestment(context.seed(state, "investment:none"), ProOffseasonInvestment.NONE, null))),
                     )
                 } else {
-                addSection(Phase8Section("offseason", "비시즌 선택", listOf(
-                    Phase8Row("현재 계약", "${pro?.contract?.yearsRemaining ?: 0}년", "계속하기와 새로운 선택을 비교합니다."),
-                    Phase8Row("복무", "${pro?.serviceYears ?: 0}년", if (pro?.militaryCompleted == true) "완료" else "선택 가능"),
+                addSection(Phase8Section("offseason", "겨울의 선택", listOf(
+                    Phase8Row("계약", "${pro?.contract?.yearsRemaining ?: 0}년 남음", "남을까, 떠날까, 복무할까, 벗을까."),
+                    Phase8Row("1군 경력", "${pro?.serviceYears ?: 0}년", if (pro?.militaryCompleted == true) "병역은 끝났다" else "병역은 아직"),
                 )))
                 val offseasonEnabled = pro?.phase == com.solkim.baseball.core.pro.ProCareerPhase.OFFSEASON_DECISION
                 val faEligible = (pro?.serviceYears ?: 0) >= 6 && (pro?.contract?.yearsRemaining ?: 0) == 0
                 addAction(
                     "offseason:continue",
                     "계속하기",
-                    "현재 구단에 남아 다음 시즌을 준비합니다. 나이와 계약만 한 해 진행됩니다.",
+                    "한 해 더 이 유니폼을 입는다.",
                     offseasonEnabled,
                     listOf(pro(ProCommand.ChooseOffseason(context.seed(state, "offseason:continue"), OffseasonDecision.CONTINUE))),
                 )
                 addAction(
                     "offseason:military_service",
                     "군 복무",
-                    "두 시즌 동안 계약을 멈추고 복무를 다녀옵니다. 한 번만 선택할 수 있습니다.",
+                    "두 시즌을 비우고 복무를 다녀온다. 한 번뿐이다.",
                     offseasonEnabled && pro?.militaryCompleted != true,
                     listOf(pro(ProCommand.ChooseOffseason(context.seed(state, "offseason:military_service"), OffseasonDecision.MILITARY_SERVICE))),
                 )
                 addAction(
                     "offseason:free_agency",
                     "FA 시장",
-                    "계약이 끝난 뒤에만 새 팀과 계약할 수 있습니다. 1군 6년이 필요합니다.",
+                    if (faEligible) "새 유니폼을 고른다." else "1군 6년을 채우고 계약이 끝나야 열린다.",
                     offseasonEnabled && faEligible,
                     listOf(pro(ProCommand.ChooseOffseason(context.seed(state, "offseason:free_agency"), OffseasonDecision.FREE_AGENCY))),
                 )
                 addAction(
                     "offseason:retire",
                     "은퇴하기",
-                    "여기서 커리어를 마칩니다. 통산 기록과 명예의 전당 점수가 확정됩니다. 되돌릴 수 없습니다.",
+                    "글러브를 벗는다. 되돌릴 수 없다.",
                     offseasonEnabled,
                     listOf(pro(ProCommand.ChooseOffseason(context.seed(state, "offseason:retire"), OffseasonDecision.RETIRE))),
                     destructive = true,
@@ -1045,16 +1104,29 @@ public object Phase8ScreenProjection {
                 }
             }
             Phase8ScreenId.P021_PRO_RETIREMENT -> {
-                addSection(Phase8Section("retirement", "은퇴", listOf(
-                    Phase8Row("나이", pro?.age?.toString() ?: "—", "커리어의 마지막 계절을 맞이합니다."),
-                    Phase8Row("통산", "${pro?.careerGames() ?: 0}경기 · ${pro?.careerStrikeouts() ?: 0}탈삼진", "시즌 기록과 수상 이력"),
-                    Phase8Row("다음", "프로 유산", "마지막 선택 뒤 기록을 남깁니다."),
-                )))
-                addAction("retire", "은퇴하고 기록 남기기", "프로 커리어를 마치고 유산 후보를 엽니다.", pro?.phase == ProCareerPhase.RETIREMENT_DECISION, listOf(pro(ProCommand.ChooseOffseason(context.seed(state, "retire"), OffseasonDecision.RETIRE))), destructive = true)
+                val preview = pro?.journeyState?.let { com.solkim.baseball.core.pro.ProJourneyKernel.retirementPreview(it, pro.team.id) }
+                val hof = pro?.let { ProKernel().hallOfFameProjection(it) } ?: 0
+                val honorRows = preview?.honors.orEmpty().map { honor -> Phase8Row("훈장", retirementHonorTitle(honor.kind, honor.teamId), retirementHonorStory(honor.kind)) }
+                addSection(Phase8Section("retirement", "은퇴", listOfNotNull(
+                    Phase8Row("${pro?.age ?: "—"}살, 마지막 계절", "${pro?.careerStats?.size ?: 0}시즌 · ${pro?.careerGames() ?: 0}경기 · ${pro?.careerStrikeouts() ?: 0}탈삼진", "마지막 공은 ${pro?.team?.name ?: "이 팀"}의 유니폼으로 던진다."),
+                    Phase8Row("명예의 전당", if (hof >= 70) "헌액 확정" else "헌액까지 ${70 - hof}점", "$hof/70"),
+                    pro?.let { Phase8Row("다음 생으로", "야구혼 +${ProRetirementLedger.soulBonus(it)}", "이 커리어가 다음 생에 남기는 힘") },
+                    preview?.careerEarnings?.takeIf { it > 0 }?.let { Phase8Row("통산 수입", "%,d원".format(java.util.Locale.KOREA, it), "") },
+                ) + honorRows))
+                addAction("retire", "은퇴하고 기록 남기기", "글러브를 벗는다. 되돌릴 수 없다.", pro?.phase == ProCareerPhase.RETIREMENT_DECISION, listOf(pro(ProCommand.ChooseOffseason(context.seed(state, "retire"), OffseasonDecision.RETIRE))), destructive = true)
             }
             Phase8ScreenId.P022_PRO_LEGACY -> {
-                addSection(Phase8Section("pro-legacy", "프로 유산", (pro?.legacyCandidates.orEmpty().map { candidate -> Phase8Row(candidate.title, candidate.evidenceSummary, candidate.farewell) } + listOf(Phase8Row("다음 생에 남길 것", "프로에서 남긴 유산", "이번 선수의 기억을 다음 생으로 이어 갑니다.")))))
-                pro?.legacyCandidates.orEmpty().forEach { candidate -> addAction("selectProLegacy:${candidate.id}", candidate.title, "이 유산을 선택합니다.", pro?.phase == ProCareerPhase.LEGACY_SELECTION, listOf(pro(ProCommand.SelectLegacy(candidate.id)))) }
+                val ceremony = pro?.news.orEmpty().take(3)
+                val honorRows = pro?.journeyState?.retirementHonors.orEmpty().map { honor -> Phase8Row("훈장", retirementHonorTitle(honor.kind, honor.teamId), retirementHonorStory(honor.kind)) }
+                if (ceremony.isNotEmpty() || honorRows.isNotEmpty()) addSection(Phase8Section("retirement-ceremony", "은퇴식", ceremony.map { Phase8Row("", it, "") } + honorRows))
+                addSection(Phase8Section("pro-legacy", "다음 생에 가져갈 하나", pro?.legacyCandidates.orEmpty().map { candidate ->
+                    val family = HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == candidate.id }?.family.orEmpty()
+                    Phase8Row(candidate.title, legacyEvidence(candidate.evidenceSummary, pro), proLegacyFarewell(family))
+                }))
+                pro?.legacyCandidates.orEmpty().forEach { candidate ->
+                    val family = HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == candidate.id }?.family.orEmpty()
+                    addAction("selectProLegacy:${candidate.id}", candidate.title, proLegacyChoice(family), pro?.phase == ProCareerPhase.LEGACY_SELECTION, listOf(pro(ProCommand.SelectLegacy(candidate.id))))
+                }
             }
             Phase8ScreenId.P024_WEEKLY -> {
                 val weekly = highSchool?.weekly
@@ -1062,39 +1134,42 @@ public object Phase8ScreenProjection {
                     Phase8Row(
                         weeklyTaskTitle(task.kind),
                         "${task.progress}/${task.target}${if (task.completed) " · 완료" else ""}",
-                        if (task.completed) "이번 주 과제를 채웠습니다." else "훈련과 경기가 이 숫자를 올립니다.",
+                        if (task.completed) "채웠다" else "훈련과 경기로 채운다",
                     )
                 }
                 val stampRows = weekly?.stamps.orEmpty().takeLast(6).map { stamp ->
                     Phase8Row(
-                        stamp.weekKey,
+                        readableWeek(stamp.weekKey),
                         if (stamp.perfect) "완벽 도장" else "도장 ${stamp.completedTaskCount}",
-                        "주간 노트를 이어 온 기록입니다.",
+                        "",
                     )
                 }
                 addSection(Phase8Section("weekly", "주간 야구 노트", listOf(
-                    Phase8Row("이번 주", weekly?.weekKey ?: "기록 없음", "훈련과 경기의 작은 목표"),
-                    Phase8Row("과제", "${weekly?.tasks?.count { it.completed } ?: 0}/${weekly?.tasks?.size ?: 0}", "완료한 과제"),
-                    Phase8Row("도장", weekly?.stamps?.size?.toString() ?: "0", "꾸준히 쌓이는 기록"),
-                    Phase8Row("보상", if (weekly?.rewardClaimed == true) "받음" else "받기 전", "한 번 받은 보상은 다시 지급되지 않습니다."),
+                    Phase8Row("이번 주", weekly?.weekKey?.let(::readableWeek) ?: "기록 없음", ""),
+                    Phase8Row("과제", "${weekly?.tasks?.count { it.completed } ?: 0}/${weekly?.tasks?.size ?: 0}", ""),
+                    Phase8Row("도장", weekly?.stamps?.size?.toString() ?: "0", "과제를 채운 주마다 하나. 셋 다 채우면 완벽 도장."),
+                    Phase8Row("보상", if (weekly?.rewardClaimed == true) "받았다" else "아직", if (weekly?.rewardClaimed == true) "" else "과제를 하나라도 채우면 받을 수 있다."),
                 ) + taskRows + stampRows))
-                addAction("claimWeeklyReward", "보상 받기", "이번 주 보상을 받습니다.", weekly?.rewardClaimed == false && weekly.tasks.any { it.completed }, listOf(hs(HighSchoolPhase4Command.ClaimWeeklyReward)))
+                addAction("claimWeeklyReward", "보상 받기", "이번 주 몫을 챙긴다.", weekly?.rewardClaimed == false && weekly.tasks.any { it.completed }, listOf(hs(HighSchoolPhase4Command.ClaimWeeklyReward)))
             }
             Phase8ScreenId.P025_RECORDS_LEAGUE -> {
-                if (state.canEnterPlayerSetup()) addAction("enterSetup", "새로운 야구 인생 시작", "남긴 기록과 야구혼을 간직하고 다음 선수로 시작합니다.", true, listOf(GameCommand.EnterSetup))
+                if (state.canEnterPlayerSetup()) addAction("enterSetup", "새로운 야구 인생 시작", "남긴 기록과 야구혼을 간직하고 다음 생에서 시작합니다.", true, listOf(GameCommand.EnterSetup))
                 state.meta.retiredProCareers.filter { state.meta.seedChallenge == null && it.careerId != pro?.careerId }.asReversed().forEach { retired ->
                     addSection(Phase8Section("retired:${retired.careerId}", retired.identityName, listOf(
                         Phase8Row("프로 통산", "${retired.careerStats.size}시즌 · ${retired.careerGames()}경기 · ${retired.careerStrikeouts()}탈삼진"),
                         Phase8Row("남긴 유산", retired.legacyCandidates.firstOrNull { it.id == retired.selectedLegacyId }?.title ?: "기억"),
-                        Phase8Row("명예의 전당", "${retired.hallOfFameScore ?: 0}"),
+                        Phase8Row("명예의 전당", (retired.hallOfFameScore ?: 0).let { if (it >= 70) "헌액 ($it/70)" else "헌액까지 ${70 - it}점 ($it/70)" }),
                     )))
                 }
                 val standings = pro?.standings.orEmpty().take(5)
-                addSection(Phase8Section("records", "기록과 순위", listOf(
-                    Phase8Row("고교 기록", "${run?.performance?.pitches ?: 0}구 · ${run?.performance?.strikeouts ?: 0}탈삼진", "이번 생의 투구 기록"),
-                    Phase8Row("프로 기록", "${pro?.careerGames() ?: 0}경기 · ${pro?.careerStrikeouts() ?: 0}탈삼진", "프로 통산 ${pro?.careerStats?.size ?: 0}시즌"),
-                    Phase8Row("보관 기록", "${highSchool?.archive?.size ?: 0}회", "선택한 생의 기록만 카드로 남깁니다."),
-                ) + standings.map { row ->
+                val nothingYet = (run?.performance?.pitches ?: 0) == 0 && (pro?.careerGames() ?: 0) == 0 && (highSchool?.archive?.size ?: 0) == 0
+                addSection(Phase8Section("records", "기록과 순위", (if (nothingYet) listOf(
+                    Phase8Row("아직 던진 공이 없다", "첫 등판을 마치면 여기 쌓인다.", ""),
+                ) else listOf(
+                    Phase8Row("고교 기록", "${run?.performance?.pitches ?: 0}구 · ${run?.performance?.strikeouts ?: 0}탈삼진" + perfectSuffix(run), "이번 생의 투구 기록"),
+                    Phase8Row("프로 기록", "${pro?.careerGames() ?: 0}경기 · ${pro?.careerStrikeouts() ?: 0}탈삼진" + proPerfectSuffix(proCareerPerfect(pro)), "프로 통산 ${pro?.careerStats?.size ?: 0}시즌"),
+                    Phase8Row("지난 생", "${highSchool?.archive?.size ?: 0}번", "한 생을 마치면 카드가 남는다."),
+                )) + standings.map { row ->
                     Phase8Row("${row.rank}위 ${row.teamName}", "${row.wins}승 ${row.losses}패", if (row.isPlayerTeam) "내 구단" else "리그 순위")
                 }))
             }
@@ -1117,44 +1192,42 @@ public object Phase8ScreenProjection {
             }
             Phase8ScreenId.P027_SETTINGS -> {
                 addSection(Phase8Section("settings", "플레이 방식", listOf(
-                    Phase8Row("자동 릴리스", boolLabel(state.settings.autoReleaseEnabled), "자동 릴리스는 접근성 보조입니다. 기본 투구는 길게 눌러 와인드업입니다."),
+                    Phase8Row("자동 릴리스", boolLabel(state.settings.autoReleaseEnabled), "자동 릴리스는 보조 조작. 기본은 길게 눌러 와인드업."),
                     Phase8Row("소리와 음악", "${boolLabel(state.settings.soundEnabled)} · ${boolLabel(state.settings.musicEnabled)}", "경기 분위기"),
                     Phase8Row("진동", boolLabel(state.settings.hapticsEnabled), "선택과 결과의 손맛"),
                     Phase8Row("알림", boolLabel(state.settings.notificationsEnabled), "복귀 안내"),
                     Phase8Row("접근성", "고대비 ${boolLabel(state.settings.highContrastEnabled)} · 모션 ${if (state.settings.reducedMotionEnabled) "줄임" else "기본"}", "읽기 편한 화면"),
-                    Phase8Row("진행 삭제", "첫 화면으로 돌아갑니다", "저장된 커리어와 투구를 지우고 새로 시작합니다. 되돌릴 수 없습니다."),
+                    Phase8Row("진행 삭제", "첫 화면으로 돌아갑니다", "모든 생의 기록이 사라진다. 되돌릴 수 없다."),
                 )))
-                addAction("toggleAutoRelease", if (state.settings.autoReleaseEnabled) "자동 릴리스 끄기" else "자동 릴리스 켜기", "자동 릴리스 설정을 저장합니다.", true, listOf(settingsCommand(state) { it.copy(autoReleaseEnabled = !it.autoReleaseEnabled) }))
-                addAction("toggleSound", if (state.settings.soundEnabled) "소리 끄기" else "소리 켜기", "소리 설정을 저장합니다.", true, listOf(settingsCommand(state) { it.copy(soundEnabled = !it.soundEnabled) }))
-                addAction("toggleMusic", if (state.settings.musicEnabled) "음악 끄기" else "음악 켜기", "음악 설정을 저장합니다.", true, listOf(settingsCommand(state) { it.copy(musicEnabled = !it.musicEnabled) }))
-                addAction("toggleHaptics", if (state.settings.hapticsEnabled) "진동 끄기" else "진동 켜기", "진동 설정을 저장합니다.", true, listOf(settingsCommand(state) { it.copy(hapticsEnabled = !it.hapticsEnabled) }))
-                addAction("toggleContrast", if (state.settings.highContrastEnabled) "고대비 끄기" else "고대비 켜기", "고대비 화면 설정을 저장합니다.", true, listOf(settingsCommand(state) { it.copy(highContrastEnabled = !it.highContrastEnabled) }))
-                addAction("toggleMotion", if (state.settings.reducedMotionEnabled) "기본 모션 사용" else "모션 줄이기", "화면 움직임 설정을 저장합니다.", true, listOf(settingsCommand(state) { it.copy(reducedMotionEnabled = !it.reducedMotionEnabled) }))
+                addAction("toggleAutoRelease", if (state.settings.autoReleaseEnabled) "자동 릴리스 끄기" else "자동 릴리스 켜기", "탭 한 번으로 던지는 보조 조작", true, listOf(settingsCommand(state) { it.copy(autoReleaseEnabled = !it.autoReleaseEnabled) }))
+                addAction("toggleSound", if (state.settings.soundEnabled) "소리 끄기" else "소리 켜기", "효과음", true, listOf(settingsCommand(state) { it.copy(soundEnabled = !it.soundEnabled) }))
+                addAction("toggleMusic", if (state.settings.musicEnabled) "음악 끄기" else "음악 켜기", "배경 음악", true, listOf(settingsCommand(state) { it.copy(musicEnabled = !it.musicEnabled) }))
+                addAction("toggleHaptics", if (state.settings.hapticsEnabled) "진동 끄기" else "진동 켜기", "손맛", true, listOf(settingsCommand(state) { it.copy(hapticsEnabled = !it.hapticsEnabled) }))
+                addAction("toggleContrast", if (state.settings.highContrastEnabled) "고대비 끄기" else "고대비 켜기", "더 또렷한 화면", true, listOf(settingsCommand(state) { it.copy(highContrastEnabled = !it.highContrastEnabled) }))
+                addAction("toggleMotion", if (state.settings.reducedMotionEnabled) "기본 모션 사용" else "모션 줄이기", "움직임을 줄인 화면", true, listOf(settingsCommand(state) { it.copy(reducedMotionEnabled = !it.reducedMotionEnabled) }))
                 addSection(Phase8Section("glossary", "용어집", BaseballGlossary.terms.map { term ->
                     Phase8Row(term.name, term.definition)
                 }))
-                if (state.meta.seedChallenge == null) addAction("resetProgress", "진행 삭제", "저장된 진행을 지우고 첫 화면으로 돌아갑니다.", true, listOf(GameCommand.ResetProgress), destructive = true)
+                if (state.meta.seedChallenge == null) addAction("resetProgress", "진행 삭제", "모든 기록을 지우고 처음부터. 되돌릴 수 없다.", true, listOf(GameCommand.ResetProgress), destructive = true)
             }
             Phase8ScreenId.P028_LIFECARD -> {
                 val card = Phase9LifeCardProjection.selected(state)
                 addSection(Phase8Section("life-card", "라이프 카드", if (card == null) listOf(
-                    Phase8Row("보관된 생", "아직 없음", "한 생의 기록을 남기면 나만의 카드를 만들 수 있습니다."),
-                ) else card.lines.map { line -> Phase8Row("보관된 기록", line) } + listOf(
-                    Phase8Row("공유", "카드와 글 함께 준비", "카드 이미지와 글을 함께 공유합니다."),
-                )))
+                    Phase8Row("보관된 생", "아직 없음", "한 생을 마치면 카드가 생긴다."),
+                ) else card.lines.map { line -> Phase8Row(line.substringBefore(": ", "기록"), line.substringAfter(": ", line)) }))
             }
             Phase8ScreenId.P029_RETURN_PLAN -> {
                 addSection(Phase8Section("return-plan", "복귀 계획", listOf(
                     Phase8Row("다음 목적지", highSchool?.returnPlan?.destination?.label ?: "아직 없음", "잠깐 쉬고 돌아올 위치"),
-                    Phase8Row("안내", highSchool?.returnPlan?.reason ?: "복귀 계획을 준비해 보세요.", "다음 날의 안내는 저장된 계획을 따릅니다."),
-                    Phase8Row("알림", "기기 권한 확인 필요", "권한을 허용한 경우에만 복귀 안내를 예약합니다."),
+                    Phase8Row("안내", highSchool?.returnPlan?.body?.takeIf { it.isNotBlank() && it != highSchool.returnPlan?.reason } ?: "돌아올 자리를 정해 두자.", ""),
+                    Phase8Row("알림", "내일 아침 9시에 한 번", "알림을 허용했을 때만 온다."),
                 )))
-                addAction("prepareReturnPlan", "복귀 계획 준비", "복귀 계획을 저장합니다.", highSchool != null, listOf(hs(HighSchoolPhase4Command.PrepareReturnPlan(context.dayKey(state), HighSchoolContentCatalog.WORLD_RULES_VERSION))))
-                addAction("dismissReturnPlan", "복귀 카드 닫기", "저장된 복귀 카드를 닫습니다.", highSchool?.returnPlan?.dismissed == false, listOf(hs(HighSchoolPhase4Command.DismissReturnPlan)))
+                addAction("prepareReturnPlan", "내일 아침에 알려 줘", "돌아올 자리는 여기. 내일 아침 9시에 한 번만 알린다.", highSchool != null, listOf(hs(HighSchoolPhase4Command.PrepareReturnPlan(context.dayKey(state), HighSchoolContentCatalog.WORLD_RULES_VERSION))))
+                addAction("dismissReturnPlan", "복귀 카드 닫기", "이 카드는 그만 본다.", highSchool?.returnPlan?.dismissed == false, listOf(hs(HighSchoolPhase4Command.DismissReturnPlan)))
             }
             Phase8ScreenId.P030_REVIEW -> {
                 addSection(Phase8Section("review", "리뷰", listOf(
-                    Phase8Row("나의 야구 이야기", "플레이는 어떠셨나요?", "남겨 주신 의견은 다음 이야기를 더 즐겁게 만드는 데 도움이 됩니다."),
+                    Phase8Row("리뷰", "재밌었다면 한 줄 남겨 주세요.", "다음 생을 만드는 데 큰 힘이 됩니다."),
                 )))
             }
         }
@@ -1167,35 +1240,35 @@ public object Phase8ScreenProjection {
     private fun pro(command: ProCommand): GameCommand = GameCommand.Pro(command)
 
     private fun subtitle(id: Phase8ScreenId): String = when (id) {
-        Phase8ScreenId.P001_OPENING -> "환생 투수 커리어의 첫 장면입니다. 기본 투구는 투구 슬라이더입니다."
-        Phase8ScreenId.P002_SETUP -> "이번 생의 이름과 지역을 고릅니다."
-        Phase8ScreenId.P003_PROLOGUE -> "편지와 첫 사인을 따라 이야기를 시작합니다."
-        Phase8ScreenId.P004_PITCH_TUTORIAL -> "내가 고른 투구를 공의 궤적으로 확인합니다."
-        Phase8ScreenId.P005_SCHOOL_SELECTION -> "네 학교의 철학과 사람을 비교합니다."
-        Phase8ScreenId.P006_TRAINING -> "다음 한 블록의 성장을 선택합니다."
-        Phase8ScreenId.P007_RELATIONSHIP -> "짧은 대화가 다음 장면을 바꿉니다."
-        Phase8ScreenId.P008_IMPORTANT_GAME -> "상황을 읽고 승부처에 오릅니다."
-        Phase8ScreenId.P009_AWAKENING -> "내 투구의 새로운 감각을 깨웁니다."
-        Phase8ScreenId.P010_CHAPTER -> "한 장을 돌아보고 다음 장을 엽니다."
-        Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> "지금까지의 고교 기록을 한눈에 봅니다."
-        Phase8ScreenId.P012_TOURNAMENT_LEAGUE -> "대회와 라이벌의 흐름을 확인합니다."
-        Phase8ScreenId.P013_DRAFT -> "마지막 평가와 다음 길을 확인합니다."
-        Phase8ScreenId.P014_RUN_RECAP -> "이번 생에 남은 기록과 유산을 고릅니다."
-        Phase8ScreenId.P015_REBIRTH -> "남은 기억을 품고 다음 선수를 시작합니다."
-        Phase8ScreenId.P016_PRO_CONTRACT -> "고교에서 이어 가거나 직접 프로를 시작합니다."
-        Phase8ScreenId.P017_PRO_WEEK -> "여섯 계획 중 하나로 한 주를 보냅니다."
-        Phase8ScreenId.P018_PRO_IMPORTANT_GAME -> "한 점 차 승부에서 다음 공을 직접 고릅니다."
-        Phase8ScreenId.P019_PRO_SEASON -> "성장, 기록, 수상과 대표팀 결정을 돌아봅니다."
-        Phase8ScreenId.P020_OFFSEASON -> "다음 시즌의 길을 선택합니다."
-        Phase8ScreenId.P021_PRO_RETIREMENT -> "긴 커리어의 마지막을 준비합니다."
-        Phase8ScreenId.P022_PRO_LEGACY -> "프로의 시간을 하나의 유산으로 남깁니다."
-        Phase8ScreenId.P024_WEEKLY -> "이번 주의 작은 목표와 보상을 확인합니다."
-        Phase8ScreenId.P025_RECORDS_LEAGUE -> "고교와 프로의 기록을 함께 봅니다."
-        Phase8ScreenId.P026_ACHIEVEMENTS -> "커리어에서 쌓은 업적을 확인합니다."
-        Phase8ScreenId.P027_SETTINGS -> "내가 편한 방식으로 경기를 조절합니다."
-        Phase8ScreenId.P028_LIFECARD -> "선택한 생의 이야기를 카드로 돌아봅니다."
-        Phase8ScreenId.P029_RETURN_PLAN -> "다음에 돌아올 장면을 준비합니다."
-        Phase8ScreenId.P030_REVIEW -> "리뷰 안내가 필요한 순간을 확인합니다."
+        Phase8ScreenId.P001_OPENING -> "한 구씩, 한 생씩."
+        Phase8ScreenId.P002_SETUP -> "이번 생의 이름과 출발점"
+        Phase8ScreenId.P003_PROLOGUE -> "편지 한 통, 그리고 첫 공"
+        Phase8ScreenId.P004_PITCH_TUTORIAL -> "기록에 안 남는 첫 공"
+        Phase8ScreenId.P005_SCHOOL_SELECTION -> "3년을 보낼 학교"
+        Phase8ScreenId.P006_TRAINING -> "오늘 몸에 남길 것"
+        Phase8ScreenId.P007_RELATIONSHIP -> "짧은 대화, 달라지는 관계"
+        Phase8ScreenId.P008_IMPORTANT_GAME -> "승부처, 내가 던진다"
+        Phase8ScreenId.P009_AWAKENING -> "새로 깨어나는 감각"
+        Phase8ScreenId.P010_CHAPTER -> "한 장을 덮고 다음 장으로"
+        Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> "고교 3년의 기록"
+        Phase8ScreenId.P012_TOURNAMENT_LEAGUE -> "대회와 라이벌"
+        Phase8ScreenId.P013_DRAFT -> "이름이 불리는 날"
+        Phase8ScreenId.P014_RUN_RECAP -> "이 생이 남긴 것"
+        Phase8ScreenId.P015_REBIRTH -> "같은 나, 다시 1학년"
+        Phase8ScreenId.P016_PRO_CONTRACT -> "어느 유니폼을 입을까"
+        Phase8ScreenId.P017_PRO_WEEK -> "이번 주를 어떻게 보낼까"
+        Phase8ScreenId.P018_PRO_IMPORTANT_GAME -> "프로의 승부처"
+        Phase8ScreenId.P019_PRO_SEASON -> "시즌이 남긴 것"
+        Phase8ScreenId.P020_OFFSEASON -> "겨울의 선택"
+        Phase8ScreenId.P021_PRO_RETIREMENT -> "글러브를 벗을 때"
+        Phase8ScreenId.P022_PRO_LEGACY -> "프로에서 가져갈 하나"
+        Phase8ScreenId.P024_WEEKLY -> "이번 주의 작은 목표"
+        Phase8ScreenId.P025_RECORDS_LEAGUE -> "고교와 프로, 모든 숫자"
+        Phase8ScreenId.P026_ACHIEVEMENTS -> "쌓아 온 업적"
+        Phase8ScreenId.P027_SETTINGS -> "내게 편한 방식으로"
+        Phase8ScreenId.P028_LIFECARD -> "한 생을 한 장으로"
+        Phase8ScreenId.P029_RETURN_PLAN -> "돌아올 자리"
+        Phase8ScreenId.P030_REVIEW -> "한 줄 리뷰"
     }
 
     private fun achievementTitle(id: String): String = when (id) {
@@ -1218,18 +1291,21 @@ public object Phase8ScreenProjection {
     }
 
     private fun achievementDescription(id: String): String = when (id) {
-        HighSchoolAchievementRules.FIRST_DRAFT -> "드래프트에서 처음으로 지명을 받으세요."
-        HighSchoolAchievementRules.FIRST_STRIKEOUT -> "타자를 삼진으로 잡으세요."
-        HighSchoolAchievementRules.CLEAN_INNING -> "직접 등판한 경기를 무실점으로 마치세요."
-        HighSchoolAchievementRules.PERFECT_DELIVERY -> "조준과 타이밍 정확도를 모두 90% 이상 맞히세요."
-        HighSchoolAchievementRules.THIRD_LIFE -> "세 번째 선수로 새 삶을 시작하세요."
-        HighSchoolAchievementRules.FIFTH_LIFE -> "다섯 번째 선수로 새 삶을 시작하세요."
-        HighSchoolAchievementRules.TENTH_LIFE -> "열 번째 선수로 새 삶을 시작하세요."
-        HighSchoolAchievementRules.KARMA_RUN -> "핸디캡을 적용하고 고교 과정을 마치세요."
-        HighSchoolAchievementRules.DOUBLE_KARMA -> "핸디캡 2개를 적용하고 고교 과정을 마치세요."
-        HighSchoolAchievementRules.AWAKENED_THRICE -> "한 선수로 각성을 세 번 선택하세요."
-        HighSchoolAchievementRules.FOUR_SCHOOLS -> "서로 다른 유형의 학교 네 곳에서 선수 생활을 마치세요."
-        HighSchoolAchievementRules.FIVE_DRAFTS -> "드래프트 지명을 받은 선수 다섯 명의 기록을 남기세요."
+        HighSchoolAchievementRules.FIRST_DRAFT -> "처음으로 이름이 불린다."
+        HighSchoolAchievementRules.FIRST_STRIKEOUT -> "삼진 하나를 잡는다."
+        HighSchoolAchievementRules.CLEAN_INNING -> "직접 던진 등판을 무실점으로 막는다."
+        HighSchoolAchievementRules.PERFECT_DELIVERY -> "조준도 타이밍도 완벽에 가까운 한 구를 던진다."
+        HighSchoolAchievementRules.THIRD_LIFE -> "세 번째 생을 시작한다."
+        HighSchoolAchievementRules.FIFTH_LIFE -> "다섯 번째 생을 시작한다."
+        HighSchoolAchievementRules.TENTH_LIFE -> "열 번째 생을 시작한다."
+        HighSchoolAchievementRules.KARMA_RUN -> "핸디캡을 하나 걸고 고교 3년을 마친다."
+        HighSchoolAchievementRules.DOUBLE_KARMA -> "핸디캡을 둘 걸고 고교 3년을 마친다."
+        HighSchoolAchievementRules.AWAKENED_THRICE -> "한 생에서 각성 셋을 익힌다."
+        HighSchoolAchievementRules.FOUR_SCHOOLS -> "서로 다른 학교 네 곳에서 3년을 마친다."
+        HighSchoolAchievementRules.FIVE_DRAFTS -> "지명받은 생을 다섯 번 남긴다."
+        HighSchoolAchievementRules.MAJOR_DEBUT -> "1군 마운드에 처음 오른다."
+        HighSchoolAchievementRules.HUNDRED_STRIKEOUTS -> "프로에서 탈삼진 100개를 넘긴다."
+        HighSchoolAchievementRules.HALL_OF_FAME -> "명예의 전당에 이름을 올린다."
         else -> ""
     }
 
@@ -1244,6 +1320,13 @@ public object Phase8ScreenProjection {
     }.getOrDefault("남겨진 유산")
 
     private fun boolLabel(value: Boolean): String = if (value) "켜짐" else "꺼짐"
+    /** Relationship numbers stay internal; the player reads a feeling, not a score. */
+    private fun trustWord(value: Int): String = when {
+        value >= 75 -> "깊은 믿음"
+        value >= 55 -> "믿는 편"
+        value >= 35 -> "지켜보는 중"
+        else -> "아직 멀다"
+    }
     public fun reviewTrigger(state: GameAggregateState): String? {
         val run = state.highSchool?.run ?: return null
         val recapReady = run.phase == HighSchoolPhase.LEGACY || run.phase == HighSchoolPhase.COMPLETED
@@ -1370,7 +1453,7 @@ public object Phase8ScreenProjection {
             draftEvaluation = run.draftResult?.evaluationScore ?: 60,
             entitlement = ProEntitlement(),
             activeHighSchoolPreserved = true,
-            highSchoolLegacyContext = ProHighSchoolLegacyContext(requireNotNull(state.highSchool).startingPitcher.toPitcherSnapshot(), pitcher, run.performance, run.selectedAwakenings.map { it.wire }, run.managerTrust, run.catcherTrust, run.rivalTrust),
+            highSchoolLegacyContext = ProHighSchoolLegacyContext(requireNotNull(state.highSchool).startingPitcher.toPitcherSnapshot(), pitcher, run.performance.copy(perfectReleases = 0), run.selectedAwakenings.map { it.wire }, run.managerTrust, run.catcherTrust, run.rivalTrust),
         )
     }
 
@@ -1539,15 +1622,15 @@ public object Phase8ScreenProjection {
             else -> "부상 위험 낮음"
         }
         val effect = when (this) {
-            ProWeekPlan.DEVELOP_STUFF -> "구위·포심 구속·헛스윙 성장"
-            ProWeekPlan.DEVELOP_MOVEMENT -> "변화구 결정구를 키웁니다"
-            ProWeekPlan.REFINE_COMMAND -> "존 가장자리를 찌르는 제구"
-            ProWeekPlan.BUILD_STAMINA -> "후반 체감 피로가 줄어듭니다"
-            ProWeekPlan.RECOVER -> "이번 주 피로 20 회복"
-            ProWeekPlan.EARN_TRUST -> "감독의 믿음을 쌓습니다"
-            ProWeekPlan.DEVELOP_WEAPON -> "주무기의 완성도를 올립니다"
+            ProWeekPlan.DEVELOP_STUFF -> "이번 주는 구속만 본다"
+            ProWeekPlan.DEVELOP_MOVEMENT -> "결정구 하나를 더 벼린다"
+            ProWeekPlan.REFINE_COMMAND -> "존 구석을 손에 붙인다"
+            ProWeekPlan.BUILD_STAMINA -> "후반까지 같은 공을 던질 몸"
+            ProWeekPlan.RECOVER -> "쉰다. 피로 20이 빠진다"
+            ProWeekPlan.EARN_TRUST -> "감독 눈에 들어 둔다"
+            ProWeekPlan.DEVELOP_WEAPON -> "주무기를 갈고닦는다"
         }
-        return "$effect. $risk"
+        return "$effect · $risk"
     }
 
     private val OffseasonDecision.label: String get() = when (this) {
@@ -1587,10 +1670,134 @@ public object Phase8ScreenProjection {
     }
 
     private fun settlementNextRouteLabel(route: ProSettlementNextRoute): String = when (route) {
-        ProSettlementNextRoute.UNDER_CONTRACT -> "잔여 계약으로 다음 시즌을 맞습니다."
-        ProSettlementNextRoute.RENEWAL_MARKET -> "재계약 시장이 열립니다."
-        ProSettlementNextRoute.FREE_AGENCY_ELIGIBLE -> "FA 자격이 열립니다."
-        ProSettlementNextRoute.FORCED_RETIREMENT -> "커리어의 마지막 결산입니다."
+        ProSettlementNextRoute.UNDER_CONTRACT -> "계약이 남았다. 같은 유니폼으로 봄을 맞는다."
+        ProSettlementNextRoute.RENEWAL_MARKET -> "재계약 테이블이 열린다."
+        ProSettlementNextRoute.FREE_AGENCY_ELIGIBLE -> "FA. 어느 유니폼이든 고를 수 있다."
+        ProSettlementNextRoute.FORCED_RETIREMENT -> "현역의 마지막 결산."
+    }
+
+    private fun proScenarioTitle(trigger: com.solkim.baseball.core.pro.ProSeasonTrigger?): String = when (trigger) {
+        com.solkim.baseball.core.pro.ProSeasonTrigger.MAJOR_DEBUT -> "1군 데뷔"
+        com.solkim.baseball.core.pro.ProSeasonTrigger.CALL_UP_AUDITION -> "콜업 오디션"
+        com.solkim.baseball.core.pro.ProSeasonTrigger.OPENING_STATEMENT -> "개막 선언"
+        com.solkim.baseball.core.pro.ProSeasonTrigger.STANDINGS_RACE -> "순위 경쟁"
+        com.solkim.baseball.core.pro.ProSeasonTrigger.NATIONAL_FINAL -> "대표팀 결승"
+        com.solkim.baseball.core.pro.ProSeasonTrigger.RECORD_CHASE -> "기록이 걸린 등판"
+        com.solkim.baseball.core.pro.ProSeasonTrigger.ROLE_SHOWDOWN -> "보직이 걸린 등판"
+        com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_WILD_CARD -> "와일드카드"
+        com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_SEMIFINAL -> "준플레이오프"
+        com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_PLAYOFF -> "플레이오프"
+        com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_FINAL -> "우승 결정전"
+        null -> "프로 승부처"
+    }
+
+    private fun seasonArcTitle(arc: com.solkim.baseball.core.pro.ProSeasonArcTitle): String = when (arc) {
+        com.solkim.baseball.core.pro.ProSeasonArcTitle.FIRST_HALF_ACE -> "전반기의 에이스"
+        com.solkim.baseball.core.pro.ProSeasonArcTitle.DOMINANT -> "압도한 한 해"
+        com.solkim.baseball.core.pro.ProSeasonArcTitle.LONG_TUNNEL -> "긴 터널"
+        com.solkim.baseball.core.pro.ProSeasonArcTitle.LATE_RECOVERY -> "뒤늦은 반등"
+        com.solkim.baseball.core.pro.ProSeasonArcTitle.AUTUMN_DOOR_CLOSED -> "닫힌 가을 문"
+        com.solkim.baseball.core.pro.ProSeasonArcTitle.AUTUMN_CHAMPION -> "가을의 챔피언"
+        com.solkim.baseball.core.pro.ProSeasonArcTitle.AUTUMN_RUNNER_UP -> "한 계단 아래"
+        com.solkim.baseball.core.pro.ProSeasonArcTitle.AUTUMN_ELIMINATED -> "짧았던 가을"
+        com.solkim.baseball.core.pro.ProSeasonArcTitle.AUTUMN_UNAVAILABLE -> "가을 없는 해"
+        com.solkim.baseball.core.pro.ProSeasonArcTitle.QUIET -> "조용한 한 해"
+    }
+
+    private fun teamLegacyTierLabel(score: Int): String = when {
+        score >= 90 -> "영구결번 후보"
+        score >= 75 -> "구단의 상징"
+        score >= 60 -> "팀의 에이스"
+        score >= 40 -> "핵심 선수"
+        score >= 20 -> "든든한 기둥"
+        else -> "새 얼굴"
+    }
+
+    private fun ambitionTitle(ambition: com.solkim.baseball.core.pro.ProCareerAmbition): String = when (ambition) {
+        com.solkim.baseball.core.pro.ProCareerAmbition.FRANCHISE_ICON -> "한 팀의 전설"
+        com.solkim.baseball.core.pro.ProCareerAmbition.RECORD_BOOK -> "기록으로 남는 투수"
+        com.solkim.baseball.core.pro.ProCareerAmbition.ENDURING_PRO -> "오래 뛰는 선수"
+    }
+
+    private fun goalMetricStory(metric: com.solkim.baseball.core.pro.ProCareerGoalMetric): String {
+        val left = (metric.target - metric.current).coerceAtLeast(0)
+        return when (metric.kind) {
+            com.solkim.baseball.core.pro.ProCareerGoalMetricKind.ANCHOR_TEAM_SEASONS -> "이 팀에서 ${left}시즌만 더."
+            com.solkim.baseball.core.pro.ProCareerGoalMetricKind.ANCHOR_TEAM_LEGACY -> "이 팀에서의 자리를 더 굳혀야 한다."
+            com.solkim.baseball.core.pro.ProCareerGoalMetricKind.HALL_OF_FAME_PROJECTION -> "명예의 전당까지 ${left}점."
+            com.solkim.baseball.core.pro.ProCareerGoalMetricKind.AWARDS -> "수상 ${left}번이 더 필요하다."
+            com.solkim.baseball.core.pro.ProCareerGoalMetricKind.PRO_SEASONS -> "${left}시즌만 더 버티면 된다."
+            com.solkim.baseball.core.pro.ProCareerGoalMetricKind.MAJOR_SERVICE_YEARS -> "1군 ${left}년이 남았다."
+        }
+    }
+
+    private fun fanReasonStory(contentId: String): String = when (contentId) {
+        "pro.fan.important-game.scoreless" -> "승부처를 무실점으로 막았다."
+        "pro.fan.important-game.runs-allowed" -> "승부처에서 점수를 줬다."
+        "pro.fan.same-team-season" -> "한 해 더 같은 유니폼을 입었다."
+        "pro.autumn.champion" -> "가을의 마지막에 서 있었다."
+        com.solkim.baseball.core.pro.ProCareerRecognitionRules.STRIKEOUTS -> "탈삼진상. 리그가 내 공을 헛쳤다."
+        com.solkim.baseball.core.pro.ProCareerRecognitionRules.RUN_PREVENTION -> "실점 억제상. 점수를 안 줬다."
+        com.solkim.baseball.core.pro.ProCareerRecognitionRules.COMMAND -> "정밀 제구상. 볼넷이 없었다."
+        com.solkim.baseball.core.pro.ProCareerRecognitionRules.HITS -> "피안타 억제상. 맞지 않았다."
+        com.solkim.baseball.core.pro.ProCareerRecognitionRules.INNINGS -> "이닝 책임상. 마운드를 오래 지켰다."
+        else -> ""
+    }
+
+    private fun retirementHonorTitle(kind: com.solkim.baseball.core.pro.ProRetirementHonorKind, teamId: String?): String {
+        val team = teamId?.let { id -> ProCatalog.teams.firstOrNull { it.id == id }?.name }
+        return when (kind) {
+            com.solkim.baseball.core.pro.ProRetirementHonorKind.HALL_OF_FAME -> "명예의 전당"
+            com.solkim.baseball.core.pro.ProRetirementHonorKind.RETIRED_NUMBER -> "${team ?: "구단"} 영구결번"
+            com.solkim.baseball.core.pro.ProRetirementHonorKind.CLUB_HALL -> "${team ?: "구단"} 명예 선수"
+            com.solkim.baseball.core.pro.ProRetirementHonorKind.AMBITION_COMPLETED -> "약속을 지킨 커리어"
+            com.solkim.baseball.core.pro.ProRetirementHonorKind.CAREER_EARNINGS -> "통산 수입"
+            com.solkim.baseball.core.pro.ProRetirementHonorKind.NATIONAL_GOLD -> "대표팀 금메달"
+        }
+    }
+
+    private fun retirementHonorStory(kind: com.solkim.baseball.core.pro.ProRetirementHonorKind): String = when (kind) {
+        com.solkim.baseball.core.pro.ProRetirementHonorKind.HALL_OF_FAME -> "이 리그가 내 이름을 기억한다."
+        com.solkim.baseball.core.pro.ProRetirementHonorKind.RETIRED_NUMBER -> "내 등번호를 이제 아무도 못 단다."
+        com.solkim.baseball.core.pro.ProRetirementHonorKind.CLUB_HALL -> "구단 역사에 남았다."
+        com.solkim.baseball.core.pro.ProRetirementHonorKind.AMBITION_COMPLETED -> "계약할 때 걸었던 목표를 이뤘다."
+        com.solkim.baseball.core.pro.ProRetirementHonorKind.CAREER_EARNINGS -> "던져서 번 돈."
+        com.solkim.baseball.core.pro.ProRetirementHonorKind.NATIONAL_GOLD -> "국기를 달고 이겼다."
+    }
+
+    private fun proLegacyFarewell(family: String): String = when (family) {
+        "power" -> "마지막까지 공은 무거웠다. 그 무게를 다음 생의 어깨에 얹는다."
+        "command" -> "구석에 꽂던 감각은 손끝에 남는다. 다음 생의 첫 공부터."
+        "breaking" -> "타자를 얼리던 그 공. 다음 생의 손에도 같은 그립이 잡힌다."
+        "endurance" -> "긴 이닝을 버틴 몸. 다음 생은 지치기 전에 더 멀리 간다."
+        "gamecraft" -> "타자를 읽던 눈은 늙지 않는다. 다음 생이 먼저 본다."
+        else -> "포수와 맞춘 호흡. 다음 생의 배터리는 처음부터 한 호흡이다."
+    }
+
+    private fun proLegacyChoice(family: String): String = when (family) {
+        "power" -> "힘을 가져간다."
+        "command" -> "제구를 가져간다."
+        "breaking" -> "결정구를 가져간다."
+        "endurance" -> "체력을 가져간다."
+        "gamecraft" -> "수싸움을 가져간다."
+        else -> "호흡을 가져간다."
+    }
+
+    /** The kernel summary carries raw 20–80 ratings; show them on the same 1–100 scale as every other screen. */
+    private fun legacyEvidence(summary: String, pro: com.solkim.baseball.core.pro.ProState?): String {
+        if (pro == null) return summary
+        val ratings = "구위 ${AbilityDisplayScale.rating(pro.pitcher.stuff)} · 제구 ${AbilityDisplayScale.rating(pro.pitcher.command)} · 변화구 ${AbilityDisplayScale.rating(pro.pitcher.movement)} · 체력 ${AbilityDisplayScale.rating(pro.pitcher.stamina)}"
+        return "프로 통산 ${pro.careerGames()}경기 · ${pro.careerStrikeouts()}탈삼진 · $ratings · ${if (pro.awards.isEmpty()) "수상 없음" else "수상 ${pro.awards.size}회"}"
+    }
+
+    /** "2026-W37" → "9월 셋째 주". */
+    private fun readableWeek(weekKey: String): String {
+        val match = Regex("(\\d{4})-W(\\d{2})").matchEntire(weekKey) ?: return weekKey
+        val monday = runCatching {
+            LocalDate.of(match.groupValues[1].toInt(), 1, 4).with(WeekFields.ISO.weekOfWeekBasedYear(), match.groupValues[2].toLong()).with(java.time.DayOfWeek.MONDAY)
+        }.getOrNull() ?: return weekKey
+        val ordinal = listOf("첫째", "둘째", "셋째", "넷째", "다섯째")[((monday.dayOfMonth - 1) / 7).coerceIn(0, 4)]
+        return "${monday.monthValue}월 $ordinal 주"
     }
 
     private fun merchandiseTierLabel(tier: ProMerchandiseTier): String = when (tier) {
@@ -1602,10 +1809,15 @@ public object Phase8ScreenProjection {
 
     private fun weeklyTaskTitle(kind: String): String = when (kind) {
         "daily_inning_completed", "daily-inning" -> "이닝을 마치기"
-        "training_block", "train" -> "훈련 블록"
+        "training_block", "train" -> "훈련 한 번"
         "relationship" -> "관계를 고르기"
-        "important_game", "important-game" -> "승부처에 오르기"
-        else -> kind.ifBlank { "이번 주 과제" }
+        "important_game", "important-game", "important_games_completed" -> "승부처에 오르기"
+        "played_on_two_days" -> "이틀 이상 던지기"
+        "chapters_advanced" -> "다음 장으로 넘어가기"
+        "different_school_selected" -> "다른 학교에서 시작하기"
+        "next_run_started" -> "다음 생 시작하기"
+        "pro_weeks_advanced" -> "프로 주간 보내기"
+        else -> kind.replace('_', ' ').replace('-', ' ').ifBlank { "이번 주 과제" }
     }
 
     private fun fanReasonLabel(kind: ProFanReasonKind): String = when (kind) {
@@ -1773,3 +1985,59 @@ public class Phase8Controller(
         return Phase8Execution(launch)
     }
 }
+
+/** 통산 퍼펙트 릴리스. 0이면 줄을 늘리지 않는다. */
+internal fun perfectSuffix(run: HighSchoolState?): String =
+    run?.performance?.perfectReleases?.takeIf { it > 0 }?.let { " · 퍼펙트 $it" }.orEmpty()
+
+/** 장 결산의 정규 경기 줄: 아직이면 초대, 던졌으면 결과 한 줄. */
+internal fun chapterGameRows(state: GameAggregateState): List<Phase8Row> {
+    val highSchool = state.highSchool ?: return emptyList()
+    val run = highSchool.run
+    if (run.phase != HighSchoolPhase.CHAPTER_REVIEW) return emptyList()
+    if (run.chapterGameClaimed) {
+        val line = highSchool.seasonLog.lastOrNull { it.regular && it.chapter == run.chapter.number }
+            ?: return listOf(Phase8Row("정규 경기", "던졌다", "이번 장의 정규 경기는 기록에 남았다."))
+        return listOf(Phase8Row(
+            "정규 경기",
+            "${line.outs / 3}.${line.outs % 3}이닝 ${line.runsAllowed}실점 · K${line.strikeouts}",
+            if (line.perfectReleases > 0) "퍼펙트 ${line.perfectReleases} · 기록에 남았다" else "기록에 남았다",
+        ))
+    }
+    if (run.chapter.number >= HighSchoolContentCatalog.chapters.size) return emptyList()
+    return listOf(Phase8Row("정규 경기", "아직 안 던졌다", "이 장의 정규 경기 하나를 직접 던질 수 있다. 장마다 한 번."))
+}
+
+/** 아웃 수를 이닝 표기로. 18아웃이면 6.0이닝. */
+internal fun inningsLabel(outs: Int): String = "${outs / 3}.${outs % 3}이닝"
+
+internal fun proPerfectSuffix(count: Int): String = if (count > 0) " · 퍼펙트 $count" else ""
+
+/** 시즌 결산 뒤 다음 시즌이 열리기 전에는 올해 성적이 통산에도 들어가 있다. 다른 통산 수치와 같은 규칙을 쓴다. */
+internal fun proCareerPerfect(pro: ProState?): Int {
+    if (pro == null) return 0
+    val seasons = if (pro.careerStats.lastOrNull()?.season == pro.currentStats.season) pro.careerStats else pro.careerStats + pro.currentStats
+    return seasons.sumOf { it.perfectReleases }
+}
+
+/** 한 경기 한 줄. 승부처인지 정규 경기인지, 그리고 그날의 결과. */
+internal fun highSchoolGameRow(line: HighSchoolSeasonLine): Phase8Row = Phase8Row(
+    if (line.regular) "${line.chapter}장 정규" else "${line.chapter}장 승부처",
+    "${inningsLabel(line.outs)} ${line.runsAllowed}실점 · ${line.strikeouts}탈삼진",
+    listOfNotNull(
+        "${line.walks}볼넷 ${line.hits}피안타",
+        line.perfectReleases.takeIf { it > 0 }?.let { "퍼펙트 $it" },
+        "${line.teamRuns}-${line.opponentRuns}",
+    ).joinToString(" · "),
+)
+
+internal fun proGameRow(line: ProGameLine): Phase8Row = Phase8Row(
+    "${line.week}주차 ${if (line.started) "선발" else "구원"}",
+    "${inningsLabel(line.outs)} ${line.runsAllowed}실점 · ${line.strikeouts}탈삼진",
+    listOfNotNull(
+        "${line.walks}볼넷 ${line.hits}피안타",
+        line.perfectReleases.takeIf { it > 0 }?.let { "퍼펙트 $it" },
+        "${line.teamRuns}-${line.opponentRuns}",
+    ).joinToString(" · "),
+)
+

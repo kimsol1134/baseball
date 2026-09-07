@@ -9,6 +9,6 @@
     <string name="choice_heading_relationship">이번 대답</string>
     <string name="choice_heading_week">이번 주 선택</string>
     <string name="pitch_hold_to_release">누르고 있다가 놓기</string>
-    <string name="opening_what_this_is">환생 투수 커리어입니다. 기본 투구는 투구 슬라이더입니다.</string>
-    <string name="settings_auto_release">자동 릴리스는 접근성 보조입니다. 기본 투구는 길게 눌러 와인드업입니다.</string>
+    <string name="opening_what_this_is">한 구씩 직접 던지는 환생 야구. 기본 조작은 투구 슬라이더.</string>
+    <string name="settings_auto_release">자동 릴리스는 보조 조작. 기본은 길게 눌러 와인드업.</string>
 </resources>

@@ -81,6 +81,13 @@ public object PitchHudProjection {
         return highSchool.run.toPitcherSnapshot()
     }
 
+    /** Match the active simulation context; archived pro fatigue must never leak into a new life. */
+    public fun fatigue(state: GameAggregateState): Int = when (state.pitch?.careerKind) {
+        PitchCareerKind.TUTORIAL -> 0
+        PitchCareerKind.PRO -> state.pro?.activePitch?.context?.fatigue ?: state.pro?.fatigue ?: 0
+        else -> state.highSchool?.activePitch?.context?.fatigue ?: state.highSchool?.run?.fatigue ?: 0
+    }
+
     public fun batter(state: GameAggregateState): BatterSnapshot {
         val pitch = state.pitch
         if (pitch?.careerKind == PitchCareerKind.PRO) {
@@ -156,11 +163,11 @@ public object PitchHudProjection {
             adaptationWarning = adaptationWarning(adaptation),
             adaptationLevel = adaptation.level,
             catcherConfidencePercent = catcherConfidence,
-            catcherConfidenceLabel = "사인 확신 ${catcherConfidence}%",
+            catcherConfidenceLabel = "사인 확신 ${when { catcherConfidence >= 75 -> "높음"; catcherConfidence >= 50 -> "보통"; else -> "낮음" }}",
             catcherTrust = catcherTrust,
             catcherBondLabel = catcherBond,
-            catcherTrustLabel = "포수 호흡 $catcherTrust · $catcherBond",
-            autoReleaseLabel = "자동 릴리스 — 탭 한 번으로 중립 투구",
+            catcherTrustLabel = "포수 호흡 · $catcherBond",
+            autoReleaseLabel = "자동 릴리스 · 탭 한 번으로 던지기",
             abortLabel = "중단",
             sessionPitches = sessionPitches(state),
             canFastForward = canFastForward(state),
@@ -178,17 +185,24 @@ public object PitchHudProjection {
             com.solkim.baseball.core.pro.ProSeasonTrigger.OPENING_STATEMENT -> "개막 선언"
             com.solkim.baseball.core.pro.ProSeasonTrigger.STANDINGS_RACE -> "순위 경쟁"
             com.solkim.baseball.core.pro.ProSeasonTrigger.NATIONAL_FINAL -> "대표팀 결승"
-            else -> "프로 중요 경기"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.RECORD_CHASE -> "기록이 걸린 등판"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.ROLE_SHOWDOWN -> "보직이 걸린 등판"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_WILD_CARD -> "와일드카드"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_SEMIFINAL -> "준플레이오프"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_PLAYOFF -> "플레이오프"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_FINAL -> "우승 결정전"
+            null -> "프로 중요 경기"
         }
         else -> "마운드 승부처"
     }
 
     public fun scenarioDetail(state: GameAggregateState): String = when (state.pitch?.careerKind) {
-        PitchCareerKind.TUTORIAL -> "기록에 남지 않는 연습 한 타석입니다. 마음껏 던져 보세요."
-        PitchCareerKind.PRO -> state.pro?.currentRival?.profile ?: "오늘 이 타석이 시즌의 무게를 가릅니다."
+        PitchCareerKind.TUTORIAL -> if ((state.highSchool?.run?.lifeNumber ?: 1) > 1) "기록에 안 남는 연습 한 구. 새 몸을 시험해 보자."
+            else "기록에 안 남는 연습 한 타석. 마음껏 던져 보자."
+        PitchCareerKind.PRO -> state.pro?.currentRival?.profile ?: "오늘 이 타석이 시즌의 무게를 가른다."
         else -> {
             val rival = state.highSchool?.run?.rival?.name
-            if (rival.isNullOrBlank()) "오늘 이 타석이 승부처입니다." else "${rival}과의 승부. 이 타석이 오늘을 가릅니다."
+            if (rival.isNullOrBlank()) "오늘 이 타석이 승부처다." else "${rival}과의 승부. 이 타석이 오늘을 가른다."
         }
     }
 
@@ -206,9 +220,9 @@ public object PitchHudProjection {
         if (pitches >= 3) return null
         val strikes = session?.context?.strikes ?: 0
         return when {
-            pitches == 0 -> "① 길게 눌러 와인드업 — 미터가 가운데 초록에 올 때 떼자. 구종과 코스는 포수가 골라 뒀다."
-            strikes >= 2 -> "③ 결정구 — 상대가 약한 구종으로 유인하자. 존을 살짝 벗어나도 방망이가 나온다."
-            else -> "② 같은 곳에 두 번은 없다 — 구종이나 코스를 바꿔 타자의 눈을 흔들자."
+            pitches == 0 -> "길게 눌러 와인드업. 미터가 가운데 초록에 올 때 떼자. 구종과 코스는 포수가 골라 뒀다."
+            strikes >= 2 -> "결정구다. 상대가 약한 구종으로 유인하자. 존을 살짝 벗어나도 방망이가 나온다."
+            else -> "같은 곳에 두 번은 없다. 구종이나 코스를 바꿔 타자의 눈을 흔들자."
         }
     }
 
@@ -258,7 +272,8 @@ public object PitchHudProjection {
             balls = context?.balls ?: 0
             strikes = context?.strikes ?: 0
         }
-        return pitches > 0 && leverage < 780 && balls < 3 && strikes < 2
+        // Skipping is for low-pressure plate appearances only; a full count or two strikes is one pitch away anyway.
+        return leverage < 780 && !(balls == 3 || strikes == 2) || (pitches == 0 && leverage < 780)
     }
 
     public fun scoutingTitle(preparation: PitchPreparation, batSide: com.solkim.baseball.core.pitch.BatSide): String {

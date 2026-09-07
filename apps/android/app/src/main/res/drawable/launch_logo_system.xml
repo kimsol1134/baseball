@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ uses a 288dp icon canvas with a 192dp circular safe area.
+     Keep the complete iOS artwork inside that area instead of using the app icon. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/launch_logo"
+    android:insetLeft="16.666667%"
+    android:insetTop="16.666667%"
+    android:insetRight="16.666667%"
+    android:insetBottom="16.666667%" />

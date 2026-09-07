@@ -638,11 +638,13 @@ public class KotlinGameStore private constructor(
 
     public suspend fun exportCareerBackup(): ByteArray = mutex.withLock {
         check(!closed.get()) { "game.store.closed" }
+        require(CareerBackup.isAvailable(current)) { "backup.challenge_active" }
         requireNotNull(repository as? CSharpLegacyGameStoreRepository).exportCareer()
     }
 
     public suspend fun importCareerBackup(bytes: ByteArray, expectedRevision: ULong): Unit = mutex.withLock {
         check(!closed.get()) { "game.store.closed" }
+        require(CareerBackup.isAvailable(current)) { "backup.challenge_active" }
         require(current.revision == expectedRevision) { "backup.stale_revision" }
         _busy.value = true
         try {

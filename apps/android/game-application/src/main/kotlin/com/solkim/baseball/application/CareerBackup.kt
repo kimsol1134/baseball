@@ -8,6 +8,7 @@ import com.solkim.baseball.persistence.CSharpSaveCompatibilityCodec
 /** Portable native career only; no platform credentials, files, or external analytics outbox. */
 public object CareerBackup {
     public const val MAX_BYTES: Int = 8 * 1024 * 1024
+    public fun isAvailable(state: GameAggregateState): Boolean = state.meta.seedChallenge == null && state.highSchool?.challenge?.active != true
     internal fun encode(payload: JsonValue.Obj): ByteArray {
         val bytes = StrictJson.canonical(JsonValue.Obj(linkedMapOf(
             "format" to JsonValue.Str("baseball-career-backup-v1"),
@@ -25,7 +26,9 @@ public object CareerBackup {
         val payload = root["payload"] as? JsonValue.Obj ?: error("backup.payload")
         require(payload.canonicalSha256() == (root["checksum"] as? JsonValue.Str)?.value) { "backup.checksum" }
         CSharpSaveCompatibilityCodec.validatePayload(payload)
-        CSharpLegacyAggregateBridge.project(payload, 0UL, payload.canonicalSha256()).meta.validate()
+        val state = CSharpLegacyAggregateBridge.project(payload, 0UL, payload.canonicalSha256())
+        state.meta.validate()
+        require(isAvailable(state)) { "backup.challenge_snapshot" }
         return payload
     }
     public fun preview(bytes: ByteArray): GameAggregateState {

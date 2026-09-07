@@ -57,7 +57,6 @@ public fun Phase9PlatformSurface(
 ) {
     when (model.id) {
         Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> Phase9ReminderOfferSurface(state, model.id, platformState, onAction)
-        Phase8ScreenId.P027_SETTINGS -> Phase9SettingsSurface(state, model.id, platformState, onAction, onViewportExposure)
         Phase8ScreenId.P028_LIFECARD -> Phase9ShareSurface(
             state,
             model,
@@ -100,40 +99,6 @@ private fun Phase9ReminderOfferSurface(
 }
 
 @Composable
-private fun Phase9SettingsSurface(
-    state: GameAggregateState,
-    screen: Phase8ScreenId,
-    platformState: Phase9PlatformUiState,
-    onAction: (Phase9UiAction) -> Unit,
-    onViewportExposure: (Phase9ViewportExposure) -> Unit,
-) {
-    val truthText = when (platformState.notificationTruth) {
-        NotificationPermissionTruth.ALLOWED -> "알림 켜짐"
-        NotificationPermissionTruth.REQUESTABLE -> "알림 권한을 아직 확인하지 않음"
-        NotificationPermissionTruth.DENIED -> "알림 권한이 필요함"
-        NotificationPermissionTruth.BLOCKED -> "기기 설정에서 알림이 차단됨"
-        NotificationPermissionTruth.UNAVAILABLE -> "이 기기에서는 알림을 사용할 수 없음"
-    }
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("기기 알림", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(truthText, style = MaterialTheme.typography.bodyLarge)
-            Text("복귀 계획이 있을 때만 저장된 안내를 예약합니다.", style = MaterialTheme.typography.bodyMedium)
-            val action = if (platformState.notificationTruth == NotificationPermissionTruth.REQUESTABLE) {
-                PlatformAction.REQUEST_NOTIFICATION_PERMISSION
-            } else {
-                PlatformAction.OPEN_NOTIFICATION_SETTINGS
-            }
-            OutlinedButton(
-                onClick = { onAction(capturePlatformAction(state, screen, action)) },
-                enabled = platformState.notificationTruth != NotificationPermissionTruth.UNAVAILABLE,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).gameDescription("기기 알림 설정. $truthText"),
-            ) { Text(if (action == PlatformAction.REQUEST_NOTIFICATION_PERMISSION) "알림 권한 요청" else "알림 설정 열기") }
-        }
-    }
-}
-
-@Composable
 private fun Phase9ShareSurface(
     state: GameAggregateState,
     model: Phase8ScreenModel,
@@ -156,7 +121,7 @@ private fun Phase9ShareSurface(
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("라이프 카드 공유", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("카드 이미지와 글을 함께 공유합니다.", style = MaterialTheme.typography.bodyLarge)
+            Text("한 생을 카드 한 장으로. 이미지와 글이 함께 나간다.", style = MaterialTheme.typography.bodyLarge)
             selectedId?.let { LifeCardVisual(state, it) }
             state.highSchool?.archive.orEmpty().asReversed().forEach { record ->
                 OutlinedButton(
@@ -169,13 +134,13 @@ private fun Phase9ShareSurface(
             Button(
                 onClick = { sharePayload?.let { onAction(capturePlatformAction(state, model.id, PlatformAction.SHARE_LIFE_CARD, sharePayload = it)) } },
                 enabled = shareAllowed,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).gameDescription(if (shareAllowed) "인생 카드 공유. 이미지와 글을 함께 준비합니다." else "보관된 생이 없어 공유할 수 없음"),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).gameDescription(if (shareAllowed) "라이프 카드 공유" else "아직 마친 생이 없어 공유할 수 없다"),
             ) { Text("라이프 카드 공유") }
         }
     }
 }
 
-private fun capturePlatformAction(
+internal fun capturePlatformAction(
     state: GameAggregateState,
     screen: Phase8ScreenId,
     action: PlatformAction,

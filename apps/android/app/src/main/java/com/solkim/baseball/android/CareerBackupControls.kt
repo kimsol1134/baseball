@@ -9,6 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import com.solkim.baseball.application.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -17,12 +20,14 @@ import java.io.ByteArrayOutputStream
 import com.solkim.baseball.android.LocalizedGameText as Text
 
 @Composable
-internal fun CareerBackupControls(state: GameAggregateState) {
+internal fun CareerBackupControls(state: GameAggregateState, busy: Boolean = false, onContinue: (GameAggregateState) -> Unit = {}) {
     val context = LocalContext.current
     val store = (context.applicationContext as BaseballApplication).gameStore
-    if (!store.supportsCareerBackup) return
+    if (!store.supportsCareerBackup || !CareerBackup.isAvailable(state)) return
+    val copy = rememberGameCopy()
     val scope = rememberCoroutineScope()
     var working by remember { mutableStateOf(false) }
+    var restored by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var pending by remember { mutableStateOf<ByteArray?>(null) }
     var preview by remember { mutableStateOf<GameAggregateState?>(null) }
@@ -67,16 +72,18 @@ internal fun CareerBackupControls(state: GameAggregateState) {
             } finally { working = false }
         }
     }
-    Text("기록 보관과 복원", style = MaterialTheme.typography.titleMedium)
     Text("기기를 바꾸거나 앱을 지우기 전에 기록을 파일로 보관해 주세요.")
-    OutlinedButton(onClick = { save.launch("baseball-career.json") }, enabled = !working && (state.highSchool != null || state.pro != null),
+    OutlinedButton(onClick = { save.launch("baseball-career.json") }, enabled = !working && !busy && (state.highSchool != null || state.pro != null),
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("backup.export")) { Text("기록을 파일로 보관") }
-    OutlinedButton(onClick = { open.launch(arrayOf("application/json", "application/octet-stream")) }, enabled = !working,
+    OutlinedButton(onClick = { open.launch(arrayOf("application/json", "application/octet-stream")) }, enabled = !working && !busy,
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("backup.import")) { Text("보관한 기록 불러오기") }
-    message?.let { Text(it) }
+    message?.let { Text(it, modifier = Modifier.testTag("backup.message").semantics { liveRegion = LiveRegionMode.Polite }) }
+    if (restored) TextButton(onClick = { onContinue(store.current) }, enabled = !working && !busy, modifier = Modifier.testTag("backup.continue")) {
+        Text(copy.resolve("settings2.continue"), verbatim = true)
+    }
     val ready = preview
     if (pending != null && ready != null) AlertDialog(onDismissRequest = { pending = null; preview = null },
-        title = { Text("이 기록으로 이어 할까요?") },
+        title = { Text("이 기록으로 이어서 할까요?") },
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val activePro = ready.pro?.takeIf { ready.stage in setOf(GameStage.PRO, GameStage.RETIREMENT, GameStage.LEGACY) }
             Text(activePro?.identityName ?: ready.highSchool?.run?.identity?.name.orEmpty(), verbatim = true)
@@ -84,12 +91,12 @@ internal fun CareerBackupControls(state: GameAggregateState) {
             else Text("${ready.highSchool?.run?.lifeNumber ?: 1}번째 생")
             Text("현재 진행 중인 기록이 이 파일의 기록으로 바뀝니다. 현재 기록을 남기려면 먼저 파일로 보관해 주세요.")
         } },
-        confirmButton = { TextButton(onClick = {
+        confirmButton = { TextButton(enabled = !working && !busy, onClick = {
             val bytes = pending ?: return@TextButton
             pending = null; preview = null
             scope.launch {
                 working = true
-                try { store.importCareerBackup(bytes, expectedRevision); message = "기록을 불러왔어요. 이어서 플레이해 보세요." }
+                try { store.importCareerBackup(bytes, expectedRevision); restored = true; message = "기록을 불러왔어요. 이어서 플레이해 보세요." }
                 catch (error: Exception) {
                     if (error is kotlinx.coroutines.CancellationException) throw error
                     message = "기록을 불러오지 못했어요. 현재 기록을 확인한 뒤 다시 시도해 주세요."

@@ -69,6 +69,7 @@ public class BaseballApplication : Application() {
             CSharpLegacyGameStoreRepository(
                 directory = requireNotNull(getExternalFilesDir(null)).toPath().resolve("save"),
                 installId = installId,
+                resetSideEffects = phase9ResetSideEffects(),
             )
         } else {
             val shadowDirectory = filesDir.toPath().resolve(

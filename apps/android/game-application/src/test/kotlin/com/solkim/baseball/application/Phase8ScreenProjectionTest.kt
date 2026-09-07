@@ -325,7 +325,7 @@ class Phase8ScreenProjectionTest {
         assertEquals("강속구 불펜", weekly.actions.single { it.id == "proPlan:develop_stuff" }.label)
         assertEquals("결정구 완성", weekly.actions.single { it.id == "proPlan:develop_movement" }.label)
         assertEquals("코스 제구 훈련", weekly.actions.single { it.id == "proPlan:refine_command" }.label)
-        assertTrue(weekly.actions.single { it.id == "proAdvanceSegment" }.label.contains("건너뛰기"))
+        assertTrue(weekly.actions.single { it.id == "proAdvanceSegment" }.label.contains("맡긴다"))
         assertTrue(weekly.actions.first { it.enabled }.id.startsWith("proPlan:"))
         assertTrue(weekly.actions.single { it.id == "proPlan:develop_stuff" }.description.contains("부상"))
         val signedContract = controller.projection(Phase8ScreenId.P016_PRO_CONTRACT)
@@ -412,7 +412,7 @@ class Phase8ScreenProjectionTest {
             context,
         )
         Phase8AccessibilityContract.validate(settlementModel)
-        assertEquals("결산 확인", settlementModel.actions.single { it.id == "acknowledgeSettlement" }.label)
+        assertEquals("올해를 덮는다", settlementModel.actions.single { it.id == "acknowledgeSettlement" }.label)
         val called = kernel.acknowledgeSeasonSettlement(
             reviewed.state,
             reviewed.nextSeed,
@@ -651,6 +651,52 @@ class Phase8ScreenProjectionTest {
         assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
         assertEquals(ProCareerPhase.WEEKLY_PLAN, store.current.pro?.phase)
         assertFalse(store.current.settings.autoReleaseEnabled)
+    }
+
+    @Test
+    fun chapterReviewOffersOneClaimedRegularGameThatRecordsAndReplacesAnAutomaticLine() = runBlocking {
+        val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase8-chapter-game"))
+        val controller = Phase8Controller(store, context)
+        executeFirst(controller, Phase8ScreenId.P001_OPENING)
+        executeFirst(controller, Phase8ScreenId.P002_SETUP)
+        executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
+        executeFirst(controller, Phase8ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
+        finishTutorialPitch(store)
+        executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
+        executeFirst(controller, Phase8ScreenId.P005_SCHOOL_SELECTION)
+        val phase7 = Phase7VerticalController(store, "phase8-ui")
+        advanceHighSchoolUntil(store, controller, phase7, HighSchoolPhase.CHAPTER_REVIEW)
+
+        val review = controller.projection(Phase8ScreenId.P010_CHAPTER)
+        val invitation = review.sections.first { it.id == "chapter" }.rows.first { it.label == "정규 경기" }
+        assertEquals("아직 안 던졌다", invitation.value)
+        assertTrue(review.actions.single { it.id == "claimChapterGame" }.enabled)
+        val automaticBefore = requireNotNull(store.current.highSchool).run.automaticGames
+        val gamesBefore = requireNotNull(store.current.highSchool).run.performance.importantGamesCompleted
+
+        executeFirst(controller, Phase8ScreenId.P010_CHAPTER, "claimChapterGame")
+        val claimed = requireNotNull(store.current.highSchool).run
+        assertEquals(HighSchoolPhase.IMPORTANT_GAME, claimed.phase)
+        assertTrue(claimed.chapterGameClaimed)
+        assertTrue(requireNotNull(claimed.currentGameScenarioId).startsWith("regular-"))
+        assertEquals(Phase8ScreenId.P008_IMPORTANT_GAME, controller.preferredScreen())
+
+        finishImportantGame(store, controller, phase7)
+        val played = requireNotNull(store.current.highSchool)
+        assertEquals(HighSchoolPhase.CHAPTER_REVIEW, played.run.phase)
+        assertEquals(gamesBefore + 1, played.run.performance.importantGamesCompleted)
+        assertTrue(played.run.performance.perfectReleases > 0, "1000 releases are perfect")
+        assertTrue(played.seasonLog.last().regular)
+
+        val after = controller.projection(Phase8ScreenId.P010_CHAPTER)
+        val result = after.sections.first { it.id == "chapter" }.rows.first { it.label == "정규 경기" }
+        assertTrue(result.value.contains("이닝"), "result row shows the outing: ${result.value}")
+        assertFalse(after.actions.single { it.id == "claimChapterGame" }.enabled)
+
+        executeFirst(controller, Phase8ScreenId.P010_CHAPTER, "advanceChapter")
+        val advanced = requireNotNull(store.current.highSchool).run
+        assertEquals(automaticBefore + 1, advanced.automaticGames, "the claimed game replaces one automatic line")
+        assertFalse(advanced.chapterGameClaimed)
     }
 
     private suspend fun completedHighSchoolFixture(installId: String, archive: Boolean = true): Pair<KotlinGameStore, Phase8Controller> {

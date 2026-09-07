@@ -53,8 +53,8 @@ internal fun SeedChallengeDialog(
                 Text(copy.resolve("android.challenge.explanation"))
                 OutlinedTextField(value = input, onValueChange = { input = it.take(2048) },
                     label = { Text(copy.resolve("android.challenge.code")) },
-                    placeholder = { Text("12345-1") }, singleLine = true,
-                    isError = input.length > 6 && parsed == null,
+                    placeholder = { Text("친구가 보낸 코드 (숫자-숫자)") }, singleLine = true,
+                    isError = input.contains('-') && parsed == null,
                     modifier = Modifier.fillMaxWidth().testTag("challenge.code"))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(onClick = { input = "${java.security.SecureRandom().nextLong().toULong()}-1" }, modifier = Modifier.testTag("challenge.generate")) {

@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.BaseballLaunch" parent="Theme.BaseballMigration">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:statusBarColor">@color/launch_background</item>
+        <item name="android:navigationBarColor">@color/launch_background</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowSplashScreenBackground">@color/launch_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/launch_logo_system</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/launch_background</item>
+    </style>
+</resources>

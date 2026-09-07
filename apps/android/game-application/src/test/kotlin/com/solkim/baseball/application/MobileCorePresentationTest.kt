@@ -6,6 +6,22 @@ import java.nio.file.Files
 import kotlin.test.*
 
 class MobileCorePresentationTest {
+    @Test fun growthForecastNamesTheAbilityAndSeparatesZeroFixedAndRange() {
+        val hs = HighSchoolPhase4Kernel().start(HighSchoolPhase4StartRequest("918220", "power_prospect", "forecast", "2026-W36", "2026-09-06")).state
+        val state = GameAggregateState.initial("forecast").copy(stage = GameStage.HIGH_SCHOOL, highSchool = hs)
+        val preview = HighSchoolTrainingPreview(0, 0, 6, 0, false, false, false, false)
+        for (language in GameLanguage.entries) {
+            val copy = GameCopy(language)
+            assertEquals(copy.resolve("training.clear.no-growth"), TrainingPresentation.growthOutlook(state, TrainingFocus.COMMAND, preview, copy))
+            val fixed = TrainingPresentation.growthOutlook(state, TrainingFocus.COMMAND, preview.copy(minimumGrowth = 1, maximumGrowth = 1), copy)
+            assertTrue(fixed.contains(copy.legacy("제구")))
+            assertEquals(1, fixed.count { it == '+' })
+            val range = TrainingPresentation.growthOutlook(state, TrainingFocus.COMMAND, preview.copy(maximumGrowth = 2), copy)
+            assertTrue(range.contains(copy.legacy("제구")))
+            assertEquals(2, range.count { it == '+' })
+        }
+    }
+
     @Test fun displayScaleMatchesIOSAtEndpointsAndRoundingBoundaries() {
         assertEquals(listOf(1, 2, 38, 50, 72, 73, 100), listOf(20, 21, 43, 50, 63, 64, 80).map(AbilityDisplayScale::rating))
         assertEquals(1, AbilityDisplayScale.delta(63, 64))
@@ -41,6 +57,27 @@ class MobileCorePresentationTest {
             assertEquals(NextAppearanceCue(0, 0), NextAppearanceCue.resolve(aggregate()))
             assertEquals(initial, NextAppearanceCue(trainings, choices))
         }
+    }
+
+    @Test fun growthFeedbackKeepsSmallGainsCompactAndLabelsFatigueInEveryLanguage() {
+        val small = PlayerGrowthReceipt("life", "training", "training", listOf(40, 35, 40, 40), listOf(40, 36, 40, 40))
+        assertFalse(GrowthFeedbackPresentation.controlMilestone(small))
+        assertEquals(1, GrowthFeedbackPresentation.primary(small))
+        val milestone = small.copy(before = listOf(40, 39, 40, 40), after = listOf(43, 40, 40, 40))
+        assertTrue(GrowthFeedbackPresentation.controlMilestone(milestone))
+        assertEquals(1, GrowthFeedbackPresentation.primary(milestone))
+        for (language in GameLanguage.entries) {
+            val copy = GameCopy(language)
+            val tired = GrowthFeedbackPresentation.condition(copy, 11, 6)
+            val recovered = GrowthFeedbackPresentation.condition(copy, 5, -6)
+            assertTrue(tired.contains("11") && tired.contains("+6"), tired)
+            assertTrue(recovered.contains("5") && recovered.contains("-6"), recovered)
+            assertFalse(tired.contains("loop."))
+            assertNotEquals(tired, recovered)
+        }
+        assertTrue(RebirthContinuity.sameName(" Alex Han ", "alex han"))
+        assertFalse(RebirthContinuity.sameName("Alex Han", "Jamie Han"))
+        assertFalse(RebirthContinuity.sameName(" ", " "))
     }
 
     @Test fun growthReceiptUsesCommittedBeforeAfterAndSurvivesNativeReloadWithoutDoubleGrant() = runBlocking {

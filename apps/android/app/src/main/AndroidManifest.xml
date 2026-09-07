@@ -57,6 +57,7 @@
             android:screenOrientation="portrait" />
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Theme.BaseballLaunch"
             android:launchMode="singleTop"
             android:exported="true"
             android:resizeableActivity="false"

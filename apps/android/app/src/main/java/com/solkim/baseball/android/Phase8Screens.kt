@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
@@ -77,6 +78,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.solkim.baseball.application.CareerShareCopy
+import com.solkim.baseball.application.RebirthContinuity
+import com.solkim.baseball.application.RelationshipNarrative
+import androidx.compose.foundation.BorderStroke
+import com.solkim.baseball.application.SignatureLegacyDisplay
+import com.solkim.baseball.application.GameCopyArgument
 import com.solkim.baseball.application.GameAggregateState
 import com.solkim.baseball.application.Phase8ActionModel
 import com.solkim.baseball.application.Phase8CommandContext
@@ -140,6 +146,13 @@ public fun Phase8Shell(
     val gameCopy = rememberGameCopy()
     val model = Phase8ScreenProjection.project(state, visibleScreen, commandContext).localized(gameCopy, state)
     val currentTab = ProductTab.forScreen(visibleScreen)
+    if (visibleScreen == Phase8ScreenId.P027_SETTINGS) {
+        SettingsScreen(state, model, busy, actionError, platformState, onAction, onPlatformAction,
+            onExit = { onNavigate(Phase8ScreenProjection.preferredScreen(state)) },
+            onRestored = { restored -> onNavigate(Phase8ScreenProjection.preferredScreen(restored)) },
+            bottomBar = { if (state.highSchool != null || state.pro != null) ProductNavigation(state, currentTab, onNavigate) })
+        return
+    }
     var trainingResultStart by rememberSaveable(state.highSchool?.run?.careerId) { mutableStateOf(-1) }
     var dismissedTraining by rememberSaveable(state.highSchool?.run?.careerId) { mutableStateOf(0) }
     val growthMarker = state.meta.playerGrowth?.commandId
@@ -156,9 +169,15 @@ public fun Phase8Shell(
     val isFirstPlay = visibleScreen in setOf(Phase8ScreenId.P001_OPENING, Phase8ScreenId.P002_SETUP,
         Phase8ScreenId.P003_PROLOGUE, Phase8ScreenId.P004_PITCH_TUTORIAL)
 
+    // The main action always lives in the same place: the bottom bar. Screens that are a list of equal
+    // choices (schools, weekly plans, contracts, legacies) keep their choices inline.
+    val genericScreen = visibleScreen !in setOf(Phase8ScreenId.P001_OPENING, Phase8ScreenId.P002_SETUP, Phase8ScreenId.P003_PROLOGUE,
+        Phase8ScreenId.P004_PITCH_TUTORIAL, Phase8ScreenId.P005_SCHOOL_SELECTION, Phase8ScreenId.P006_TRAINING, Phase8ScreenId.P007_RELATIONSHIP,
+        Phase8ScreenId.P009_AWAKENING, Phase8ScreenId.P014_RUN_RECAP, Phase8ScreenId.P015_REBIRTH, Phase8ScreenId.P017_PRO_WEEK, Phase8ScreenId.P027_SETTINGS)
     val pinnedAction = if (visibleScreen == Phase8ScreenId.P015_REBIRTH) model.actions.firstOrNull { it.id == "quickRebirth" && it.enabled }
         else if (visibleScreen in setOf(Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P010_CHAPTER, Phase8ScreenId.P013_DRAFT))
-        model.actions.firstOrNull { it.enabled } else null
+        model.actions.firstOrNull { it.enabled }
+        else if (genericScreen) model.actions.filter { it.enabled && !it.destructive }.singleOrNull() else null
 
     Scaffold(
         modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true },
@@ -174,7 +193,7 @@ public fun Phase8Shell(
                 navigationIcon = {
                     if (visibleScreen != preferred) {
                         TextButton(onClick = { onNavigate(preferred) }) {
-                            Text("← 이야기", color = BaseballColors.action, fontWeight = FontWeight.SemiBold)
+                            Text("← 내 투수", color = BaseballColors.action, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 },
@@ -185,41 +204,12 @@ public fun Phase8Shell(
                 if (pinnedAction != null) Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
                     Phase8ActionButton(model.id, pinnedAction.copy(enabled = !busy), onAction)
                 }
-            if (!isFirstPlay) NavigationBar(
-                modifier = Modifier.heightIn(min = if (androidx.compose.ui.platform.LocalDensity.current.fontScale >= 1.5f) 112.dp else 80.dp),
-                containerColor = BaseballColors.surface,
-                tonalElevation = 0.dp,
-            ) {
-                ProductTab.entries.forEach { tab ->
-                    val destination = tab.landingScreen(state)
-                    val isSelected = tab == currentTab
-                    NavigationBarItem(
-                        selected = isSelected,
-                        onClick = { destination?.let(onNavigate) },
-                        enabled = destination != null,
-                        icon = {
-                            TabIcon(tab = tab, isSelected = isSelected)
-                        },
-                        label = {
-                            Text(
-                                text = tab.label,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Transparent,
-                            selectedIconColor = BaseballColors.action,
-                            selectedTextColor = BaseballColors.action,
-                            unselectedIconColor = BaseballColors.textTertiary,
-                            unselectedTextColor = BaseballColors.textTertiary,
-                        ),
-                    )
-                }
-            }
+            if (!isFirstPlay) ProductNavigation(state, currentTab, onNavigate)
             }
         },
     ) { insets ->
         if (visibleScreen == Phase8ScreenId.P001_OPENING) {
+            val appName = stringResource(R.string.app_name)
             Column(Modifier.fillMaxSize().padding(insets).padding(horizontal = 24.dp, vertical = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -228,16 +218,10 @@ public fun Phase8Shell(
                         TextButton(onClick = onSeedChallenge) { Text(gameCopy.resolve(if (pendingSeedCode == null) "android.challenge.open" else "android.challenge.pending")) }
                         TextButton(onClick = { onNavigate(Phase8ScreenId.P027_SETTINGS) }) { Text("설정") }
                     }
-                    Text("환생 투수 커리어", color = BaseballColors.milestone, style = MaterialTheme.typography.titleMedium)
-                    Text("한 구를 던지고,\n한 생을 남기세요.", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                    Text("고교에서 배우고, 프로에서 승부하고, 은퇴 뒤에는 다음 생으로 이어집니다.", style = MaterialTheme.typography.bodyLarge)
-                    Card(colors = CardDefaults.cardColors(containerColor = BaseballColors.surfaceRaised)) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("누르고 초록 구간에서 놓기", fontWeight = FontWeight.Bold)
-                            Text("슬라이더의 타이밍을 직접 맞춰 공을 던집니다. 처음에는 포수의 사인을 따라 해 보세요.", style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                    Text("진행은 자동으로 저장됩니다.", color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(28.dp))
+                    Text(appName, verbatim = true, color = BaseballColors.milestone, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("한 구씩,\n한 생씩.", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                    Text("고교 마운드에서 프로까지, 공은 내가 직접 던진다.\n안 되면 다시 태어나서 더 강해진다.", style = MaterialTheme.typography.bodyLarge, color = BaseballColors.textSecondary)
                 }
                 model.actions.singleOrNull { it.id == "enterSetup" }?.let { action ->
                     Phase8ActionButton(model.id, action, onAction, showDescription = false)
@@ -274,17 +258,17 @@ public fun Phase8Shell(
             if (model.id.group in setOf(Phase8Group.CAREER_CORE, Phase8Group.PRO, Phase8Group.RECAP_REBIRTH)) {
                 CorePlayerHeader(state, compact = true)
             }
+            if (visibleScreen in recordScreens) RecordsSegments(state, visibleScreen, onNavigate)
 
-            if (visibleScreen in setOf(Phase8ScreenId.P007_RELATIONSHIP, Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P009_AWAKENING, Phase8ScreenId.P010_CHAPTER) &&
-                (state.highSchool?.run?.lastTraining?.number ?: 0) > dismissedTraining) {
-                TrainingResultCard(state, trainingResultStart, !showGrowthSpotlight) { dismissedTraining = state.highSchool?.run?.lastTraining?.number ?: 0 }
-            }
             val growth = state.meta.playerGrowth?.takeIf {
                 it.source != "training" && it.careerId == (state.pro?.takeIf { state.stage in setOf(com.solkim.baseball.application.GameStage.PRO, com.solkim.baseball.application.GameStage.RETIREMENT) }?.careerId ?: state.highSchool?.run?.careerId)
                     && it.before != it.after
             }
             var dismissedGrowth by rememberSaveable { mutableStateOf<String?>(null) }
-            if (growth != null && dismissedGrowth != growth.commandId) Card {
+            // A growth card belongs to the screen where it first appeared; it does not follow the player.
+            var growthHome by rememberSaveable { mutableStateOf<String?>(null) }
+            if (growth != null && dismissedGrowth != growth.commandId && growthHome?.startsWith(growth.commandId + "@") != true) growthHome = growth.commandId + "@" + visibleScreen.wire
+            if (growth != null && dismissedGrowth != growth.commandId && growthHome == growth.commandId + "@" + visibleScreen.wire) Card {
                 Column(Modifier.padding(16.dp)) {
                     CoreGrowthResult(growth, compact = !showGrowthSpotlight)
                     TextButton(onClick = { dismissedGrowth = growth.commandId }) { Text("닫기") }
@@ -314,6 +298,44 @@ private fun Phase8FirstPitchIntroduction(
     onAction: (Phase8UiAction) -> Unit,
 ) {
     val isLetter = model.id == Phase8ScreenId.P003_PROLOGUE
+    val continuity = RebirthContinuity.resolve(state)
+    if (isLetter && continuity != null) {
+        val copy = rememberGameCopy()
+        var memories by rememberSaveable(state.highSchool?.run?.careerId) { mutableStateOf(false) }
+        Column(Modifier.fillMaxSize().padding(insets).padding(horizontal = 24.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (actionError != null) Phase8ErrorCard(actionError)
+            CorePlayerHeader(state, compact = true)
+            Text(copy.resolve(if (continuity.samePlayer) "loop.reborn.same" else "loop.reborn.different"), verbatim = true,
+                style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("rebirth.ready"))
+            Text(copy.resolve("loop.reborn.next"), verbatim = true, style = MaterialTheme.typography.bodyMedium)
+            model.actions.firstOrNull { it.id == "completeTutorial" }?.let { action -> Phase8ActionButton(model.id, action.copy(enabled = action.enabled && !busy), onAction, showDescription = false) }
+            model.actions.firstOrNull { it.id == "resumePitch" && it.enabled }?.let { action -> Phase8ActionButton(model.id, action.copy(enabled = !busy), onAction, showDescription = false) }
+                ?: model.actions.firstOrNull { it.id == "openTutorialPitch" }?.let { action ->
+                    OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) }, enabled = action.enabled && !busy,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("action.openTutorialPitch")) { Text(action.label) }
+                }
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                continuity.legacyTitle?.let { Text(copy.resolve("loop.reborn.inherited", GameCopyArgument.UserText(copy.legacy(it))), verbatim = true, color = BaseballColors.milestone) }
+                val handicaps = state.highSchool?.run?.karmas?.size ?: 0
+                if (handicaps > 0) Text(copy.resolve("loop.reborn.handicaps", GameCopyArgument.Whole(handicaps.toLong())), verbatim = true, color = BaseballColors.warning)
+                val previousName = continuity.previousName
+                if (previousName != null) {
+                    TextButton(onClick = { memories = !memories }, modifier = Modifier.testTag("rebirth.memories")) {
+                        Text(copy.resolve(if (continuity.samePlayer) "loop.reborn.memories" else "loop.reborn.other-record"), verbatim = true)
+                    }
+                    if (memories) {
+                        Text(if (continuity.samePlayer) copy.resolve("loop.letter.self-title") else previousName,
+                            verbatim = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("rebirth.previousSelf"))
+                        val body = if (continuity.samePlayer) continuity.legacyTitle?.let { copy.resolve("loop.letter.self-body", GameCopyArgument.UserText(copy.legacy(it))) }
+                            ?: copy.resolve("loop.letter.self-basic") else copy.resolve("loop.reborn.other-history", GameCopyArgument.UserText(previousName))
+                        Text(body, verbatim = true)
+                        Text(copy.resolve("loop.reborn.record-line", GameCopyArgument.Whole(continuity.games.toLong()), GameCopyArgument.Whole(continuity.strikeouts.toLong())), verbatim = true)
+                    }
+                }
+            }
+        }
+        return
+    }
     Column(Modifier.fillMaxSize().padding(insets).padding(horizontal = 24.dp, vertical = 20.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -321,23 +343,56 @@ private fun Phase8FirstPitchIntroduction(
             if (actionError != null) Phase8ErrorCard(actionError)
             if (isLetter) {
                 state.highSchool?.run?.identity?.name?.let { name ->
-                    Text(name, verbatim = true, style = MaterialTheme.typography.titleMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        PlayerPortrait(seed = playerPortraitSeed(state) ?: name, stage = PlayerStage.FRESHMAN, width = 56.dp)
+                        Text(name, verbatim = true, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
                 }
                 Text("도착한 편지", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 model.sections.firstOrNull { it.id == "letter" }?.rows?.getOrNull(1)?.let { letter ->
                     Text(letter.value, verbatim = true, style = MaterialTheme.typography.bodyLarge)
                 }
-                Text(if (state.highSchool?.tutorial?.started == true) "첫 공의 감각을 기억하며, 이제 나의 학교를 고릅니다." else "마운드에서 포수의 첫 사인을 기다립니다.",
+                Text(if (state.highSchool?.tutorial?.started == true) "첫 공은 던졌다. 이제 3년을 보낼 학교를 고른다." else "포수가 벌써 사인을 냈다. 마운드로.",
                     style = MaterialTheme.typography.bodyLarge)
             } else {
-                Text("누르고 초록 구간에서 놓기", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("누른 채 조준을 맞추고, 슬라이더가 초록 구간에 오면 손을 뗍니다.", style = MaterialTheme.typography.bodyLarge)
-                Text("처음에는 포수의 사인을 따라 던져 보세요.", style = MaterialTheme.typography.bodyLarge)
+                Text("첫 공", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("길게 눌러 와인드업, 초록에서 손을 뗀다. 구종과 코스는 포수가 골라 뒀다.", style = MaterialTheme.typography.bodyLarge)
             }
         }
-        // Keep the next action stable while saves finish; transient save rows must not move it.
-        model.actions.filter { it.enabled }.forEach { action ->
+        // One primary action: the mound. The separate "start tutorial" step stays in the projection for
+        // controllers and tests, but a player never has to press it.
+        val visible = model.actions.filter { it.enabled }.let { actions ->
+            if (actions.any { it.id == "openTutorialPitch" }) actions.filterNot { it.id == "beginTutorial" } else actions
+        }
+        visible.forEach { action ->
             Phase8ActionButton(model.id, action.copy(enabled = !busy), onAction, showDescription = false)
+        }
+    }
+}
+
+private val recordScreens = listOf(Phase8ScreenId.P025_RECORDS_LEAGUE, Phase8ScreenId.P011_HIGH_SCHOOL_CAREER, Phase8ScreenId.P026_ACHIEVEMENTS, Phase8ScreenId.P024_WEEKLY, Phase8ScreenId.P028_LIFECARD, Phase8ScreenId.P029_RETURN_PLAN)
+
+/** The records tab used to land on the first reachable screen and stop there. Every record screen is one tap away. */
+@Composable
+private fun RecordsSegments(state: GameAggregateState, current: Phase8ScreenId, onNavigate: (Phase8ScreenId) -> Unit) {
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        recordScreens.forEach { screen ->
+            val label = when (screen) {
+                Phase8ScreenId.P025_RECORDS_LEAGUE -> "기록"
+                Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> "경기 기록"
+                Phase8ScreenId.P026_ACHIEVEMENTS -> "업적"
+                Phase8ScreenId.P024_WEEKLY -> "주간 노트"
+                Phase8ScreenId.P028_LIFECARD -> "라이프 카드"
+                else -> "돌아올 자리"
+            }
+            val selected = screen == current
+            androidx.compose.material3.FilterChip(
+                selected = selected,
+                onClick = { if (!selected) onNavigate(screen) },
+                enabled = Phase8ScreenProjection.isReachable(state, screen),
+                label = { Text(label) },
+                modifier = Modifier.heightIn(min = 40.dp).testTag("records.tab.${screen.wire}"),
+            )
         }
     }
 }
@@ -390,7 +445,7 @@ private enum class ProductTab(val label: String) {
     }
 
     companion object {
-        fun forScreen(screen: Phase8ScreenId): ProductTab = when (screen.group) {
+        fun forScreen(screen: Phase8ScreenId): ProductTab = if (screen in setOf(Phase8ScreenId.P028_LIFECARD, Phase8ScreenId.P011_HIGH_SCHOOL_CAREER)) RECORDS else when (screen.group) {
             Phase8Group.PRO, Phase8Group.CAREER_CORE, Phase8Group.RECAP_REBIRTH -> CAREER
             Phase8Group.RECORDS_META, Phase8Group.RETURN_REVIEW -> RECORDS
             Phase8Group.SETTINGS_PLATFORM -> SETTINGS
@@ -444,21 +499,23 @@ private fun Phase8ScreenContent(
                     Phase8ScreenId.P014_RUN_RECAP, Phase8ScreenId.P015_REBIRTH -> CoreRebirthChoices(state, model, onAction, onViewportExposure)
                     Phase8ScreenId.P027_SETTINGS -> { CareerBackupControls(state); Phase8Sections(model.sections); Phase8Actions(model, onAction) }
                     Phase8ScreenId.P009_AWAKENING -> AwakeningTreeView(state, model, onAction)
-                    Phase8ScreenId.P005_SCHOOL_SELECTION -> Phase8SchoolChoices(model, onAction)
-                    Phase8ScreenId.P006_TRAINING, Phase8ScreenId.P007_RELATIONSHIP, Phase8ScreenId.P017_PRO_WEEK ->
+                    Phase8ScreenId.P005_SCHOOL_SELECTION -> Phase8SchoolChoices(state, model, onAction)
+                    Phase8ScreenId.P016_PRO_CONTRACT -> if (model.actions.any { it.id.startsWith("acceptOffer:") }) Phase8ContractChoices(model, onAction) else { Phase8Sections(model.sections); Phase8Actions(model, onAction) }
+                    Phase8ScreenId.P013_DRAFT -> { Phase8DraftReveal(state, model); Phase8Actions(model, onAction) }
+                    Phase8ScreenId.P007_RELATIONSHIP, Phase8ScreenId.P017_PRO_WEEK ->
                         Phase8DecisionChoices(state, model, onAction)
                     else -> {
                         Phase8Sections(model.sections)
                         Phase8Actions(model, onAction)
                     }
                 }
-                var showsDetails by remember(model.id) { mutableStateOf(false) }
+                var showsDetails by remember(model.id) { mutableStateOf(model.id in setOf(Phase8ScreenId.P013_DRAFT, Phase8ScreenId.P014_RUN_RECAP, Phase8ScreenId.P019_PRO_SEASON, Phase8ScreenId.P021_PRO_RETIREMENT, Phase8ScreenId.P028_LIFECARD)) }
                 TextButton(onClick = { showsDetails = !showsDetails }, modifier = Modifier.testTag("career.storyDetails")) {
                     Text(rememberGameCopy().resolve("mobile.core.career-details"), verbatim = true)
                 }
                 if (showsDetails) {
                 if (model.id == Phase8ScreenId.P015_REBIRTH) Phase8Sections(model.sections)
-                Phase8ShareButton(state, model)
+                else Phase8ShareButton(state, model)
                 Phase9ViewportCards(state, commandContext, model, platformState, selectedLifeCardId, onViewportExposure)
                 Phase9PlatformSurface(
                     state = state,
@@ -478,7 +535,22 @@ private fun Phase8ScreenContent(
 @Composable
 private fun CoreRebirthChoices(state: GameAggregateState, model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit, onExposed: (Phase9ViewportExposure) -> Unit) {
     val copy = rememberGameCopy()
-    if (model.id == Phase8ScreenId.P015_REBIRTH && model.actions.any { it.id == "quickRebirth" && it.enabled }) {
+    val quickPath = model.id == Phase8ScreenId.P015_REBIRTH && model.actions.any { it.id == "quickRebirth" && it.enabled }
+    if (quickPath) {
+        val run = state.highSchool?.run
+        val name = run?.identity?.name?.takeIf { it.isNotBlank() }
+        if (name != null) {
+            Row(Modifier.fillMaxWidth().testTag("rebirth.identity"), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                PlayerPortrait(seed = playerPortraitSeed(state) ?: name, stage = if (state.pro != null) PlayerStage.PRO else PlayerStage.ACE, width = 56.dp)
+                Text("→", verbatim = true, style = MaterialTheme.typography.headlineSmall, color = BaseballColors.action)
+                PlayerPortrait(seed = playerPortraitSeed(state) ?: name, stage = PlayerStage.FRESHMAN, width = 56.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(name, verbatim = true, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("같은 이름, 같은 얼굴. 1학년부터 다시.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
+                }
+            }
+        }
+        lineageLine(state)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textTertiary, modifier = Modifier.testTag("rebirth.lineage")) }
         model.sections.firstOrNull { it.id == "rebirth" }?.rows?.firstOrNull()?.let { inherited ->
             Text(copy.resolve("mobile.core.inherited"), verbatim = true, style = MaterialTheme.typography.labelLarge, color = BaseballColors.textSecondary)
             Text(inherited.value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -486,6 +558,11 @@ private fun CoreRebirthChoices(state: GameAggregateState, model: Phase8ScreenMod
         }
         model.sections.firstOrNull { it.id == "rebirth" }?.rows?.getOrNull(1)?.takeIf { it.value.toIntOrNull()?.let { count -> count > 0 } == true }?.let {
             Text("${it.label} ${it.value}", style = MaterialTheme.typography.bodySmall)
+        }
+        if (run != null && state.highSchool?.archive?.any { it.careerId == run.careerId } == true) {
+            Text("지난 생의 카드", style = MaterialTheme.typography.labelLarge, color = BaseballColors.textSecondary)
+            LifeCardVisual(state = state, careerId = run.careerId)
+            Phase8ShareButton(state, model)
         }
     } else Phase8Sections(model.sections)
     val actions = model.actions.filter { action ->
@@ -535,20 +612,80 @@ private fun Phase8Sections(sections: List<com.solkim.baseball.application.Phase8
 }
 
 @Composable
-private fun Phase8SchoolChoices(model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit) {
+private fun Phase8SchoolChoices(state: GameAggregateState, model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit) {
     val copy = rememberGameCopy()
+    val schools = state.highSchool?.run?.schoolOptions.orEmpty()
     Text(copy.resolve("android.school.question"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
     model.actions.forEach { action ->
         val people = model.sections.flatMap { it.rows }.firstOrNull { it.label == action.label }?.detail.orEmpty()
+        val school = schools.firstOrNull { it.name == action.label }
         OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) }, enabled = action.enabled,
             modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp).testTag("action.${action.id}")) {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(action.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(action.description, style = MaterialTheme.typography.bodyMedium)
-                if (people.isNotBlank()) Text(people, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (school != null) Row(horizontalArrangement = Arrangement.spacedBy((-10).dp)) {
+                    PlayerPortrait(seed = school.coachName, role = AvatarRole.COACH, width = 40.dp)
+                    PlayerPortrait(seed = school.catcherName, role = AvatarRole.CATCHER, width = 40.dp)
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(action.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(action.description, style = MaterialTheme.typography.bodyMedium)
+                    if (people.isNotBlank()) Text(people, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }
+}
+
+/** Contract market: one team at a time. The goal is the second question, not a multiplier on the button list. */
+@Composable
+private fun Phase8ContractChoices(model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit) {
+    val offers = model.actions.filter { it.id.startsWith("acceptOffer:") }.groupBy { it.id.split(":")[1] }
+    val market = model.sections.firstOrNull { it.id == "pro-contract-market" }
+    var selectedOffer by rememberSaveable(model.id.wire) { mutableStateOf<String?>(null) }
+    market?.let { Text(it.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary) }
+    offers.entries.forEachIndexed { index, (offerId, actions) ->
+        val teamName = actions.first().label.substringBefore(" · ")
+        val row = market?.rows?.getOrNull(index)
+        val selected = selectedOffer == offerId
+        OutlinedButton(onClick = { selectedOffer = if (selected) null else offerId }, enabled = actions.any { it.enabled },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp).testTag("contract.offer.$offerId"),
+            border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) BaseballColors.action else BaseballColors.border)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(row?.label ?: teamName, verbatim = true, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                row?.let { Text(it.value, verbatim = true, style = MaterialTheme.typography.bodyMedium) }
+                row?.let { if (it.detail.isNotBlank()) Text(it.detail, verbatim = true, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+        }
+        if (selected) {
+            Text("이 계약에 걸 목표", style = MaterialTheme.typography.labelLarge, color = BaseballColors.textSecondary)
+            actions.forEach { action ->
+                Phase8ActionButton(model.id, action.copy(label = action.label.substringAfter(" · ")), onAction, showDescription = true)
+            }
+        }
+    }
+    if (selectedOffer == null) Text("팀을 먼저 고른다. 목표는 그다음.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
+    model.actions.filter { !it.id.startsWith("acceptOffer:") && it.enabled }.forEach { Phase8ActionButton(model.id, it, onAction) }
+}
+
+/** Draft day. Before the call: the player's face and one sentence. After: the verdict, big. */
+@Composable
+private fun Phase8DraftReveal(state: GameAggregateState, model: Phase8ScreenModel) {
+    val run = state.highSchool?.run
+    val name = run?.identity?.name.orEmpty()
+    val first = model.sections.firstOrNull { it.id == "draft" }?.rows?.firstOrNull()
+    val drafted = run?.draftResult?.outcome == HighSchoolDraftOutcome.DRAFTED
+    val revealed = run?.draftResult != null
+    Column(Modifier.fillMaxWidth().testTag("draft.reveal"), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (name.isNotBlank()) PlayerPortrait(seed = name, stage = PlayerStage.ACE, width = 96.dp)
+        Text(name, verbatim = true, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        first?.let {
+            Text(if (revealed) it.label else it.value, verbatim = true, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black,
+                color = if (!revealed) BaseballColors.textPrimary else if (drafted) BaseballColors.action else BaseballColors.textSecondary)
+            Text(if (revealed) it.value else it.detail, verbatim = true, style = MaterialTheme.typography.bodyLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            if (revealed && it.detail.isNotBlank()) Text(it.detail, verbatim = true, style = MaterialTheme.typography.bodyMedium, color = BaseballColors.textSecondary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
+    }
+    Phase8Sections(model.sections.filterNot { it.id == "draft" })
 }
 
 @Composable
@@ -557,19 +694,21 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
     var details by rememberSaveable(model.id.wire) { mutableStateOf(false) }
     var roleChoices by rememberSaveable(state.pro?.careerId, state.pro?.season) { mutableStateOf(false) }
     when (model.id) {
-        Phase8ScreenId.P006_TRAINING -> {
-            Text(copy.resolve("android.training.question"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(copy.resolve("android.training.condition", com.solkim.baseball.application.GameCopyArgument.Whole((state.highSchool?.run?.fatigue ?: 0).toLong()),
-                com.solkim.baseball.application.GameCopyArgument.Whole((state.highSchool?.run?.armRisk ?: 0).toLong())),
-                color = if ((state.highSchool?.run?.fatigue ?: 0) >= 60) BaseballColors.warning else MaterialTheme.colorScheme.onSurfaceVariant)
-            if ((state.highSchool?.run?.fatigue ?: 0) >= 60) Text(copy.resolve("android.training.recovery-hint"), color = BaseballColors.warning)
-            model.sections.firstOrNull { it.id == "training" }?.rows?.firstOrNull()?.let { Text(it.detail, style = MaterialTheme.typography.bodyMedium) }
-        }
         Phase8ScreenId.P007_RELATIONSHIP -> {
+            val run = state.highSchool?.run
+            val role = run?.let { RelationshipNarrative.speakerRole(it) }
             model.sections.firstOrNull()?.let { section ->
                 Text(section.title, style = MaterialTheme.typography.titleMedium)
                 section.rows.firstOrNull()?.let { row ->
-                    Text(row.label, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        when (role) {
+                            "coach" -> PlayerPortrait(seed = row.label, role = AvatarRole.COACH, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
+                            "catcher" -> PlayerPortrait(seed = row.label, role = AvatarRole.CATCHER, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
+                            "rival" -> PlayerPortrait(seed = row.label, role = AvatarRole.RIVAL, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
+                            else -> Unit
+                        }
+                        Text(row.label, fontWeight = FontWeight.Bold)
+                    }
                     Text(row.value, verbatim = true, style = MaterialTheme.typography.titleLarge)
                 }
             }
@@ -589,7 +728,15 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
         else -> Unit
     }
     if (model.id == Phase8ScreenId.P007_RELATIONSHIP) {
-        model.actions.forEach { action -> Phase8ActionButton(model.id, action, onAction, showDescription = true) }
+        model.actions.filter { it.enabled }.forEach { action ->
+            OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp).testTag("action.${action.id}").gameDescription(action.contentDescription)) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(action.label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    if (action.description.isNotBlank()) Text(action.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
     } else Phase8ChoiceGrid(model, onAction)
     TextButton(onClick = { details = !details }) { Text(copy.resolve(if (details) "android.details.hide" else "android.details.show")) }
     if (details) Phase8Sections(model.sections)
@@ -609,6 +756,7 @@ private fun Phase9ViewportCards(
     // exposure observers in that state, otherwise a visible card would enqueue a receipt that the
     // reducer correctly rejects and the in-process retry queue would live forever.
     if (state.highSchool?.challenge?.active == true) return
+    val legacyCopy = rememberGameCopy()
     val run = state.highSchool?.run
     when (model.id) {
         Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> if (
@@ -628,7 +776,7 @@ private fun Phase9ViewportCards(
                 ),
                 onExposed = onExposed,
             ) {
-                Phase8ReadOnlyRow("복귀 안내", "다음 장면을 놓치지 않기", "첫 공식 경기 뒤, 다음에 돌아올 때 이어 볼 장면을 안내할 수 있어요.")
+                Phase8ReadOnlyRow("돌아올 때", "어디까지 했는지 알려 줄게", "첫 경기를 던졌으니, 다음에 열면 이어 할 장면부터 보여 준다.")
             }
         } else Unit
         Phase8ScreenId.P003_PROLOGUE -> if (run != null) {
@@ -643,7 +791,7 @@ private fun Phase9ViewportCards(
                 ),
                 onExposed = onExposed,
             ) {
-                Phase8ReadOnlyRow("이번 생의 바람", windLabel(HighSchoolDisplayRules.windIdFor(run.careerId)), "이번 생의 흐름은 같은 규칙으로 끝까지 이어집니다.")
+                Phase8ReadOnlyRow("이번 생의 바람", windLabel(HighSchoolDisplayRules.windIdFor(run.careerId)), "이 해의 분위기는 3년 내내 이어진다.")
             }
         } else Unit
         Phase8ScreenId.P007_RELATIONSHIP -> run?.currentRelationshipEvent?.let { event ->
@@ -677,7 +825,7 @@ private fun Phase9ViewportCards(
                     ),
                     onExposed = onExposed,
                 ) {
-                    Phase8ReadOnlyRow("대표 유산 후보", run.legacyOptions.joinToString(" · ") { "후보 ${it.take(12)}" }, "이번 생의 기록에서 얼어붙은 세 가지 선택입니다.")
+                    Phase8ReadOnlyRow("남길 수 있는 세 가지", run.legacyOptions.joinToString(" · ") { SignatureLegacyDisplay.title(it, legacyCopy) ?: "남겨진 유산" }, "하나만 다음 생으로 간다.")
                 }
             }
             Phase9PlayerLegacyExposurePolicy.resolve(state, Phase9PlayerLegacyExposureSurface.RECAP)?.let { exposure ->
@@ -694,7 +842,7 @@ private fun Phase9ViewportCards(
                     ),
                     onExposed = onExposed,
                 ) {
-                    Phase8ReadOnlyRow("이번 생의 동결 기록", "최종 결산", "현재 생이 최종 확정된 뒤에만 이 기록을 보여 줍니다.")
+                    Phase8ReadOnlyRow("이 생의 마지막 장", "기록은 남았다", "여기서 고른 하나가 다음 생으로 간다.")
                 }
             }
         }
@@ -712,7 +860,7 @@ private fun Phase9ViewportCards(
                 ),
                 onExposed = onExposed,
             ) {
-                Phase8ReadOnlyRow("이전 생의 편지", "다음 생에 남은 기록", "지난 생에 남긴 기록과 기억이 이어집니다.")
+                Phase8ReadOnlyRow("지난 생의 편지", "기록과 기억이 이어진다", "")
             }
         } ?: Unit
         Phase8ScreenId.P024_WEEKLY -> state.highSchool?.weekly?.let { weekly ->
@@ -728,7 +876,7 @@ private fun Phase9ViewportCards(
                 ),
                 onExposed = onExposed,
             ) {
-                Phase8ReadOnlyRow("이번 주 기록", "${weekly.tasks.count { it.completed }}/${weekly.tasks.size} 과제", "이번 주의 작은 목표를 확인합니다.")
+                Phase8ReadOnlyRow("이번 주 기록", "${weekly.tasks.count { it.completed }}/${weekly.tasks.size} 과제", "")
             }
         } ?: Unit
         Phase8ScreenId.P028_LIFECARD -> Phase9LifeCardProjection.selected(state, selectedLifeCardCareerId)?.let { card ->
@@ -795,7 +943,7 @@ internal fun LifeCardVisual(state: GameAggregateState, careerId: String) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PlayerPortrait(
-                    seed = record.playerName,
+                    seed = lineagePortraitSeed(state) ?: record.playerName,
                     role = AvatarRole.PLAYER,
                     stage = if (record.drafted) PlayerStage.PRO else PlayerStage.ACE,
                     width = 58.dp,
@@ -818,6 +966,7 @@ internal fun LifeCardVisual(state: GameAggregateState, careerId: String) {
                     "삼진" to record.strikeouts.toString(),
                     "볼넷" to record.walks.toString(),
                     "실점" to record.runsAllowed.toString(),
+                    "퍼펙트" to record.perfectReleases.toString(),
                 ).forEach { (label, value) ->
                     Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
                         Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -825,14 +974,27 @@ internal fun LifeCardVisual(state: GameAggregateState, careerId: String) {
                     }
                 }
             }
-            Text("능력 ${record.ratings.map(AbilityDisplayScale::rating).joinToString(" · ")}", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
+            Text(listOf("구위", "제구", "무브먼트", "체력").zip(record.ratings.map(AbilityDisplayScale::rating)).joinToString(" · ") { (label, value) -> "$label $value" }, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
+            lineageLine(state, upToLife = record.lifeNumber)?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = BaseballColors.textTertiary) }
         }
     }
 }
 
+/** The face belongs to the lineage: the first life's name seeds every later life, even after a rename. */
 internal fun playerPortraitSeed(state: GameAggregateState): String? =
-    state.pro?.identityName?.takeIf { it.isNotBlank() }
+    lineagePortraitSeed(state)
+        ?: state.pro?.identityName?.takeIf { it.isNotBlank() }
         ?: state.highSchool?.run?.identity?.name?.takeIf { it.isNotBlank() }
+
+internal fun lineagePortraitSeed(state: GameAggregateState): String? =
+    state.highSchool?.archive?.firstOrNull()?.playerName?.takeIf { it.isNotBlank() }
+
+/** Last three lives in one line: who they were and how it ended. */
+internal fun lineageLine(state: GameAggregateState, upToLife: Int? = null): String? {
+    val records = state.highSchool?.archive.orEmpty().filter { upToLife == null || it.lifeNumber <= upToLife }.takeLast(3)
+    if (records.isEmpty()) return null
+    return "계보 " + records.joinToString(" → ") { "${it.lifeNumber}생 ${it.playerName} ${if (it.drafted) "지명" else "미지명"} K${it.strikeouts}" }
+}
 
 private fun windLabel(id: String): String = when (id) {
     "calm" -> "고요한 해"
@@ -877,9 +1039,13 @@ private fun ColumnScope.Phase8SetupFields(
     val gameCopy = rememberGameCopy()
     val setupAction = model.actions.single { it.id == "startHighSchool" }
     val secondLife = (state.highSchool?.archive?.size ?: 0) >= 1 || state.meta.retiredProCareers.isNotEmpty()
-    val lastStep = if (secondLife) 4 else 2
+    val lastStep = if (secondLife) 3 else 1
+    // The reborn player keeps their name unless they type a new one.
+    val carriedName = if (secondLife && state.meta.seedChallenge == null)
+        state.highSchool?.archive?.lastOrNull()?.playerName?.takeIf { it.isNotBlank() } ?: state.meta.retiredProCareers.lastOrNull()?.identityName?.takeIf { it.isNotBlank() }
+        else null
     var step by rememberSaveable(model.id.wire + ":step") { mutableStateOf(0) }
-    var name by rememberSaveable(model.id.wire) { mutableStateOf("") }
+    var name by rememberSaveable(model.id.wire) { mutableStateOf(carriedName.orEmpty()) }
     var region by rememberSaveable(model.id.wire + ":region") {
         mutableStateOf(HighSchoolDisplayRules.regions.first())
     }
@@ -909,6 +1075,14 @@ private fun ColumnScope.Phase8SetupFields(
     Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
     when (step) {
         0 -> {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxWidth()) {
+                PlayerPortrait(seed = (if (secondLife && state.meta.seedChallenge == null) lineagePortraitSeed(state) else null) ?: finalName, stage = PlayerStage.FRESHMAN, width = 72.dp, modifier = Modifier.testTag("setup.portrait"))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(finalName, verbatim = true, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(if (carriedName != null && finalName == carriedName) "지난 생의 그 얼굴 그대로." else if (carriedName != null) "이름은 달라도 얼굴은 이어진다. 기억을 이어받은 다른 선수." else "이름이 얼굴을 정한다.",
+                        style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
+                }
+            }
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it.take(12) },
@@ -917,8 +1091,6 @@ private fun ColumnScope.Phase8SetupFields(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().testTag("setup.name"),
             )
-        }
-        1 -> {
             Text("지역", style = MaterialTheme.typography.titleSmall)
             Box {
                 OutlinedButton(
@@ -945,7 +1117,7 @@ private fun ColumnScope.Phase8SetupFields(
                 }
             }
         }
-        2 -> {
+        1 -> {
             Text("투구 손", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { throwingHand = "right" }) {
@@ -981,16 +1153,20 @@ private fun ColumnScope.Phase8SetupFields(
                 }
             }
         }
-        3 -> {
+        2 -> {
             Text(presetTitle(presetId), fontWeight = FontWeight.SemiBold)
-            Text(presetRepertoireLine(presetId), style = MaterialTheme.typography.bodyLarge)
+            Text("주 구종 ${setupPitchLabel(SetupPitch.entries.single { it.wire == primaryPitch })} · 배우는 구종 ${setupPitchLabel(SetupPitch.entries.single { it.wire == learningPitch })}", style = MaterialTheme.typography.bodyLarge)
+            var primaryReset by remember { mutableStateOf(false) }
+            if (primaryReset) Text("배우는 구종과 겹쳐서 주 구종을 포심으로 되돌렸다.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.warning)
             Text("배우는 구종", style = MaterialTheme.typography.titleSmall)
+            Text("3년 동안 익혀서 완성하는 공. 처음엔 제구가 흔들린다.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
             SetupPitch.entries.filter { it != SetupPitch.FOUR_SEAM }.forEach { pitch ->
-                OutlinedButton(onClick = { learningPitch = pitch.wire; if (primaryPitch == learningPitch) primaryPitch = "four_seam" }, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { learningPitch = pitch.wire; primaryReset = primaryPitch == learningPitch; if (primaryPitch == learningPitch) primaryPitch = "four_seam" }, modifier = Modifier.fillMaxWidth()) {
                     Text("${setupPitchLabel(pitch)}${if (learningPitch == pitch.wire) " · 선택됨" else ""}")
                 }
             }
             Text("주 구종", style = MaterialTheme.typography.titleSmall)
+            Text("포수가 가장 먼저 내는 사인. 첫 공부터 믿고 던질 수 있다.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
             SetupPitch.entries.filter { it.wire != learningPitch }.forEach { pitch ->
                 OutlinedButton(onClick = { primaryPitch = pitch.wire }, modifier = Modifier.fillMaxWidth()) {
                     Text("${setupPitchLabel(pitch)}${if (primaryPitch == pitch.wire) " · 선택됨" else ""}")
@@ -999,46 +1175,42 @@ private fun ColumnScope.Phase8SetupFields(
         }
         else -> {
             Text("이번 생의 난이도", style = MaterialTheme.typography.titleSmall)
-            listOf("relaxed" to "부드럽게", "standard" to "표준", "challenging" to "혹독하게").forEach { (id, label) ->
-                OutlinedButton(onClick = { harshness = id }) { Text(if (harshness == id) "$label · 선택됨" else label) }
+            listOf(Triple("relaxed", "부드럽게", "라이벌이 약하고 지명선이 낮다."), Triple("standard", "표준", "기본."), Triple("challenging", "혹독하게", "라이벌이 강하고 지명선이 높다. 야구혼을 더 받는다.")).forEach { (id, label, detail) ->
+                SetupOption(label, detail, harshness == id) { harshness = id }
             }
-            Text("야구혼 계승 분야", style = MaterialTheme.typography.titleSmall)
-            listOf("body" to "몸 · 구위", "technique" to "기술 · 제구", "game" to "경기 · 운영").forEach { (id, label) ->
-                OutlinedButton(onClick = { soulDomain = id }) { Text(if (soulDomain == id) "$label · 선택됨" else label) }
+            Text("야구혼이 먼저 키우는 것", style = MaterialTheme.typography.titleSmall)
+            Text("지난 생이 남긴 야구혼을 어느 능력에 먼저 쓸지.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
+            listOf(Triple("body", "몸 · 구위", "공에 힘이 실린 채 시작한다."), Triple("technique", "기술 · 제구", "초록 구간이 넓은 채 시작한다."), Triple("game", "경기 · 운영", "타자를 읽는 눈을 갖고 시작한다.")).forEach { (id, label, detail) ->
+                SetupOption(label, detail, soulDomain == id) { soulDomain = id }
             }
-            Text("영혼 상점 · 잔액 $soulBalance · 사용 $boostCost", style = MaterialTheme.typography.titleSmall)
+            Text("야구혼 $soulBalance · 쓰는 중 $boostCost", style = MaterialTheme.typography.titleSmall)
+            Text("야구혼을 써서 이번 생의 출발을 바꾼다.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
             SetupSoulBoost.entries.forEach { boost ->
                 val selected = boost in boosts
-                OutlinedButton(
-                    onClick = { selectedBoostIds = (if (selected) boosts - boost else boosts + boost).joinToString(",") { it.wire } },
-                    enabled = selected || boostCost + boost.cost <= soulBalance,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("${setupBoostLabel(boost)} · ${boost.cost}${if (selected) " · 선택됨" else ""}") }
+                SetupOption("${setupBoostLabel(boost)} · 야구혼 ${boost.cost}", setupBoostDetail(boost), selected, enabled = selected || boostCost + boost.cost <= soulBalance) {
+                    selectedBoostIds = (if (selected) boosts - boost else boosts + boost).joinToString(",") { it.wire }
+                }
             }
-            Text("이번 생의 핸디캡을 고를 수 있습니다. 최대 두 개입니다.", style = MaterialTheme.typography.bodyLarge)
+            Text("핸디캡", style = MaterialTheme.typography.titleSmall)
+            Text("최대 둘. 어려워지는 대신 3년을 마치면 야구혼을 더 받는다.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
             listOf(
-                "unknown_land" to "낯선 땅",
-                "stubborn_coach" to "고집 센 코치",
-                "single_weapon" to "한 가지 무기",
-                "genius_generation" to "천재들의 기수",
-            ).forEach { (id, label) ->
+                Triple("unknown_land", "낯선 땅", "연고 밖에서 시작한다. 관계가 늦게 붙는다."),
+                Triple("stubborn_coach", "고집 센 코치", "감독이 내 말을 잘 안 듣는다. 믿음이 더디게 쌓인다."),
+                Triple("single_weapon", "한 가지 무기", "가장 강한 능력 하나만 빠르게 큰다. 나머지는 더디다."),
+                Triple("genius_generation", "천재들의 기수", "같은 해 라이벌들이 유난히 강하다."),
+            ).forEach { (id, label, detail) ->
                 val selected = id in karmas
-                OutlinedButton(
-                    onClick = {
-                        val next = karmas.toMutableSet()
-                        if (selected) next.remove(id) else if (next.size < 2) next.add(id)
-                        selectedKarmas = next.joinToString(",")
-                    },
-                ) {
-                    Text(if (selected) "$label · 선택됨" else label)
+                SetupOption(label, detail, selected) {
+                    val next = karmas.toMutableSet()
+                    if (selected) next.remove(id) else if (next.size < 2) next.add(id)
+                    selectedKarmas = next.joinToString(",")
                 }
             }
         }
     }
     }
     val canAdvance = when (step) {
-        0 -> true
-        1 -> region in HighSchoolDisplayRules.regions
+        0 -> region in HighSchoolDisplayRules.regions
         else -> true
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -1084,18 +1256,27 @@ private fun ColumnScope.Phase8SetupFields(
 
 private fun setupStepTitle(step: Int): String = when (step) {
     0 -> "어떤 이름으로 불릴까요?"
-    1 -> "어디에서 시작할까요?"
-    2 -> "어떤 투수가 되고 싶나요?"
-    3 -> "어떤 공으로 승부할까요?"
+    1 -> "어떤 투수가 되고 싶나요?"
+    2 -> "어떤 공으로 승부할까요?"
     else -> "이번 생에는 무엇을 이어받을까요?"
 }
 
-private fun presetRepertoireLine(id: String): String = when (id) {
-    "power_prospect" -> "주 구종 포심 · 배우는 구종 체인지업"
-    "precision_commander" -> "주 구종 포심 · 배우는 구종 커브"
-    "breaking_ball_artist" -> "주 구종 슬라이더 · 배우는 구종 체인지업"
-    "innings_eater" -> "주 구종 포심 · 배우는 구종 체인지업"
-    else -> "주 구종 포심 · 배우는 구종 슬라이더"
+@Composable
+private fun SetupOption(label: String, detail: String, selected: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
+    OutlinedButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) BaseballColors.action else BaseballColors.border)) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal, color = if (selected) BaseballColors.action else BaseballColors.textPrimary)
+            if (detail.isNotBlank()) Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+private fun setupBoostDetail(boost: SetupSoulBoost): String = when (boost) {
+    SetupSoulBoost.TALENT_BREAK -> "가장 낮은 재능의 벽을 한 단계 올린다."
+    SetupSoulBoost.EXTRA_MEMORY -> "지난 생의 기억을 하나 더 가져온다."
+    SetupSoulBoost.HEAD_START -> "시작 능력에 5를 얹는다."
+    SetupSoulBoost.TRAINING_RHYTHM -> "훈련 한 번의 효과가 커진다."
 }
 
 @Composable
@@ -1186,6 +1367,7 @@ private fun Phase8ShareButton(
         Phase8ScreenId.P013_DRAFT -> CareerShareCopy.draft(state)
         Phase8ScreenId.P019_PRO_SEASON -> CareerShareCopy.nationalMedal(state)
         Phase8ScreenId.P021_PRO_RETIREMENT -> CareerShareCopy.retirement(state)
+        Phase8ScreenId.P015_REBIRTH -> CareerShareCopy.retirement(state) ?: CareerShareCopy.draft(state)
         Phase8ScreenId.P025_RECORDS_LEAGUE -> CareerShareCopy.retirement(state) ?: CareerShareCopy.records(state)
         else -> null
         }
@@ -1222,11 +1404,11 @@ private fun Phase8Actions(
     model: Phase8ScreenModel,
     onAction: (Phase8UiAction) -> Unit,
 ) {
-    if (model.actions.isEmpty()) return
+    val actions = if (model.id in setOf(Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P018_PRO_IMPORTANT_GAME)) model.actions.filter { it.enabled } else model.actions
+    if (actions.isEmpty()) return
     HorizontalDivider()
-    Text("다음 선택", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-    model.actions.forEach { action ->
-        Phase8ActionButton(model.id, action, onAction, showDescription = model.id.group == Phase8Group.PRO && model.actions.count { it.enabled } > 1)
+    actions.forEach { action ->
+        Phase8ActionButton(model.id, action, onAction, showDescription = model.id.group == Phase8Group.PRO && actions.count { it.enabled } > 1)
     }
 }
 
@@ -1237,7 +1419,7 @@ private fun Phase8ActionButton(
     onAction: (Phase8UiAction) -> Unit,
     showDescription: Boolean = false,
 ) {
-    val description = if (action.enabled) action.contentDescription else "${action.label}. ${action.description}. 지금은 선택할 수 없습니다."
+    val description = if (action.enabled) action.contentDescription else "${action.label}. 아직 열리지 않았다."
     if (action.destructive) {
         OutlinedButton(
             onClick = { onAction(Phase8UiAction(screenId, action.id, action.payloads)) },
@@ -1251,8 +1433,8 @@ private fun Phase8ActionButton(
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("action.${action.id}").gameDescription(description),
         ) { Text(action.label) }
     }
-    if (showDescription || action.destructive || !action.enabled) Text(
-        if (action.enabled) action.description else "이 장면에서는 아직 선택할 수 없습니다.",
+    if ((showDescription || action.destructive) && action.description.isNotBlank()) Text(
+        action.description,
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -1282,4 +1464,40 @@ private fun setupBoostLabel(boost: SetupSoulBoost): String = when (boost) {
     SetupSoulBoost.EXTRA_MEMORY -> "기억 한 자리 추가"
     SetupSoulBoost.HEAD_START -> "시작 능력 보너스"
     SetupSoulBoost.TRAINING_RHYTHM -> "훈련 리듬"
+}
+
+@Composable
+private fun ProductNavigation(state: GameAggregateState, currentTab: ProductTab, onNavigate: (Phase8ScreenId) -> Unit) {
+            NavigationBar(
+                modifier = Modifier.heightIn(min = if (androidx.compose.ui.platform.LocalDensity.current.fontScale >= 1.5f) 112.dp else 80.dp),
+                containerColor = BaseballColors.surface,
+                tonalElevation = 0.dp,
+            ) {
+                ProductTab.entries.forEach { tab ->
+                    val destination = tab.landingScreen(state)
+                    val isSelected = tab == currentTab
+                    NavigationBarItem(
+                        modifier = Modifier.testTag("navigation.${tab.name.lowercase()}"),
+                        selected = isSelected,
+                        onClick = { destination?.let(onNavigate) },
+                        enabled = destination != null,
+                        icon = {
+                            TabIcon(tab = tab, isSelected = isSelected)
+                        },
+                        label = {
+                            Text(
+                                text = tab.label,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = Color.Transparent,
+                            selectedIconColor = BaseballColors.action,
+                            selectedTextColor = BaseballColors.action,
+                            unselectedIconColor = BaseballColors.textTertiary,
+                            unselectedTextColor = BaseballColors.textTertiary,
+                        ),
+                    )
+                }
+            }
 }

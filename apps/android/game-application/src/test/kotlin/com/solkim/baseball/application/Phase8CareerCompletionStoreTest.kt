@@ -173,6 +173,43 @@ class Phase8CareerCompletionStoreTest {
         }
     }
 
+    @Test fun returningPlayerCanStartImmediatelyOrPracticeOnceWithoutCareerRewards() = runBlocking {
+        for (practice in listOf(false, true)) withTempDirectory { directory ->
+            val id = "return-ready-$practice"
+            val session = openFileSession(id, directory, native = true)
+            try {
+                session.completeHighSchoolAndEnterPro(enterPro = false)
+                session.executeFirst(Phase8ScreenId.P015_REBIRTH, "quickRebirth")
+                val before = session.store.current
+                val hs = requireNotNull(before.highSchool)
+                assertEquals(2, hs.run.lifeNumber)
+                assertFalse(before.settings.autoReleaseEnabled)
+                val actions = session.controller.projection(Phase8ScreenId.P003_PROLOGUE).actions
+                assertTrue(actions.single { it.id == "completeTutorial" }.enabled)
+                assertTrue(actions.single { it.id == "openTutorialPitch" }.enabled)
+                if (practice) {
+                    val launch = session.controller.execute(Phase8ScreenId.P003_PROLOGUE, "openTutorialPitch")
+                    assertNotNull(launch.launch)
+                    assertEquals(hs.run.pitcher.command, PitchHudProjection.pitcher(session.store.current).command)
+                    assertEquals(0, PitchHudProjection.fatigue(session.store.current))
+                    assertTrue(PitchHudProjection.scenarioDetail(session.store.current).contains("기록에 안 남는"))
+                    session.finishTutorialPitch()
+                    assertEquals(hs.run.pitcher, session.store.current.highSchool?.run?.pitcher)
+                    assertEquals(hs.run.performance, session.store.current.highSchool?.run?.performance)
+                    assertEquals(before.meta.completedGameCount, session.store.current.meta.completedGameCount)
+                }
+                session.executeFirst(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
+                val after = session.store.current
+                assertEquals(HighSchoolPhase.SCHOOL_SELECTION, after.highSchool?.run?.phase)
+                assertEquals(hs.run.pitcher, after.highSchool?.run?.pitcher)
+                assertEquals(hs.archive, after.highSchool?.archive)
+                assertEquals(hs.inheritance, after.highSchool?.inheritance)
+                val reopened = KotlinGameStore.open(id, session.repository, session.mode)
+                try { assertEquals(after, reopened.current) } finally { reopened.close() }
+            } finally { session.store.close() }
+        }
+    }
+
     private suspend fun openFileSession(installId: String, directory: Path, native: Boolean = false): CareerSession {
         val repository: GameStoreRepository = if (native) CSharpLegacyGameStoreRepository(directory, installId) else FileShadowFixtureGameStoreRepository(directory)
         val mode = if (native) NativeAuthorityMode.NATIVE_AUTHORITATIVE else NativeAuthorityMode.NATIVE_SHADOW_READ_ONLY
@@ -195,7 +232,7 @@ class Phase8CareerCompletionStoreTest {
         var phase7: Phase7VerticalController,
         val mode: NativeAuthorityMode,
     ) {
-        suspend fun completeHighSchoolAndEnterPro() {
+        suspend fun completeHighSchoolAndEnterPro(enterPro: Boolean = true) {
             assertFalse(store.current.settings.autoReleaseEnabled)
             executeFirst(Phase8ScreenId.P001_OPENING)
             // Persistence coverage uses a supported relaxed commander build to earn the draft;
@@ -223,6 +260,7 @@ class Phase8CareerCompletionStoreTest {
             val earnedSchool = requireNotNull(store.current.highSchool)
             val earnedDraft = requireNotNull(earnedSchool.run.draftResult)
             assertEquals("drafted", earnedDraft.outcome.wire)
+            if (!enterPro) return
             executeFirst(Phase8ScreenId.P015_REBIRTH, "startLinked")
             val linked = requireNotNull(store.current.pro)
             assertEquals(earnedDraft.teamId, linked.team.id)
@@ -385,7 +423,7 @@ class Phase8CareerCompletionStoreTest {
             )
         }
 
-        private suspend fun finishTutorialPitch() {
+        suspend fun finishTutorialPitch() {
             val pitch = requireNotNull(store.current.pitch)
             val request = phase7.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
             phase7.consumePresentation(pitch.sessionId, request)

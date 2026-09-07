@@ -118,9 +118,38 @@ public data class RebirthStartPreview(
 
 /** Resolve effect labels individually so Japanese never receives phrase-fragment translation. */
 public object SignatureLegacyDisplay {
+    public fun title(id: String, copy: GameCopy): String? =
+        com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == id }?.title?.let { copy.legacy(it) }
     public fun effect(id: String, copy: GameCopy): String? {
         val value = com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == id } ?: return null
         return listOf("구위" to value.stuff, "제구" to value.command, "무브먼트" to value.movement, "체력" to value.stamina)
             .filter { it.second != 0 }.joinToString(" · ") { (label, amount) -> "${copy.legacy(label)} ${if (amount > 0) "+" else ""}$amount" }
+    }
+}
+
+public object GrowthFeedbackPresentation {
+    public fun primary(receipt: PlayerGrowthReceipt): Int? = if (controlMilestone(receipt)) 1 else (0..3)
+        .filter { receipt.before[it] != receipt.after[it] }.maxByOrNull { receipt.after[it] - receipt.before[it] }
+    public fun controlMilestone(receipt: PlayerGrowthReceipt): Boolean = PitchReleaseWindow.crossesMilestone(receipt.before[1], receipt.after[1])
+    public fun condition(copy: GameCopy, fatigue: Int, change: Int): String = when {
+        change > 0 -> copy.resolve("loop.condition.up", GameCopyArgument.Whole(fatigue.toLong()), GameCopyArgument.Whole(change.toLong()))
+        change < 0 -> copy.resolve("loop.condition.down", GameCopyArgument.Whole(fatigue.toLong()), GameCopyArgument.Whole(change.toLong()))
+        else -> copy.resolve("loop.condition.current", GameCopyArgument.Whole(fatigue.toLong()))
+    }
+}
+
+public data class RebirthContinuity(val previousName: String?, val samePlayer: Boolean, val legacyTitle: String?, val games: Int, val strikeouts: Int) {
+    public companion object {
+        public fun resolve(state: GameAggregateState): RebirthContinuity? {
+            val hs = state.highSchool ?: return null
+            if (hs.run.lifeNumber <= 1 || hs.challenge.active || state.meta.seedChallenge != null) return null
+            val previous = hs.archive.lastOrNull { it.lifeNumber < hs.run.lifeNumber }
+            val legacy = hs.inheritance.selectedSignatureLegacyId?.let { id ->
+                com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == id }?.title
+            }
+            return RebirthContinuity(previous?.playerName, previous?.let { sameName(it.playerName, hs.run.identity.name) } ?: true,
+                legacy, previous?.importantGames ?: 0, previous?.strikeouts ?: 0)
+        }
+        public fun sameName(previous: String, current: String): Boolean = previous.trim().isNotEmpty() && previous.trim().equals(current.trim(), ignoreCase = true)
     }
 }

@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.solkim.baseball.application.GameAggregateState
+import com.solkim.baseball.application.AvatarRole
 import com.solkim.baseball.application.Phase8CommandContext
 import com.solkim.baseball.application.Phase8Controller
 import com.solkim.baseball.application.Phase8Payloads
@@ -27,6 +28,8 @@ import com.solkim.baseball.application.GameCommandEnvelope
 import com.solkim.baseball.application.SeedChallengeCode
 import com.solkim.baseball.application.SeedChallengeRules
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.Modifier
@@ -76,6 +79,7 @@ public class MainActivity : ComponentActivity() {
     private var showSeedExitDialog by mutableStateOf(false)
     private var invalidSeedLink by mutableStateOf(false)
     private var actionError by mutableStateOf<String?>(null)
+    private var showResetConfirmation by mutableStateOf(false)
     private var restoringProgress by mutableStateOf(false)
     private var selectedScreen by mutableStateOf<Phase8ScreenId?>(null)
     private var platformUiState by mutableStateOf(
@@ -107,6 +111,7 @@ public class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_BaseballMigration)
         super.onCreate(savedInstanceState)
         val store = (application as BaseballApplication).gameStore
         platform = (application as BaseballApplication).platform
@@ -138,17 +143,41 @@ public class MainActivity : ComponentActivity() {
                     commandContext = commandContext,
                     platformState = platformUiState,
                     onNavigate = {
-                        selectedScreen = it
+                        selectedScreen = it.takeUnless { destination -> destination == phase8Controller.preferredScreen() }
                         actionError = null
                     },
-                    onAction = ::performPhase8,
+                    onAction = { action ->
+                        if (action.actionId == "resetProgress") {
+                            actionError = null
+                            showResetConfirmation = true
+                        } else performPhase8(action)
+                    },
                     onPlatformAction = ::performPlatformAction,
                     onViewportExposure = ::recordViewportExposure,
                     pendingSeedCode = pendingSeedCode,
                     onSeedChallenge = { showSeedDialog = true },
                     onExitSeedChallenge = { showSeedExitDialog = true },
                 )
+                LaunchedEffect(state.settings.musicEnabled) {
+                    if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) applyNativeSettings()
+                }
                 val copy = rememberGameCopy()
+                if (showResetConfirmation) AlertDialog(
+                    modifier = Modifier.semantics { testTagsAsResourceId = true },
+                    onDismissRequest = { if (!busy) { showResetConfirmation = false; actionError = null } },
+                    title = { Text(copy.resolve("android.settings.reset-title")) },
+                    text = { Column {
+                        Text(copy.resolve(if (busy) "android.settings.reset-working" else "android.settings.reset-body"))
+                        actionError?.let { Text(it, modifier = Modifier.testTag("settings.reset.error"), color = MaterialTheme.colorScheme.error) }
+                    } },
+                    confirmButton = { TextButton(enabled = !busy, modifier = Modifier.testTag("settings.reset.confirm"), onClick = {
+                        val action = phase8Controller.projection(Phase8ScreenId.P027_SETTINGS).actions.firstOrNull { it.id == "resetProgress" && it.enabled }
+                        if (action != null) performPhase8(Phase8UiAction(Phase8ScreenId.P027_SETTINGS, action.id, action.payloads))
+                    }) { Text(copy.resolve("android.settings.reset-confirm"), color = MaterialTheme.colorScheme.error) } },
+                    dismissButton = { TextButton(enabled = !busy, modifier = Modifier.testTag("settings.reset.cancel"), onClick = {
+                        showResetConfirmation = false; actionError = null
+                    }) { Text(copy.resolve("android.settings.reset-cancel")) } },
+                )
                 if (showSeedDialog) SeedChallengeDialog(pendingSeedCode, SeedChallengeRules.canStart(state) && !busy,
                     onStart = { code, preset ->
                         rememberSeed(code)
@@ -207,7 +236,7 @@ public class MainActivity : ComponentActivity() {
                     throw cancelled
                 } catch (error: Exception) {
                     Log.e("MainActivity", "Progress reconciliation failed", error)
-                    withContext(Dispatchers.Main) { actionError = "진행 기록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요." }
+                    withContext(Dispatchers.Main) { actionError = "기록을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요." }
                 } finally {
                     withContext(kotlinx.coroutines.NonCancellable + Dispatchers.Main) { restoringProgress = false }
                 }
@@ -278,10 +307,13 @@ public class MainActivity : ComponentActivity() {
                 }
             } catch (error: Exception) {
                 Log.e("MainActivity", "Seed challenge command failed", error)
-                withContext(Dispatchers.Main) { actionError = "저장하지 못했습니다. 잠시 후 다시 시도해 주세요." }
+                withContext(Dispatchers.Main) { actionError = "저장하지 못했어요. 같은 버튼을 한 번 더 눌러 주세요." }
             }
         }
     }
+
+    /** Same button, same failure, twice: telling the player to press again a third time is a dead end. */
+    private var failingActionId: String? = null
 
     private fun performPhase8(action: Phase8UiAction) {
         actionError = null
@@ -294,12 +326,13 @@ public class MainActivity : ComponentActivity() {
                     capturedPayloads = action.capturedPayloads,
                 )
                 withContext(Dispatchers.Main) {
-                    // A successful command invalidates any manually selected utility screen;
-                    // recomposition now chooses the route from the newly committed state.
-                    selectedScreen = null
+                    // Preferences keep their current page so multiple changes can be made in place.
+                    if (action.screenId != Phase8ScreenId.P027_SETTINGS || action.actionId == "resetProgress") selectedScreen = null
+                    if (action.actionId == "resetProgress") showResetConfirmation = false
                     execution.launch?.let { launch ->
                         startActivity(PitchActivity.intent(this@MainActivity, launch.sessionId, launch.expectedRevision.toString()))
                     }
+                    failingActionId = null
                     applyNativeSettings()
                     (application as BaseballApplication).updateCrashContext()
                     nativePresentationMarker(action.actionId)?.let { marker ->
@@ -320,9 +353,25 @@ public class MainActivity : ComponentActivity() {
                 // Refresh an uncertain earlier commit before allowing another choice.
                 val refreshed = runCatching { (application as BaseballApplication).gameStore.reconcilePersistedRevision() }.isSuccess
                 withContext(Dispatchers.Main) {
-                    actionError = if (error.message == "game.command.stale_revision" && refreshed)
-                        "진행 기록을 다시 불러왔어요. 원하는 행동을 다시 눌러 주세요."
-                    else "진행 상황을 저장하지 못했어요. 잠시 후 다시 시도해 주세요."
+                    val restoredState = (application as BaseballApplication).gameStore.current
+                    if (action.actionId == "resetProgress" && refreshed && restoredState.stage == com.solkim.baseball.application.GameStage.OPENING &&
+                        restoredState.highSchool == null && restoredState.pro == null) {
+                        showResetConfirmation = false
+                        selectedScreen = null
+                        actionError = null
+                        applyNativeSettings()
+                        refreshPlatformUiState()
+                        return@withContext
+                    }
+                    val repeated = failingActionId == action.actionId
+                    failingActionId = action.actionId
+                    actionError = when {
+                        error.message == "game.command.stale_revision" && refreshed ->
+                            "기록을 다시 불러왔어요. 방금 누른 버튼을 한 번 더 눌러 주세요."
+                        repeated ->
+                            "저장이 계속 실패하고 있어요. 설정의 저장과 기록에서 기록을 파일로 보관한 뒤, 기기의 남은 저장 공간을 확인해 주세요."
+                        else -> "저장하지 못했어요. 같은 버튼을 한 번 더 눌러 주세요."
+                    }
                 }
             }
         }
@@ -332,11 +381,11 @@ public class MainActivity : ComponentActivity() {
         actionError = null
         val state = (application as BaseballApplication).gameStore.current
         val decoded = runCatching { PlatformActionCodec.decode(action.encodedPayload) }.getOrElse {
-            actionError = "이 선택을 확인하지 못했습니다. 다시 시도해 주세요."
+            actionError = "이 선택이 저장되지 않았어요. 한 번 더 눌러 주세요."
             return
         }
         if (decoded != action.payload || decoded.expectedRevision != state.revision || decoded.stateCommitment != state.commitment) {
-            actionError = "저장된 장면이 바뀌었습니다. 화면을 다시 열어 주세요."
+            actionError = "그사이 이야기가 앞으로 갔어요. 뒤로 갔다가 다시 들어와 주세요."
             return
         }
         val expectedParameters = when (decoded.action) {
@@ -351,7 +400,7 @@ public class MainActivity : ComponentActivity() {
             else -> emptyMap()
         }
         if (decoded.parameterHash != PlatformActionCodec.parameterHash(expectedParameters)) {
-            actionError = "선택한 항목을 확인하지 못했습니다. 화면을 다시 열어 주세요."
+            actionError = "이 선택은 지금 화면과 맞지 않아요. 뒤로 갔다가 다시 들어와 주세요."
             return
         }
         when (decoded.action) {
@@ -371,11 +420,11 @@ public class MainActivity : ComponentActivity() {
             }
             PlatformAction.SHARE_LIFE_CARD -> {
                 val payload = action.sharePayload ?: run {
-                    actionError = "공유할 카드를 준비하지 못했습니다."
+                    actionError = "카드를 만들지 못했어요. 기록 탭에서 다시 시도해 주세요."
                     return
                 }
                 if (payload.careerId.isBlank() || payload.lifeNumber <= 0) {
-                    actionError = "보관된 카드의 생을 확인하지 못했습니다."
+                    actionError = "이 카드의 생을 찾지 못했어요. 기록 탭에서 다른 생을 골라 주세요."
                     return
                 }
                 val selected = Phase9LifeCardProjection.selected(state, payload.careerId)
@@ -389,14 +438,23 @@ public class MainActivity : ComponentActivity() {
                     )
                 }
                 if (payload != expectedPayload) {
-                    actionError = "보관된 카드가 바뀌었습니다. 다시 열어 주세요."
+                    actionError = "카드가 그사이 바뀌었어요. 다시 골라 주세요."
                     return
                 }
                 val copy = com.solkim.baseball.application.GameCopy(com.solkim.baseball.application.GameLanguage.fromTag(resources.configuration.locales[0].toLanguageTag()))
-                val playerName = state.highSchool?.archive?.firstOrNull { it.careerId == payload.careerId }?.playerName
+                val record = state.highSchool?.archive?.firstOrNull { it.careerId == payload.careerId }
+                val playerName = record?.playerName
                 val names = listOfNotNull(playerName).toSet()
                 val lines = payload.lines.map { copy.legacy(it, names) }
-                val result = platform.share.share(payload.copy(title = copy.legacy(payload.title), text = lines.joinToString("\n"), lines = lines))
+                val appName = getString(R.string.app_name)
+                val installUrl = "https://play.google.com/store/apps/details?id=com.solkim.baseball.android"
+                val portrait = playerName?.let { name ->
+                    val drawableName = PlayerPortraitResolver.resolveDrawableName(name, AvatarRole.PLAYER, if (record.drafted) PlayerStage.PRO else PlayerStage.ACE)
+                    val id = resources.getIdentifier(drawableName, "drawable", packageName)
+                    if (id != 0) runCatching { android.graphics.BitmapFactory.decodeResource(resources, id) }.getOrNull() else null
+                }
+                val result = platform.share.share(payload.copy(title = copy.legacy(payload.title), text = (lines + listOf("", appName, installUrl)).joinToString("\n"), lines = lines),
+                    portrait = portrait, appName = appName)
                 if (result is com.solkim.baseball.platform.ShareResult.ChooserOpened || result is com.solkim.baseball.platform.ShareResult.TextFallbackChooserOpened) {
                     // The chooser receipt belongs to the exact frozen record captured by the
                     // payload. Never substitute the active player or a later archive entry if a
@@ -411,15 +469,15 @@ public class MainActivity : ComponentActivity() {
                         ),
                     )
                 }
-                if (result is com.solkim.baseball.platform.ShareResult.Failed) actionError = "공유 화면을 열지 못했습니다."
+                if (result is com.solkim.baseball.platform.ShareResult.Failed) actionError = "공유 창을 열지 못했어요. 다른 앱을 잠시 닫고 다시 눌러 주세요."
             }
             PlatformAction.REQUEST_REVIEW -> {
                 if (decoded.screenWire !in setOf(Phase8ScreenId.P014_RUN_RECAP.wire, Phase8ScreenId.P015_REBIRTH.wire)) {
-                    actionError = "지금은 리뷰를 묻는 장면이 아닙니다."
+                    actionError = "지금은 리뷰를 묻는 장면이 아니에요."
                     return
                 }
                 val reason = action.reviewReason ?: run {
-                    actionError = "리뷰 안내 이유를 확인하지 못했습니다."
+                    actionError = "리뷰 창을 열 수 없었어요. 다음 기회에 다시 물어볼게요."
                     return
                 }
                 val expectedReason = Phase8ScreenProjection.reviewTrigger(state)?.let {
@@ -431,11 +489,11 @@ public class MainActivity : ComponentActivity() {
                     }
                 }
                 if (reason != expectedReason) {
-                    actionError = "지금은 이 리뷰 안내를 열 수 없습니다."
+                    actionError = "지금은 리뷰를 남길 수 없어요. 다음 기회에 다시 물어볼게요."
                     return
                 }
                 platform.review.request(this, reason) { result ->
-                    if (result is ReviewResult.Failed) runOnUiThread { actionError = "지금은 리뷰 창을 열 수 없습니다." }
+                    if (result is ReviewResult.Failed) runOnUiThread { actionError = "지금은 리뷰 창을 열 수 없어요. 스토어에서 직접 남길 수 있어요." }
                 }
             }
         }
@@ -555,6 +613,7 @@ public class MainActivity : ComponentActivity() {
     }
 
     private fun applyNativeSettings() {
+        if (!playbackSettings().soundEnabled) platform.audioHaptics.stopEffects()
         platform.audioHaptics.startMusic(NativeAudioResources.musicToggleResource(), playbackSettings())
     }
 
@@ -622,6 +681,11 @@ public class MainActivity : ComponentActivity() {
         }
         val savedDay = runCatching { LocalDate.parse(plan.savedDayKey ?: plan.createdDayKey) }.getOrElse { commandContext.clock.today() }
         val trigger = savedDay.plusDays(1).atTime(LocalTime.of(9, 0)).atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli()
+        val state = (application as BaseballApplication).gameStore.current
+        val playerName = state.pro?.identityName?.takeIf { it.isNotBlank() } ?: state.highSchool?.run?.identity?.name?.takeIf { it.isNotBlank() }
+        val body = plan.body.takeIf { it.isNotBlank() && it != plan.reason } ?: "어디까지 했는지 알려 줄게."
+        // One reminder at a time. A new plan replaces the old alarm instead of stacking on it.
+        runCatching { platform.notifications.scheduler.cancelScheduled() }
         platform.notifications.scheduler.schedule(
             NativeReminderPlan(
                 triggerAtUtcMillis = trigger,
@@ -629,6 +693,8 @@ public class MainActivity : ComponentActivity() {
                 reason = plan.reason,
                 planReceipt = plan.receiptId,
                 token = "${plan.receiptId}|${plan.createdDayKey}|${destination.wire}",
+                title = if (playerName != null) "$playerName, 다음 경기가 기다린다" else "다음 경기가 기다린다",
+                body = body,
             ),
         )
     }
@@ -744,9 +810,14 @@ public class MainActivity : ComponentActivity() {
             actionId.startsWith("seasonDecision:") ||
             actionId.startsWith("offseason:") ||
             actionId.startsWith("selectLegacy:") ||
-            actionId.startsWith("selectProLegacy:") ||
             actionId.startsWith("toggle") -> "menu-tap"
-            actionId in setOf("startHighSchool", "beginTutorial", "completeTutorial", "prepareReturnPlan", "claimWeeklyReward", "resolveDraft", "finalizeArchive", "quickRebirth", "customizeRebirth", "signContract", "retire") -> "pad-confirm"
+            actionId.startsWith("awakening:") ||
+            actionId.startsWith("acceptOffer:") ||
+            actionId.startsWith("selectProLegacy:") ||
+            actionId in setOf("resolveDraft", "confirmDraftResult", "nationalTeam:acknowledge", "acknowledgeSettlement", "quickRebirth", "retire", "startLinked") -> "milestone"
+            actionId.startsWith("investment:") ||
+            actionId.startsWith("ack:") ||
+            actionId in setOf("startHighSchool", "beginTutorial", "completeTutorial", "prepareReturnPlan", "claimWeeklyReward", "finalizeArchive", "customizeRebirth", "signContract", "advanceChapter", "chooseSchool") -> "pad-confirm"
         else -> null
     }
 

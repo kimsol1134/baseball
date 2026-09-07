@@ -120,17 +120,18 @@ public object PitchScoreboardProjection {
     private fun outingLine(state: GameAggregateState): String? {
         val pro = state.pro?.activePitch
         if (pro != null && pro.pitches > 0) {
-            return formatOuting(pro.outs, pro.strikeouts, pro.walks, pro.runsAllowed, pro.pitches)
+            return formatOuting(pro.outs, pro.strikeouts, pro.walks, pro.runsAllowed, pro.pitches, pro.perfectReleases)
         }
         val hs = state.highSchool?.activePitch
         if (hs != null && hs.pitches > 0) {
-            return formatOuting(hs.outs, hs.strikeouts, hs.walks, hs.runsAllowed, hs.pitches)
+            return formatOuting(hs.outs, hs.strikeouts, hs.walks, hs.runsAllowed, hs.pitches, hs.perfectReleases)
         }
         return null
     }
 
-    private fun formatOuting(outs: Int, strikeouts: Int, walks: Int, runs: Int, pitches: Int): String {
+    private fun formatOuting(outs: Int, strikeouts: Int, walks: Int, runs: Int, pitches: Int, perfect: Int = 0): String {
         val innings = "${outs / 3}.${outs % 3}"
-        return "${innings}이닝 · ${strikeouts}탈삼진 ${walks}볼넷 ${runs}실점 · ${pitches}구"
+        val base = "${innings}이닝 · ${strikeouts}탈삼진 ${walks}볼넷 ${runs}실점 · ${pitches}구"
+        return if (perfect > 0) "$base · 퍼펙트 $perfect" else base
     }
 }

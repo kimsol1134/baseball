@@ -35,6 +35,11 @@ class GameCopyTest {
         assertEquals("Practice pitching", GameCopy(GameLanguage.ENGLISH).legacy("첫 사인 익히기"))
         assertEquals("投球を練習する", GameCopy(GameLanguage.JAPANESE).legacy("첫 사인 익히기"))
         assertEquals("첫 사인 익히기", GameCopy(GameLanguage.KOREAN).legacy("첫 사인 익히기", setOf("첫 사인 익히기")))
+        val oldDraft = "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
+        for (language in GameLanguage.entries) {
+            val copy = GameCopy(language)
+            assertEquals(copy.resolve("conclusion.draft-summary.undrafted"), copy.legacy(oldDraft))
+        }
     }
     @Test fun sourceCataloguesResolveExplicitKeysInAllThreeLanguages() {
         assertEquals("선수 만들기", GameCopy(GameLanguage.KOREAN).resolve("android.setup.title"))

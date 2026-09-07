@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.BaseballLaunch" parent="Theme.BaseballLaunchBase">
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>
