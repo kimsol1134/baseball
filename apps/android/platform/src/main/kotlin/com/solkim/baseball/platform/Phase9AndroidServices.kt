@@ -44,6 +44,8 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.FirebaseApp
 import com.solkim.baseball.model.Hashing
+import com.solkim.baseball.model.PitchAudioCue
+import com.solkim.baseball.model.PitchHapticCue
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import com.solkim.baseball.model.PresentationMarker
@@ -300,8 +302,8 @@ public data class NativeReminderPlan(
     public val reason: String,
     public val planReceipt: String,
     public val token: String,
-    public val title: String = "다음 장면을 기다리고 있어요",
-    public val body: String = "저장된 복귀 계획을 확인해 보세요.",
+    public val title: String = "다음 경기가 기다린다",
+    public val body: String = "어디까지 했는지 알려 줄게.",
 ) {
     init {
         require(triggerAtUtcMillis > 0L) { "reminder.trigger" }
@@ -466,8 +468,8 @@ public class ReminderAlarmReceiver : BroadcastReceiver() {
         val pending = PendingIntent.getActivity(context, rawToken.hashCode(), openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.baseball_notification_small)
-            .setContentTitle(intent.getStringExtra("baseball.notification.title")?.takeUnless { it == "다음 장면을 기다리고 있어요" } ?: context.getString(R.string.baseball_return_title))
-            .setContentText(intent.getStringExtra("baseball.notification.body")?.takeUnless { it == "저장된 복귀 계획을 확인해 보세요." } ?: context.getString(R.string.baseball_return_body))
+            .setContentTitle(intent.getStringExtra("baseball.notification.title")?.takeIf { it.isNotBlank() } ?: context.getString(R.string.baseball_return_title))
+            .setContentText(intent.getStringExtra("baseball.notification.body")?.takeIf { it.isNotBlank() } ?: context.getString(R.string.baseball_return_body))
             .setAutoCancel(true)
             .setContentIntent(pending)
             .build()
@@ -544,7 +546,7 @@ public class NativeLifeCardShareService(
     private val context: Context,
     private val stateStore: PlatformStateStore? = null,
 ) {
-    public fun share(payload: LifeCardSharePayload): ShareResult {
+    public fun share(payload: LifeCardSharePayload, portrait: Bitmap? = null, appName: String? = null): ShareResult {
         val epoch = stateStore?.read()?.shareCacheEpoch ?: 0L
         val shareDirectory = File(context.cacheDir, "phase9-share-$epoch").apply { mkdirs() }
         val baseName = "lifecard-${Hashing.sha256Hex("${payload.careerId}|${payload.lifeNumber}|${payload.text}").take(16)}"
@@ -554,7 +556,7 @@ public class NativeLifeCardShareService(
             putExtra(Intent.EXTRA_TEXT, payload.text)
         }
         return try {
-            val image = render(payload)
+            val image = render(payload, portrait, appName)
             val imageFile = File(shareDirectory, "$baseName.png")
             imageFile.outputStream().use { stream -> check(image.compress(Bitmap.CompressFormat.PNG, 100, stream)) { "share.png_compress" } }
             image.recycle()
@@ -581,48 +583,70 @@ public class NativeLifeCardShareService(
             .forEach { it.deleteRecursively() }
     }
 
-    private fun render(payload: LifeCardSharePayload): Bitmap {
-        val wrappedLines = payload.lines.flatMap { line ->
-            if (line.isEmpty()) listOf("") else line.chunked(48)
+    /** A card, not a log: face, name, verdict, four numbers, one legacy line, and the game's name. */
+    private fun render(payload: LifeCardSharePayload, portrait: Bitmap?, appName: String?): Bitmap {
+        val width = 1080
+        val height = 1350
+        val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        canvas.drawColor(Color.rgb(11, 15, 13))
+        val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(20, 27, 24) }
+        canvas.drawRoundRect(RectF(48f, 48f, width - 48f, height - 48f), 40f, 40f, cardPaint)
+        val accent = Color.rgb(196, 255, 92)
+        val gold = Color.rgb(226, 190, 96)
+        val ink = Color.rgb(240, 244, 240)
+        val muted = Color.rgb(150, 160, 152)
+        fun paint(size: Float, color: Int, bold: Boolean = false) = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color; textSize = size
+            typeface = Typeface.create("sans-serif", if (bold) Typeface.BOLD else Typeface.NORMAL)
         }
-        val plan = NativeLifeCardRenderPolicy.plan(wrappedLines.size)
-        val output = Bitmap.createBitmap(plan.outputWidth, plan.outputHeight, Bitmap.Config.ARGB_8888)
-        val outputCanvas = Canvas(output)
-        val sourcePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.rgb(37, 45, 50)
-            textSize = 38f
-            typeface = Typeface.create("sans-serif", Typeface.NORMAL)
+        val fields = payload.lines.mapNotNull { line -> line.split(": ", limit = 2).takeIf { it.size == 2 }?.let { it[0] to it[1] } }.toMap()
+        val name = fields["선수"] ?: payload.title.substringBefore(" · ")
+        val life = fields["생"] ?: "${payload.lifeNumber}번째 생"
+        val drafted = fields["드래프트"] == "지명"
+        // portrait
+        val portraitLeft = 96f
+        val portraitTop = 112f
+        val portraitSize = 260f
+        if (portrait != null) {
+            val src = android.graphics.Rect(0, 0, portrait.width, portrait.height)
+            val dst = RectF(portraitLeft, portraitTop, portraitLeft + portraitSize, portraitTop + portraitSize * portrait.height / portrait.width.coerceAtLeast(1))
+            val clip = android.graphics.Path().apply { addRoundRect(dst, 28f, 28f, android.graphics.Path.Direction.CW) }
+            canvas.save(); canvas.clipPath(clip); canvas.drawBitmap(portrait, src, dst, Paint(Paint.FILTER_BITMAP_FLAG)); canvas.restore()
         }
-        var sourceTop = 0
-        while (sourceTop < plan.sourceHeight) {
-            val tileHeight = minOf(plan.tileHeight, plan.sourceHeight - sourceTop)
-            val tile = Bitmap.createBitmap(plan.sourceWidth, tileHeight, Bitmap.Config.ARGB_8888)
-            try {
-                val tileCanvas = Canvas(tile)
-                tileCanvas.drawColor(Color.rgb(248, 246, 240))
-                tileCanvas.save()
-                tileCanvas.translate(0f, -sourceTop.toFloat())
-                tileCanvas.drawText(payload.title, 56f, 78f, sourcePaint)
-                wrappedLines.forEachIndexed { index, line ->
-                    tileCanvas.drawText(line, 56f, 150f + index * NativeLifeCardRenderPolicy.LINE_HEIGHT, sourcePaint)
-                }
-                tileCanvas.restore()
-                outputCanvas.drawBitmap(
-                    tile,
-                    null,
-                    RectF(
-                        0f,
-                        sourceTop * plan.uniformScale,
-                        plan.outputWidth.toFloat(),
-                        (sourceTop + tileHeight) * plan.uniformScale,
-                    ),
-                    Paint(Paint.FILTER_BITMAP_FLAG),
-                )
-            } finally {
-                tile.recycle()
-            }
-            sourceTop += tileHeight
+        val textLeft = if (portrait != null) portraitLeft + portraitSize + 40f else 96f
+        canvas.drawText(life, textLeft, 170f, paint(40f, gold, bold = true))
+        canvas.drawText(name, textLeft, 260f, paint(84f, ink, bold = true))
+        canvas.drawText(if (drafted) "지명" else "미지명", textLeft, 330f, paint(48f, if (drafted) accent else muted, bold = true))
+        fields["학교"]?.let { canvas.drawText(it, textLeft, 390f, paint(36f, muted)) }
+        // four numbers
+        val stats = listOf("경기" to fields["중요 경기"]?.removeSuffix("경기"), "삼진" to fields["삼진"]?.removeSuffix("개"), "볼넷" to fields["볼넷"]?.removeSuffix("개"), "실점" to fields["실점"]?.removeSuffix("점"))
+        val cell = (width - 192f) / 4f
+        stats.forEachIndexed { index, (label, value) ->
+            val cx = 96f + cell * index + cell / 2f
+            val valuePaint = paint(88f, ink, bold = true).apply { textAlign = Paint.Align.CENTER }
+            val labelPaint = paint(34f, muted).apply { textAlign = Paint.Align.CENTER }
+            canvas.drawText(value ?: "0", cx, 560f, valuePaint)
+            canvas.drawText(label, cx, 612f, labelPaint)
         }
+        canvas.drawLine(96f, 668f, width - 96f, 668f, Paint().apply { color = Color.rgb(44, 54, 48); strokeWidth = 2f })
+        // three lines that make this life this life
+        var y = 748f
+        listOf("능력" to fields["능력"], "각성" to fields["각성"], "대표 유산" to fields["대표 유산"], "야구혼" to fields["야구혼"]).forEach { (label, value) ->
+            if (value.isNullOrBlank()) return@forEach
+            canvas.drawText(label, 96f, y, paint(34f, accent, bold = true))
+            val body = paint(40f, ink)
+            val maxWidth = width - 192f
+            var text: String = value
+            while (body.measureText(text) > maxWidth && text.length > 4) text = text.dropLast(2)
+            if (text != value) text = text.dropLast(1) + "…"
+            canvas.drawText(text, 96f, y + 56f, body)
+            y += 132f
+        }
+        // footer
+        val footer = paint(36f, gold, bold = true)
+        canvas.drawText(appName ?: "야구 못하면 또 환생함", 96f, height - 110f, footer)
+        canvas.drawText("Google Play", width - 96f, height - 110f, paint(32f, muted).apply { textAlign = Paint.Align.RIGHT })
         return output
     }
 }
@@ -684,11 +708,27 @@ public object NativeAudioResources {
 
     public val MENU_TAP: Int = R.raw.baseball_menu_tap
     public val PAD_CONFIRM: Int = R.raw.baseball_pad_confirm
+    public val MILESTONE: Int = R.raw.baseball_crowd_cheer
     public val PITCH_RELEASE: Int = R.raw.baseball_pitch_release
     public val PITCH_PLATE: Int = R.raw.baseball_pitch_plate
     public val PITCH_IMPACT: Int = R.raw.baseball_pitch_impact
     public val MUSIC_THEME: Int = R.raw.baseball_menu_theme
     public val MUSIC_CROWD: Int = R.raw.baseball_crowd_loop
+
+    public fun pitchCueResource(cue: PitchAudioCue): Int = when (cue) {
+        PitchAudioCue.RELEASE -> PITCH_RELEASE
+        PitchAudioCue.CATCH -> R.raw.baseball_glove_catch
+        PitchAudioCue.SWING_MISS -> R.raw.baseball_swing_miss
+        PitchAudioCue.FOUL -> R.raw.baseball_bat_foul
+        PitchAudioCue.CONTACT -> R.raw.baseball_bat_contact_hard
+        PitchAudioCue.WEAK_CONTACT -> R.raw.baseball_bat_contact_weak
+        PitchAudioCue.STRIKE -> R.raw.baseball_umpire_strike
+        PitchAudioCue.STRIKEOUT -> R.raw.baseball_umpire_strikeout
+        PitchAudioCue.CHEER -> R.raw.baseball_crowd_cheer
+        PitchAudioCue.GROAN -> R.raw.baseball_crowd_groan
+        PitchAudioCue.PERFECT_RELEASE -> R.raw.baseball_perfect_release
+        PitchAudioCue.FLIGHT -> R.raw.baseball_pitch_flight
+    }
 
     public fun musicToggleResource(): Int = MUSIC_THEME
 
@@ -734,15 +774,67 @@ public class NativeAudioHapticsService(
     private var pausedForLifecycle = false
     private val loadedSamples = linkedMapOf<Int, Int>()
     private val pendingSamples = linkedMapOf<Int, Pair<Float, Float>>()
+    private val readySamples = mutableSetOf<Int>()
+    private val effectStreams = mutableSetOf<Int>()
+    private val sampleLock = Any()
     private val heartbeatHandler = Handler(Looper.getMainLooper())
     private var heartbeatTrack: AudioTrack? = null
+    private var heartbeatMotor: Vibrator? = null
 
     init {
-        soundPool.setOnLoadCompleteListener { pool, sampleId, status ->
-            pendingSamples.remove(sampleId)?.let { (volume, rate) ->
-                if (status == 0) pool.play(sampleId, volume, volume, 1, 0, rate)
+        soundPool.setOnLoadCompleteListener { _, sampleId, status ->
+            synchronized(sampleLock) {
+                if (status == 0) {
+                    readySamples += sampleId
+                    pendingSamples.remove(sampleId)?.let { (volume, rate) -> playLoaded(sampleId, volume, rate) }
+                } else {
+                    pendingSamples.remove(sampleId)
+                    loadedSamples.entries.removeAll { it.value == sampleId }
+                    android.util.Log.w("BaseballPitchAudio", "load_failed sample=$sampleId status=$status")
+                }
             }
         }
+    }
+
+    private fun playLoaded(sample: Int, volume: Float, rate: Float) {
+        val stream = soundPool.play(sample, volume, volume, 1, 0, rate.coerceIn(0.5f, 2f))
+        if (stream != 0) effectStreams += stream
+        while (effectStreams.size > 16) effectStreams.remove(effectStreams.first())
+        if (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0)
+            android.util.Log.i("BaseballPitchAudio", "sample=$sample stream=$stream rate=$rate")
+    }
+
+    public fun preparePitchSounds() = synchronized(sampleLock) {
+        PitchAudioCue.entries.forEach { cue ->
+            val resource = NativeAudioResources.pitchCueResource(cue)
+            if (resource !in loadedSamples) loadedSamples[resource] = soundPool.load(context, resource, 1)
+        }
+    }
+
+    public fun isPitchAudioReady(): Boolean = synchronized(sampleLock) {
+        PitchAudioCue.entries.all { loadedSamples[NativeAudioResources.pitchCueResource(it)] in readySamples }
+    }
+
+    public fun playPitchCue(cue: PitchAudioCue, settings: NativePlaybackSettings, seed: ULong, haptic: PitchHapticCue? = null, gain: Float = 1f, rate: Float = 1f) {
+        val volume = when (cue) {
+            PitchAudioCue.RELEASE -> 0.65f
+            PitchAudioCue.CHEER, PitchAudioCue.GROAN -> 0.60f
+            PitchAudioCue.PERFECT_RELEASE -> 0.90f
+            PitchAudioCue.FLIGHT -> 0.55f
+            else -> 0.85f
+        }
+        // Two identical catches in a row stop sounding like leather. Keep a small per-pitch drift.
+        val drift = 0.98f + (seed % 5UL).toInt() * 0.01f
+        playEffect(NativeAudioResources.pitchCueResource(cue), settings, seed, (volume * gain).coerceIn(0f, 1f), playbackRate = (rate * drift).coerceIn(0.5f, 2f))
+        haptic?.let { NativePitchHaptics.play(context, it, settings.hapticsEnabled) }
+        if (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0)
+            android.util.Log.i("BaseballPitchAudio", "cue=$cue sound=${settings.soundEnabled} haptic=${haptic?.name ?: "none"}")
+    }
+
+    public fun stopEffects() = synchronized(sampleLock) {
+        pendingSamples.clear()
+        effectStreams.forEach(soundPool::stop)
+        effectStreams.clear()
     }
 
     /** Presentation markers are the only pitch path allowed to produce sound/haptics. */
@@ -761,23 +853,22 @@ public class NativeAudioHapticsService(
         }
         val resource = when (marker) {
             "menu-tap" -> NativeAudioResources.MENU_TAP
-            "pad-confirm" -> NativeAudioResources.PAD_CONFIRM
+            "pad-confirm" -> { vibrate(settings, 16L); NativeAudioResources.PAD_CONFIRM }
+            "milestone" -> { vibrate(settings, 40L); NativeAudioResources.MILESTONE }
             else -> return
         }
         playEffect(resource, settings, presentationSeed)
     }
 
-    public fun playEffect(resourceId: Int?, settings: NativePlaybackSettings, presentationSeed: ULong, volume: Float = 1f) {
+    public fun playEffect(resourceId: Int?, settings: NativePlaybackSettings, presentationSeed: ULong, volume: Float = 1f, playbackRate: Float? = null) {
         if (!settings.soundEnabled || resourceId == null || resourceId == 0) return
         runCatching {
-            val variation = ((presentationSeed % 3UL).toInt() + 1) / 3f
-            val cached = loadedSamples[resourceId]
-            if (cached != null) {
-                soundPool.play(cached, volume, volume, 1, 0, variation)
-            } else {
-                val loaded = soundPool.load(context, resourceId, 1)
-                loadedSamples[resourceId] = loaded
-                pendingSamples[loaded] = volume to variation
+            synchronized(sampleLock) {
+                val rate = playbackRate ?: (0.98f + (presentationSeed % 3UL).toInt() * 0.02f)
+                val sample = loadedSamples.getOrPut(resourceId) { soundPool.load(context, resourceId, 1) }
+                if (sample == 0) loadedSamples.remove(resourceId)
+                else if (sample in readySamples) playLoaded(sample, volume, rate)
+                else pendingSamples[sample] = volume to rate
             }
         }
     }
@@ -847,15 +938,24 @@ public class NativeAudioHapticsService(
 
     public fun heartbeatBeat(intensity: Double, settings: NativePlaybackSettings) {
         stopHeartbeatHaptics()
-        if (!settings.hapticsEnabled || intensity <= 0.0) return
-        val systemEnabled = systemHapticsEnabled()
-        if (!systemEnabled) return
-        vibrateAmplitude(HeartbeatHaptic.PRIMARY_MS, HeartbeatHaptic.amplitude(intensity))
-        val secondary = HeartbeatHaptic.amplitude(intensity, 0.62)
-        heartbeatHandler.postDelayed(
-            { vibrateAmplitude(HeartbeatHaptic.SECONDARY_MS, secondary) },
-            HeartbeatHaptic.SECONDARY_DELAY_MS,
-        )
+        if (!settings.hapticsEnabled || intensity <= 0.0 || !systemHapticsEnabled()) return
+        runCatching {
+            val motor = if (Build.VERSION.SDK_INT >= 31) context.getSystemService(VibratorManager::class.java)?.defaultVibrator
+                else context.getSystemService(Vibrator::class.java)
+            if (motor?.hasVibrator() != true) return@runCatching
+            val strength = intensity.coerceIn(0.0, 1.0)
+            val first = (14 + strength * 30).toLong()
+            val second = (10 + strength * 20).toLong()
+            val timing = longArrayOf(0, first, 160 - first, second)
+            val effect = if (motor.hasAmplitudeControl()) VibrationEffect.createWaveform(timing,
+                intArrayOf(0, HeartbeatHaptic.amplitude(strength), 0, HeartbeatHaptic.amplitude(strength, 0.62)), -1)
+                else VibrationEffect.createWaveform(timing, -1)
+            if (Build.VERSION.SDK_INT >= 33) motor.vibrate(effect, android.os.VibrationAttributes.Builder().setUsage(android.os.VibrationAttributes.USAGE_TOUCH).build())
+            else motor.vibrate(effect, AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION).build())
+            heartbeatMotor = motor
+            if (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0)
+                android.util.Log.i("BaseballPitchHaptics", "heartbeat intensity=$intensity amplitudeControl=${motor.hasAmplitudeControl()}")
+        }
     }
 
     public fun stopHeartbeat() {
@@ -864,6 +964,8 @@ public class NativeAudioHapticsService(
     }
 
     public fun pauseForLifecycle() {
+        stopEffects()
+        NativePitchHaptics.cancel(context)
         stopHeartbeat()
         if (music?.isPlaying == true) {
             pausedForLifecycle = true
@@ -888,6 +990,8 @@ public class NativeAudioHapticsService(
         abandonFocus()
     }
     public fun release() {
+        stopEffects()
+        readySamples.clear()
         stopHeartbeat()
         stopMusic()
         loadedSamples.clear()
@@ -911,6 +1015,8 @@ public class NativeAudioHapticsService(
 
     private fun stopHeartbeatHaptics() {
         heartbeatHandler.removeCallbacksAndMessages(null)
+        heartbeatMotor?.let { runCatching { it.cancel() } }
+        heartbeatMotor = null
     }
 
     private fun systemHapticsEnabled(): Boolean = try {
