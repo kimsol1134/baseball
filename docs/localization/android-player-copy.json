@@ -85,9 +85,9 @@
   ],
   [
     "비워 두면 민서준으로 시작합니다",
-    "이름을 입력하지 않으면 민서준으로 시작해요.",
-    "Leave blank to play as Min Seo-jun.",
-    "空欄ならミン・ソジュンで始まります。"
+    "비우면 민서준으로 불린다.",
+    "Leave it blank and you go by Min Seo-jun.",
+    "空欄ならミン・ソジュンと呼ばれる。"
   ],
   [
     "선수의 첫 학교가 이 지역에서 정해집니다",
@@ -121,9 +121,9 @@
   ],
   [
     "이번 생에는 무엇을 이어받을까요?",
-    "다음 선수의 시작 조건을 골라 주세요",
-    "Choose your next pitcher's starting conditions",
-    "次の投手の開始条件を選ぼう"
+    "이번 생에는 무엇을 이어받을까",
+    "What do you carry into this life?",
+    "この生には何を受け継ぐ？"
   ],
   [
     "이번 생의 핸디캡을 고를 수 있습니다. 최대 두 개입니다.",
@@ -217,9 +217,9 @@
   ],
   [
     "이번 선택은 다음 장의 투구 감각에 남습니다.",
-    "선택한 각성 효과가 앞으로의 투구에 적용돼요.",
-    "Your chosen awakening affects future pitches.",
-    "選んだ覚醒の効果が、これからの投球に反映されます。"
+    "이 감각은 다음 공부터 손에 남는다.",
+    "This feel stays in your hand from the next pitch.",
+    "この感覚は次の一球から手に残る。"
   ],
   [
     "승부처에 오르기",
@@ -259,9 +259,9 @@
   ],
   [
     "직접 슬라이더로 던지는 타석입니다.",
-    "투구 슬라이더로 직접 공을 던지는 경기예요.",
-    "You'll pitch this game with the timing slider.",
-    "タイミングスライダーで自分で投げる試合です。"
+    "내가 직접 던지는 타석.",
+    "An at-bat I pitch myself.",
+    "自分で投げる打席。"
   ],
   [
     "장 결산",
@@ -859,9 +859,9 @@
   ],
   [
     "계속하기와 새로운 선택을 비교합니다.",
-    "잔류·이적·군 복무·은퇴 중 가능한 선택을 확인하세요.",
-    "Check your options to stay, move, serve, or retire.",
-    "残留・移籍・兵役・引退から選べるものを確認しましょう。"
+    "남을까, 떠날까, 복무할까, 벗을까.",
+    "Stay, leave, serve, or hang it up.",
+    "残るか、去るか、兵役か、引退か。"
   ],
   [
     "현재 구단에 남아 다음 시즌을 준비합니다. 나이와 계약만 한 해 진행됩니다.",
@@ -871,9 +871,9 @@
   ],
   [
     "커리어의 마지막 결산입니다.",
-    "현역 생활을 마무리하고 통산 기록을 확인해요.",
-    "Finish your playing career and review your totals.",
-    "現役生活を締めくくり、通算記録を確認します。"
+    "현역의 마지막. 통산 기록이 남는다.",
+    "The end of the playing days. The career numbers remain.",
+    "現役の最後。通算記録が残る。"
   ],
   [
     "프로의 시간을 하나의 유산으로 남깁니다.",
@@ -994,82 +994,431 @@
     "이번 장의 목표와 훈련 결과",
     "This chapter's goals and training results",
     "この章の目標と練習結果"
+  ],
+  [
+    "정확한 투구",
+    "정확한 투구",
+    "Accurate pitch",
+    "正確な投球"
+  ],
+  [
+    "무실점 등판",
+    "무실점 등판",
+    "Scoreless outing",
+    "無失点登板"
+  ],
+  [
+    "드래프트에서 처음으로 지명을 받으세요.",
+    "드래프트에서 처음으로 지명을 받으세요.",
+    "Get drafted for the first time.",
+    "初めてドラフト指名を受けましょう。"
+  ],
+  [
+    "타자를 삼진으로 잡으세요.",
+    "타자를 삼진으로 잡으세요.",
+    "Strike out a hitter.",
+    "打者から三振を奪いましょう。"
+  ],
+  [
+    "직접 등판한 경기를 무실점으로 마치세요.",
+    "직접 등판한 경기를 무실점으로 마치세요.",
+    "Finish a manually played outing without allowing a run.",
+    "自分で登板した試合を無失点で終えましょう。"
+  ],
+  [
+    "조준과 타이밍 정확도를 모두 90% 이상 맞히세요.",
+    "조준과 타이밍 정확도를 모두 90% 이상 맞히세요.",
+    "Reach at least 90% accuracy in both aim and timing.",
+    "狙いとタイミングの精度を両方90%以上にしましょう。"
+  ],
+  [
+    "세 번째 선수로 새 삶을 시작하세요.",
+    "세 번째 선수로 새 삶을 시작하세요.",
+    "Begin your third pitcher's life.",
+    "3人目の選手で新しい人生を始めましょう。"
+  ],
+  [
+    "다섯 번째 선수로 새 삶을 시작하세요.",
+    "다섯 번째 선수로 새 삶을 시작하세요.",
+    "Begin your fifth pitcher's life.",
+    "5人目の選手で新しい人生を始めましょう。"
+  ],
+  [
+    "열 번째 선수로 새 삶을 시작하세요.",
+    "열 번째 선수로 새 삶을 시작하세요.",
+    "Begin your tenth pitcher's life.",
+    "10人目の選手で新しい人生を始めましょう。"
+  ],
+  [
+    "핸디캡을 적용하고 고교 과정을 마치세요.",
+    "핸디캡을 적용하고 고교 과정을 마치세요.",
+    "Complete high school with a handicap.",
+    "ハンデを適用して高校時代を終えましょう。"
+  ],
+  [
+    "핸디캡 2개를 적용하고 고교 과정을 마치세요.",
+    "핸디캡 2개를 적용하고 고교 과정을 마치세요.",
+    "Complete high school with two handicaps.",
+    "ハンデを2つ適用して高校時代を終えましょう。"
+  ],
+  [
+    "한 선수로 각성을 세 번 선택하세요.",
+    "한 선수로 각성을 세 번 선택하세요.",
+    "Choose three awakenings with one pitcher.",
+    "1人の選手で覚醒を3回選びましょう。"
+  ],
+  [
+    "서로 다른 유형의 학교 네 곳에서 선수 생활을 마치세요.",
+    "서로 다른 유형의 학교 네 곳에서 선수 생활을 마치세요.",
+    "Complete careers at all four school types.",
+    "4種類すべての学校で選手生活を終えましょう。"
+  ],
+  [
+    "드래프트 지명을 받은 선수 다섯 명의 기록을 남기세요.",
+    "드래프트 지명을 받은 선수 다섯 명의 기록을 남기세요.",
+    "Archive five pitchers who were drafted.",
+    "ドラフト指名を受けた選手5人の記録を残しましょう。"
+  ],
+  [
+    "이어진 마음",
+    "핸디캡 도전 성공",
+    "Handicap challenge cleared",
+    "ハンデ挑戦達成"
+  ],
+  [
+    "두 겹의 마음",
+    "핸디캡 2개로 완주",
+    "Two-handicap career complete",
+    "ハンデ2つで完走"
+  ],
+  [
+    "가볍게 몸 풀기",
+    "가볍게 몸 풀기",
+    "Light exercise",
+    "軽く体を動かす"
+  ],
+  [
+    "같은 훈련 최대 3회",
+    "같은 훈련 최대 3회",
+    "Repeat the same training up to 3 times",
+    "同じ練習を最大3回"
+  ],
+  [
+    "경기 운영 훈련",
+    "경기 운영 훈련",
+    "Game planning",
+    "配球の練習"
+  ],
+  [
+    "구위 훈련",
+    "구위 훈련",
+    "Power training",
+    "球威の練習"
+  ],
+  [
+    "구위와 구속을 키워요. 강하게 훈련하면 팔에 부담이 커져요.",
+    "구위와 구속을 키워요. 강하게 훈련하면 팔에 부담이 커져요.",
+    "Build pitch quality and velocity. Intensive training puts more strain on your arm.",
+    "球威と球速を伸ばします。強い練習は腕への負担が増えます。"
+  ],
+  [
+    "능력 성장 대신 피로를 줄여요. 재활 중이라면 팔도 회복돼요.",
+    "능력 성장 대신 피로를 줄여요. 재활 중이라면 팔도 회복돼요.",
+    "Reduce fatigue instead of gaining ability. Rehabilitation also helps your arm recover.",
+    "能力の成長の代わりに疲労を減らします。リハビリ中なら腕も回復します。"
+  ],
+  [
+    "능력 한계에 도달했어요. 숙련이나 재능 발현을 노려보세요.",
+    "능력 한계에 도달했어요. 숙련이나 재능 발현을 노려보세요.",
+    "You've reached an ability limit. Aim for mastery or a talent breakthrough.",
+    "能力の限界に達しています。熟練や才能の開花を目指しましょう。"
+  ],
+  [
+    "몸이 많이 지쳤어요. 이번에는 회복을 추천해요.",
+    "몸이 많이 지쳤어요. 이번에는 회복을 추천해요.",
+    "Your body needs a break. Recovery is recommended.",
+    "体が疲れています。今回は休養がお勧めです。"
+  ],
+  [
+    "변화구 훈련",
+    "변화구 훈련",
+    "Breaking-ball training",
+    "変化球の練習"
+  ],
+  [
+    "성장 예상 +%1$s~%2$s · 대성공은 별도",
+    "성장 예상 +%1$s~%2$s · 대성공은 별도",
+    "Expected growth +%1$s–%2$s · Breakthroughs may add more",
+    "成長予想 +%1$s〜%2$s・大成功は別途"
+  ],
+  [
+    "숙련 +%1$s",
+    "숙련 +%1$s",
+    "Mastery +%1$s",
+    "熟練 +%1$s"
+  ],
+  [
+    "쉬면서도 던지기",
+    "쉬면서도 던지기",
+    "Pitch during rest",
+    "休みながら投げる"
+  ],
+  [
+    "연속 훈련은 일정이 바뀌거나 재능이 발현되면 멈춰요. 회복 외 훈련은 피로 75 이상이거나 팔 상태가 나빠져도 멈춰요.",
+    "연속 훈련은 일정이 바뀌거나 재능이 발현되면 멈춰요. 회복 외 훈련은 피로 75 이상이거나 팔 상태가 나빠져도 멈춰요.",
+    "Repeats stop at the next event or a talent breakthrough. Non-recovery training also stops at fatigue 75 or when your arm needs care.",
+    "日程が変わった時や才能が開花した時に停止します。休養以外は疲労75以上、または腕の不調でも停止します。"
+  ],
+  [
+    "연습할 구종",
+    "연습할 구종",
+    "Pitch to train",
+    "練習する球種"
+  ],
+  [
+    "연습할 구종을 골라 공의 움직임과 헛스윙을 유도하는 능력을 키워요.",
+    "연습할 구종을 골라 공의 움직임과 헛스윙을 유도하는 능력을 키워요.",
+    "Choose a pitch to improve its movement and ability to get swings and misses.",
+    "球種を選んで、変化量と空振りを奪う力を伸ばします。"
+  ],
+  [
+    "오늘의 기회",
+    "오늘의 기회",
+    "Today's opportunity",
+    "今日のチャンス"
+  ],
+  [
+    "오래 던질 수 있도록 체력을 키워요.",
+    "오래 던질 수 있도록 체력을 키워요.",
+    "Build stamina to pitch longer.",
+    "長く投げられるよう体力をつけます。"
+  ],
+  [
+    "원하는 코스로 던지는 능력을 키워요. 피로 부담이 비교적 적어요.",
+    "원하는 코스로 던지는 능력을 키워요. 피로 부담이 비교적 적어요.",
+    "Improve location with relatively low fatigue.",
+    "狙ったコースに投げる力を伸ばします。疲労は比較的少なめです。"
+  ],
+  [
+    "이번에는 어떤 훈련을 할까요?",
+    "이번에는 어떤 훈련을 할까요?",
+    "What will you train?",
+    "今回はどの練習をする？"
+  ],
+  [
+    "재능의 한계를 넘었어요!",
+    "재능의 한계를 넘었어요!",
+    "Talent breakthrough!",
+    "才能の限界を突破！"
+  ],
+  [
+    "재활 중에는 회복 훈련을 합니다.",
+    "재활 중에는 회복 훈련을 합니다.",
+    "Only recovery is available during rehabilitation.",
+    "リハビリ中は休養を行います。"
+  ],
+  [
+    "제구 훈련",
+    "제구 훈련",
+    "Control training",
+    "制球の練習"
+  ],
+  [
+    "체력 훈련",
+    "체력 훈련",
+    "Stamina training",
+    "体力の練習"
+  ],
+  [
+    "타자 공략을 연습하며 제구를 키워요.",
+    "타자 공략을 연습하며 제구를 키워요.",
+    "Study how to attack hitters and improve command.",
+    "打者の攻め方を学び、制球を伸ばします。"
+  ],
+  [
+    "푹 쉬기",
+    "푹 쉬기",
+    "Full rest",
+    "しっかり休む"
+  ],
+  [
+    "피로 %1$s%2$s",
+    "피로 %1$s%2$s",
+    "Fatigue %1$s%2$s",
+    "疲労 %1$s%2$s"
+  ],
+  [
+    "피로 %1$s%2$s · 팔 부담 %3$s%4$s",
+    "피로 %1$s%2$s · 팔 부담 %3$s%4$s",
+    "Fatigue %1$s%2$s · Arm strain %3$s%4$s",
+    "疲労 %1$s%2$s・腕の負担 %3$s%4$s"
+  ],
+  [
+    "학교 특기",
+    "학교 특기",
+    "School specialty",
+    "学校の得意分野"
+  ],
+  [
+    "훈련 %1$s/%2$s",
+    "훈련 %1$s/%2$s",
+    "Training %1$s/%2$s",
+    "練習 %1$s/%2$s"
+  ],
+  [
+    "훈련 %1$s회 완료",
+    "훈련 %1$s회 완료",
+    "%1$s training sessions complete",
+    "練習%1$s回完了"
+  ],
+  [
+    "훈련 강도",
+    "훈련 강도",
+    "Training intensity",
+    "練習の強さ"
+  ],
+  [
+    "휴식 완료",
+    "휴식 완료",
+    "Rest complete",
+    "休養完了"
+  ],
+  [
+    "휴식과 회복",
+    "휴식과 회복",
+    "Rest and recovery",
+    "休養と回復"
+  ],
+  [
+    "휴식은 능력 성장 대신 피로를 줄여요.",
+    "휴식은 능력 성장 대신 피로를 줄여요.",
+    "Rest reduces fatigue instead of raising abilities.",
+    "休養は能力を上げず、疲労を減らします。"
+  ],
+  [
+    "실전 구종",
+    "실전 구종",
+    "Game-ready pitch",
+    "実戦で使える球種"
+  ],
+  [
+    "연습 중",
+    "연습 중",
+    "In development",
+    "練習中"
+  ],
+  [
+    "무브먼트 +%1$d",
+    "무브먼트 +%1$d",
+    "Movement +%1$d",
+    "変化量 +%1$d"
+  ],
+  [
+    "구위 +%1$d",
+    "구위 +%1$d",
+    "Stuff +%1$d",
+    "球威 +%1$d"
+  ],
+  [
+    "제구 +%1$d",
+    "제구 +%1$d",
+    "Command +%1$d",
+    "制球 +%1$d"
+  ],
+  [
+    "체력 +%1$d",
+    "체력 +%1$d",
+    "Stamina +%1$d",
+    "体力 +%1$d"
+  ],
+  [
+    "구종을 고르세요",
+    "구종을 고르세요",
+    "Choose your pitch",
+    "球種を選ぶ"
+  ],
+  [
+    "낮게",
+    "낮게",
+    "Low",
+    "低め"
+  ],
+  [
+    "높게",
+    "높게",
+    "High",
+    "高め"
+  ],
+  [
+    "다른 추천",
+    "다른 추천",
+    "Alternative",
+    "別の提案"
+  ],
+  [
+    "오른쪽",
+    "오른쪽",
+    "Right",
+    "右"
+  ],
+  [
+    "왼쪽",
+    "왼쪽",
+    "Left",
+    "左"
+  ],
+  [
+    "중앙",
+    "중앙",
+    "Center",
+    "中央"
+  ],
+  [
+    "포수 추천",
+    "포수 추천",
+    "Catcher's call",
+    "捕手の提案"
+  ],
+  [
+    "코스를 고른 뒤 조준점을 가운데 맞추고, 초록 구간에서 놓으세요.",
+    "코스를 고른 뒤 조준점을 가운데 맞추고, 초록 구간에서 놓으세요.",
+    "Choose a location, keep the aim centered, and release in the green zone.",
+    "コースを選び、照準を中央に合わせて緑のゾーンで離しましょう。"
+  ],
+  [
+    "진동 켜짐",
+    "진동 켜짐",
+    "Vibration on",
+    "振動オン"
+  ],
+  [
+    "진동 꺼짐",
+    "진동 꺼짐",
+    "Vibration off",
+    "振動オフ"
+  ],
+  [
+    "진동 확인",
+    "진동 확인",
+    "Test vibration",
+    "振動を試す"
+  ],
+  [
+    "기기의 터치 진동 설정을 확인해 주세요.",
+    "기기의 터치 진동 설정을 확인해 주세요.",
+    "Check your device's touch vibration settings.",
+    "端末のタッチ操作時の振動設定を確認してください。"
+  ],
+  [
+    "길게 눌러 와인드업",
+    "누르고 있다가 놓기",
+    "Hold, then release",
+    "長押しして離す"
+  ],
+  [
+    "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요.",
+    "마지막까지 이름이 불리지 않았습니다. 다음 생에 이어갈 감각을 고르세요.",
+    "Your name wasn’t called. Choose the feel you’ll carry into your next life.",
+    "最後まで名前は呼ばれませんでした。次の人生へつなぐ感覚を選びましょう。"
   ]
-,
-["정확한 투구","정확한 투구","Accurate pitch","正確な投球"],
-["무실점 등판","무실점 등판","Scoreless outing","無失点登板"],
-["드래프트에서 처음으로 지명을 받으세요.","드래프트에서 처음으로 지명을 받으세요.","Get drafted for the first time.","初めてドラフト指名を受けましょう。"],
-["타자를 삼진으로 잡으세요.","타자를 삼진으로 잡으세요.","Strike out a hitter.","打者から三振を奪いましょう。"],
-["직접 등판한 경기를 무실점으로 마치세요.","직접 등판한 경기를 무실점으로 마치세요.","Finish a manually played outing without allowing a run.","自分で登板した試合を無失点で終えましょう。"],
-["조준과 타이밍 정확도를 모두 90% 이상 맞히세요.","조준과 타이밍 정확도를 모두 90% 이상 맞히세요.","Reach at least 90% accuracy in both aim and timing.","狙いとタイミングの精度を両方90%以上にしましょう。"],
-["세 번째 선수로 새 삶을 시작하세요.","세 번째 선수로 새 삶을 시작하세요.","Begin your third pitcher's life.","3人目の選手で新しい人生を始めましょう。"],
-["다섯 번째 선수로 새 삶을 시작하세요.","다섯 번째 선수로 새 삶을 시작하세요.","Begin your fifth pitcher's life.","5人目の選手で新しい人生を始めましょう。"],
-["열 번째 선수로 새 삶을 시작하세요.","열 번째 선수로 새 삶을 시작하세요.","Begin your tenth pitcher's life.","10人目の選手で新しい人生を始めましょう。"],
-["핸디캡을 적용하고 고교 과정을 마치세요.","핸디캡을 적용하고 고교 과정을 마치세요.","Complete high school with a handicap.","ハンデを適用して高校時代を終えましょう。"],
-["핸디캡 2개를 적용하고 고교 과정을 마치세요.","핸디캡 2개를 적용하고 고교 과정을 마치세요.","Complete high school with two handicaps.","ハンデを2つ適用して高校時代を終えましょう。"],
-["한 선수로 각성을 세 번 선택하세요.","한 선수로 각성을 세 번 선택하세요.","Choose three awakenings with one pitcher.","1人の選手で覚醒を3回選びましょう。"],
-["서로 다른 유형의 학교 네 곳에서 선수 생활을 마치세요.","서로 다른 유형의 학교 네 곳에서 선수 생활을 마치세요.","Complete careers at all four school types.","4種類すべての学校で選手生活を終えましょう。"],
-["드래프트 지명을 받은 선수 다섯 명의 기록을 남기세요.","드래프트 지명을 받은 선수 다섯 명의 기록을 남기세요.","Archive five pitchers who were drafted.","ドラフト指名を受けた選手5人の記録を残しましょう。"],
-["이어진 마음","핸디캡 도전 성공","Handicap challenge cleared","ハンデ挑戦達成"],
-["두 겹의 마음","핸디캡 2개로 완주","Two-handicap career complete","ハンデ2つで完走"]
-,
-["가볍게 몸 풀기","가볍게 몸 풀기","Light exercise","軽く体を動かす"],
-["같은 훈련 최대 3회","같은 훈련 최대 3회","Repeat the same training up to 3 times","同じ練習を最大3回"],
-["경기 운영 훈련","경기 운영 훈련","Game planning","配球の練習"],
-["구위 훈련","구위 훈련","Power training","球威の練習"],
-["구위와 구속을 키워요. 강하게 훈련하면 팔에 부담이 커져요.","구위와 구속을 키워요. 강하게 훈련하면 팔에 부담이 커져요.","Build pitch quality and velocity. Intensive training puts more strain on your arm.","球威と球速を伸ばします。強い練習は腕への負担が増えます。"],
-["능력 성장 대신 피로를 줄여요. 재활 중이라면 팔도 회복돼요.","능력 성장 대신 피로를 줄여요. 재활 중이라면 팔도 회복돼요.","Reduce fatigue instead of gaining ability. Rehabilitation also helps your arm recover.","能力の成長の代わりに疲労を減らします。リハビリ中なら腕も回復します。"],
-["능력 한계에 도달했어요. 숙련이나 재능 발현을 노려보세요.","능력 한계에 도달했어요. 숙련이나 재능 발현을 노려보세요.","You've reached an ability limit. Aim for mastery or a talent breakthrough.","能力の限界に達しています。熟練や才能の開花を目指しましょう。"],
-["몸이 많이 지쳤어요. 이번에는 회복을 추천해요.","몸이 많이 지쳤어요. 이번에는 회복을 추천해요.","Your body needs a break. Recovery is recommended.","体が疲れています。今回は休養がお勧めです。"],
-["변화구 훈련","변화구 훈련","Breaking-ball training","変化球の練習"],
-["성장 예상 +%1$s~%2$s · 대성공은 별도","성장 예상 +%1$s~%2$s · 대성공은 별도","Expected growth +%1$s–%2$s · Breakthroughs may add more","成長予想 +%1$s〜%2$s・大成功は別途"],
-["숙련 +%1$s","숙련 +%1$s","Mastery +%1$s","熟練 +%1$s"],
-["쉬면서도 던지기","쉬면서도 던지기","Pitch during rest","休みながら投げる"],
-["연속 훈련은 일정이 바뀌거나 재능이 발현되면 멈춰요. 회복 외 훈련은 피로 75 이상이거나 팔 상태가 나빠져도 멈춰요.","연속 훈련은 일정이 바뀌거나 재능이 발현되면 멈춰요. 회복 외 훈련은 피로 75 이상이거나 팔 상태가 나빠져도 멈춰요.","Repeats stop at the next event or a talent breakthrough. Non-recovery training also stops at fatigue 75 or when your arm needs care.","日程が変わった時や才能が開花した時に停止します。休養以外は疲労75以上、または腕の不調でも停止します。"],
-["연습할 구종","연습할 구종","Pitch to train","練習する球種"],
-["연습할 구종을 골라 공의 움직임과 헛스윙을 유도하는 능력을 키워요.","연습할 구종을 골라 공의 움직임과 헛스윙을 유도하는 능력을 키워요.","Choose a pitch to improve its movement and ability to get swings and misses.","球種を選んで、変化量と空振りを奪う力を伸ばします。"],
-["오늘의 기회","오늘의 기회","Today's opportunity","今日のチャンス"],
-["오래 던질 수 있도록 체력을 키워요.","오래 던질 수 있도록 체력을 키워요.","Build stamina to pitch longer.","長く投げられるよう体力をつけます。"],
-["원하는 코스로 던지는 능력을 키워요. 피로 부담이 비교적 적어요.","원하는 코스로 던지는 능력을 키워요. 피로 부담이 비교적 적어요.","Improve location with relatively low fatigue.","狙ったコースに投げる力を伸ばします。疲労は比較的少なめです。"],
-["이번에는 어떤 훈련을 할까요?","이번에는 어떤 훈련을 할까요?","What will you train?","今回はどの練習をする？"],
-["재능의 한계를 넘었어요!","재능의 한계를 넘었어요!","Talent breakthrough!","才能の限界を突破！"],
-["재활 중에는 회복 훈련을 합니다.","재활 중에는 회복 훈련을 합니다.","Only recovery is available during rehabilitation.","リハビリ中は休養を行います。"],
-["제구 훈련","제구 훈련","Control training","制球の練習"],
-["체력 훈련","체력 훈련","Stamina training","体力の練習"],
-["타자 공략을 연습하며 제구를 키워요.","타자 공략을 연습하며 제구를 키워요.","Study how to attack hitters and improve command.","打者の攻め方を学び、制球を伸ばします。"],
-["푹 쉬기","푹 쉬기","Full rest","しっかり休む"],
-["피로 %1$s%2$s","피로 %1$s%2$s","Fatigue %1$s%2$s","疲労 %1$s%2$s"],
-["피로 %1$s%2$s · 팔 부담 %3$s%4$s","피로 %1$s%2$s · 팔 부담 %3$s%4$s","Fatigue %1$s%2$s · Arm strain %3$s%4$s","疲労 %1$s%2$s・腕の負担 %3$s%4$s"],
-["학교 특기","학교 특기","School specialty","学校の得意分野"],
-["훈련 %1$s/%2$s","훈련 %1$s/%2$s","Training %1$s/%2$s","練習 %1$s/%2$s"],
-["훈련 %1$s회 완료","훈련 %1$s회 완료","%1$s training sessions complete","練習%1$s回完了"],
-["훈련 강도","훈련 강도","Training intensity","練習の強さ"],
-["휴식 완료","휴식 완료","Rest complete","休養完了"],
-["휴식과 회복","휴식과 회복","Rest and recovery","休養と回復"],
-["휴식은 능력 성장 대신 피로를 줄여요.","휴식은 능력 성장 대신 피로를 줄여요.","Rest reduces fatigue instead of raising abilities.","休養は能力を上げず、疲労を減らします。"]
-,
- ["실전 구종", "실전 구종", "Game-ready pitch", "実戦で使える球種"],
- ["연습 중", "연습 중", "In development", "練習中"]
-,
- ["무브먼트 +%1$d", "무브먼트 +%1$d", "Movement +%1$d", "変化量 +%1$d"],
- ["구위 +%1$d", "구위 +%1$d", "Stuff +%1$d", "球威 +%1$d"],
- ["제구 +%1$d", "제구 +%1$d", "Command +%1$d", "制球 +%1$d"],
- ["체력 +%1$d", "체력 +%1$d", "Stamina +%1$d", "体力 +%1$d"]
-,
-["구종을 고르세요","구종을 고르세요","Choose your pitch","球種を選ぶ"],
-["낮게","낮게","Low","低め"],
-["높게","높게","High","高め"],
-["다른 추천","다른 추천","Alternative","別の提案"],
-["오른쪽","오른쪽","Right","右"],
-["왼쪽","왼쪽","Left","左"],
-["중앙","중앙","Center","中央"],
-["포수 추천","포수 추천","Catcher's call","捕手の提案"],
-["코스를 고른 뒤 조준점을 가운데 맞추고, 초록 구간에서 놓으세요.","코스를 고른 뒤 조준점을 가운데 맞추고, 초록 구간에서 놓으세요.","Choose a location, keep the aim centered, and release in the green zone.","コースを選び、照準を中央に合わせて緑のゾーンで離しましょう。"]
-,
-["진동 켜짐","진동 켜짐","Vibration on","振動オン"],
-["진동 꺼짐","진동 꺼짐","Vibration off","振動オフ"],
-["진동 확인","진동 확인","Test vibration","振動を試す"],
-["기기의 터치 진동 설정을 확인해 주세요.","기기의 터치 진동 설정을 확인해 주세요.","Check your device's touch vibration settings.","端末のタッチ操作時の振動設定を確認してください。"]
-,
- ["길게 눌러 와인드업", "누르고 있다가 놓기", "Hold, then release", "長押しして離す"]
 ]
