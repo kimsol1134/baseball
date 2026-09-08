@@ -28,7 +28,7 @@ class HighSchoolPhase4FixtureTest {
         assertEquals("Asia/Seoul", input.string("timezone"))
         val rows = root.obj("expected").array("rows").values
         assertEquals(20, rows.size)
-        val kernel = HighSchoolKernel()
+        val kernel = HighSchoolKernel(balanceRulesVersion = 4)
         rows.forEach { item ->
             val row = item as JsonValue.Obj
             val vertical = runSourceBackedVertical(kernel, row.string("seed"))
@@ -136,7 +136,7 @@ class HighSchoolPhase4FixtureTest {
                     ),
                 )
                 HighSchoolPhase.CHAPTER_REVIEW -> {
-                    automaticLines += HighSchoolAutomaticOutingSimulator()
+                    automaticLines += HighSchoolAutomaticOutingSimulator(modernPitching = false)
                         .simulate(result.snapshot, result.snapshot.chapter, result.nextSeed.toULong())
                         .map { listOf(it.outs, it.runsAllowed, it.pitches, it.strikeouts, it.walks, it.hits) }
                     kernel.advanceChapter(HighSchoolKernel.AdvanceRequest(result.nextSeed.toString(), result.snapshot))

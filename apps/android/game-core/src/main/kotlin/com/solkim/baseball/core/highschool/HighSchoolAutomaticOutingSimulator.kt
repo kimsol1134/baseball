@@ -28,7 +28,8 @@ import kotlin.math.max
  * returns only the aggregate needed by the chapter ledger/draft evaluation.
  */
 internal class HighSchoolAutomaticOutingSimulator(
-    private val pitch: PitchKernel = PitchKernel(),
+    private val modernPitching: Boolean = true,
+    private val pitch: PitchKernel = PitchKernel(legacyRecommendations = !modernPitching),
 ) {
     internal data class Line(
         val outs: Int,
@@ -144,7 +145,7 @@ internal class HighSchoolAutomaticOutingSimulator(
             // 초말을 무시하면 초의 세 번째 아웃이 통째로 사라진다.
             val outsBefore = absoluteOuts(inning)
             var context = PlateAppearanceContext(
-                plateAppearanceId = "week-pa-$plateAppearanceIndex:outing-v2",
+                plateAppearanceId = "week-pa-$plateAppearanceIndex" + if (modernPitching) ":outing-v2" else "",
                 revision = 0UL,
                 inning = inning.inning,
                 outs = inning.outs,
@@ -156,7 +157,7 @@ internal class HighSchoolAutomaticOutingSimulator(
                 fatigue = currentFatigue,
             )
             var seedText = maxOf(1UL, rng.next() shr 1).toString()
-            val preparation = pitch.prepare(
+            val preparation = prepare(
                 PitchKernel.PrepareRequest(
                     seedText, pitcher, batter, scouting, context, memory, gameState, carriedLog,
                 ),
@@ -203,12 +204,15 @@ internal class HighSchoolAutomaticOutingSimulator(
                     pitchNumber = context.pitchNumber + 1,
                     fatigue = currentFatigue,
                 )
-                val following = result.nextPreparation ?: break
+                val following = if (modernPitching) result.nextPreparation ?: break else pitch.prepareLegacy(PitchKernel.PrepareRequest(seedText, pitcher, batter, scouting, context, memory, gameState, carriedLog))
                 nextPreparation = following
             }
         }
         return Line(lineOuts, strikeouts, walks, runsAllowed, pitches, hits, homeRuns)
     }
+
+    private fun prepare(request: PitchKernel.PrepareRequest): com.solkim.baseball.core.pitch.PitchPreparation =
+        if (modernPitching) pitch.prepare(request) else pitch.prepareLegacy(request)
 
     private fun starterExtensionOuts(pitcher: com.solkim.baseball.core.pitch.PitcherSnapshot): Int {
         val edge = max(0, pitcher.stamina - maxOf(pitcher.stuff, pitcher.command, pitcher.movement))

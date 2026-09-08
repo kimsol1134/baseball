@@ -1134,11 +1134,11 @@ private class CatcherRecommendationEngine {
     }
 }
 
-public class PitchKernel {
+public class PitchKernel(private val legacyRecommendations: Boolean = false) {
     private val recommendationEngine = CatcherRecommendationEngine()
     private val rivalMemoryEngine = RivalMemoryEngine()
 
-    public fun preparePitch(parameters: PreparePitchParams): PitchPreparation = preparePitchVersion(parameters, false)
+    public fun preparePitch(parameters: PreparePitchParams): PitchPreparation = preparePitchVersion(parameters, legacyRecommendations)
 
     private fun preparePitchVersion(parameters: PreparePitchParams, legacy: Boolean): PitchPreparation {
         val seed = validate(parameters)
@@ -1208,6 +1208,7 @@ public class PitchKernel {
             parameters.gameState,
             parameters.gameLog?.entries?.lastOrNull(),
             parameters.rivalMemory?.recentObservations.orEmpty(),
+            legacyRecommendations,
         )
         val expectedToken = preparationToken(prepareParameters, plan.commitment, recommendations.first, recommendations.second)
         // Accept an exact previous-algorithm token only for the same complete immutable state.

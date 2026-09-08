@@ -260,8 +260,12 @@ public data class HighSchoolResult(
     val eventHash: String,
 )
 
-public class HighSchoolKernel {
-    private val automaticOuting = HighSchoolAutomaticOutingSimulator()
+public object HighSchoolGameplayRules { public const val CURRENT: Int = 5; public const val SWIFT_REFERENCE: Int = 4 }
+
+public class HighSchoolKernel(private val balanceRulesVersion: Int = HighSchoolGameplayRules.CURRENT) {
+    init { require(balanceRulesVersion in HighSchoolGameplayRules.SWIFT_REFERENCE..HighSchoolGameplayRules.CURRENT) }
+    private val currentRules: Boolean get() = balanceRulesVersion >= 5
+    private val automaticOuting = HighSchoolAutomaticOutingSimulator(modernPitching = currentRules)
     public data class StartRequest(
         val seed: String,
         val presetId: String,
@@ -417,7 +421,7 @@ public class HighSchoolKernel {
             currentGameScenario = null,
             currentRelationshipEvent = null,
             news = prologueNews(request.identity, request.lifeNumber, request.inheritedMemories.size, wind.newsLine),
-            balanceVersion = HighSchoolContentCatalog.BALANCE_VERSION,
+            balanceVersion = balanceRulesVersion,
             worldRulesVersion = HighSchoolContentCatalog.WORLD_RULES_VERSION,
             rebirthEcho = request.rebirthEcho,
             trainingOpportunity = null,
@@ -493,7 +497,7 @@ public class HighSchoolKernel {
     /** Preview and resolution share this probability; no extra random draw is introduced. */
     private fun trainingJackpotChance(state: HighSchoolState, focus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): Int {
         if (state.injuryRecovery > 0 || focus == HighSchoolTrainingFocus.RECOVERY) return 0
-        val intensityBonus = when (intensity) {
+        val intensityBonus = if (!currentRules) 0 else when (intensity) {
             HighSchoolTrainingIntensity.LIGHT -> 0
             HighSchoolTrainingIntensity.STANDARD -> 15
             HighSchoolTrainingIntensity.INTENSIVE -> 30
@@ -506,7 +510,7 @@ public class HighSchoolKernel {
         state.development?.experience?.get(HighSchoolDevelopment.index(focus)) ?: 0
 
     public fun trainingPracticeStep(state: HighSchoolState, focus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): Int {
-        if (focus == HighSchoolTrainingFocus.RECOVERY || state.injuryRecovery > 0) return 0
+        if (!currentRules || focus == HighSchoolTrainingFocus.RECOVERY || state.injuryRecovery > 0) return 0
         val points = when (intensity) { HighSchoolTrainingIntensity.LIGHT -> 35; HighSchoolTrainingIntensity.STANDARD -> 60; HighSchoolTrainingIntensity.INTENSIVE -> 80 }
         return if (state.fatigue >= 70) points / 2 else points
     }
@@ -621,7 +625,7 @@ public class HighSchoolKernel {
             chapterTrainingCount = state.chapterTrainingCount + 1,
             totalTrainingsCompleted = number,
             lastTraining = training,
-            development = nextDevelopment,
+            development = if (currentRules) nextDevelopment else state.development,
             pitchLearningProject = learning,
             injuryRecovery = if (rehab) state.injuryRecovery - 1 else state.injuryRecovery,
             armRisk = if (rehab) max(0, state.armRisk - 10) else clamp(state.armRisk + trainingArmRisk(focus, request.intensity), 0, 100),
@@ -652,7 +656,7 @@ public class HighSchoolKernel {
         val category = state.currentRelationshipCategory ?: state.currentRelationshipTarget?.wire ?: "coach"
         val target = relationshipTargetForCategory(category)
         val baseImpact = relationshipImpact(state, category, request.response)
-        val impact = if (category == "coach" && request.response == HighSchoolRelationshipResponse.EXPLAIN)
+        val impact = if (currentRules && category == "coach" && request.response == HighSchoolRelationshipResponse.EXPLAIN)
             baseImpact.copy(fatigue = -12, growthFocus = null) else baseImpact
         var development = state.development ?: HighSchoolDevelopment()
         val support = when (category) {
@@ -746,7 +750,7 @@ public class HighSchoolKernel {
                 fatigue = relationship.fatigueAfter,
                 fanInterest = fanInterest,
                 lastRelationship = relationship,
-                development = development,
+                development = if (currentRules) development else state.development,
                 currentRelationshipTarget = null,
                 currentRelationshipCategory = null,
                 currentRelationshipEvent = null,
@@ -955,7 +959,7 @@ public class HighSchoolKernel {
         require(request.awakening in request.state.awakeningOptions && request.awakening !in request.state.selectedAwakenings) {
             "awakening.unavailable"
         }
-        val pitcher = applyAwakening(request.state.pitcher, request.awakening)
+        val pitcher = if (currentRules) applyAwakening(request.state.pitcher, request.awakening) else legacyAwakening(request.state.pitcher, request.awakening)
         val next = enterMilestone(
             request.state.copy(
                 revision = request.state.revision + 1UL,
@@ -1028,7 +1032,7 @@ public class HighSchoolKernel {
     public fun resolveDraft(request: AdvanceRequest): HighSchoolResult {
         val seed = validate(request.seed, request.state, HighSchoolPhase.DRAFT)
         // The final chapter has no advanceChapter action; settle its schedule before scouting evaluates it.
-        val finalLines = automaticOuting.simulate(request.state, request.state.chapter, seed)
+        val finalLines = if (!currentRules) emptyList() else automaticOuting.simulate(request.state, request.state.chapter, seed)
             .let { if (request.state.chapterGameClaimed) it.drop(1) else it }
         val state = request.state.copy(automaticGames = request.state.automaticGames + finalLines.size,
             automaticOuts = request.state.automaticOuts + finalLines.sumOf { it.outs },
@@ -1116,13 +1120,13 @@ public class HighSchoolKernel {
 
     public fun availableAwakenings(state: HighSchoolState): List<HighSchoolAwakening> {
         val taken = state.selectedAwakenings.toSet()
-        if (taken.size >= 2) return emptyList()
-        if (taken.isNotEmpty() && (state.chapter.number < 5 || state.totalTrainingsCompleted < 6 ||
+        if (currentRules && taken.size >= 2) return emptyList()
+        if (currentRules && taken.isNotEmpty() && (state.chapter.number < 5 || state.totalTrainingsCompleted < 6 ||
                 state.performance.outs + state.automaticOuts < 36)) return emptyList()
-        val canLeap = state.lifeNumber > 1 && state.awakeningSparks >= 3
+        val canLeap = (!currentRules || state.lifeNumber > 1) && state.awakeningSparks >= 3
         return HighSchoolContentCatalog.awakeningNodes.mapNotNull { node ->
             if (node.id in taken) return@mapNotNull null
-            if (node.tier >= 3 && (state.lifeNumber == 1 || maxOf(state.pitcher.stuff, state.pitcher.command, state.pitcher.movement) < 60)) return@mapNotNull null
+            if (currentRules && node.tier >= 3 && (state.lifeNumber == 1 || maxOf(state.pitcher.stuff, state.pitcher.command, state.pitcher.movement) < 60)) return@mapNotNull null
             val unmet = node.parents.filterNot { it in taken }
             if (unmet.isEmpty()) return@mapNotNull node.id
             if (canLeap && unmet.size == 1 && taken.any { selected ->
@@ -1158,7 +1162,7 @@ public class HighSchoolKernel {
         val phases = state.schedule.milestonesByChapter[state.chapter.number - 1].toMutableList()
         if (state.chapter.number == 8) phases += HighSchoolPhase.DRAFT
         val phase = phases.getOrNull(index) ?: HighSchoolPhase.CHAPTER_REVIEW
-        if (phase == HighSchoolPhase.AWAKENING && availableAwakenings(state).isEmpty())
+        if (currentRules && phase == HighSchoolPhase.AWAKENING && availableAwakenings(state).isEmpty())
             return enterMilestone(state, seed, index + 1)
         val relationshipEvent = if (phase == HighSchoolPhase.RELATIONSHIP) relationshipEventFor(state, seed) else null
         val gameScenario = if (phase == HighSchoolPhase.IMPORTANT_GAME) gameScenario(state) else null
@@ -1561,7 +1565,7 @@ public class HighSchoolKernel {
         return InheritanceApplication(value, updatedTalent)
     }
 
-    public fun previewAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher = applyAwakening(pitcher, awakening)
+    public fun previewAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher = if (currentRules) applyAwakening(pitcher, awakening) else legacyAwakening(pitcher, awakening)
 
     private fun applyAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher {
         // Android awakening semantics: keep costs tied to the action being strengthened.
@@ -1727,7 +1731,7 @@ public class HighSchoolKernel {
         }
         milestones[7] += listOf(HighSchoolPhase.AWAKENING, HighSchoolPhase.IMPORTANT_GAME)
         var earlyAwakeningKept = false
-        for (chapter in 0..6) milestones[chapter].removeAll { phase ->
+        if (currentRules) for (chapter in 0..6) milestones[chapter].removeAll { phase ->
             if (phase != HighSchoolPhase.AWAKENING) false
             else if (earlyAwakeningKept) true else { earlyAwakeningKept = true; false }
         }
@@ -1796,6 +1800,7 @@ public class HighSchoolKernel {
     }
 
     private fun draftScore(state: HighSchoolState): Int {
+        if (!currentRules) return legacyDraftScore(state)
         val ratings = state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina
         val quality = state.performance.strikeouts * 4 - state.performance.walks * 2 - state.performance.runsAllowed * 2
         val process = clamp((state.performance.expectedDamage - state.performance.actualDamage) / 350, -8, 10)
@@ -2040,7 +2045,10 @@ public class HighSchoolKernel {
         return (windNews?.let(::listOf).orEmpty() + base)
     }
 
-    private fun signed(state: HighSchoolState): HighSchoolState = state.copy(stateCommitment = commitment(state))
+    private fun signed(state: HighSchoolState): HighSchoolState {
+        val versioned = state.copy(balanceVersion = balanceRulesVersion)
+        return versioned.copy(stateCommitment = commitment(versioned))
+    }
 
     private fun commitment(state: HighSchoolState): String {
         val ratings = "${state.pitcher.stuff}:${state.pitcher.command}:${state.pitcher.movement}:${state.pitcher.stamina}"
@@ -2145,6 +2153,7 @@ public class HighSchoolKernel {
     }
 
     private fun validate(seedText: String, state: HighSchoolState, phase: HighSchoolPhase): ULong {
+        require(state.balanceVersion <= balanceRulesVersion) { "highschool.future_rules" }
         val seed = parseSeed(seedText)
         require(state.phase == phase) { "state.phase" }
         require(state.stateCommitment.isNotBlank() && state.stateCommitment == commitment(state)) { "state.commitment" }
@@ -2206,6 +2215,65 @@ public class HighSchoolKernel {
         fun trainingGrowthBonus(focus: HighSchoolTrainingFocus): Int = if (focus == favoredTraining) favoredTrainingBonus else 0
         fun trainingFatigueModifier(focus: HighSchoolTrainingFocus): Int =
             trainingFatigueDelta + if (focus == extraFatigueFocus) extraFatigueDelta else 0
+    }
+
+    // Frozen Swift v4 rules; current Android rules are v5.
+    private fun legacyDraftScore(state: HighSchoolState): Int {
+        val ratings = state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina
+        val quality = state.performance.strikeouts * 4 - state.performance.walks * 2 - state.performance.runsAllowed * 2
+        val process = clamp((state.performance.expectedDamage - state.performance.actualDamage) / 350, -8, 10)
+        val season = if (state.automaticOuts == 0) 0 else {
+            val firstLifeBaseline = when (state.pitcher.id) {
+                "pitcher-command" -> 1_900
+                "pitcher-artist" -> 2_700
+                "pitcher-stamina" -> 2_900
+                else -> 4_930
+            }
+            fun meanScale(life: Int): Int = (1..8).sumOf { chapter -> difficultyScale(chapter, life) } * 100 / 8
+            val baseline = firstLifeBaseline + 432 * (meanScale(state.lifeNumber) - meanScale(1)) / 100
+            clamp((baseline - state.automaticRunsAllowed * 27_000 / state.automaticOuts) / 1_000, -2, 2)
+        }
+        val karmaPenalty = (if (HighSchoolKarma.UNKNOWN_LAND in state.karmas) 3 else 0) +
+            if (HighSchoolKarma.NO_LAST_CHANCE in state.karmas) 2 else 0
+        val overusePenalty = when {
+            state.armRisk >= HighSchoolContentCatalog.ARM_WARNING_THRESHOLD -> 4
+            state.armRisk >= 45 -> 2
+            else -> 0
+        }
+        val fanTerm = clamp((state.fanInterest - 40) / 15, -3, 3)
+        return clamp(
+            ratings / 4 + 15 + quality / 6 + process + state.selectedAwakenings.size +
+                (state.relationshipTrust - 50) / 10 + season + fanTerm + windFor(state.careerId).draftEvaluationDelta -
+                karmaPenalty - overusePenalty,
+            20,
+            95,
+        )
+    }
+
+    private fun legacyAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher {
+        // Source: HighSchoolCareer.applyAwakening (current Swift). Keep the profile-level
+        // deltas together with the scalar trade-offs; the automatic PitchKernel path consumes
+        // these profiles in the next chapter.
+        return when (awakening) {
+            HighSchoolAwakening.EXPLOSIVE_FASTBALL -> tune(pitcher, stuff = 4, command = -2, pitch = PitchKind.FOUR_SEAM, velocity = 15, whiff = 5, fatigueCost = 1)
+            HighSchoolAwakening.RISING_FOUR_SEAM -> tune(pitcher, stuff = 3, movement = -1, pitch = PitchKind.FOUR_SEAM, profileMovement = 4, whiff = 6, weakContact = 2)
+            HighSchoolAwakening.PINPOINT_EDGE -> tune(pitcher, stuff = -1, command = 4, control = 2, profileCommand = 3)
+            HighSchoolAwakening.BATTERY_SYNC -> tune(pitcher, command = 2, movement = 1, control = 2, profileCommand = 2, weakContact = 3)
+            HighSchoolAwakening.REPEATABLE_RELEASE -> tune(pitcher, stuff = -1, command = 4, control = 3, profileCommand = 2)
+            HighSchoolAwakening.FIRST_PITCH_STRIKE -> tune(pitcher, command = 3, stamina = -1, control = 3)
+            HighSchoolAwakening.DISAPPEARING_BREAKER -> tune(pitcher, command = -1, movement = 4, nonFastball = true, profileMovement = 4, whiff = 5)
+            HighSchoolAwakening.SINKER_TUNNEL -> tune(pitcher, movement = 3, pitchSet = setOf(PitchKind.FOUR_SEAM, PitchKind.CHANGEUP), profileMovement = 3, weakContact = 5)
+            HighSchoolAwakening.FROZEN_CHANGEUP -> tune(pitcher, movement = 3, stamina = -1, pitch = PitchKind.CHANGEUP, profileMovement = 6, whiff = 7)
+            HighSchoolAwakening.SWEEPING_SLIDER -> tune(pitcher, command = -1, movement = 4, pitch = PitchKind.SLIDER, profileMovement = 7, whiff = 6)
+            HighSchoolAwakening.CURVEBALL_CLOCK -> tune(pitcher, movement = 4, stamina = -1, pitch = PitchKind.CURVEBALL, profileMovement = 7, whiff = 5)
+            HighSchoolAwakening.IRON_ARM -> tune(pitcher, movement = -1, stamina = 5, fatigueCost = -2)
+            HighSchoolAwakening.LATE_INNING_RESERVE -> tune(pitcher, stamina = 4, pitch = PitchKind.FOUR_SEAM, whiff = 2, fatigueCost = -2)
+            HighSchoolAwakening.CALM_UNDER_PRESSURE -> tune(pitcher, command = 2, stamina = 1, control = 2, profileCommand = 2)
+            HighSchoolAwakening.PICKOFF_RHYTHM -> tune(pitcher, command = 1, stamina = 2, control = 1, weakContact = 1)
+            HighSchoolAwakening.TWO_STRIKE_PLAN -> tune(pitcher, command = 2, movement = 2, stamina = -1, nonFastball = true, whiff = 3)
+            HighSchoolAwakening.TRAFFIC_CONTROLLER -> tune(pitcher, stuff = -1, command = 2, stamina = 2, weakContact = 3)
+            HighSchoolAwakening.SCOUT_COMPOSURE -> tune(pitcher, stuff = 2, command = 2, stamina = -1, control = 1)
+        }
     }
 
     private companion object {

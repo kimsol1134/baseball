@@ -12,7 +12,7 @@ import kotlin.math.max
 /** Frozen fictional pro catalog copied from the current Swift/C# source set. */
 public object ProCatalog {
     /** Pro schedule, fatigue, and overload-injury rules currently used by new careers. */
-    public const val RULES_VERSION: Int = 10
+    public const val RULES_VERSION: Int = 11
     public const val BALANCE_VERSION: Int = 4
     public const val MAXIMUM_CAREER_SEASONS: Int = 20
     public const val WEEKS_PER_SEASON: Int = 24

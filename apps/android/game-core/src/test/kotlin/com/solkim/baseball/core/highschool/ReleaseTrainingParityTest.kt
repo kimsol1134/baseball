@@ -19,7 +19,7 @@ class ReleaseTrainingParityTest {
         val root = StrictJson.parseUtf8(Files.readAllBytes(path)) as JsonValue.Obj
         val cases = (root["training"] as JsonValue.Arr).values.map { it as JsonValue.Obj }
         assertEquals(216, cases.size)
-        val core = HighSchoolKernel()
+        val core = HighSchoolKernel(balanceRulesVersion = 4)
         for (row in cases) {
             fun text(key: String) = (row[key] as JsonValue.Str).value
             fun expected(key: String) = (row[key] as JsonValue.Arr).values.map { (it as JsonValue.Str).value }

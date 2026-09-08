@@ -1205,7 +1205,7 @@ public class HighSchoolPhase4Kernel(
             require(state.prospectBoard.count { it.isCurrentPlayer } <= 1) { "phase4.prospect_player_rows" }
         }
         require(state.inheritance.inheritanceRulesVersion == null || state.inheritance.inheritanceRulesVersion in 1..2) { "phase4.inheritance_rules" }
-        require(state.run.balanceVersion in 1..HighSchoolContentCatalog.BALANCE_VERSION) { "phase4.balance_version" }
+        require(state.run.balanceVersion in 1..HighSchoolGameplayRules.CURRENT) { "phase4.balance_version" }
         require(state.run.worldRulesVersion in 1..HighSchoolContentCatalog.WORLD_RULES_VERSION) { "phase4.world_rules_version" }
         require(state.run.recentRelationshipEventIds.distinct().size == state.run.recentRelationshipEventIds.size) { "phase4.relationship_recent" }
         state.run.currentGameScenario?.let { scenario ->

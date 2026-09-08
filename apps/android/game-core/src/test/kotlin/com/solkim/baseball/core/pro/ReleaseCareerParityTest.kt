@@ -11,7 +11,7 @@ import org.junit.Assume.assumeTrue
 
 /** Replay Swift-authored commands; fixed game reports isolate career rules from mound rendering. */
 class ReleaseCareerParityTest {
-    private val kernel = ProKernel()
+    private val kernel = ProKernel(gameplayRulesVersion = 10)
     private fun signed(s: ProState): ProState = s.copy(commitment = kernel.commitment(s))
     private fun values(s: ProState): List<String> {
         val r = s.currentStats
@@ -26,7 +26,7 @@ class ReleaseCareerParityTest {
             s.journeyState?.pendingContractMarket?.offers.orEmpty().joinToString(";") { "${it.teamId}:${it.years}:${it.annualSalary}:${it.signingBonus ?: 0}:${it.contractKind.wire}:${it.rolePromise.wire}:${it.expectation.kind.wire}:${it.expectation.target}:${it.expectation.difficulty.wire}" })
     }
     private fun replayHighSchool(root: JsonValue.Obj): HighSchoolState {
-        val k = HighSchoolKernel()
+        val k = HighSchoolKernel(balanceRulesVersion = 4)
         var state: HighSchoolState? = null
         val rows = (root["highSchool"] as JsonValue.Arr).values.map { it as JsonValue.Obj }
         for ((index, row) in rows.withIndex()) {
@@ -68,7 +68,7 @@ class ReleaseCareerParityTest {
         val path = Path.of("../../../artifacts/android-compose/release-gate/swift-release-parity.json")
         assumeTrue("Run tools/run-android-release-gate.py to generate current Swift evidence", Files.exists(path))
         val root = StrictJson.parseUtf8(Files.readAllBytes(path)) as JsonValue.Obj
-        assertEquals(ProCatalog.RULES_VERSION, (root["rulesVersion"] as JsonValue.Num).raw.toInt())
+        assertEquals(10, (root["rulesVersion"] as JsonValue.Num).raw.toInt())
         assertEquals(HighSchoolContentCatalog.BALANCE_VERSION, (root["balanceVersion"] as JsonValue.Num).raw.toInt())
         val linkedSchool = replayHighSchool(root)
         for (scenario in listOf("pro", "proFa", "proLinked")) {
