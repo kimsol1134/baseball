@@ -177,7 +177,7 @@ public object PitchHudProjection {
         )
     }
 
-    public fun scenarioTitle(state: GameAggregateState): String = when (state.pitch?.careerKind) {
+    public fun scenarioTitle(state: GameAggregateState): String = OutingPresentation.title(state) ?: when (state.pitch?.careerKind) {
         PitchCareerKind.TUTORIAL -> "첫 불펜"
         PitchCareerKind.PRO -> when (state.pro?.seasonTrigger) {
             com.solkim.baseball.core.pro.ProSeasonTrigger.MAJOR_DEBUT -> "1군 데뷔"

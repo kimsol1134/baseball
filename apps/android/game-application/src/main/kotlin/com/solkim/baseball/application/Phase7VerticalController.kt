@@ -359,7 +359,7 @@ public class Phase7VerticalController(
     public fun canContinueInning(): Boolean {
         val state = store.state.value
         state.highSchool?.activePitch?.let {
-            return it.sessionId.endsWith(":outing-v2") && it.ended && state.highSchool.run.chapterGameClaimed &&
+            return it.sessionId.endsWith(":outing-v2") && it.ended && (state.highSchool.run.chapterGameClaimed || it.assignment?.role == com.solkim.baseball.core.pitch.OutingRole.STARTER) &&
                 it.context.outs == 0 && it.outs < 18 && it.pitches < 80 && it.context.inning < 9 && it.context.fatigue < 90
         }
         state.pro?.activePitch?.let {

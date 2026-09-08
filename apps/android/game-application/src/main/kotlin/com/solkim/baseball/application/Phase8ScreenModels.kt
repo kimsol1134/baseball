@@ -479,6 +479,8 @@ public object Phase8ScreenProjection {
                     Phase8Row("돌아오기", "언제든 이어서", "진행은 저절로 저장된다."),
                 )))
                 addAction("enterSetup", "시작하기", "내 투수를 만들고 마운드로.", state.stage == GameStage.OPENING, listOf(GameCommand.EnterSetup))
+                addAction("startDirect", "프로부터 새로 시작", "고교 과정을 건너뛰고 별도 프로 선수로 시작합니다.", state.stage == GameStage.OPENING,
+                    listOf(pro(ProCommand.StartDirect(ProStartDirectRequest(context.seed(state, "pro-direct"), "power_prospect", "민서준")))))
             }
             Phase8ScreenId.P002_SETUP -> {
                 addSection(Phase8Section("setup", "선수 만들기", HighSchoolContentCatalog.presets.map { preset ->
@@ -574,21 +576,28 @@ public object Phase8ScreenProjection {
             Phase8ScreenId.P007_RELATIONSHIP -> {
                 val event = run?.currentRelationshipEvent
                 addSection(Phase8Section("relationship", event?.title ?: "이번 대화", listOf(
-                    Phase8Row(run?.let(RelationshipNarrative::speaker) ?: "동료", run?.let(RelationshipNarrative::line) ?: "동료와 코치의 목소리가 들린다.", ""),
+                    Phase8Row(run?.let(RelationshipNarrative::speaker) ?: "동료", run?.let(ConversationPresentation::line) ?: "동료와 코치의 목소리가 들린다.", ""),
                     Phase8Row("상대", run?.currentRelationshipTarget?.label ?: "팀", "감독 ${trustWord(run?.managerTrust ?: 0)} · 포수 ${trustWord(run?.catcherTrust ?: 0)} · 라이벌 ${trustWord(run?.rivalTrust ?: 0)}"),
                 )))
                 HighSchoolRelationshipResponse.entries.forEach { response ->
                     addAction(
                         "relationship:${response.wire}",
-                        run?.let { RelationshipNarrative.choice(it, response)?.title } ?: relationshipChoiceTitle(event?.category, response),
-                        run?.let { RelationshipNarrative.choice(it, response)?.detail } ?: relationshipChoiceDetail(event?.category, response),
+                        run?.let { ConversationPresentation.title(it, response) } ?: relationshipChoiceTitle(event?.category, response),
+                        run?.let { ConversationPresentation.preview(it, context.seed(state, "relationship:${response.wire}"), response) } ?: relationshipChoiceDetail(event?.category, response),
                         run?.phase == HighSchoolPhase.RELATIONSHIP,
                         listOf(hs(HighSchoolPhase4Command.Relationship(context.seed(state, "relationship:${response.wire}"), response))),
                     )
                 }
             }
             Phase8ScreenId.P008_IMPORTANT_GAME -> {
-                val scenario = run?.currentGameScenario
+                val previewRun = highSchool?.takeIf { it.run.phase == HighSchoolPhase.IMPORTANT_GAME && it.activePitch == null }?.let {
+                    HighSchoolPhase4Kernel().reserveImportantGame(context.seed(state, "important-game"), it).state
+                }
+                val scenario = previewRun?.run?.currentGameScenario ?: run?.currentGameScenario
+                val assignment = previewRun?.activePitch?.assignment ?: highSchool?.activePitch?.assignment
+                if (assignment != null) addSection(Phase8Section("outing-assignment", OutingPresentation.roleLabel(assignment.role), listOf(
+                    Phase8Row("이번 목표", OutingPresentation.goal(assignment)),
+                    Phase8Row("투입", "${assignment.entryInning}회 · ${assignment.entryOuts}사", if (assignment.inheritedRunners > 0) "주자 ${assignment.inheritedRunners}명 승계" else "주자 없음"))))
                 addSection(Phase8Section("important-game", scenario?.title ?: "승부처", listOf(
                     Phase8Row("오늘", scenario?.narrative ?: "상황과 상대를 확인한 뒤 마운드에 오릅니다.", "직접 슬라이더로 던지는 타석입니다."),
                     Phase8Row("상황", importantGameSituation(scenario), "승부처의 점수와 주자"),
@@ -650,7 +659,7 @@ public object Phase8ScreenProjection {
                 if (run?.draftResult == null) Phase8Row("드래프트 당일", "이름이 불릴까.", "3년이 이 한 번의 호명에 달렸다. 숨을 참고 듣는다.")
                 else Phase8Row(run.draftResult?.outcome?.label ?: "결과", run.draftResult?.summary.orEmpty(), if (run.draftResult?.outcome?.wire == "drafted") "프로 계약이 기다린다." else "이 생은 여기까지. 기록은 다음 생으로 간다."),
             )))
-            .also { run?.let { CareerChoicePresentation.conclusion(it).forEach(::addSection) } }
+            .also { addSection(ProfessionalStatusPresentation.section(state)); run?.let { CareerChoicePresentation.conclusion(it).forEach(::addSection) } }
             .also { addAction("resolveDraft", "드래프트 결과 확인", "이름이 불릴까. 숨을 참고 듣는다.", run?.let { it.phase == HighSchoolPhase.DRAFT && it.draftResult == null } == true, listOf(hs(HighSchoolPhase4Command.ResolveDraft(context.seed(state, "draft"))))) }
             Phase8ScreenId.P014_RUN_RECAP -> {
                 run?.let { CareerChoicePresentation.conclusion(it).forEach(::addSection) }
@@ -688,6 +697,7 @@ public object Phase8ScreenProjection {
                 }
             }
             Phase8ScreenId.P015_REBIRTH -> {
+                addSection(ProfessionalStatusPresentation.section(state))
                 val inheritedId = highSchool?.inheritance?.selectedSignatureLegacyId
                 addSection(Phase8Section("rebirth", "다음 생에도, 나의 공", listOf(
                     Phase8Row("이어지는 힘", inheritedId?.let(::legacyTitle) ?: "남은 기억", inheritedId?.let(::legacyEffect).orEmpty()),
@@ -718,25 +728,19 @@ public object Phase8ScreenProjection {
                         highSchool.archive.none { it.careerId == run.careerId },
                     listOf(hs(HighSchoolPhase4Command.FinalizeArchive)),
                 )
-                if ((state.pro == null || state.pro.phase == ProCareerPhase.COMPLETED) && run?.phase == HighSchoolPhase.COMPLETED) {
+                if ((state.pro == null || (state.pro.phase == ProCareerPhase.COMPLETED && state.pro.sourceHighSchoolCareerId != run?.careerId)) && run?.phase == HighSchoolPhase.COMPLETED) {
                     if (run.draftResult?.outcome == HighSchoolDraftOutcome.DRAFTED) addAction(
                         "startLinked",
-                        "프로 무대로 가기",
+                        "입단 계약 보기",
                         "지명받은 그 이름 그대로 프로에 간다.",
                         true,
                         listOf(pro(ProCommand.StartLinked(linkedRequest(state, context)))),
                     )
-                    val name = run?.identity?.name?.ifBlank { null } ?: "민서준"
-                    addAction(
-                        "startDirect",
-                        "직접 프로 시작",
-                        "고교와 상관없이 프로부터 시작한다.",
-                        true,
-                        listOf(pro(ProCommand.StartDirect(ProStartDirectRequest(context.seed(state, "pro-direct"), "power_prospect", name)))),
-                    )
+
                 }
             }
             Phase8ScreenId.P016_PRO_CONTRACT -> {
+                addSection(ProfessionalStatusPresentation.section(state))
                 val market = pro?.journeyState?.pendingContractMarket
                 val contract = pro?.contract
                 val salary = contract?.annualSalary
@@ -797,9 +801,10 @@ public object Phase8ScreenProjection {
                     addAction("signContract", "계약 서명", "이 계약에 사인한다.", pro?.phase == ProCareerPhase.CONTRACT_OFFER, listOf(pro(ProCommand.SignContract)))
                 }
                 val name = run?.identity?.name ?: "민서준"
-                addAction("startDirect", "직접 프로 시작", "고교와 상관없이 프로부터 시작한다.", pro == null, listOf(pro(ProCommand.StartDirect(ProStartDirectRequest(context.seed(state, "pro-direct"), "power_prospect", name)))))
+                if (highSchool == null && pro == null) addAction("startDirect", "프로부터 새로 시작", "별도 프로 선수로 시작합니다.", true,
+                    listOf(pro(ProCommand.StartDirect(ProStartDirectRequest(context.seed(state, "pro-direct"), "power_prospect", name)))))
                 val canLink = highSchool != null && pro == null && run?.draftResult?.outcome == HighSchoolDraftOutcome.DRAFTED && run.phase in setOf(HighSchoolPhase.DRAFT, HighSchoolPhase.COMPLETED)
-                if (highSchool != null) addAction("startLinked", "프로 무대로 가기", "지명받은 그 이름 그대로 프로에 간다.", canLink,
+                if (highSchool != null) addAction("startLinked", "입단 계약 보기", "지명받은 그 이름 그대로 프로에 간다.", canLink,
                     if (canLink) listOf(pro(ProCommand.StartLinked(linkedRequest(state, context)))) else emptyList())
             }
             Phase8ScreenId.P017_PRO_WEEK -> {

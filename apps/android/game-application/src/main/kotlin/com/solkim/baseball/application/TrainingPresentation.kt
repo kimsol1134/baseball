@@ -97,6 +97,12 @@ public object TrainingPresentation {
     public fun growthOutlook(state: GameAggregateState, focus: TrainingFocus, preview: TrainingPreview, copy: GameCopy): String {
         val minimum = displayGrowth(state, focus, preview.minimumGrowth)
         val maximum = displayGrowth(state, focus, preview.maximumGrowth)
+        if (preview.masteryTraining) return copy.resolve("growth.path.mastery")
+        if (preview.breakthroughTarget > 0) return copy.resolve("growth.path.breakthrough",
+            GameCopyArgument.Whole(preview.breakthroughProgress.toLong()), GameCopyArgument.Whole(preview.breakthroughTarget.toLong()))
+        if (maximum == 0 && preview.practiceStep > 0) return copy.resolve("growth.path.progress",
+            GameCopyArgument.UserText(copy.legacy(metric(focus))), GameCopyArgument.Whole(preview.experience.toLong()),
+            GameCopyArgument.Whole(minOf(100, preview.experience + preview.practiceStep).toLong()))
         if (maximum == 0) return copy.resolve("training.clear.no-growth")
         val ability = GameCopyArgument.UserText(copy.legacy(metric(focus)))
         return if (minimum == maximum) copy.resolve("training.clear.fixed", ability, GameCopyArgument.Whole(maximum.toLong()))

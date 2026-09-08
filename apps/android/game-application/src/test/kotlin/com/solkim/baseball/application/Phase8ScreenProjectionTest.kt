@@ -28,6 +28,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Phase 8 coverage uses reachable, signed aggregate fixtures instead of an invalid matrix seed. */
@@ -632,7 +633,7 @@ class Phase8ScreenProjectionTest {
         assertFalse(beforeArchive.actions.single { it.id == "customizeRebirth" }.enabled)
         val drafted = highSchool.run.draftResult?.outcome?.wire == "drafted"
         assertEquals(drafted, beforeArchive.actions.any { it.id == "startLinked" && it.enabled })
-        assertTrue(beforeArchive.actions.single { it.id == "startDirect" }.enabled)
+        assertTrue(beforeArchive.actions.none { it.id == "startDirect" })
 
         executeFirst(controller, Phase8ScreenId.P015_REBIRTH, "finalizeArchive")
         assertEquals(Phase8ScreenId.P015_REBIRTH, controller.preferredScreen())
@@ -642,14 +643,20 @@ class Phase8ScreenProjectionTest {
         assertFalse(afterArchive.actions.single { it.id == "finalizeArchive" }.enabled)
         assertTrue(afterArchive.actions.single { it.id == "quickRebirth" }.enabled)
         assertEquals(drafted, afterArchive.actions.any { it.id == "startLinked" && it.enabled })
-        assertTrue(afterArchive.actions.single { it.id == "startDirect" }.enabled)
+        assertTrue(afterArchive.actions.none { it.id == "startDirect" })
 
-        executeFirst(controller, Phase8ScreenId.P015_REBIRTH, if (drafted) "startLinked" else "startDirect")
-        assertEquals(if (drafted) Phase8ScreenId.P016_PRO_CONTRACT else Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
-        assertNotNull(store.current.pro)
-        if (store.current.pro?.phase == ProCareerPhase.CONTRACT_OFFER) executeFirst(controller, Phase8ScreenId.P016_PRO_CONTRACT) { it.id.startsWith("acceptOffer:") || it.id == "signContract" }
-        assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
-        assertEquals(ProCareerPhase.WEEKLY_PLAN, store.current.pro?.phase)
+        if (drafted) {
+            executeFirst(controller, Phase8ScreenId.P015_REBIRTH, "startLinked")
+            assertEquals(Phase8ScreenId.P016_PRO_CONTRACT, controller.preferredScreen())
+            assertNotNull(store.current.pro)
+            if (store.current.pro?.phase == ProCareerPhase.CONTRACT_OFFER) executeFirst(controller, Phase8ScreenId.P016_PRO_CONTRACT) { it.id.startsWith("acceptOffer:") || it.id == "signContract" }
+            assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
+            assertEquals(ProCareerPhase.WEEKLY_PLAN, store.current.pro?.phase)
+        } else {
+            executeFirst(controller, Phase8ScreenId.P015_REBIRTH, "quickRebirth")
+            assertNull(store.current.pro)
+            assertEquals(Phase8ScreenId.P003_PROLOGUE, controller.preferredScreen())
+        }
         assertFalse(store.current.settings.autoReleaseEnabled)
     }
 

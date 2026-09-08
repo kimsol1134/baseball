@@ -8,15 +8,14 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class FirstPitchOnboardingTest {
-    @Test fun firstLifeWaitsForExplicitFirstPitchAndPracticeLeadsToSchool() = runBlocking {
+    @Test fun firstLifeOpensMoundButWaitsForExplicitDeliveryAndPracticeLeadsToSchool() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("onboarding-first"))
         try {
             val controller = Phase8Controller(store)
             controller.executePlayerAction(Phase8ScreenId.P001_OPENING, "enterSetup")
-            assertEquals(null, controller.executePlayerAction(Phase8ScreenId.P002_SETUP, "startHighSchool").launch)
-            assertEquals(null, store.current.pitch)
-            assertEquals(Phase8ScreenId.P003_PROLOGUE, controller.preferredScreen())
-            val launch = assertNotNull(controller.executePlayerAction(Phase8ScreenId.P003_PROLOGUE, "openTutorialPitch").launch)
+            val launch = assertNotNull(controller.executePlayerAction(Phase8ScreenId.P002_SETUP, "startHighSchool").launch)
+            assertEquals(PitchBoundary.PLAYING, store.current.pitch?.boundary)
+            assertEquals(null, store.current.highSchool?.lastPresentation)
             assertFalse(store.current.settings.autoReleaseEnabled)
             assertEquals(PitchCareerKind.TUTORIAL, store.current.pitch?.careerKind)
             assertTrue(store.current.highSchool!!.tutorial.started)
@@ -33,7 +32,6 @@ class FirstPitchOnboardingTest {
             val controller = Phase8Controller(store)
             controller.executePlayerAction(Phase8ScreenId.P001_OPENING, "enterSetup")
             controller.executePlayerAction(Phase8ScreenId.P002_SETUP, "startHighSchool")
-            controller.executePlayerAction(Phase8ScreenId.P003_PROLOGUE, "openTutorialPitch")
             repeat(3) { index ->
                 val session = assertNotNull(store.current.pitch).sessionId
                 throwPractice(store)

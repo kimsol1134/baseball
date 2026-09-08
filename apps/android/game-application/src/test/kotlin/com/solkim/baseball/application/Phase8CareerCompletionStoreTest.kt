@@ -165,9 +165,10 @@ class Phase8CareerCompletionStoreTest {
             assertEquals(oldLife + 1, session.store.current.highSchool?.run?.lifeNumber)
             assertEquals(Phase8ScreenId.P003_PROLOGUE, Phase8ScreenProjection.preferredScreen(session.store.current))
             session = session.reopenAndAssert(ProCareerPhase.COMPLETED, "reborn-after-pro")
-            session.executeFirst(Phase8ScreenId.P016_PRO_CONTRACT, "startDirect")
-            assertEquals(ProCareerPhase.WEEKLY_PLAN, session.store.current.pro?.phase)
-            assertTrue(session.store.current.pro?.careerId != retired.careerId)
+            assertTrue(session.controller.projection(Phase8ScreenId.P016_PRO_CONTRACT).actions.none { it.id == "startDirect" },
+                "A reborn high-school player must not jump into an unrelated new pro career")
+            assertEquals(ProCareerPhase.COMPLETED, session.store.current.pro?.phase)
+            assertEquals(retired.careerId, session.store.current.pro?.careerId)
             assertEquals(archived, session.store.current.meta.retiredProCareers.single())
             session.store.close()
         }
