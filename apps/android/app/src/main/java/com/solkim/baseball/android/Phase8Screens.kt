@@ -603,6 +603,7 @@ private fun CoreRebirthChoices(state: GameAggregateState, model: Phase8ScreenMod
     val copy = rememberGameCopy()
     model.sections.firstOrNull { it.id == "professional-status" }?.let { CareerSection(it, it.rows.size) }
     val enteringPro = com.solkim.baseball.application.ProfessionalStatusPresentation.canEnterPro(state)
+    if (!enteringPro && model.id == Phase8ScreenId.P015_REBIRTH) CareerMemorySummary(state)
     if (enteringPro && model.id == Phase8ScreenId.P015_REBIRTH) {
         model.actions.firstOrNull { it.id == "startLinked" && it.enabled }?.let { Phase8ActionButton(model.id, it, onAction) }
         val alternatives = model.actions.filter { it.enabled && it.id in setOf("quickRebirth", "customizeRebirth", "finalizeArchive") }
@@ -754,6 +755,7 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
         Phase8ScreenId.P007_RELATIONSHIP -> {
             val run = state.highSchool?.run
             val role = run?.let { RelationshipNarrative.speakerRole(it) }
+            com.solkim.baseball.application.CareerMemoryPresentation.conversationRecall(state, copy)?.let { Text(it, verbatim = true, color = BaseballColors.milestone, style = MaterialTheme.typography.bodyMedium) }
             model.sections.firstOrNull()?.let { section ->
                 Text(section.title, style = MaterialTheme.typography.titleMedium)
                 section.rows.firstOrNull()?.let { row ->

@@ -109,6 +109,7 @@ internal fun CompactLifeRecap(state: GameAggregateState, model: Phase8ScreenMode
             }
         }
     }
+    CareerMemorySummary(state)
     CareerDisclosure("성적과 지명 평가", "recap.details") {
         model.sections.filter { it.id in setOf("draft-reasons", "life-story") }.forEach { CareerSection(it, it.rows.size) }
     }
@@ -312,6 +313,7 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
                 Text(model.sections.firstOrNull()?.title.orEmpty(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 CareerStatTiles(listOf("등판" to "${stats.games}", "이닝" to "${stats.inningsOuts / 3}.${stats.inningsOuts % 3}", "탈삼진" to "${stats.strikeouts}"))
                 model.sections.firstOrNull { it.id == "pro-season" }?.rows?.getOrNull(2)?.let { CareerFact(it, "season.team") }
+                if (pro.pendingDecision != null) CareerMemoryPresentation.conversationRecall(state, copy)?.let { Text(it, verbatim = true, color = BaseballColors.milestone) }
                 pro.pendingDecision?.let { decision -> CareerFact(Phase8Row(decision.title, decision.detail), "season.decision", revealDetail = true) }
                 if (pro.awards.isNotEmpty()) Text("최근 수상", style = MaterialTheme.typography.labelMedium, color = BaseballColors.textSecondary)
                 pro.awards.takeLast(3).forEach { Text(it, style = MaterialTheme.typography.labelLarge, color = BaseballColors.milestone) }
@@ -347,6 +349,7 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
 
         }
         Phase8ScreenId.P021_PRO_RETIREMENT -> {
+            CareerMemorySummary(state)
             val pro = state.pro
             if (pro != null) {
                 val stats = pro.careerStats + listOf(pro.currentStats).filter { current -> pro.careerStats.none { it.season == current.season } }
@@ -369,3 +372,15 @@ internal val compactCareerScreens = setOf(Phase8ScreenId.P011_HIGH_SCHOOL_CAREER
     Phase8ScreenId.P019_PRO_SEASON, Phase8ScreenId.P021_PRO_RETIREMENT, Phase8ScreenId.P022_PRO_LEGACY,
     Phase8ScreenId.P024_WEEKLY, Phase8ScreenId.P025_RECORDS_LEAGUE, Phase8ScreenId.P026_ACHIEVEMENTS,
     Phase8ScreenId.P028_LIFECARD, Phase8ScreenId.P029_RETURN_PLAN)
+
+@Composable
+internal fun CareerMemorySummary(state: GameAggregateState) {
+    val memories = CareerMemoryPresentation.featured(state, includePrevious = true)
+    if (memories.isEmpty()) return
+    val copy = rememberGameCopy()
+    Text("내 투수가 해낸 일", style = MaterialTheme.typography.titleMedium, color = BaseballColors.milestone)
+    memories.forEach { memory ->
+        Text(copy.resolve("companion.memory.${memory.kind}"), verbatim = true, style = MaterialTheme.typography.bodyMedium)
+        Text(CareerMemoryPresentation.detail(memory, copy), verbatim = true, style = MaterialTheme.typography.bodySmall)
+    }
+}

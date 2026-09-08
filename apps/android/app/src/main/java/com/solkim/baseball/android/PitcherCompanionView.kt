@@ -156,6 +156,7 @@ private fun CompanionMemory(memory: PitchMemory, pinned: Boolean, busy: Boolean,
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(copy.resolve("mobile.core.life", GameCopyArgument.Whole(memory.life.toLong())), verbatim = true, style = MaterialTheme.typography.labelSmall)
             Text(copy.resolve("companion.memory.${memory.kind}"), verbatim = true, style = MaterialTheme.typography.titleMedium)
+            CareerMemoryPresentation.detail(memory, copy).takeIf { it.isNotBlank() }?.let { Text(it, verbatim = true, style = MaterialTheme.typography.bodySmall) }
             if (memory.pitch.isNotEmpty()) Text(PitchHudProjection.koreanLabel(PitchKind.entries.first { it.wire == memory.pitch }), style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = { onChange("pin", if (pinned) "" else memory.id) }, enabled = !busy, modifier = Modifier.testTag("companion.pin.${memory.id}")) { Text(if (pinned) "고정 해제" else "선수 화면에 고정") }
         }

@@ -4,7 +4,7 @@ import com.solkim.baseball.core.pitch.PitchKind
 import com.solkim.baseball.core.pitch.PitchOutcome
 import com.solkim.baseball.model.JsonValue
 
-public data class PitchMemory(val id: String, val career: String, val life: Int, val kind: String, val pitch: String = "", val amount: Int = 0)
+public data class PitchMemory(val id: String, val career: String, val life: Int, val kind: String, val pitch: String = "", val amount: Int = 0, val outing: List<Int> = emptyList(), val sourceId: String = "")
 public data class SignatureExperience(val pitch: String, val training: Int = 0, val uses: Int = 0, val strikeouts: Int = 0) {
     public val rank: Int get() = when { strikeouts >= 10 -> 3; strikeouts >= 1 -> 2; uses >= 3 || training >= 3 -> 1; else -> 0 }
 }
@@ -23,7 +23,8 @@ public data class PitcherCompanion(
         require(goal in setOf("", "signature", "clean", "best") && goalTarget >= 0 && goalBaseline >= 0) { "companion.goal" }
         require(listOf(careerStrikeouts, careerSignatureKs, cleanOutings).all { it >= 0 }) { "companion.count" }
         require(experience.size <= 4 && experience.map { it.pitch }.distinct().size == experience.size && experience.all { it.pitch in PitchKind.entries.map { p -> p.wire } && it.training >= 0 && it.uses >= 0 && it.strikeouts in 0..it.uses }) { "companion.experience" }
-        require(memories.map { it.id }.distinct().size == memories.size && memories.all { it.id.isNotBlank() && it.career.isNotBlank() && it.life > 0 && it.amount >= 0 && (it.pitch.isEmpty() || it.pitch in PitchKind.entries.map { p -> p.wire }) && it.kind in setOf("first_strikeout", "pitch_strikeout", "recovery", "clean_outing", "signature_rank_1", "signature_rank_2", "signature_rank_3", "goal_signature", "goal_clean", "goal_best", "goal_attempt") }) { "companion.memories" }
+        require(memories.map { it.id }.distinct().size == memories.size && memories.all { it.id.isNotBlank() && it.career.isNotBlank() && it.life > 0 && it.amount >= 0 && (it.pitch.isEmpty() || it.pitch in PitchKind.entries.map { p -> p.wire }) && it.kind in setOf("first_strikeout", "pitch_strikeout", "recovery", "clean_outing", "signature_rank_1", "signature_rank_2", "signature_rank_3", "goal_signature", "goal_clean", "goal_best", "goal_attempt", "starter_trial", "held_lead", "first_save", "best_outing") }) { "companion.memories" }
+        require(memories.all { it.outing.isEmpty() && it.sourceId.isEmpty() || (it.outing.size == 3 && it.outing.all { n -> n >= 0 } && it.sourceId.isNotBlank()) }) { "companion.outing" }
         require(previousStart.isEmpty() || previousStart.size == 4 && previousStart.all { it in 20..80 }) { "companion.start" }
         require(pinned.isEmpty() || memories.any { it.id == pinned }) { "companion.pin" }
     }
@@ -138,6 +139,43 @@ public object PitcherCompanionRules {
         after.pro?.currentGameLines.orEmpty().filter { it.played && "${it.season}:${it.week}:${it.outingNumber}" !in oldProGames }.forEach {
             if (it.outs >= 3 && it.runsAllowed == 0 && it.walks == 0) { c = c.copy(cleanOutings = c.cleanOutings + 1); memory("clean_outing", amount = it.strikeouts) }
         }
+        fun rememberOuting(kind: String, source: String, outs: Int, runs: Int, ks: Int, replaceBest: Boolean = false) {
+            if (outs <= 0) return
+            val id = "${c.career}:$kind:"
+            val existing = c.memories.firstOrNull { it.id == id }
+            fun score(o: List<Int>) = o[0] * 4 + o[2] * 3 - o[1] * 8
+            val line = listOf(outs, runs, ks)
+            if (existing != null && (!replaceBest || (existing.outing.size == 3 && score(existing.outing) >= score(line)))) return
+            val remembered = PitchMemory(id, c.career, life, kind, amount = ks, outing = line, sourceId = source)
+            c = c.copy(memories = c.memories.filterNot { it.id == id } + remembered)
+        }
+        val objective = OutingPresentation.assignment(after)
+        if (objective?.status == com.solkim.baseball.core.pitch.OutingGoalStatus.ACHIEVED &&
+            OutingPresentation.assignment(before)?.status != com.solkim.baseball.core.pitch.OutingGoalStatus.ACHIEVED) {
+            val hsPitch = after.highSchool?.activePitch
+            val proPitch = after.pro?.activePitch
+            val kind = when (objective.goal) {
+                com.solkim.baseball.core.pitch.OutingGoal.STARTER_TEST -> "starter_trial"
+                com.solkim.baseball.core.pitch.OutingGoal.HOLD_LEAD -> "held_lead"
+                else -> null
+            }
+            if (kind != null) rememberOuting(kind, proPitch?.sessionId ?: hsPitch!!.sessionId,
+                proPitch?.outs ?: hsPitch!!.outs, proPitch?.runsAllowed ?: hsPitch!!.runsAllowed, proPitch?.strikeouts ?: hsPitch!!.strikeouts)
+        }
+        school?.seasonLog.orEmpty().filter { it.played && it.careerId == c.career && "${it.careerId}:${it.gameNumber}" !in oldGames }.forEach {
+            rememberOuting("best_outing", "hs:${it.careerId}:${it.gameNumber}", it.outs, it.runsAllowed, it.strikeouts, true)
+        }
+        val oldFinalGames = before.pro?.currentGameLines.orEmpty().associateBy { "${it.season}:${it.week}:${it.outingNumber}" }
+        val nextPro = after.pro?.takeIf { it.careerId == c.career }
+        val pending = nextPro?.takeIf { it.phase == com.solkim.baseball.core.pro.ProCareerPhase.IMPORTANT_GAME }?.currentGameLines?.lastOrNull { !it.played && it.week == nextPro.week }
+        nextPro?.currentGameLines.orEmpty().filter { it != pending }.forEach {
+            val id = "${it.season}:${it.week}:${it.outingNumber}"
+            val old = oldFinalGames[id]
+            if (old == null || (!old.played && it.played)) {
+                if (it.decision == com.solkim.baseball.core.pro.ProPitchingDecision.SAVE) rememberOuting("first_save", "pro:${c.career}:$id", it.outs, it.runsAllowed, it.strikeouts)
+                if (it.played) rememberOuting("best_outing", "pro:${c.career}:$id", it.outs, it.runsAllowed, it.strikeouts, true)
+            }
+        }
         if (after.stage in setOf(GameStage.PRO, GameStage.RETIREMENT) && after.pro?.activePitch == null) c = c.copy(careerStrikeouts = currentKs(after))
         if (c.goal.isNotEmpty() && !c.goalCompleted && !(c.goal == "best" && after.pro?.activePitch != null)) {
             val progress = progress(c)
@@ -159,7 +197,7 @@ public object PitcherCompanionCodec {
         "pinned" to str(c.pinned), "goal" to str(c.goal), "goalPitch" to str(c.goalPitch), "goalTarget" to num(c.goalTarget), "goalBaseline" to num(c.goalBaseline),
         "goalCompleted" to JsonValue.Bool(c.goalCompleted), "careerStrikeouts" to num(c.careerStrikeouts), "careerSignatureKs" to num(c.careerSignatureKs), "cleanOutings" to num(c.cleanOutings),
         "experience" to JsonValue.Arr(c.experience.map { JsonValue.Obj(linkedMapOf("pitch" to str(it.pitch), "training" to num(it.training), "uses" to num(it.uses), "strikeouts" to num(it.strikeouts))) }),
-        "memories" to JsonValue.Arr(c.memories.map { JsonValue.Obj(linkedMapOf("id" to str(it.id), "career" to str(it.career), "life" to num(it.life), "kind" to str(it.kind), "pitch" to str(it.pitch), "amount" to num(it.amount))) })
+        "memories" to JsonValue.Arr(c.memories.map { JsonValue.Obj(linkedMapOf("id" to str(it.id), "career" to str(it.career), "life" to num(it.life), "kind" to str(it.kind), "pitch" to str(it.pitch), "amount" to num(it.amount)).apply { if (it.outing.isNotEmpty()) { put("outing", JsonValue.Arr(it.outing.map(::num))); put("source", str(it.sourceId)) } }) })
     ))
     public fun decode(value: JsonValue?): PitcherCompanion? {
         if (value == null || value == JsonValue.Null) return null
@@ -171,6 +209,6 @@ public object PitcherCompanionCodec {
         return PitcherCompanion(v.s("career"), v.s("representative"), v.s("nickname"), v.n("jersey"), v.s("pinned"), v.s("goal"), v.s("goalPitch"), v.n("goalTarget"), v.n("goalBaseline"),
             (v.entries["goalCompleted"] as? JsonValue.Bool)?.value ?: error("companion.goalCompleted"), v.n("careerStrikeouts"), v.n("careerSignatureKs"), v.n("cleanOutings"),
             v.list("experience").map { require(it.entries.keys == setOf("pitch", "training", "uses", "strikeouts")) { "companion.experience_fields" }; SignatureExperience(it.s("pitch"), it.n("training"), it.n("uses"), it.n("strikeouts")) },
-            v.list("memories").map { require(it.entries.keys == setOf("id", "career", "life", "kind", "pitch", "amount")) { "companion.memory_fields" }; PitchMemory(it.s("id"), it.s("career"), it.n("life"), it.s("kind"), it.s("pitch"), it.n("amount")) }, ((v.entries["previousStart"] as? JsonValue.Arr)?.values.orEmpty().map { (it as JsonValue.Num).raw.toInt() }), (v.entries["nicknames"] as? JsonValue.Obj)?.entries.orEmpty().mapValues { (it.value as JsonValue.Str).value }).also { it.validate(); require(encode(it).entries.keys == v.entries.keys) { "companion.fields" } }
+            v.list("memories").map { require(it.entries.keys == setOf("id", "career", "life", "kind", "pitch", "amount") + setOf("outing", "source").filter { key -> key in it.entries }) { "companion.memory_fields" }; PitchMemory(it.s("id"), it.s("career"), it.n("life"), it.s("kind"), it.s("pitch"), it.n("amount"), (it.entries["outing"] as? JsonValue.Arr)?.values.orEmpty().map { n -> (n as JsonValue.Num).raw.toInt() }, (it.entries["source"] as? JsonValue.Str)?.value.orEmpty()) }, ((v.entries["previousStart"] as? JsonValue.Arr)?.values.orEmpty().map { (it as JsonValue.Num).raw.toInt() }), (v.entries["nicknames"] as? JsonValue.Obj)?.entries.orEmpty().mapValues { (it.value as JsonValue.Str).value }).also { it.validate(); require(encode(it).entries.keys == v.entries.keys) { "companion.fields" } }
     }
 }
