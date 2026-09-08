@@ -225,6 +225,11 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
                 }
                 Text(records.scope.title + " · " + records.scope.player, style = MaterialTheme.typography.labelMedium)
                 CareerStatTiles(listOf("등판" to records.games.toString(), "이닝" to records.innings, "실점" to records.runs.toString()))
+                CareerDisclosure("상세 투구 기록", "records.pitching.stats") {
+                    val pitching = AlbumPitchingStats.from(records)
+                    AlbumStatGrid(pitching.line)
+                    AlbumStatGrid(pitching.rates)
+                }
                 if (records.incomplete) Text("누적 기록은 보존했어요. 개별 등판은 저장된 경기부터 보여드려요.", style = MaterialTheme.typography.bodySmall)
                 Text("최근 등판", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 if (records.rows.isEmpty() && records.games > 0) Text("이전 경기의 개별 기록은 남아 있지 않아요.", style = MaterialTheme.typography.bodySmall)

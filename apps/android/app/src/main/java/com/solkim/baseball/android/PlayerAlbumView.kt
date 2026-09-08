@@ -39,27 +39,40 @@ internal fun PlayerAlbumView(state: GameAggregateState) {
     }
     val innings = if (page.inningsKnown) "${page.outs/3}.${page.outs%3}" else "—"
     if (page.signature.isNotBlank()) Text(copy.resolve("content.pitch-type.${page.signature}.name"), verbatim = true, color = BaseballColors.action)
-    val stats = listOf("등판" to page.games.toString(), "이닝" to innings, "탈삼진" to page.strikeouts.toString())
+    val pitching = AlbumPitchingStats.from(page)
+    val stats = listOf("WHIP" to pitching.whip, "이닝" to innings, "탈삼진" to page.strikeouts.toString())
     CareerStatTiles(stats)
+    CareerDisclosure("상세 투구 기록", "album.pitching.stats") {
+        AlbumStatGrid(pitching.line)
+        AlbumStatGrid(pitching.rates)
+        CareerDisclosure("기록 용어", "album.pitching.glossary") {
+            listOf("G 경기 · GS 선발 · W 승 · L 패 · SV 세이브", "IP 이닝 · H 피안타 · HR 피홈런 · BB 볼넷", "SO 탈삼진 · R 실점 · NP 투구 수", "WHIP · 이닝당 허용한 피안타와 볼넷", "K/9 · 9이닝당 탈삼진", "BB/9 · 9이닝당 볼넷", "H/9 · 9이닝당 피안타", "K/BB · 볼넷당 탈삼진", "RA/9 · 9이닝당 실점, 자책점 기준 ERA와 달라요.", "— · 계산에 필요한 기록이 없거나 분모가 0이에요.").forEach {
+                Text(it, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
     var card by remember(page.scope.id) { mutableStateOf<AlbumShareCard?>(null) }
     var replay by remember(page.scope.id) { mutableStateOf(false) }
-    fun shareCard(title: String, values: List<Pair<String, String>>, caption: String) = AlbumShareCard(copy.legacy(title), page.scope.player,
+    fun shareCard(title: String, values: List<Pair<String, String>>, caption: String, game: CareerGameView? = null): AlbumShareCard {
+        val detail = game?.let { AlbumPitchingStats.from(it) } ?: pitching
+        return AlbumShareCard(copy.legacy(title), page.scope.player,
         copy.legacy(listOf(page.scope.title, page.affiliation).filter { it.isNotBlank() }.joinToString(" · ")), values.map { copy.legacy(it.first) to it.second }, listOfNotNull(copy.legacy("${page.life}번째 생"),
             page.signature.takeIf { it.isNotBlank() }?.let { copy.legacy("대표 구종") + " · " + copy.resolve("content.pitch-type.$it.name") },
-            copy.legacy(caption, pages.map { it.scope.player }.toSet())).joinToString("\n"), copy.resolve("android.app.name"))
+            copy.legacy(caption, pages.map { it.scope.player }.toSet())).joinToString("\n"), copy.resolve("android.app.name"), line = detail.line, rates = detail.rates)
+    }
     TextButton(onClick = { card = shareCard("내 투수", stats, "나의 야구 인생") }, modifier = Modifier.testTag("album.card")) { Text("카드 보기") }
     val best = page.rows.maxByOrNull { it.outs * 4 + it.strikeouts * 3 - it.runs * 8 }
     if (best != null) {
         Text("기억할 경기", style = MaterialTheme.typography.titleMedium)
         CareerStatTiles(listOf("이닝" to "${best.outs/3}.${best.outs%3}", "탈삼진" to best.strikeouts.toString(), "실점" to best.runs.toString()))
         Text(best.label, style = MaterialTheme.typography.labelMedium)
-        TextButton(onClick = { card = shareCard("인생 경기", listOf("이닝" to "${best.outs/3}.${best.outs%3}", "탈삼진" to best.strikeouts.toString(), "실점" to best.runs.toString()), best.label) }) { Text("경기 카드") }
+        TextButton(onClick = { card = shareCard("인생 경기", listOf("이닝" to "${best.outs/3}.${best.outs%3}", "탈삼진" to best.strikeouts.toString(), "실점" to best.runs.toString()), best.label, best) }) { Text("경기 카드") }
     }
     CareerDisclosure("기념할 순간", "album.milestones") {
         val chronological = page.rows.sortedBy { it.chronologicalKey }
         listOf("첫 승" to chronological.firstOrNull { it.decision == "win" }, "첫 세이브" to chronological.firstOrNull { it.decision == "save" },
             "첫 선발" to chronological.firstOrNull { it.started }, "첫 무실점 등판" to chronological.firstOrNull { it.outs > 0 && it.runs == 0 }).forEach { (title, game) ->
-            if (game != null) TextButton(onClick = { card = shareCard(title, listOf("이닝" to "${game.outs/3}.${game.outs%3}", "탈삼진" to game.strikeouts.toString(), "실점" to game.runs.toString()), game.label) }) { Text(title) }
+            if (game != null) TextButton(onClick = { card = shareCard(title, listOf("이닝" to "${game.outs/3}.${game.outs%3}", "탈삼진" to game.strikeouts.toString(), "실점" to game.runs.toString()), game.label, game) }) { Text(title) }
         }
         Text("선택한 기간에 저장된 경기 기준", style = MaterialTheme.typography.bodySmall)
     }
@@ -67,7 +80,7 @@ internal fun PlayerAlbumView(state: GameAggregateState) {
     var shownGames by remember(page.scope.id) { mutableIntStateOf(5) }
     CareerDisclosure("모든 등판", "album.games") {
         page.rows.asReversed().take(shownGames).forEach { game ->
-            TextButton(onClick = { card = shareCard("기억할 경기", listOf("이닝" to "${game.outs/3}.${game.outs%3}", "탈삼진" to game.strikeouts.toString(), "실점" to game.runs.toString()), game.label) }) { Text(game.label, style = MaterialTheme.typography.labelMedium) }
+            TextButton(onClick = { card = shareCard("기억할 경기", listOf("이닝" to "${game.outs/3}.${game.outs%3}", "탈삼진" to game.strikeouts.toString(), "실점" to game.runs.toString()), game.label, game) }) { Text(game.label, style = MaterialTheme.typography.labelMedium) }
             CareerStatTiles(listOf("이닝" to "${game.outs/3}.${game.outs%3}", "탈삼진" to game.strikeouts.toString(), "실점" to game.runs.toString()))
         }
         if (shownGames < page.rows.size) TextButton(onClick = { shownGames += 5 }) { Text("더 보기") }
@@ -162,4 +175,21 @@ private fun AlbumCardPreview(card: AlbumShareCard, seed: String, pro: Boolean, c
             TextButton(onClick = close) { Text(copy.legacy("닫기"), verbatim = true) }
         }
     })
+}
+
+@Composable
+internal fun AlbumStatGrid(stats: List<Pair<String, String>>) {
+    stats.chunked(3).forEach { row ->
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            row.forEach { (label, value) ->
+                Surface(color = BaseballColors.surfaceRaised, modifier = Modifier.weight(1f)) {
+                    Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                        Text(label, verbatim = true, style = MaterialTheme.typography.labelSmall, color = BaseballColors.textSecondary)
+                        Text(value, verbatim = true, style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+    }
 }

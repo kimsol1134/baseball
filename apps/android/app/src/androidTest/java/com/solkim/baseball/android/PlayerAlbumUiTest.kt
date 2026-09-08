@@ -46,6 +46,19 @@ class PlayerAlbumUiTest {
         compose.waitUntil(5000) { compose.onAllNodesWithText("헛스윙").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(original, state.recomputeCommitment())
     }
+    @Test fun exportContainsACompleteBaseballStatLine() {
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        val stats = AlbumPitchingStats(28, 486, 184, 43, 122, 36, 25, 15, 4, 0, 12, 2480)
+        val card = com.solkim.baseball.platform.AlbumShareCard("시즌 결산", "민서준", "대구 포지 · 프로 3시즌", emptyList(), "1번째 생 · 대표 구종 포심", "야구 못하면 또 환생함", stats.line, stats.rates)
+        val name = PlayerPortraitResolver.resolveDrawableName("민서준", AvatarRole.PLAYER, PlayerStage.PRO)
+        val id = context.resources.getIdentifier(name, "drawable", context.packageName)
+        val portrait = android.graphics.BitmapFactory.decodeResource(context.resources, id)
+        val bitmap = com.solkim.baseball.platform.NativePlayerAlbumShareService(context).render(card, portrait)
+        try {
+            assertEquals(1080, bitmap.width); assertEquals(1350, bitmap.height)
+            java.io.File(context.cacheDir, "card-redesign-season.png").outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+        } finally { bitmap.recycle(); portrait.recycle() }
+    }
     @Test fun albumControlsUseEnglishAndJapanese() {
         var language by mutableStateOf("en")
         compose.setContent {
