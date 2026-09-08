@@ -5,6 +5,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -89,28 +90,63 @@ class CareerParityUiTest {
     }
     @Test fun treeShowsLockedBranchesAndConfirmsExactlyOneChoice() {
         var state by mutableStateOf(fixture(awakening = true))
-        val context = Phase8CommandContext()
-        val model = Phase8ScreenProjection.project(state, Phase8ScreenId.P009_AWAKENING, context)
+        val model = Phase8ScreenProjection.project(state, Phase8ScreenId.P009_AWAKENING, Phase8CommandContext())
         compose.setContent { BaseballMigrationTheme { Surface(color = androidx.compose.material3.MaterialTheme.colorScheme.background) {
-            Column(Modifier.fillMaxSize().systemBarsPadding().verticalScroll(rememberScrollState())) {
+            Box(Modifier.fillMaxSize().systemBarsPadding()) {
                 AwakeningTreeView(state, model, { action ->
-                    action.capturedPayloads.orEmpty().forEach { state = GameStateReducer.dispatch(state, it.envelope).state }
+                    action.capturedPayloads.forEach { state = GameStateReducer.dispatch(state, it.envelope).state }
                 })
             }
         } } }
+        compose.onNodeWithTag("awakening.node.rising_four_seam").performScrollTo().performClick()
+        compose.onNodeWithTag("awakening.confirm").assertIsNotEnabled()
+        compose.onNodeWithTag("awakening.branch.command").performClick()
+        compose.onNodeWithTag("awakening.node.pinpoint_edge").assertExists()
         compose.onNodeWithTag("awakening.node.rising_four_seam").assertDoesNotExist()
-        compose.onNodeWithTag("awakening.fullTree").performScrollTo().performClick()
-        compose.onNodeWithTag("awakening.node.rising_four_seam").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("action.awakening:rising_four_seam").assertDoesNotExist()
-        compose.onNodeWithTag("action.awakening:explosive_fastball").performScrollTo().performClick()
+        compose.onNodeWithTag("awakening.branch.power").performClick()
+        compose.onNodeWithTag("awakening.node.explosive_fastball").performScrollTo().performClick()
         assertEquals(0, state.highSchool!!.run.selectedAwakenings.size)
-        compose.mainClock.advanceTimeBy(600)
-        compose.waitForIdle()
-        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).waitForIdle()
-        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).takeScreenshot(File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, "stat-colors-skill-confirm.png"))
+        compose.onNodeWithTag("awakening.benefit").assertIsDisplayed()
+        compose.onNodeWithTag("awakening.cost").assertIsDisplayed()
+        compose.onNodeWithTag("awakening.confirm").assertIsDisplayed().assertIsEnabled()
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).takeScreenshot(File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, "skill-tree-native.png"))
         compose.onNodeWithTag("awakening.confirm").performClick()
         compose.waitForIdle()
         assertEquals(listOf("explosive_fastball"), state.highSchool!!.run.selectedAwakenings.map { it.wire })
+        compose.onNodeWithTag("awakening.confirm").assertIsNotEnabled()
+    }
+    @Test fun treeSupportsLargeJapaneseTextAndShowsOnlyLegalLeap() {
+        val original = fixture(awakening = true)
+        val school = original.highSchool!!
+        val core = com.solkim.baseball.core.highschool.HighSchoolKernel()
+        val root = com.solkim.baseball.core.highschool.HighSchoolAwakening.PINPOINT_EDGE
+        var run = school.run.copy(selectedAwakenings = listOf(root), awakeningSparks = 3,
+            pitcher = core.previewAwakening(school.run.pitcher, root))
+        run = core.resignShadowState(run.copy(awakeningOptions = core.availableAwakenings(run)))
+        val nextSchool = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel().commitShadowState(school.copy(run = run))
+        val state = original.copy(highSchool = nextSchool).let { it.copy(commitment = it.recomputeCommitment()) }
+        var config by mutableStateOf(android.content.res.Configuration(InstrumentationRegistry.getInstrumentation().targetContext.resources.configuration).apply { setLocale(java.util.Locale.JAPANESE) })
+        compose.setContent {
+            CompositionLocalProvider(androidx.compose.ui.platform.LocalConfiguration provides config,
+                androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(androidx.compose.ui.platform.LocalDensity.current.density, 1.6f)) {
+                BaseballMigrationTheme { Surface(color = androidx.compose.material3.MaterialTheme.colorScheme.background) {
+                    Box(Modifier.requiredSize(360.dp, 620.dp)) {
+                        AwakeningTreeView(state, Phase8ScreenProjection.project(state, Phase8ScreenId.P009_AWAKENING), {})
+                    }
+                } }
+            }
+        }
+        compose.onNodeWithTag("awakening.branch.command").performClick()
+        compose.onNodeWithTag("awakening.node.calm_under_pressure").performScrollTo().performClick()
+        compose.onNodeWithTag("awakening.confirm").assertIsDisplayed().assertIsEnabled()
+        compose.onNodeWithTag("awakening.node.explosive_fastball").assertDoesNotExist()
+        compose.onNodeWithTag("awakening.branch.breaking").performClick()
+        compose.onNodeWithTag("awakening.node.frozen_changeup").performScrollTo().performClick()
+        compose.onNodeWithTag("awakening.confirm").assertIsDisplayed().assertIsNotEnabled()
+        compose.runOnIdle { config = android.content.res.Configuration(config).apply { setLocale(java.util.Locale.ENGLISH) } }
+        compose.onNodeWithTag("awakening.branch.power").performClick()
+        compose.onNodeWithTag("awakening.node.explosive_fastball").performScrollTo().performClick()
+        compose.onNodeWithTag("awakening.confirm").assertIsDisplayed().assertIsEnabled()
     }
     @Test fun rebirthPreviewAndPinnedActionMatchActualNextStart() {
         var state by mutableStateOf(fixture(rebirth = true))

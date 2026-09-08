@@ -56,7 +56,7 @@ internal fun SeedChallengeDialog(
                     placeholder = { Text("친구가 보낸 코드 (숫자-숫자)") }, singleLine = true,
                     isError = input.contains('-') && parsed == null,
                     modifier = Modifier.fillMaxWidth().testTag("challenge.code"))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AdaptiveActionRow(Modifier.fillMaxWidth()) {
                     TextButton(onClick = { input = "${java.security.SecureRandom().nextLong().toULong()}-1" }, modifier = Modifier.testTag("challenge.generate")) {
                         Text(copy.resolve("android.challenge.generate"))
                     }

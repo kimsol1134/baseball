@@ -6,6 +6,24 @@ import java.nio.file.Files
 import kotlin.test.*
 
 class MobileCorePresentationTest {
+    @Test fun firstTrainingCopySeparatesGuaranteedGrowthFromTotalJackpotGrowth() {
+        val hs = HighSchoolPhase4Kernel().start(HighSchoolPhase4StartRequest("918220", "power_prospect", "forecast", "2026-W36", "2026-09-06")).state
+        val state = GameAggregateState.initial("forecast").copy(stage = GameStage.HIGH_SCHOOL, highSchool = hs)
+        val preview = HighSchoolTrainingPreview(1, 1, 4, 0, false, false, false, false,
+            jackpotChancePercent = 37, jackpotMinimumGrowth = 2, jackpotMaximumGrowth = 2, firstTrainingGuaranteed = true)
+        for (language in GameLanguage.entries) {
+            val copy = GameCopy(language)
+            val base = TrainingPresentation.growthOutlook(state, TrainingFocus.VELOCITY, preview, copy)
+            val bonus = assertNotNull(TrainingPresentation.jackpotOutlook(state, TrainingFocus.VELOCITY, preview, copy))
+            assertTrue(base.contains("+${TrainingPresentation.displayGrowth(state, TrainingFocus.VELOCITY, 1)}"))
+            assertTrue(bonus.contains("37%"))
+            assertTrue(bonus.contains("+${TrainingPresentation.displayGrowth(state, TrainingFocus.VELOCITY, 2)}"))
+            assertFalse(bonus.contains("%1$"))
+            assertNull(TrainingPresentation.jackpotOutlook(state, TrainingFocus.RECOVERY, preview, copy))
+            assertNull(TrainingPresentation.jackpotOutlook(state, TrainingFocus.VELOCITY, preview.copy(atTalentWall = true), copy))
+        }
+    }
+
     @Test fun growthForecastNamesTheAbilityAndSeparatesZeroFixedAndRange() {
         val hs = HighSchoolPhase4Kernel().start(HighSchoolPhase4StartRequest("918220", "power_prospect", "forecast", "2026-W36", "2026-09-06")).state
         val state = GameAggregateState.initial("forecast").copy(stage = GameStage.HIGH_SCHOOL, highSchool = hs)

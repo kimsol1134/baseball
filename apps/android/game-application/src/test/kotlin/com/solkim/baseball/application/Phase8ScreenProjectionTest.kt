@@ -668,8 +668,8 @@ class Phase8ScreenProjectionTest {
         advanceHighSchoolUntil(store, controller, phase7, HighSchoolPhase.CHAPTER_REVIEW)
 
         val review = controller.projection(Phase8ScreenId.P010_CHAPTER)
-        val invitation = review.sections.first { it.id == "chapter" }.rows.first { it.label == "정규 경기" }
-        assertEquals("아직 안 던졌다", invitation.value)
+        assertTrue(review.sections.first { it.id == "chapter" }.rows.none { it.label == "정규 경기" })
+        assertEquals("다음 훈련 준비", review.actions.single { it.id == "advanceChapter" }.label)
         assertTrue(review.actions.single { it.id == "claimChapterGame" }.enabled)
         val automaticBefore = requireNotNull(store.current.highSchool).run.automaticGames
         val gamesBefore = requireNotNull(store.current.highSchool).run.performance.importantGamesCompleted
