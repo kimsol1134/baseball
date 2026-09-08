@@ -172,10 +172,12 @@ public data class GameMetaState(
     val seedChallenge: SeedChallengeSession? = null,
     val playerGrowth: PlayerGrowthReceipt? = null,
     val companion: PitcherCompanion? = null,
+    val album: List<PlayerAlbumPage> = emptyList(),
 ) {
     public fun validate() {
         playerGrowth?.validate()
         companion?.validate()
+        PlayerAlbum.validate(album)
         require(completedGameCount >= 0UL) { "meta.completed_games" }
         listOf(achievementIds, weeklyReceiptIds, returnPlanReceiptIds, decisionReceiptIds, lifeArchiveCareerIds)
             .forEach { values -> require(values.distinct().size == values.size && values.all(String::isNotBlank)) { "meta.receipts" } }
@@ -297,7 +299,7 @@ public data class GameAggregateState(
                 pitchValue, settings.toString(), analytics, receiptsValue, deleted,
             ).joinToString("|") + (if (meta.retiredProCareers.isNotEmpty() || meta.standaloneSoulBalance != 0) {
                 "|retired-pro:${meta.retiredProCareers.joinToString(",") { it.commitment }}|pro-wallet:${meta.standaloneSoulBalance}"
-            } else "") + (if (meta.seedChallenge != null) "|seed-challenge:${meta.seedChallenge}" else "")
+            } else "") + (if (meta.album.isNotEmpty()) "|album:${PlayerAlbumCodec.encode(meta.album)}" else "") + (if (meta.seedChallenge != null) "|seed-challenge:${meta.seedChallenge}" else "")
         )
     }
 

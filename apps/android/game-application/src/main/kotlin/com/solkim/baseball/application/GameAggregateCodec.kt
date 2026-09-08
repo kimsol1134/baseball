@@ -78,10 +78,11 @@ public object GameAggregateCodec : JsonPayloadCodec<GameAggregateState> {
         value.seedChallenge?.let { put("seedChallenge", SeedChallengeCodec.encode(it)) }
         value.companion?.let { put("companion", PitcherCompanionCodec.encode(it)) }
         value.playerGrowth?.let { put("playerGrowth", PlayerGrowthReceipt.encode(it)) }
+        if (value.album.isNotEmpty()) put("album", PlayerAlbumCodec.encode(value.album))
     })
 
     private fun decodeMeta(value: JsonValue.Obj): GameMetaState {
-        requireExact(value, metaFields + setOf("retiredProCareers", "standaloneSoulBalance", "seedChallenge", "playerGrowth", "companion").filter { it in value.entries }, "meta")
+        requireExact(value, metaFields + setOf("retiredProCareers", "standaloneSoulBalance", "seedChallenge", "playerGrowth", "companion", "album").filter { it in value.entries }, "meta")
         return GameMetaState(
             completedGameCount = value.decimal("completedGameCount"),
             achievementIds = value.strings("achievementIds"),
@@ -95,6 +96,7 @@ public object GameAggregateCodec : JsonPayloadCodec<GameAggregateState> {
             seedChallenge = SeedChallengeCodec.decode(value["seedChallenge"]),
             playerGrowth = PlayerGrowthReceipt.decode(value["playerGrowth"]),
             companion = PitcherCompanionCodec.decode(value["companion"]),
+            album = PlayerAlbumCodec.decode(value["album"]),
         )
     }
 

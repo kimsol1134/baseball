@@ -28,11 +28,13 @@ public object CareerRecordPresentation {
         if (pro != null) {
             val season = scope.id.substringAfterLast(':').toIntOrNull()
             val stats = (pro.careerStats.filter { it.season != pro.currentStats.season } + pro.currentStats).filter { season == null || it.season == season }
-            val rows = pro.currentGameLines.filter { season == null || it.season == season }
+            val liveRows = pro.currentGameLines.filter { season == null || it.season == season }
                 .distinctBy { "${it.season}:${it.week}:${it.outingNumber}" }.asReversed().map {
-                    CareerGameView("${scope.id}:${it.season}:${it.week}:${it.outingNumber}", "${it.season}시즌 · ${it.week}주차 · ${if (it.played) "직접" else "자동"}",
+                    CareerGameView("pro:${pro.careerId}:${it.season}:${it.week}:${it.outingNumber}", "${it.season}시즌 · ${it.week}주차 · ${if (it.played) "직접" else "자동"}",
                         it.outs, it.strikeouts, it.runsAllowed, it.walks, it.hits, it.perfectReleases, it.teamRuns, it.opponentRuns, it.played)
                 }
+            val archived = state.meta.album.filter { it.scope.id.startsWith("pro:${pro.careerId}:") && (season == null || it.scope.id.substringAfterLast(':').toIntOrNull() == season) }.flatMap { it.rows }
+            val rows = (archived + liveRows).associateBy { it.id }.values.toList().sortedByDescending { it.id }
             val games = stats.sumOf { it.games }
             return CareerRecordView(scope, games, stats.sumOf { it.inningsOuts }, stats.sumOf { it.runsAllowed }, stats.sumOf { it.strikeouts }, rows, rows.size < games)
         }
