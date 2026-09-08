@@ -41,8 +41,7 @@ internal fun CareerMilestoneCelebration(state: GameAggregateState, showTrainingB
             }
             run.selectedAwakenings.size > seenAwakenings -> {
                 moment = "awakening"
-                artBranch = com.solkim.baseball.core.highschool.HighSchoolContentCatalog.awakeningNodes
-                    .firstOrNull { it.id == run.selectedAwakenings.last() }?.branch ?: "game"
+                artBranch = run.selectedAwakenings.last().wire
                 detail = HighSchoolDisplayRules.awakeningTitle(run.selectedAwakenings.last().wire)
             }
             wins > 0 && seenWins == 0 -> { moment = "win"; detail = null }
@@ -108,6 +107,25 @@ internal fun RecentGrowthNotice(state: GameAggregateState, enabled: Boolean) {
 
 
 internal fun skillCelebrationArt(branch: String): Int = when (branch) {
+    "explosive_fastball" -> R.drawable.awakening_skill_explosive_fastball
+    "rising_four_seam" -> R.drawable.awakening_skill_rising_four_seam
+    "iron_arm" -> R.drawable.awakening_skill_iron_arm
+    "late_inning_reserve" -> R.drawable.awakening_skill_late_inning_reserve
+    "pinpoint_edge" -> R.drawable.awakening_skill_pinpoint_edge
+    "repeatable_release" -> R.drawable.awakening_skill_repeatable_release
+    "first_pitch_strike" -> R.drawable.awakening_skill_first_pitch_strike
+    "calm_under_pressure" -> R.drawable.awakening_skill_calm_under_pressure
+    "scout_composure" -> R.drawable.awakening_skill_scout_composure
+    "disappearing_breaker" -> R.drawable.awakening_skill_disappearing_breaker
+    "sweeping_slider" -> R.drawable.awakening_skill_sweeping_slider
+    "curveball_clock" -> R.drawable.awakening_skill_curveball_clock
+    "frozen_changeup" -> R.drawable.awakening_skill_frozen_changeup
+    "sinker_tunnel" -> R.drawable.awakening_skill_sinker_tunnel
+    "battery_sync" -> R.drawable.awakening_skill_battery_sync
+    "two_strike_plan" -> R.drawable.awakening_skill_two_strike_plan
+    "pickoff_rhythm" -> R.drawable.awakening_skill_pickoff_rhythm
+    "traffic_controller" -> R.drawable.awakening_skill_traffic_controller
+
     "power" -> R.drawable.awakening_art_power
     "command" -> R.drawable.awakening_art_command
     "breaking" -> R.drawable.awakening_art_breaking
