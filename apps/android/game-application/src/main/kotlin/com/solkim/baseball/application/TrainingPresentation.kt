@@ -99,10 +99,6 @@ public object TrainingPresentation {
         val maximum = displayGrowth(state, focus, preview.maximumGrowth)
         if (maximum == 0) return copy.resolve("training.clear.no-growth")
         val ability = GameCopyArgument.UserText(copy.legacy(metric(focus)))
-        if (preview.firstTrainingGuaranteed && minimum > 0) {
-            return if (minimum == maximum) copy.resolve("training.intensity.guaranteed-fixed", ability, GameCopyArgument.Whole(minimum.toLong()))
-            else copy.resolve("training.intensity.guaranteed-range", ability, GameCopyArgument.Whole(minimum.toLong()), GameCopyArgument.Whole(maximum.toLong()))
-        }
         return if (minimum == maximum) copy.resolve("training.clear.fixed", ability, GameCopyArgument.Whole(maximum.toLong()))
         else copy.resolve("training.clear.range", ability, GameCopyArgument.Whole(minimum.toLong()), GameCopyArgument.Whole(maximum.toLong()))
     }
