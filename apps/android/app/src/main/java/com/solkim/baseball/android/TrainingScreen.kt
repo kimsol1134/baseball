@@ -148,11 +148,11 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { commit(false) }, enabled = !busy, modifier = Modifier.weight(1f).heightIn(min = 56.dp).testTag("training.commit")) { Text("훈련하기") }
+            Button(onClick = { commit(false) }, enabled = !busy, modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("training.commit")) { Text("훈련하기") }
             OutlinedButton(onClick = {
                 if (TrainingPlans.availableSteps(state, TrainingPlans.options.single { it.id == selectedPlan }) == 0) selectedPlan = "condition"
                 sheet = "plans"
-            }, enabled = !busy, modifier = Modifier.heightIn(min = 56.dp).testTag("training.repeat")) {
+            }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp).testTag("training.repeat")) {
                 Text(copy.resolve("training.plan.open"), verbatim = true)
             }
         }
@@ -211,7 +211,7 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                 sheet = null
                 onCommit(Phase8UiAction(Phase8ScreenId.P006_TRAINING, payloads.first().actionId, payloads))
             }, enabled = !busy && TrainingPlans.availableSteps(state, plan) > 0,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).heightIn(min = 56.dp).testTag("training.plan.execute")) {
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).heightIn(min = 48.dp).testTag("training.plan.execute")) {
                 Text(copy.resolve("training.plan.execute"), verbatim = true)
             }
         }
@@ -225,7 +225,7 @@ private fun TrainingChoice(selected: Boolean, enabled: Boolean, modifier: Modifi
         contentColor = if (selected) BaseballColors.actionInk else BaseballColors.textPrimary,
         shape = MaterialTheme.shapes.small,
         border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) BaseballColors.action else BaseballColors.border),
-        modifier = modifier.heightIn(min = 52.dp).semantics { this.selected = selected }) {
+        modifier = modifier.heightIn(min = 48.dp).semantics { this.selected = selected }) {
         Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(3.dp), content = content)
     }

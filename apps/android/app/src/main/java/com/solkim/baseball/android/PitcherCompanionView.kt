@@ -117,12 +117,10 @@ internal fun CompanionProfile(state: GameAggregateState, busy: Boolean, onChange
     if (PitcherCompanionRules.canChooseGoal(state) && (c.goal.isEmpty() || c.goalCompleted)) {
         listOf("signature", "clean", "best").filter { goal -> c.memories.none { it.career == c.career && it.kind == "goal_$goal" } }.forEach { goal ->
             val preview = PitcherCompanionRules.apply(state, "goal", goal)
-            OutlinedButton(onClick = { onChange("goal", goal) }, enabled = !busy, modifier = Modifier.fillMaxWidth().testTag("companion.goal.$goal")) {
-                Column {
-                    Text(copy.resolve("companion.goal.$goal"), verbatim = true)
-                    Text(copy.resolve("companion.goal.remaining", GameCopyArgument.Whole((preview.goalTarget - preview.goalBaseline).toLong())), verbatim = true, style = MaterialTheme.typography.labelSmall)
-                }
-            }
+            CompactChoiceCard(copy.resolve("companion.goal.$goal"),
+                copy.resolve("companion.goal.remaining", GameCopyArgument.Whole((preview.goalTarget - preview.goalBaseline).toLong())),
+                !busy, "companion.goal.$goal", actionLabel = "도전") { onChange("goal", goal) }
+
         }
     }
     }

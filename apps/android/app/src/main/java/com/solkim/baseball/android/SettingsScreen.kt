@@ -188,7 +188,7 @@ private fun SettingsGroup(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 private fun SettingsSwitch(title: String, checked: Boolean, enabled: Boolean, tag: String, onToggle: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).toggleable(value = checked, enabled = enabled, role = Role.Switch) { onToggle() }
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(value = checked, enabled = enabled, role = Role.Switch) { onToggle() }
         .padding(horizontal = 16.dp, vertical = 8.dp).testTag(tag), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(title, verbatim = true, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
@@ -198,7 +198,7 @@ private fun SettingsSwitch(title: String, checked: Boolean, enabled: Boolean, ta
 
 @Composable
 private fun SettingsLink(title: String, tag: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp).testTag(tag),
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp).testTag(tag),
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(title, verbatim = true, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
         Text("›", color = BaseballColors.textTertiary, modifier = Modifier.clearAndSetSemantics {}, fontWeight = FontWeight.SemiBold)

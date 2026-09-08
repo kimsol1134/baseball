@@ -146,7 +146,7 @@ internal fun CareerLegacyPicker(model: Phase8ScreenModel, actions: List<Phase8Ac
         if (evidence != null) CareerDisclosure("이 능력을 남긴 기록", "legacy.evidence") { CareerFact(evidence, "legacy.evidence.detail") }
     }
     Button(enabled = selected?.enabled == true, onClick = { selected?.let { onAction(Phase8UiAction(model.id, it.id, it.payloads)) } },
-        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("legacy.confirm")) {
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("legacy.confirm")) {
         Text("이 능력 이어받기")
     }
     }

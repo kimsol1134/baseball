@@ -41,7 +41,7 @@ public object TrainingPresentation {
         } else when (value) {
             TrainingIntensity.LIGHT -> "가볍게"
             TrainingIntensity.STANDARD -> "보통"
-            TrainingIntensity.INTENSIVE -> "몰아붙이기"
+            TrainingIntensity.INTENSIVE -> "강하게"
         }
     public fun recommended(state: GameAggregateState): TrainingFocus {
         val run = requireNotNull(state.highSchool).run

@@ -659,24 +659,18 @@ private fun Phase8SchoolChoices(state: GameAggregateState, model: Phase8ScreenMo
     val schools = state.highSchool?.run?.schoolOptions.orEmpty()
     Text(copy.resolve("android.onboarding.school-invitation"), style = MaterialTheme.typography.bodyLarge)
     Text(copy.resolve("android.school.question"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    var information by remember { mutableStateOf<String?>(null) }
     model.actions.forEach { action ->
         val people = model.sections.flatMap { it.rows }.firstOrNull { it.label == action.label }?.detail.orEmpty()
-        val school = schools.firstOrNull { it.name == action.label }
-        OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) }, enabled = action.enabled,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp).testTag("action.${action.id}")) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (school != null) Row(horizontalArrangement = Arrangement.spacedBy((-10).dp)) {
-                    PlayerPortrait(seed = school.coachName, role = AvatarRole.COACH, width = 40.dp)
-                    PlayerPortrait(seed = school.catcherName, role = AvatarRole.CATCHER, width = 40.dp)
-                }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(action.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(action.description, style = MaterialTheme.typography.bodyMedium)
-                    if (people.isNotBlank()) Text(people, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
+        CompactChoiceCard(action.label, action.description, action.enabled, "action.${action.id}",
+            onInfo = if (people.isNotBlank()) ({ information = people }) else null) {
+            onAction(Phase8UiAction(model.id, action.id, action.payloads))
         }
     }
+    information?.let { text -> AlertDialog(onDismissRequest = { information = null }, title = { Text("학교 정보") },
+        text = { Text(text, style = MaterialTheme.typography.bodyMedium) },
+        confirmButton = { TextButton(onClick = { information = null }) { Text("닫기") } }) }
+
 }
 
 /** Contract market: one team at a time. The goal is the second question, not a multiplier on the button list. */
@@ -691,14 +685,12 @@ private fun Phase8ContractChoices(model: Phase8ScreenModel, onAction: (Phase8UiA
         val row = market?.rows?.getOrNull(index)
         val selected = selectedOffer == offerId
         OutlinedButton(onClick = { selectedOffer = if (selected) null else offerId }, enabled = actions.any { it.enabled },
-            modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp).testTag("contract.offer.$offerId"),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("contract.offer.$offerId"),
             border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) BaseballColors.action else BaseballColors.border)) {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(row?.label ?: teamName, verbatim = true, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                row?.let { Text(it.value, verbatim = true, style = MaterialTheme.typography.bodyMedium) }
-                row?.let { if (it.detail.isNotBlank()) Text(it.detail, verbatim = true, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            }
+            Text(teamName, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
         }
+        row?.let { Text(it.value, verbatim = true, style = MaterialTheme.typography.bodyMedium) }
+        if (selected) row?.let { if (it.detail.isNotBlank()) Text(it.detail, verbatim = true, style = MaterialTheme.typography.bodyMedium, color = BaseballColors.textSecondary) }
         if (selected) {
             Text("이 계약에 걸 목표", style = MaterialTheme.typography.labelLarge, color = BaseballColors.textSecondary)
             actions.forEach { action ->
@@ -776,12 +768,8 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
     }
     if (model.id == Phase8ScreenId.P007_RELATIONSHIP) {
         model.actions.filter { it.enabled }.forEach { action ->
-            OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp).testTag("action.${action.id}").gameDescription(action.contentDescription)) {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(action.label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    if (action.description.isNotBlank()) Text(action.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+            CompactChoiceCard(action.label, action.description, action.enabled, "action.${action.id}") {
+                onAction(Phase8UiAction(model.id, action.id, action.payloads))
             }
         }
     } else Phase8ChoiceGrid(model, onAction)
@@ -1135,7 +1123,7 @@ private fun ColumnScope.Phase8SetupFields(
                 OutlinedButton(
                     onClick = { regionMenuExpanded = true },
                     modifier = Modifier
-                        .fillMaxWidth().heightIn(min = 56.dp).testTag("setup.region")
+                        .fillMaxWidth().heightIn(min = 48.dp).testTag("setup.region")
                         .gameDescription("지역 선택, 현재 $region"),
                 ) { Text(region); Spacer(Modifier.weight(1f)); Text("⌄") }
                 DropdownMenu(
@@ -1177,7 +1165,7 @@ private fun ColumnScope.Phase8SetupFields(
                         learningPitch = SetupRepertoire.learning(preset.id).wire
                     },
                     modifier = Modifier
-                        .heightIn(min = 56.dp)
+                        .heightIn(min = 48.dp)
                         .testTag("setup.preset.${preset.id}")
                         .gameDescription(gameCopy.resolve("android.setup.preset-description",
                             com.solkim.baseball.application.GameCopyArgument.UserText(gameCopy.legacy(presetTitle(preset.id))),
@@ -1311,7 +1299,7 @@ private fun SetupSelectionButton(
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 56.dp).semantics { this.selected = selected },
+        modifier = modifier.heightIn(min = 48.dp).semantics { this.selected = selected },
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
             contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
@@ -1329,7 +1317,7 @@ private fun SetupSelectionButton(
 
 @Composable
 private fun SetupOption(label: String, detail: String, selected: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
-    OutlinedButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+    OutlinedButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) BaseballColors.action else BaseballColors.border)) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal, color = if (selected) BaseballColors.action else BaseballColors.textPrimary)
@@ -1391,7 +1379,7 @@ private fun Phase8ChoiceGrid(
                         enabled = action.enabled,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 56.dp)
+                            .heightIn(min = 48.dp)
                             .testTag("action.${action.id}").gameDescription(action.contentDescription),
                     ) { Text(action.label) }
                     Text(
@@ -1484,19 +1472,26 @@ private fun Phase8ActionButton(
     onAction: (Phase8UiAction) -> Unit,
     showDescription: Boolean = false,
 ) {
+    val label = when (action.id) {
+        "prepareLegacy" -> "능력 고르기"
+        "quickRebirth" -> "환생하기"
+        "finalizeArchive" -> "이번 생 마무리"
+        "openImportantGame", "openProImportantGame" -> "등판하기"
+        else -> action.label
+    }
     val description = if (action.enabled) action.contentDescription else "${action.label}. 아직 열리지 않았다."
     if (action.destructive) {
         OutlinedButton(
             onClick = { onAction(Phase8UiAction(screenId, action.id, action.payloads)) },
             enabled = action.enabled,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("action.${action.id}").gameDescription(description),
-        ) { Text(action.label, color = MaterialTheme.colorScheme.error) }
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("action.${action.id}").gameDescription(description),
+        ) { Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error) }
     } else {
         Button(
             onClick = { onAction(Phase8UiAction(screenId, action.id, action.payloads)) },
             enabled = action.enabled,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("action.${action.id}").gameDescription(description),
-        ) { Text(action.label) }
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("action.${action.id}").gameDescription(description),
+        ) { Text(label, style = MaterialTheme.typography.labelLarge) }
     }
     if ((showDescription || action.destructive) && action.description.isNotBlank()) Text(
         action.description,
