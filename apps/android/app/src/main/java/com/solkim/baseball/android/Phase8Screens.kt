@@ -658,26 +658,6 @@ private fun Phase8Sections(sections: List<com.solkim.baseball.application.Phase8
     }
 }
 
-@Composable
-private fun Phase8SchoolChoices(state: GameAggregateState, model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit) {
-    val copy = rememberGameCopy()
-    val schools = state.highSchool?.run?.schoolOptions.orEmpty()
-    Text(copy.resolve("android.onboarding.school-invitation"), style = MaterialTheme.typography.bodyLarge)
-    Text(copy.resolve("android.school.question"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-    var information by remember { mutableStateOf<String?>(null) }
-    model.actions.forEach { action ->
-        val people = model.sections.flatMap { it.rows }.firstOrNull { it.label == action.label }?.detail.orEmpty()
-        CompactChoiceCard(action.label, action.description, action.enabled, "action.${action.id}",
-            onInfo = if (people.isNotBlank()) ({ information = people }) else null) {
-            onAction(Phase8UiAction(model.id, action.id, action.payloads))
-        }
-    }
-    information?.let { text -> AlertDialog(onDismissRequest = { information = null }, title = { Text("학교 정보") },
-        text = { Text(text, style = MaterialTheme.typography.bodyMedium) },
-        confirmButton = { TextButton(onClick = { information = null }) { Text("닫기") } }) }
-
-}
-
 /** Contract market: one team at a time. The goal is the second question, not a multiplier on the button list. */
 @Composable
 private fun Phase8ContractChoices(model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit) {

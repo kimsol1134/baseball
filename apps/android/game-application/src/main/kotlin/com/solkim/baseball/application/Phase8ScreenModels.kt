@@ -538,9 +538,9 @@ public object Phase8ScreenProjection {
             Phase8ScreenId.P005_SCHOOL_SELECTION -> {
                 val schools = run?.schoolOptions?.ifEmpty { run?.let { HighSchoolContentCatalog.schools(it.identity.region) } } ?: emptyList()
                 addSection(Phase8Section("schools", "학교 후보", schools.map { school ->
-                    Phase8Row(school.name, school.philosophy, "코치 ${school.coachName} · 포수 ${school.catcherName}")
+                    Phase8Row(school.name, SchoolChoicePresentation.strength(school), SchoolChoicePresentation.fit(school))
                 }))
-                schools.forEach { school -> addAction("chooseSchool:${school.id.wire}", school.name, school.philosophy, run?.phase == HighSchoolPhase.SCHOOL_SELECTION, listOf(hs(HighSchoolPhase4Command.ChooseSchool(context.seed(state, "school:${school.id.wire}"), school.id)))) }
+                schools.forEach { school -> addAction("chooseSchool:${school.id.wire}", school.name, SchoolChoicePresentation.strength(school), run?.phase == HighSchoolPhase.SCHOOL_SELECTION, listOf(hs(HighSchoolPhase4Command.ChooseSchool(context.seed(state, "school:${school.id.wire}"), school.id)))) }
             }
             Phase8ScreenId.P006_TRAINING -> {
                 val opportunity = run?.trainingOpportunity
