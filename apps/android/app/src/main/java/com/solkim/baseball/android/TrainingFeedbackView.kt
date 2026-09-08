@@ -52,6 +52,11 @@ internal fun trainingFeedbackRecord(before: GameAggregateState, after: GameAggre
         .put("fatigueBefore", old.fatigue).put("fatigueAfter", next.fatigue)
         .put("armBefore", old.armRisk).put("armAfter", next.armRisk)
         .put("focus", last.focus.wire).put("intensity", last.intensity.wire).put("bloomed", last.bloomed)
+        .put("experience", next.development?.experience?.get(com.solkim.baseball.core.highschool.HighSchoolDevelopment.index(last.focus)) ?: 0)
+        .put("experienceEarned", next.development?.lastExperienceEarned ?: 0)
+        .put("breakthrough", next.talent.pressure(last.focus))
+        .put("breakthroughTarget", next.talent.grade(last.focus).bloomThreshold.takeIf { it != Int.MAX_VALUE } ?: 0)
+        .put("supportApplied", next.development?.supportAppliedTraining == last.number)
         .put("extraGrowth", forecast != null && last.growth > forecast.maximumGrowth).put("atWall", forecast?.atTalentWall == true)
         .put("learningBefore", old.pitchLearningProject?.practiceCredits ?: 0).put("learningAfter", next.pitchLearningProject?.practiceCredits ?: 0)
         .put("mastery", mastery.coerceAtLeast(0)).put("velocities", velocities).put("rehab", next.injuryRecovery > 0)
@@ -144,12 +149,15 @@ internal fun TrainingFeedbackPanel(record: JSONObject, onContinue: () -> Unit) {
                 }
             }
             Text(when {
-                record.optBoolean("rehab") || record.getInt("armAfter") >= 55 || record.getInt("fatigueAfter") >= 70 -> "다음에는 회복을 추천해요. 피로와 팔 부담을 낮출 수 있어요."
-                record.optBoolean("atWall") && changed.isEmpty() && record.getLong("mastery") == 0L -> "현재 능력치의 성장 한계예요. 다른 능력 훈련을 골라보세요."
+                record.optBoolean("bloomed") -> "잠재력을 돌파했어요. 더 높은 능력으로 성장할 수 있어요."
                 record.getLong("mastery") > 0 && changed.isEmpty() -> "숙련이 쌓였어요. 능력치가 같아도 훈련의 효과는 남아요."
+                record.optBoolean("atWall") && record.optInt("breakthroughTarget") > 0 && changed.isEmpty() -> "돌파 준비 ${record.optInt("breakthrough")}/${record.optInt("breakthroughTarget")} · 훈련 성과가 남았어요."
+                changed.isEmpty() && record.optInt("experienceEarned") > 0 -> "성장 준비 ${record.optInt("experience")}/100 · 다음 훈련으로 이어집니다."
+                record.optBoolean("rehab") || record.getInt("armAfter") >= 55 || record.getInt("fatigueAfter") >= 70 -> "다음에는 회복을 추천해요. 피로와 팔 부담을 낮출 수 있어요."
                 else -> "현재 몸 상태를 보고 다음 훈련을 골라보세요."
             }, style = MaterialTheme.typography.bodyMedium)
         }
+        if (record.optBoolean("supportApplied")) Text("대화에서 받은 훈련 지원을 사용했어요.", color = BaseballColors.milestone)
         Button(onClick = onContinue, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("training.feedback.continue")) { Text("계속하기") }
     }
 }

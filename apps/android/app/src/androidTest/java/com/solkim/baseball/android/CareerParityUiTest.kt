@@ -164,13 +164,19 @@ class CareerParityUiTest {
             Phase8Shell(state, false, null, Phase8ScreenProjection.preferredScreen(state), context,
                 onNavigate = {}, onAction = { action -> action.capturedPayloads.forEach { state = GameStateReducer.dispatch(state, it.envelope).state } })
         } }
+        if (ProfessionalStatusPresentation.canEnterPro(state)) {
+            compose.onNodeWithTag("action.startLinked").assertIsDisplayed()
+            compose.onNodeWithTag("career.otherPath").performScrollTo().performClick()
+        }
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("rebirth.startComparison").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("rebirth.startComparison").performScrollTo()
+        if (ProfessionalStatusPresentation.canEnterPro(state)) compose.onNodeWithTag("action.quickRebirth").performScrollTo()
         compose.onNodeWithTag("action.quickRebirth").assertIsDisplayed()
         compose.onNodeWithTag("rebirth.start.3").performScrollTo().assertIsDisplayed()
         val inst = InstrumentationRegistry.getInstrumentation()
         UiDevice.getInstance(inst).takeScreenshot(File(inst.targetContext.cacheDir, "premium-rebirth.png"))
         assertEquals(before, state)
+        if (ProfessionalStatusPresentation.canEnterPro(state)) compose.onNodeWithTag("action.quickRebirth").performScrollTo()
         compose.onNodeWithTag("action.quickRebirth").performClick()
         compose.waitForIdle()
         val pitcher = requireNotNull(state.highSchool).startingPitcher

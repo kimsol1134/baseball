@@ -175,6 +175,7 @@ public fun Phase8Shell(
     val nextTraining = bridgeResult?.getOrNull()
     val trainingSurface = visibleScreen == Phase8ScreenId.P006_TRAINING || bridgesReview
     TrainingFeedbackGate(state)
+    ConversationFeedbackGate(state)
     CareerMilestoneCelebration(state, showTrainingBloom = false)
     val currentTab = ProductTab.forScreen(visibleScreen)
     if (visibleScreen == Phase8ScreenId.P027_SETTINGS) {
@@ -205,7 +206,7 @@ public fun Phase8Shell(
     val genericScreen = visibleScreen !in setOf(Phase8ScreenId.P001_OPENING, Phase8ScreenId.P002_SETUP, Phase8ScreenId.P003_PROLOGUE,
         Phase8ScreenId.P004_PITCH_TUTORIAL, Phase8ScreenId.P005_SCHOOL_SELECTION, Phase8ScreenId.P006_TRAINING, Phase8ScreenId.P007_RELATIONSHIP,
         Phase8ScreenId.P009_AWAKENING, Phase8ScreenId.P014_RUN_RECAP, Phase8ScreenId.P015_REBIRTH, Phase8ScreenId.P017_PRO_WEEK, Phase8ScreenId.P027_SETTINGS)
-    val pinnedAction = if (bridgesReview) null else if (visibleScreen == Phase8ScreenId.P015_REBIRTH) model.actions.firstOrNull { it.id == "quickRebirth" && it.enabled }
+    val pinnedAction = if (bridgesReview) null else if (visibleScreen == Phase8ScreenId.P015_REBIRTH) model.actions.firstOrNull { it.id == "startLinked" && it.enabled } ?: model.actions.firstOrNull { it.id == "quickRebirth" && it.enabled }
         else if (visibleScreen in setOf(Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P010_CHAPTER, Phase8ScreenId.P013_DRAFT))
         model.actions.firstOrNull { it.enabled }
         else if (genericScreen && visibleScreen !in setOf(Phase8ScreenId.P022_PRO_LEGACY, Phase8ScreenId.P026_ACHIEVEMENTS)) model.actions.filter { it.enabled && !it.destructive }.singleOrNull() else null
@@ -217,7 +218,7 @@ public fun Phase8Shell(
             Column {
             val preferred = Phase8ScreenProjection.preferredScreen(state)
             if (!isFirstPlay) TopAppBar(
-                title = { Text(if (visibleScreen == Phase8ScreenId.P009_AWAKENING) gameCopy.resolve("awakening.tree.title") else if (trainingSurface) gameCopy.resolve("training.seamless.title") else if (state.meta.seedChallenge != null) gameCopy.resolve("android.challenge.screen-title", com.solkim.baseball.application.GameCopyArgument.UserText(model.title)) else model.title, style = MaterialTheme.typography.titleLarge) },
+                title = { Text(if (visibleScreen == Phase8ScreenId.P009_AWAKENING) gameCopy.resolve("awakening.tree.title") else if (trainingSurface) gameCopy.resolve("training.seamless.title") else if (visibleScreen == Phase8ScreenId.P015_REBIRTH && com.solkim.baseball.application.ProfessionalStatusPresentation.canEnterPro(state)) gameCopy.legacy("현재 진로") else if (state.meta.seedChallenge != null) gameCopy.resolve("android.challenge.screen-title", com.solkim.baseball.application.GameCopyArgument.UserText(model.title)) else model.title, style = MaterialTheme.typography.titleLarge) },
                 actions = {
                     if (state.meta.seedChallenge != null) TextButton(onClick = onExitSeedChallenge, enabled = !busy, modifier = Modifier.testTag("challenge.exit")) { Text(gameCopy.resolve("android.challenge.exit")) }
                     else if (visibleScreen == Phase8ScreenId.P027_SETTINGS) TextButton(onClick = onSeedChallenge) { Text(gameCopy.resolve("android.challenge.open")) }
@@ -259,6 +260,33 @@ public fun Phase8Shell(
                 }
                 model.actions.singleOrNull { it.id == "enterSetup" }?.let { action ->
                     Phase8ActionButton(model.id, action, onAction, showDescription = false)
+                }
+                var proSetup by remember { mutableStateOf(false) }
+                model.actions.firstOrNull { it.id == "startDirect" && it.enabled }?.let { action ->
+                    TextButton(onClick = { proSetup = true }, modifier = Modifier.testTag("opening.proMode")) { Text("프로부터 새로 시작") }
+                    if (proSetup) {
+                        var proName by rememberSaveable { mutableStateOf("") }
+                        var proPreset by rememberSaveable { mutableStateOf("power_prospect") }
+                        AlertDialog(onDismissRequest = { proSetup = false }, containerColor = BaseballColors.surfaceRaised, title = { Text("새 프로 선수") },
+                            text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("고교 과정을 건너뛰는 별도 커리어예요.")
+                                OutlinedTextField(proName, { proName = it.take(12) }, label = { Text("선수 이름") }, singleLine = true,
+                                    modifier = Modifier.testTag("opening.proName"))
+                                HighSchoolDisplayRules.presets.forEach { preset ->
+                                    SetupSelectionButton(selected = proPreset == preset.id, onClick = { proPreset = preset.id }, modifier = Modifier.fillMaxWidth()) {
+                                        Text(HighSchoolDisplayRules.presetTitle(preset.id))
+                                    }
+                                }
+                            } },
+                            confirmButton = { TextButton(enabled = proName.isNotBlank() && !busy, onClick = {
+                                val command = com.solkim.baseball.application.GameCommand.Pro(com.solkim.baseball.core.pro.ProCommand.StartDirect(
+                                    com.solkim.baseball.core.pro.ProStartDirectRequest(commandContext.seed(state, "pro-direct"), proPreset, proName.trim())))
+                                val payloads = Phase8Payloads.batch(state, model.id, action.id, listOf(command))
+                                proSetup = false
+                                onAction(Phase8UiAction(model.id, action.id, payloads))
+                            }, modifier = Modifier.testTag("opening.startPro")) { Text("프로 시작") } },
+                            dismissButton = { TextButton(onClick = { proSetup = false }) { Text("취소") } })
+                    }
                 }
             }
         } else if (visibleScreen == Phase8ScreenId.P002_SETUP) {
@@ -570,7 +598,21 @@ private fun Phase8ScreenContent(
 @Composable
 private fun CoreRebirthChoices(state: GameAggregateState, model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit, onExposed: (Phase9ViewportExposure) -> Unit) {
     val copy = rememberGameCopy()
-    val quickPath = model.id == Phase8ScreenId.P015_REBIRTH && model.actions.any { it.id == "quickRebirth" && it.enabled }
+    model.sections.firstOrNull { it.id == "professional-status" }?.let { CareerSection(it, it.rows.size) }
+    val enteringPro = com.solkim.baseball.application.ProfessionalStatusPresentation.canEnterPro(state)
+    if (enteringPro && model.id == Phase8ScreenId.P015_REBIRTH) {
+        model.actions.firstOrNull { it.id == "startLinked" && it.enabled }?.let { Phase8ActionButton(model.id, it, onAction) }
+        val alternatives = model.actions.filter { it.enabled && it.id in setOf("quickRebirth", "customizeRebirth", "finalizeArchive") }
+        if (alternatives.isNotEmpty()) CareerDisclosure("이번 생을 마무리하는 선택", "career.otherPath") {
+            val nextLife = alternatives.firstOrNull { it.id == "quickRebirth" }
+            var preview by remember(nextLife) { mutableStateOf<RebirthStartPreview?>(null) }
+            LaunchedEffect(nextLife) { preview = withContext(Dispatchers.Default) { RebirthStartPreview.resolve(state, nextLife) } }
+            preview?.let { CoreRebirthStartComparison(it) }
+            alternatives.forEach { Phase8ActionButton(model.id, it, onAction, showDescription = true) }
+        }
+        return
+    }
+    val quickPath = model.id == Phase8ScreenId.P015_REBIRTH && !enteringPro && model.actions.any { it.id == "quickRebirth" && it.enabled }
     if (quickPath) {
         val run = state.highSchool?.run
         val name = run?.identity?.name?.takeIf { it.isNotBlank() }
@@ -601,7 +643,7 @@ private fun CoreRebirthChoices(state: GameAggregateState, model: Phase8ScreenMod
             }
         }
     } else if (model.id == Phase8ScreenId.P014_RUN_RECAP) CompactLifeRecap(state, model)
-    else model.sections.forEach { CareerSection(it, 1) }
+    else model.sections.filter { it.id != "professional-status" && (!enteringPro || it.id != "rebirth") }.forEach { CareerSection(it, 1) }
     val actions = model.actions.filter { action ->
         action.enabled && action.id !in setOf("confirmRecap", "confirmDraftResult") &&
             (action.id != "prepareLegacy" || (state.highSchool?.selectedSignatureLegacyId == null && model.actions.none { it.enabled && it.id.startsWith("selectLegacy:") }))
@@ -650,6 +692,7 @@ private fun Phase8Sections(sections: List<com.solkim.baseball.application.Phase8
 @Composable
 private fun Phase8ContractChoices(model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit) {
     val offers = model.actions.filter { it.id.startsWith("acceptOffer:") }.groupBy { it.id.split(":")[1] }
+    model.sections.firstOrNull { it.id == "professional-status" }?.let { CareerSection(it, it.rows.size) }
     val market = model.sections.firstOrNull { it.id == "pro-contract-market" }
     var selectedOffer by rememberSaveable(model.id.wire) { mutableStateOf<String?>(null) }
     market?.let { Text(it.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary) }
@@ -693,6 +736,7 @@ private fun Phase8DraftReveal(state: GameAggregateState, model: Phase8ScreenMode
             if (revealed && it.detail.isNotBlank()) Text(it.detail, verbatim = true, style = MaterialTheme.typography.bodyMedium, color = BaseballColors.textSecondary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
+    if (revealed) model.sections.firstOrNull { it.id == "professional-status" }?.let { CareerSection(it, it.rows.size) }
     if (revealed) CareerDisclosure("지명 평가 보기", "draft.assessment") {
         model.sections.filter { it.id == "draft-reasons" }.forEach { CareerSection(it, it.rows.size) }
     }
@@ -724,6 +768,8 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
             }
         }
         Phase8ScreenId.P017_PRO_WEEK -> {
+            state.pro?.let { pro -> Text("프로 선수 · ${pro.team.name} · ${if (pro.level == com.solkim.baseball.core.pro.ProLevel.MAJOR) "1군" else "2군"}",
+                color = BaseballColors.milestone, style = MaterialTheme.typography.labelLarge) }
             Text(copy.resolve("android.week.question"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(copy.resolve("android.week.condition", com.solkim.baseball.application.GameCopyArgument.Whole((state.pro?.week ?: 0).toLong()),
                 com.solkim.baseball.application.GameCopyArgument.Whole((state.pro?.fatigue ?: 0).toLong())))

@@ -338,6 +338,7 @@ public class MainActivity : ComponentActivity() {
                 )
                 withContext(Dispatchers.Main) {
                     saveTrainingFeedback(this@MainActivity, beforeAction, (application as BaseballApplication).gameStore.current)
+                    saveConversationFeedback(this@MainActivity, beforeAction, (application as BaseballApplication).gameStore.current)
                     if (phase8Controller.preferredScreen() != action.screenId) {
                         previousActionScreen = action.screenId
                         navigationTapBlockUntil = android.os.SystemClock.elapsedRealtime() + 500

@@ -57,6 +57,11 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                 GameCopyArgument.Whole(run.armRisk.toLong()), GameCopyArgument.Whole(remaining.toLong())), verbatim = true,
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (run.fatigue >= 70 || run.armRisk >= 55) BaseballColors.warning else BaseballColors.textSecondary)
+            run.development?.let { if (it.hasSupport(focus)) focus else it.supportFocus }?.let { support ->
+                Text("${copy.legacy(TrainingPresentation.title(support))} · ${copy.legacy("대화에서 받은 지원")}", verbatim = true,
+                    color = BaseballColors.milestone, style = MaterialTheme.typography.labelMedium, modifier = Modifier.testTag("training.conversationSupport"))
+            }
+            if (run.development?.starterTrialPending == true) Text("다음 등판: 선발 테스트", color = BaseballColors.milestone, style = MaterialTheme.typography.labelMedium)
             if (rehab) Text("재활 중이다. 오늘은 회복만.", color = BaseballColors.warning)
             else if (recommended == TrainingFocus.RECOVERY) Text("코치: 몸이 무겁다. 오늘은 쉬자.", color = BaseballColors.warning)
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -107,7 +112,6 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     val outlook = when {
                         focus == TrainingFocus.RECOVERY || rehab -> "성장 대신 피로를 던다."
-                        preview.atTalentWall -> "현재 능력치의 성장 한계예요. 다른 능력 훈련을 골라보세요."
                         else -> TrainingPresentation.growthOutlook(state, focus, preview, copy)
                     }
                     StatChangeText(outlook, modifier = Modifier.testTag("training.outlook"), style = MaterialTheme.typography.bodyMedium)

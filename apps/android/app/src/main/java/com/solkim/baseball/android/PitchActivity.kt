@@ -149,6 +149,7 @@ public class PitchActivity : ComponentActivity() {
     private var lastPitchLine by mutableStateOf<String?>(null)
     private var resultReady by mutableStateOf(false)
     private var isDelivering by mutableStateOf(false)
+    private var contextBeforeDelivery by mutableStateOf<GameAggregateState?>(null)
     private var clutchReplay by mutableStateOf(false)
     private var plateEnded by mutableStateOf(false)
     private var replayGeneration by mutableStateOf(0)
@@ -293,12 +294,13 @@ public class PitchActivity : ComponentActivity() {
                 val fielding = if (showingResult) currentFielding() else null
                 val batSide = currentBatSide()
 
-                val board = remember(gameState) { PitchScoreboardProjection.model(gameState) }
+                val visibleContext = if (isDelivering) contextBeforeDelivery ?: gameState else gameState
+                val board = remember(visibleContext) { PitchScoreboardProjection.model(visibleContext) }
                 val balls = board.balls
                 val strikes = board.strikes
                 val outs = board.outs
                 val isClutch = strikes == 2 && (balls == 3 || outs == 2)
-                val hud = remember(gameState) { runCatching { PitchHudProjection.model(gameState) }.getOrNull() }
+                val hud = remember(visibleContext) { runCatching { PitchHudProjection.model(visibleContext) }.getOrNull() }
                 val pitcherMovement = remember(gameState) { runCatching { PitchHudProjection.pitcher(gameState).movement }.getOrNull() }
                 val growthFeedback = remember(sessionId) { consumeGrowthOverlay(gameState) }
                 val previousCommand = if (lastPitchLine != null || lastDelivery != null) null else if (gameState.pitch?.careerKind == PitchCareerKind.TUTORIAL) gameState.meta.companion?.previousStart?.getOrNull(1) ?: growthFeedback.command else growthFeedback.command
@@ -340,6 +342,15 @@ public class PitchActivity : ComponentActivity() {
                         if (practiceMode) Text(rememberGameCopy().resolve("feedback.practice.step", GameCopyArgument.Whole(practiceStep.toLong())),
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).testTag("pitch.practice.step"), style = MaterialTheme.typography.titleMedium)
                         else PitchScoreboardBar(board, perfectStreak)
+                        if (!practiceMode) com.solkim.baseball.application.OutingPresentation.assignment(visibleContext)?.let { assignment ->
+                            Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(com.solkim.baseball.application.OutingPresentation.goal(assignment), style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold, modifier = Modifier.testTag("pitch.objective"))
+                                Text(com.solkim.baseball.application.OutingPresentation.progress(visibleContext).orEmpty(),
+                                    color = BaseballColors.action, style = MaterialTheme.typography.labelMedium, modifier = Modifier.testTag("pitch.objective.progress"))
+                                if (assignment.inheritedRunners > 0) Text("등판 때 주자 ${assignment.inheritedRunners}명 승계", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
 
                         val watchingPitch = isDelivering || resultReady
                         val coachTip = hud?.coachTip
@@ -751,6 +762,7 @@ public class PitchActivity : ComponentActivity() {
 
     private fun submitSelectedPitch(delivery: PitchDelivery) {
         if (isDelivering || resultReady || needsPracticeIntroduction(store.current)) return
+        contextBeforeDelivery = store.current
         val deliveredSelection = selectedSign
         lastTargetZone = runCatching { PitchHudProjection.resolveCall(store.current, deliveredSelection).zone }.getOrNull()
         val manualRelease = !store.current.settings.autoReleaseEnabled
@@ -807,6 +819,7 @@ public class PitchActivity : ComponentActivity() {
                 controller.consumePresentation(sessionId, saved)
                 withContext(Dispatchers.Main) {
                     isDelivering = false
+                    contextBeforeDelivery = null
                     resultReady = true
                     status = "투구 결과를 확인해 보세요."
                 }
