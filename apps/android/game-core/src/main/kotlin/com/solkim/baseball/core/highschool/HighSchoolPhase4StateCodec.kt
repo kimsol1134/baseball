@@ -23,7 +23,7 @@ import java.util.Base64
 public object HighSchoolPhase4StateCodec {
     public const val SCHEMA: String = "baseball-high-school-phase4-state-v1"
     /** v2 profiles/hand; v3 sequence history; v4 tournament/prospect fields; v5 rich content/echo; v6 Meta ledgers; v7 training evidence; v8 mastery; v9 batted-ball contact. */
-    public const val SCHEMA_VERSION: Int = 10
+    public const val SCHEMA_VERSION: Int = 11
     public const val MAX_BYTES: Int = 4 * 1024 * 1024
     private const val MAGIC: String = "P4M1"
     private val ROOT_FIELDS = setOf("schema", "schemaVersion", "payload", "stateCommitment")
@@ -118,7 +118,7 @@ public object HighSchoolPhase4StateCodec {
         val seasonLog = input.readSeasonLog(includeRichFields = payloadVersion >= 5, includePerfect = payloadVersion >= 10)
         val tournaments = input.readTournaments(includeSchools = payloadVersion >= 4)
         val prospects = input.readProspects(includeTag = payloadVersion >= 4)
-        val activePitch = input.readNullable { readPitchSession(includeSequencePitches = payloadVersion >= 3, includePerfect = payloadVersion >= 10) }
+        val activePitch = input.readNullable { readPitchSession(includeSequencePitches = payloadVersion >= 3, includePerfect = payloadVersion >= 10, includeAssignment = payloadVersion >= 11) }
         val lastPresentation = input.readNullable { readPresentation(includeContact = payloadVersion >= 9) }
         val tutorial = HighSchoolTutorialState(input.readBoolean(), input.readBoolean())
         val challengeActive = input.readBoolean()
@@ -384,8 +384,9 @@ public object HighSchoolPhase4StateCodec {
             writeString(it.pitchType.wire); writeInt(it.zone.row); writeInt(it.zone.column); writeString(it.intent.wire); writeInt(it.expectedVelocityKph); writeString(it.outcome.wire)
         }
         writeInt(value.perfectReleases)
+        writeNullableString(value.assignment?.token())
     }
-    private fun DataInputStream.readPitchSession(includeSequencePitches: Boolean, includePerfect: Boolean = false): HighSchoolPitchSession {
+    private fun DataInputStream.readPitchSession(includeSequencePitches: Boolean, includePerfect: Boolean = false, includeAssignment: Boolean = false): HighSchoolPitchSession {
         val sessionId = readString(); val gameNumber = readInt(); val seed = readString(); val pitchIndex = readInt(); val preparationToken = readString()
         val context = readContext(); val memory = readMemory(); val game = readGame(); val log = readLog()
         val pitches = readInt(); val strikeouts = readInt(); val walks = readInt(); val runsAllowed = readInt(); val expectedDamage = readInt(); val actualDamage = readInt(); val accepted = readInt(); val outs = readInt(); val hits = readInt(); val abilityMoments = readStrings(); val ended = readBoolean()
@@ -400,6 +401,7 @@ public object HighSchoolPhase4StateCodec {
             )
         } else emptyList()
         val perfectReleases = if (includePerfect) readInt() else 0
+        val assignment = if (includeAssignment) readNullableString()?.let(com.solkim.baseball.core.pitch.OutingAssignment::decode) else null
         return HighSchoolPitchSession(
             sessionId = sessionId,
             gameNumber = gameNumber,
@@ -424,6 +426,7 @@ public object HighSchoolPhase4StateCodec {
             sequenceMasteryCount = sequenceMasteryCount,
             sequencePitches = sequencePitches,
             perfectReleases = perfectReleases,
+            assignment = assignment,
         )
     }
 

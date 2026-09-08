@@ -20,7 +20,7 @@ class HighSchoolLegacySaveCompatibilityTest {
 
     @Test fun schemaNineSavesOpenAndKeepTheirRecords() {
         val finished = HighSchoolPhase4StateCodec.decode(fixture("high-school-phase4-v9-finished.bin"))
-        assertEquals(10, HighSchoolPhase4StateCodec.SCHEMA_VERSION, "this fixture pins the schema before the chapter-game fields")
+        assertEquals(11, HighSchoolPhase4StateCodec.SCHEMA_VERSION, "schema 9 fixtures must survive the assignment extension")
         assertTrue(finished.seasonLog.isNotEmpty(), "the recorded outing survives")
         assertEquals(1, finished.run.performance.importantGamesCompleted)
         // Fields added after schema 9 read as their defaults instead of failing the load.
@@ -34,6 +34,8 @@ class HighSchoolLegacySaveCompatibilityTest {
         val session = assertNotNull(midGame.activePitch, "an unfinished outing survives")
         assertTrue(session.pitches > 0)
         assertEquals(0, session.perfectReleases)
+        kotlin.test.assertNull(session.assignment)
+        kotlin.test.assertNull(midGame.run.development)
     }
 
     @Test fun aSchemaNineSaveReEncodesUnderTheCurrentSchema() {

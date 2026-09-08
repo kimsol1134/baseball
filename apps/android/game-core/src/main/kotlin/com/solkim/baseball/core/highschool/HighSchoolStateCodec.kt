@@ -111,12 +111,14 @@ public object HighSchoolStateCodec {
         "selectedMemories" to strings(state.selectedMemories),
         "pitchLearningProject" to (state.pitchLearningProject?.token()?.let(::str) ?: JsonValue.Null),
         "chapterGameClaimed" to bool(state.chapterGameClaimed),
+        "development" to (state.development?.token()?.let(::str) ?: JsonValue.Null),
         "stateCommitment" to str(state.stateCommitment),
     ).let { encoded ->
         // Phase 4 commits these exact bytes. Legacy runs must not gain a null or default field.
         val trimmed = LinkedHashMap(encoded.entries)
         if (state.pitchLearningProject == null) trimmed.remove("pitchLearningProject")
         if (!state.chapterGameClaimed) trimmed.remove("chapterGameClaimed")
+        if (state.development == null) trimmed.remove("development")
         JsonValue.Obj(trimmed)
     }
 
@@ -188,6 +190,7 @@ public object HighSchoolStateCodec {
             selectedMemories = value.strings("selectedMemories"),
             pitchLearningProject = value.optionalAdditiveString("pitchLearningProject")?.let(PitchLearningProject::decode),
             chapterGameClaimed = value.optionalAdditiveBoolean("chapterGameClaimed") ?: false,
+            development = value.optionalAdditiveString("development")?.let(HighSchoolDevelopment::decode),
             stateCommitment = value.string("stateCommitment"),
         )
     }
@@ -682,9 +685,9 @@ public object HighSchoolStateCodec {
         "managerTrust", "catcherTrust", "rivalTrust", "selectedAwakenings", "awakeningOptions", "awakeningSparks", "fatigue",
         "performance", "currentGameScenarioId", "currentGameScenario", "currentRelationshipTarget", "currentRelationshipEvent", "news", "balanceVersion", "worldRulesVersion", "rebirthEcho", "recentRelationshipEventIds", "trainingOpportunity", "lastTraining", "lastRelationship",
         "fanInterest", "armRisk", "injuryRecovery", "automaticGames", "automaticOuts", "automaticRunsAllowed", "draftResult",
-        "legacyOptions", "selectedMemories", "currentRelationshipCategory", "stateCommitment", "pitchLearningProject", "chapterGameClaimed",
+        "legacyOptions", "selectedMemories", "currentRelationshipCategory", "stateCommitment", "pitchLearningProject", "chapterGameClaimed", "development",
     )
-    private val STATE_REQUIRED_FIELDS = STATE_FIELDS - setOf("pitchLearningProject", "chapterGameClaimed",
+    private val STATE_REQUIRED_FIELDS = STATE_FIELDS - setOf("pitchLearningProject", "chapterGameClaimed", "development",
         "currentRelationshipCategory", "currentGameScenario", "currentRelationshipEvent", "news", "balanceVersion",
         "worldRulesVersion", "rebirthEcho", "recentRelationshipEventIds",
     )

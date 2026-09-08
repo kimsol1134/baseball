@@ -237,9 +237,17 @@ public class HighSchoolPhase4Kernel(
         require(state.run.phase == HighSchoolPhase.IMPORTANT_GAME) { "importantGame.phase" }
         require(state.activePitch == null) { "importantGame.already_reserved" }
         val gameNumber = state.run.performance.importantGamesCompleted + 1
-        val scenario = state.run.currentGameScenario
+        val originalScenario = state.run.currentGameScenario
             ?: (HighSchoolContentCatalog.scenarios + HighSchoolContentCatalog.regularScenarios).firstOrNull { it.id == state.run.currentGameScenarioId }
             ?: error("importantGame.scenario_missing")
+        val trial = state.run.development?.starterTrialPending == true
+        val earnedStart = state.run.development?.trialOutcome == "achieved" && originalScenario.leverage < 850
+        val scenario = if (trial || earnedStart) originalScenario.copy(
+            id = if (trial) "coach-starter-trial" else "earned-starter-appearance", title = if (trial) "선발 테스트" else "선발 등판",
+            inning = 1, outs = 0, firstOccupied = false, secondOccupied = false, thirdOccupied = false, scoreDifferential = 0,
+            narrative = if (trial) "감독과 약속한 선발 테스트. 직접 두 이닝을 2실점 이하로 막아 보세요." else "지난 등판에서 얻은 선발 기회예요.") else originalScenario
+        val role = if (trial || earnedStart || state.run.chapterGameClaimed) com.solkim.baseball.core.pitch.OutingRole.STARTER
+            else if (scenario.inning >= 9 && (scenario.scoreDifferential ?: 0) > 0) com.solkim.baseball.core.pitch.OutingRole.CLOSER else com.solkim.baseball.core.pitch.OutingRole.RELIEF
         val pitcher = state.run.toPitcherSnapshot()
         val batter = state.currentBatter()
         val scouting = state.currentScouting()
@@ -286,9 +294,16 @@ public class HighSchoolPhase4Kernel(
             memory = initialMemory,
             game = initialGame,
             log = initialLog,
+            assignment = com.solkim.baseball.core.pitch.OutingAssignment(role,
+                if (trial) com.solkim.baseball.core.pitch.OutingGoal.STARTER_TEST else if (role == com.solkim.baseball.core.pitch.OutingRole.CLOSER) com.solkim.baseball.core.pitch.OutingGoal.HOLD_LEAD else com.solkim.baseball.core.pitch.OutingGoal.CLEAN_FRAME,
+                if (trial) 6 else 3 - context.outs,
+                if (trial) 2 else if (role == com.solkim.baseball.core.pitch.OutingRole.CLOSER) maxOf(0, context.scoreDifferential - 1) else 0,
+                context.inning, context.outs, context.scoreDifferential,
+                listOf(initialGame.firstOccupied, initialGame.secondOccupied, initialGame.thirdOccupied).count { it }),
         )
         return result(
-            sign(state.copy(activePitch = session, lastPresentation = null)),
+            sign(state.copy(run = highSchool.resignShadowState(state.run.copy(currentGameScenario = scenario, currentGameScenarioId = scenario.id,
+                development = state.run.development?.copy(starterTrialPending = false))), activePitch = session, lastPresentation = null)),
             "important_game_reserved",
             listOf("game.$gameNumber"),
             preparation,
@@ -393,6 +408,7 @@ public class HighSchoolPhase4Kernel(
             hits = session.hits + if (snapshot.outcome in setOf(PitchOutcome.SINGLE, PitchOutcome.DOUBLE, PitchOutcome.TRIPLE, PitchOutcome.HOME_RUN)) 1 else 0,
             abilityMoments = result.abilityMoment?.wire?.let { session.abilityMoments + it } ?: session.abilityMoments,
             ended = outingEnded,
+            assignment = session.assignment?.advance(session.outs + snapshot.inningTransition.outsRecorded, session.runsAllowed + snapshot.runsScored),
             sequenceMasteryCount = session.sequenceMasteryCount + if (sequenceMoment != null) 1 else 0,
             sequencePitches = nextSequencePitches,
             perfectReleases = session.perfectReleases + if (delivery.isPerfectRelease) 1 else 0,
@@ -405,6 +421,11 @@ public class HighSchoolPhase4Kernel(
                 nextSession.memory.toRivalMemory(pitcher.id, nextBatter.id), nextSession.game.toGameState(), nextSession.log.toGameLog()))
         } else result.nextPreparation
         nextSession = nextSession.copy(preparationToken = following?.preparationToken ?: "")
+        val completedGoal = nextSession.assignment?.status == com.solkim.baseball.core.pitch.OutingGoalStatus.ACHIEVED &&
+            session.assignment?.status != com.solkim.baseball.core.pitch.OutingGoalStatus.ACHIEVED
+        if (completedGoal) nextSession = nextSession.copy(assignment = nextSession.assignment!!.withTrustReward(state.run.managerTrust))
+        val goalReward = if (completedGoal) nextSession.assignment!!.trustReward else 0
+        val passedTrial = completedGoal && nextSession.assignment?.goal == com.solkim.baseball.core.pitch.OutingGoal.STARTER_TEST
         val deliveryAchievements = HighSchoolAchievementRules.updateDelivery(
             state.achievements.toSet(), delivery.releaseAccuracy, delivery.aimAccuracy,
         )
@@ -415,7 +436,11 @@ public class HighSchoolPhase4Kernel(
         )
         val next = sign(
             state.copy(
-                run = highSchool.resignShadowState(state.run.copy(pitchLearningProject = state.run.pitchLearningProject?.use(call.pitchType, session.context.plateAppearanceId, delivery, entry?.executionQuality ?: 0))),
+                run = highSchool.resignShadowState(state.run.copy(
+                    pitchLearningProject = state.run.pitchLearningProject?.use(call.pitchType, session.context.plateAppearanceId, delivery, entry?.executionQuality ?: 0),
+                    managerTrust = (state.run.managerTrust + goalReward).coerceAtMost(100),
+                    relationshipTrust = if (goalReward > 0) ((state.run.managerTrust + goalReward).coerceAtMost(100) + state.run.catcherTrust + state.run.rivalTrust) / 3 else state.run.relationshipTrust,
+                    development = if (passedTrial) (state.run.development ?: HighSchoolDevelopment()).copy(trialOutcome = "achieved") else state.run.development)),
                 activePitch = nextSession,
                 achievements = achievementProgress.unlocked,
                 unacknowledgedAchievements = achievementProgress.unacknowledged,
@@ -545,7 +570,7 @@ public class HighSchoolPhase4Kernel(
 
     public fun continueOuting(state: HighSchoolPhase4State): HighSchoolPhase4Result {
         val session = requireNotNull(state.activePitch)
-        require(session.sessionId.endsWith(":outing-v2") && session.ended && state.run.chapterGameClaimed &&
+        require(session.sessionId.endsWith(":outing-v2") && session.ended && (state.run.chapterGameClaimed || session.assignment?.role == com.solkim.baseball.core.pitch.OutingRole.STARTER) &&
             session.game.outs == 0 && session.outs < 18 && session.pitches < 80 && session.context.inning < 9 && session.context.fatigue < 90) { "outing.continue_unavailable" }
         val resumed = session.copy(ended = false,
             context = session.context.copy(inning = session.context.inning + 1, outs = 0, balls = 0, strikes = 0, pitchNumber = 1),
@@ -580,6 +605,15 @@ public class HighSchoolPhase4Kernel(
         var nextRun = highSchool.recordImportantGame(
             HighSchoolKernel.GameRequest(session.seed, highSchool.resignShadowState(state.run.copy(pitcher = state.run.pitchLearningProject?.let { state.run.pitcher.copy(pitchProfiles = PitchLearningRules.advance(state.run.pitcher.pitchProfiles, it, it)) } ?: state.run.pitcher)), report),
         ).snapshot
+        val objective = session.assignment?.finish()
+        if (objective != null) {
+            val trial = objective.goal == com.solkim.baseball.core.pitch.OutingGoal.STARTER_TEST
+            val achieved = objective.status == com.solkim.baseball.core.pitch.OutingGoalStatus.ACHIEVED
+            val development = nextRun.development ?: HighSchoolDevelopment()
+            nextRun = highSchool.resignShadowState(nextRun.copy(
+                development = if (trial) development.copy(trialOutcome = if (achieved || development.trialOutcome == "achieved") "achieved" else "unfinished") else development,
+                news = (listOf(if (trial && achieved) "선발 테스트 통과. 다음 등판부터 선발 기회가 열렸어요." else if (achieved && objective.trustReward > 0) "등판 목표를 달성했어요. 감독의 신뢰가 올랐어요." else if (achieved) "목표 달성" else "이번 등판을 마쳤어요. 다음 기회를 준비해요.") + nextRun.news).take(30)))
+        }
         var line = HighSchoolSeasonLineRules.line(
             session.seed,
             state.run,

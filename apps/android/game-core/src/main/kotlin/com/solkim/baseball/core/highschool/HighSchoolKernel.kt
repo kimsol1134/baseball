@@ -102,6 +102,11 @@ public data class HighSchoolTrainingPreview(
     val jackpotChancePercent: Int = 0,
     val jackpotMinimumGrowth: Int = 0, val jackpotMaximumGrowth: Int = 0,
     val firstTrainingGuaranteed: Boolean = false,
+    val experience: Int = 0,
+    val practiceStep: Int = 0,
+    val breakthroughProgress: Int = 0,
+    val breakthroughTarget: Int = 0,
+    val masteryTraining: Boolean = false,
 )
 
 public data class HighSchoolTrainingResult(
@@ -238,6 +243,7 @@ public data class HighSchoolState(
     val pitchLearningProject: PitchLearningProject? = null,
     /** "이 경기는 내가 던진다": the chapter's regular game was claimed; cleared by advanceChapter. */
     val chapterGameClaimed: Boolean = false,
+    val development: HighSchoolDevelopment? = null,
 )
 
 public data class HighSchoolEvent(
@@ -467,7 +473,8 @@ public class HighSchoolKernel {
             if (rehab || focus == HighSchoolTrainingFocus.RECOVERY || wall) return 0
             val base = max(if (first) 1 else 0, trainingGrowth(max(60, signal)))
             val raw = base * (if (jackpot) 2 else 1) + wind.trainingGrowthBonus(focus)
-            return min(raw, max(0, min(80, state.talent.grade(focus).ceiling) - before))
+            val earned = if (raw > 0) raw else (trainingExperience(state, focus) + trainingPracticeStep(state, focus, intensity) * (if (jackpot) 2 else 1)) / 100
+            return min(earned, max(0, min(80, state.talent.grade(focus).ceiling) - before))
         }
         val riskAfter = if (rehab) max(0, state.armRisk - 10) else clamp(state.armRisk + trainingArmRisk(focus, intensity), 0, 100)
         return HighSchoolTrainingPreview(gain(signal - trainingVariance(focus)), gain(signal + trainingVariance(focus)),
@@ -476,7 +483,11 @@ public class HighSchoolKernel {
             jackpotChancePercent = if (wall) 0 else trainingJackpotChance(state, focus, intensity),
             jackpotMinimumGrowth = gain(signal - trainingVariance(focus), jackpot = true),
             jackpotMaximumGrowth = gain(signal + trainingVariance(focus), jackpot = true),
-            firstTrainingGuaranteed = first && !rehab && focus != HighSchoolTrainingFocus.RECOVERY && !wall)
+            firstTrainingGuaranteed = first && !rehab && focus != HighSchoolTrainingFocus.RECOVERY && !wall,
+            experience = trainingExperience(state, focus), practiceStep = trainingPracticeStep(state, focus, intensity),
+            breakthroughProgress = state.talent.pressure(focus),
+            breakthroughTarget = if (wall && state.talent.grade(focus) != HighSchoolTalentGrade.S) state.talent.grade(focus).bloomThreshold else 0,
+            masteryTraining = wall && state.talent.grade(focus) == HighSchoolTalentGrade.S)
     }
 
     /** Preview and resolution share this probability; no extra random draw is introduced. */
@@ -491,9 +502,19 @@ public class HighSchoolKernel {
             (if (HighSchoolContentCatalog.BALANCE_VERSION >= 4) jackpotModifier(focus) else 0) + intensityBonus, 0, 70)
     }
 
+    public fun trainingExperience(state: HighSchoolState, focus: HighSchoolTrainingFocus): Int =
+        state.development?.experience?.get(HighSchoolDevelopment.index(focus)) ?: 0
+
+    public fun trainingPracticeStep(state: HighSchoolState, focus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): Int {
+        if (focus == HighSchoolTrainingFocus.RECOVERY || state.injuryRecovery > 0) return 0
+        val points = when (intensity) { HighSchoolTrainingIntensity.LIGHT -> 35; HighSchoolTrainingIntensity.STANDARD -> 60; HighSchoolTrainingIntensity.INTENSIVE -> 80 }
+        return if (state.fatigue >= 70) points / 2 else points
+    }
+
     private fun trainingSignalBase(state: HighSchoolState, focus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): Int {
         val base = when (intensity) { HighSchoolTrainingIntensity.LIGHT -> 130; HighSchoolTrainingIntensity.STANDARD -> 210; HighSchoolTrainingIntensity.INTENSIVE -> 280 }
         return base + (if (state.school?.strength == focus) 110 else 0) +
+            (if (state.development?.hasSupport(focus) == true) 120 else 0) +
             (if (state.injuryRecovery <= 0 && state.trainingOpportunity?.focus == focus) 90 else 0) -
             max(0, state.fatigue - 45) * 3 + max(0, 16 - state.schedule.trainingTotal) * 24
     }
@@ -536,6 +557,14 @@ public class HighSchoolKernel {
         }
         rawGrowth = (if (jackpot) rawGrowth * 2 else rawGrowth) +
             if (rehab) 0 else wind.trainingGrowthBonus(focus)
+        val development = state.development ?: HighSchoolDevelopment()
+        val practice = if (rehab || focus == HighSchoolTrainingFocus.RECOVERY) 0 else if (rawGrowth > 0) rawGrowth * 100 else trainingPracticeStep(state, focus, request.intensity) * (if (jackpot) 2 else 1)
+        val accumulated = trainingExperience(state, focus) + practice
+        if (focus != HighSchoolTrainingFocus.RECOVERY && !rehab) rawGrowth = accumulated / 100
+        val experience = development.experience.toMutableList()
+        if (focus != HighSchoolTrainingFocus.RECOVERY && !rehab) experience[HighSchoolDevelopment.index(focus)] = accumulated % 100
+        val nextDevelopment = development.copy(experience = experience, lastExperienceEarned = practice)
+            .let { if (rehab) it else it.consume(focus, number) }
         val before = rating(focus, state.pitcher)
         val talentApplication = if (rawGrowth > 0) {
             applyTalent(state.talent, focus, before, rawGrowth)
@@ -592,6 +621,7 @@ public class HighSchoolKernel {
             chapterTrainingCount = state.chapterTrainingCount + 1,
             totalTrainingsCompleted = number,
             lastTraining = training,
+            development = nextDevelopment,
             pitchLearningProject = learning,
             injuryRecovery = if (rehab) state.injuryRecovery - 1 else state.injuryRecovery,
             armRisk = if (rehab) max(0, state.armRisk - 10) else clamp(state.armRisk + trainingArmRisk(focus, request.intensity), 0, 100),
@@ -621,7 +651,30 @@ public class HighSchoolKernel {
         }
         val category = state.currentRelationshipCategory ?: state.currentRelationshipTarget?.wire ?: "coach"
         val target = relationshipTargetForCategory(category)
-        val impact = relationshipImpact(state, category, request.response)
+        val baseImpact = relationshipImpact(state, category, request.response)
+        val impact = if (category == "coach" && request.response == HighSchoolRelationshipResponse.EXPLAIN)
+            baseImpact.copy(fatigue = -12, growthFocus = null) else baseImpact
+        var development = state.development ?: HighSchoolDevelopment()
+        val support = when (category) {
+            "coach" -> if (request.response == HighSchoolRelationshipResponse.LISTEN) state.school?.strength else null
+            "catcher", "game", "awakening" -> when (request.response) {
+                HighSchoolRelationshipResponse.LISTEN -> HighSchoolTrainingFocus.GAME_PLANNING
+                HighSchoolRelationshipResponse.EXPLAIN -> HighSchoolTrainingFocus.COMMAND
+                HighSchoolRelationshipResponse.CHALLENGE -> HighSchoolTrainingFocus.BREAKING_BALL
+            }
+            "rival" -> when (request.response) {
+                HighSchoolRelationshipResponse.LISTEN -> HighSchoolTrainingFocus.GAME_PLANNING
+                HighSchoolRelationshipResponse.EXPLAIN -> HighSchoolTrainingFocus.COMMAND
+                HighSchoolRelationshipResponse.CHALLENGE -> HighSchoolTrainingFocus.BREAKING_BALL
+            }
+            else -> null
+        }
+        if (support != null) development = development.supported(support)
+        val trial = category == "coach" && request.response == HighSchoolRelationshipResponse.CHALLENGE
+        development = development.copy(starterTrialPending = development.starterTrialPending || trial,
+            lastConversation = state.relationshipsCompleted + 1,
+            lastOffer = when { trial -> "starter_trial"; support != null -> "training";
+                category == "coach" && request.response == HighSchoolRelationshipResponse.EXPLAIN -> "recovery"; else -> "none" })
         val wind = windFor(state.careerId)
         var trustChange = impact.trust + if (target == wind.favoredRelationship) wind.favoredRelationshipBonus else 0
         if (impact.trust < 0) trustChange -= wind.relationshipLossPenalty
@@ -693,6 +746,7 @@ public class HighSchoolKernel {
                 fatigue = relationship.fatigueAfter,
                 fanInterest = fanInterest,
                 lastRelationship = relationship,
+                development = development,
                 currentRelationshipTarget = null,
                 currentRelationshipCategory = null,
                 currentRelationshipEvent = null,
@@ -2084,6 +2138,7 @@ public class HighSchoolKernel {
                 if (echo != "none") add("rebirthEcho:$echo")
                 state.pitcher.mastery?.let { add("mastery:${it.stuff}:${it.command}:${it.movement}:${it.stamina}") }
                 if (state.chapterGameClaimed) add("chapterGame:claimed")
+                state.development?.let { add("development:${it.token()}") }
                 if (state.performance.perfectReleases > 0) add("perfect:${state.performance.perfectReleases}")
             }.joinToString("|"),
         )

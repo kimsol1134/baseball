@@ -759,16 +759,28 @@ public class ProKernel(
             pitchWeakness = PitchKind.CURVEBALL,
             chaseTendency = batter.discipline.coerceIn(20, 80),
         )
-        val entryInning = postseasonEntryInning(availabilityState)
+        val special = ProPostseasonRules.isAutumn(availabilityState.seasonTrigger) || availabilityState.seasonTrigger == ProSeasonTrigger.NATIONAL_FINAL
+        val role = when (availabilityState.role) {
+            ProRole.STARTER -> com.solkim.baseball.core.pitch.OutingRole.STARTER
+            ProRole.CLOSER -> com.solkim.baseball.core.pitch.OutingRole.CLOSER
+            else -> com.solkim.baseball.core.pitch.OutingRole.RELIEF
+        }
+        val entryInning = if (special) postseasonEntryInning(availabilityState) else when (availabilityState.role) {
+            ProRole.STARTER -> 1; ProRole.LONG_RELIEF -> 5; ProRole.SETUP -> 8; ProRole.CLOSER -> 9
+        }
+        val entryOuts = if (special || availabilityState.role == ProRole.SETUP) 1 else 0
+        val entryLead = if (special) -1 else when (availabilityState.role) {
+            ProRole.STARTER -> 0; ProRole.LONG_RELIEF -> -2; ProRole.SETUP -> 1; ProRole.CLOSER -> 2
+        }
         val context = PlateAppearanceContext(
             plateAppearanceId = "${availabilityState.careerId}:season:${availabilityState.season}:week:${availabilityState.week}:important:outing-v2",
             revision = 0UL,
             inning = entryInning,
-            outs = 1,
+            outs = entryOuts,
             balls = 0,
             strikes = 0,
             pitchNumber = 1,
-            scoreDifferential = -1,
+            scoreDifferential = entryLead,
             leverage = 850,
             fatigue = availabilityState.fatigue,
         )
@@ -776,9 +788,9 @@ public class ProKernel(
         val game = GameStateSnapshot(
             defense = DefenseSnapshot(50, 50, 50, listOf("pitcher", "catcher", "first_base", "second_base", "third_base", "shortstop", "left_field", "center_field", "right_field").map { FielderSnapshot("$it", it, it, 50, 50, 50) }),
             park = ParkSnapshot("pro-important-park", "중립 구장", 1_000, 1_000),
-            runners = BaserunnerStateSnapshot(false, true, false, 52),
+            runners = BaserunnerStateSnapshot(!special && availabilityState.role == ProRole.SETUP, special, false, 52),
             runsAllowed = 0,
-            inningState = InningStateSnapshot(entryInning, HalfInning.TOP, 1),
+            inningState = InningStateSnapshot(entryInning, HalfInning.TOP, entryOuts),
         )
         val log = GameLogSnapshot("${availabilityState.careerId}:important:${availabilityState.importantGames}", 0UL, 0, emptyList())
         val preparation = pitch.prepare(PitchKernel.PrepareRequest(seedText, PitchLearningRules.playable(availabilityState.pitcher, availabilityState.pitchLearningProject), batter, scouting, context, memory, game, log))
@@ -795,6 +807,10 @@ public class ProKernel(
             batter = batter,
             scouting = scouting,
             boundary = ProPitchBoundary.RESERVED,
+            assignment = com.solkim.baseball.core.pitch.OutingAssignment(role,
+                if (entryLead > 0 && role != com.solkim.baseball.core.pitch.OutingRole.STARTER) com.solkim.baseball.core.pitch.OutingGoal.HOLD_LEAD else com.solkim.baseball.core.pitch.OutingGoal.CLEAN_FRAME,
+                3 - entryOuts, if (entryLead > 0 && role != com.solkim.baseball.core.pitch.OutingRole.STARTER) entryLead - 1 else 0,
+                entryInning, entryOuts, entryLead, if (special || availabilityState.role == ProRole.SETUP) 1 else 0),
         )
         val next = availabilityState.copy(revision = availabilityState.revision + 1UL, activePitch = session, lastPresentation = null, lastBattedBall = null, lastFielding = null, commitment = "")
         return result(next, seedText, listOf("pro_pitch_reserved"), preparation)
@@ -883,6 +899,7 @@ public class ProKernel(
             sequenceMasteryCount = session.sequenceMasteryCount + if (sequenceMoment != null) 1 else 0,
             sequencePitches = if (snapshot.ended) emptyList() else (session.sequencePitches + sequencePitch).takeLast(3),
             ended = outingEnded,
+            assignment = session.assignment?.advance(session.outs + snapshot.inningTransition.outsRecorded, session.runsAllowed + snapshot.runsScored),
             boundary = if (outingEnded) ProPitchBoundary.COMPLETED else ProPitchBoundary.PLAYING,
             perfectReleases = session.perfectReleases + if (delivery.isPerfectRelease) 1 else 0,
         )
@@ -891,8 +908,13 @@ public class ProKernel(
             nextSession.scouting, nextSession.context, nextSession.memory, nextSession.game, nextSession.log))
         else submitted.nextPreparation
         nextSession = nextSession.copy(preparationToken = following?.preparationToken ?: "")
+        val completedGoal = nextSession.assignment?.status == com.solkim.baseball.core.pitch.OutingGoalStatus.ACHIEVED &&
+            session.assignment?.status != com.solkim.baseball.core.pitch.OutingGoalStatus.ACHIEVED
+        if (completedGoal) nextSession = nextSession.copy(assignment = nextSession.assignment!!.withTrustReward(state.managerTrust))
+        val goalReward = if (completedGoal) nextSession.assignment!!.trustReward else 0
         val next = state.copy(
             revision = state.revision + 1UL,
+            managerTrust = (state.managerTrust + goalReward).coerceAtMost(100),
             activePitch = nextSession,
             pitchLearningProject = state.pitchLearningProject?.use(call.pitchType, session.context.plateAppearanceId, delivery, entry?.executionQuality ?: 0),
             lastPresentation = snapshot.trajectoryPresentation,

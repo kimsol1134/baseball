@@ -391,6 +391,7 @@ public data class ProPitchSession(
     val ended: Boolean = false,
     val boundary: ProPitchBoundary = ProPitchBoundary.PLAYING,
     val perfectReleases: Int = 0,
+    val assignment: com.solkim.baseball.core.pitch.OutingAssignment? = null,
 )
 
 public data class ProStartLinkedRequest(

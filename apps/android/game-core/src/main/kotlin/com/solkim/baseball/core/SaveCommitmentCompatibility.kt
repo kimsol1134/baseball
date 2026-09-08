@@ -12,6 +12,10 @@ public object SaveCommitmentCompatibility {
         ", regular=false, perfectReleases=0",
         ", perfectReleases=0",
         ", chapterGameClaimed=false",
+        ", development=null",
+        ", supportQueue=[]",
+        ", assignment=null",
+        ", trustReward=0",
     )
 
     public fun stable(text: String): String {

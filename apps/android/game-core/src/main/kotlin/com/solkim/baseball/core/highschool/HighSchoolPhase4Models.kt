@@ -300,6 +300,7 @@ public data class HighSchoolPitchSession(
     /** Current plate appearance only; it is reset after a terminal plate appearance. */
     val sequencePitches: List<com.solkim.baseball.core.pitch.PitchSequencePitch> = emptyList(),
     val perfectReleases: Int = 0,
+    val assignment: com.solkim.baseball.core.pitch.OutingAssignment? = null,
 )
 
 public data class HighSchoolPitchContext(
