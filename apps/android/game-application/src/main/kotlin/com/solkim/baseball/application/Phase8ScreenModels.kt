@@ -72,7 +72,7 @@ public enum class Phase8ScreenId(
     P008_IMPORTANT_GAME("P-008", "중요 경기", Phase8Group.CAREER_CORE),
     P009_AWAKENING("P-009", "각성", Phase8Group.CAREER_CORE),
     P010_CHAPTER("P-010", "장 결산", Phase8Group.CAREER_CORE),
-    P011_HIGH_SCHOOL_CAREER("P-011", "고교 커리어", Phase8Group.CAREER_CORE),
+    P011_HIGH_SCHOOL_CAREER("P-011", "경기 기록", Phase8Group.CAREER_CORE),
     P012_TOURNAMENT_LEAGUE("P-012", "대회와 리그", Phase8Group.CAREER_CORE),
     P013_DRAFT("P-013", "드래프트", Phase8Group.RECAP_REBIRTH),
     P014_RUN_RECAP("P-014", "이번 생 결산", Phase8Group.RECAP_REBIRTH),
@@ -660,7 +660,7 @@ public object Phase8ScreenProjection {
                         else Phase8Row("유산", frozen.joinToString(" · ") { legacyTitle(it) }, "다음 생에 가져갈 건 하나.")
                     },
                 )))
-                addAction("prepareLegacy", "유산 후보 보기", "이 생이 남긴 세 가지 중 하나를 고른다.", run?.let { it.phase == HighSchoolPhase.LEGACY || (it.phase == HighSchoolPhase.COMPLETED && it.draftResult?.outcome?.wire == "drafted") } == true, listOf(hs(HighSchoolPhase4Command.PrepareLegacy)))
+                addAction("prepareLegacy", "다음 생에 가져갈 능력 고르기", "이 생이 남긴 세 가지 중 하나를 고른다.", run?.let { it.phase == HighSchoolPhase.LEGACY || (it.phase == HighSchoolPhase.COMPLETED && it.draftResult?.outcome?.wire == "drafted") } == true, listOf(hs(HighSchoolPhase4Command.PrepareLegacy)))
                 // Old base-engine memory options must first be converted into frozen signature candidates.
                 run?.legacyOptions.orEmpty().filter { id -> HighSchoolSignatureLegacyRules.definitions.any { it.id == id } }
                     .forEach { legacy -> addAction("selectLegacy:$legacy", legacyTitle(legacy), legacyEffect(legacy), run?.phase == HighSchoolPhase.LEGACY, listOf(hs(HighSchoolPhase4Command.SelectLegacy(legacy)))) }
@@ -1124,7 +1124,7 @@ public object Phase8ScreenProjection {
                 }))
                 pro?.legacyCandidates.orEmpty().forEach { candidate ->
                     val family = HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == candidate.id }?.family.orEmpty()
-                    addAction("selectProLegacy:${candidate.id}", candidate.title, proLegacyChoice(family), pro?.phase == ProCareerPhase.LEGACY_SELECTION, listOf(pro(ProCommand.SelectLegacy(candidate.id))))
+                    addAction("selectProLegacy:${candidate.id}", candidate.title, legacyEffect(candidate.id), pro?.phase == ProCareerPhase.LEGACY_SELECTION, listOf(pro(ProCommand.SelectLegacy(candidate.id))))
                 }
             }
             Phase8ScreenId.P024_WEEKLY -> {
