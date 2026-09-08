@@ -23,7 +23,7 @@ class CareerMilestoneCelebrationTest {
                 selectedAwakenings = listOf(HighSchoolContentCatalog.awakeningNodes.first().id))))
         }
         compose.onNodeWithTag("career.milestone").assertIsDisplayed()
-        compose.onNodeWithTag("career.milestone.art.power").assertIsDisplayed()
+        compose.onNodeWithTag("career.milestone.art.${HighSchoolContentCatalog.awakeningNodes.first().id.wire}").assertIsDisplayed()
         val inst = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
         // Let the Android dialog-window entrance finish before visual QA capture.
         android.os.SystemClock.sleep(500)

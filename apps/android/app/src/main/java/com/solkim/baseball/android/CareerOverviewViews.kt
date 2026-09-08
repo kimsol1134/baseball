@@ -211,22 +211,24 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
     val copy = rememberGameCopy()
     when (model.id) {
         Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> {
-            val school = state.highSchool
-            val games = school?.seasonLog.orEmpty().filter { it.careerId == school?.run?.careerId }
-            val manual = games.filter { it.played }
-            val outs = manual.sumOf { it.outs } + (school?.run?.automaticOuts ?: 0)
-            val missingHistory = (school?.run?.automaticGames ?: 0) > games.count { !it.played && it.gameNumber >= 10_000 }
-            CareerStatTiles(listOf("등판" to "${manual.size + (school?.run?.automaticGames ?: 0)}", "이닝" to "${outs / 3}.${outs % 3}", "실점" to "${manual.sumOf { it.runsAllowed } + (school?.run?.automaticRunsAllowed ?: 0)}"))
-            Text("직접 등판 ${manual.size} · 자동 등판 ${school?.run?.automaticGames ?: 0}", style = MaterialTheme.typography.bodySmall)
-            if (missingHistory) Text("이전 자동 경기의 이닝·실점은 합산했어요. 개별 기록은 저장된 경기부터 보여드려요.", style = MaterialTheme.typography.bodySmall)
-            Text("최근 등판", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            val combined = games.groupBy { it.gameNumber }.values.map { parts ->
-                val first = parts.firstOrNull { it.played } ?: parts.first()
-                first.copy(outs = parts.sumOf { it.outs }, pitches = parts.sumOf { it.pitches },
-                    strikeouts = parts.sumOf { it.strikeouts }, walks = parts.sumOf { it.walks },
-                    runsAllowed = parts.sumOf { it.runsAllowed }, hits = parts.sumOf { it.hits })
+            var scope by remember(state.stage, state.highSchool?.run?.careerId, state.pro?.careerId) { mutableStateOf<String?>(null) }
+            val records = CareerRecordPresentation.resolve(state, scope)
+            if (records != null) {
+                val scopes = CareerRecordPresentation.scopes(state)
+                if (scopes.size > 1) CareerDisclosure("기록 범위", "records.scope") {
+                    scopes.forEach { option ->
+                        FilterChip(selected = records.scope.id == option.id, onClick = { scope = option.id },
+                            label = { Text(option.title + " · " + option.player) }, modifier = Modifier.testTag("records.scope.${option.id}"))
+                    }
+                }
+                Text(records.scope.title + " · " + records.scope.player, style = MaterialTheme.typography.labelMedium)
+                CareerStatTiles(listOf("등판" to records.games.toString(), "이닝" to records.innings, "실점" to records.runs.toString()))
+                if (records.incomplete) Text("누적 기록은 보존했어요. 개별 등판은 저장된 경기부터 보여드려요.", style = MaterialTheme.typography.bodySmall)
+                Text("최근 등판", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                key(records.scope.id) { CareerGameList(records.rows.map { CareerGameCard(it.label, it.outs, it.strikeouts, it.runs,
+                    it.walks, it.hits, it.perfect, it.team, it.opponent) }) }
             }
-            CareerGameList(combined.asReversed().map { CareerGameCard(copy.resolve("career.compact.chapter", GameCopyArgument.Whole(it.chapter.toLong())) + if (it.played && games.any { part -> !part.played && part.gameNumber == it.gameNumber }) " · 직접+자동" else if (it.played) " · 직접" else " · 자동", it.outs, it.strikeouts, it.runsAllowed, it.walks, it.hits, it.perfectReleases, it.teamRuns, it.opponentRuns) })
+
         }
         Phase8ScreenId.P024_WEEKLY -> {
             val weekly = state.highSchool?.weekly
@@ -327,15 +329,20 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
             }
         }
         Phase8ScreenId.P025_RECORDS_LEAGUE -> {
-            model.sections.forEach { section ->
-                Surface(color = BaseballColors.surfaceRaised, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val current = if (section.id == "records" && state.pro != null && section.rows.size >= 3)
-                            section.copy(rows = listOf(section.rows[1], section.rows[0]) + section.rows.drop(2)) else section
-                        CareerSection(current, 1)
-                    }
-                }
+            val records = CareerRecordPresentation.resolve(state)
+            if (records == null || records.games == 0) {
+                Text("첫 등판 전", style = MaterialTheme.typography.titleLarge)
+                Text("등판을 마치면 내 기록이 여기에 쌓여요.")
+            } else {
+                Text(records.scope.player, verbatim = true, style = MaterialTheme.typography.titleLarge)
+                CareerStatTiles(listOf("등판" to records.games.toString(), "이닝" to records.innings, "탈삼진" to records.strikeouts.toString()))
             }
+            model.sections.filter { it.id.startsWith("retired:") }.forEach { CareerSection(it, 3) }
+            val ranking = model.sections.firstOrNull { it.id == "records" }?.rows.orEmpty().filter { it.detail in setOf("내 구단", "리그 순위") }
+            if (ranking.isNotEmpty()) CareerDisclosure("리그 순위", "records.standings") {
+                ranking.forEachIndexed { index, row -> CareerFact(row, "records.rank.$index", revealDetail = true) }
+            }
+
         }
         Phase8ScreenId.P021_PRO_RETIREMENT -> {
             val pro = state.pro

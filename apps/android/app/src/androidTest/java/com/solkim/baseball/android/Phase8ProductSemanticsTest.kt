@@ -94,7 +94,7 @@ class Phase8ProductSemanticsTest {
             composeRule.onNodeWithText("지역").assertIsDisplayed()
             composeRule.onNodeWithTag("setup.portrait").assertIsDisplayed()
             composeRule.onNodeWithText("다음").assertIsDisplayed().performClick()
-            composeRule.onNodeWithText("이 투수로 시작하기").assertIsDisplayed()
+            composeRule.onNodeWithTag("setup.confirm").assertIsDisplayed()
             composeRule.onNodeWithText("이전").performClick()
         }
     }
