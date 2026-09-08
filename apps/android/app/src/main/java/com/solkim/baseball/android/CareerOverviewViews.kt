@@ -67,9 +67,10 @@ internal fun CareerFact(row: Phase8Row, tag: String, revealDetail: Boolean = fal
 @Composable
 internal fun CareerSection(section: Phase8Section, initialCount: Int = 1) {
     Text(section.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
-    section.rows.take(initialCount).forEachIndexed { index, row -> CareerFact(row, "career.${section.id}.$index") }
-    if (section.rows.size > initialCount) CareerDisclosure("전체 기록 보기", "career.${section.id}.more") {
-        section.rows.drop(initialCount).forEachIndexed { index, row -> CareerFact(row, "career.${section.id}.more.$index") }
+    val complete = initialCount >= section.rows.size
+    section.rows.take(initialCount).forEachIndexed { index, row -> CareerFact(if (complete) row else row.copy(detail = ""), "career.${section.id}.$index", revealDetail = true) }
+    if (!complete) CareerDisclosure("자세히 보기", "career.${section.id}.more") {
+        section.rows.forEachIndexed { index, row -> CareerFact(row, "career.${section.id}.more.$index", revealDetail = true) }
     }
 }
 
@@ -218,6 +219,7 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
                 if (scopes.size > 1) CareerDisclosure("기록 범위", "records.scope") {
                     scopes.forEach { option ->
                         FilterChip(selected = records.scope.id == option.id, onClick = { scope = option.id },
+                            colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BaseballColors.action, selectedLabelColor = BaseballColors.actionInk),
                             label = { Text(option.title + " · " + option.player) }, modifier = Modifier.testTag("records.scope.${option.id}"))
                     }
                 }

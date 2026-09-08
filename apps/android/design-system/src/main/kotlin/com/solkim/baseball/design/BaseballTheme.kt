@@ -25,9 +25,9 @@ public object BaseballColors {
     public val positive: Color = Color(0xFF55C58A)
     public val warning: Color = Color(0xFFF0A94A)
     public val negative: Color = Color(0xFFEF746A)
-    // Numeric direction, not benefit/cost: existing coral and the shared bright team-blue shade.
-    public val statIncrease: Color = Color(0xFFEF746A)
-    public val statDecrease: Color = Color(0xFF8FBAFF)
+    // Favorable and costly changes use the same meaning as selection/result UI.
+    public val statIncrease: Color = action
+    public val statDecrease: Color = warning
     public val fieldChalk: Color = Color(0xFFDCE5DE)
     public val fieldNight: Color = Color(0xFF050A15)
     public val fieldDirt: Color = Color(0xFF6B5236)

@@ -24,13 +24,18 @@ class StatChangeTextTest {
         }
     }
 
-    @Test fun costsRecoveryZeroAndForecastRangesAreNumericDirections() {
-        val text = statChangeText("피로 +6 · 회복 −8 · 팔 부담 +0 · 성장 +1~3 · 구속 -0.2")
-        assertEquals(BaseballColors.statIncrease, colorAt(text, "+6"))
-        assertEquals(BaseballColors.statDecrease, colorAt(text, "−8"))
+    @Test fun benefitsAndCostsUseMetricMeaningInEveryLanguage() {
+        val text = statChangeText("피로 +6 · 피로 −8 · 팔 부담 +0 · 성장 +1~3 · 구속 -0.2")
+        assertEquals(BaseballColors.statDecrease, colorAt(text, "+6"))
+        assertEquals(BaseballColors.statIncrease, colorAt(text, "−8"))
         assertEquals(BaseballColors.textSecondary, colorAt(text, "+0"))
         assertEquals(BaseballColors.statIncrease, colorAt(text, "3"))
         assertEquals(BaseballColors.statDecrease, colorAt(text, "-0.2"))
+        for (source in listOf("Fatigue 12 → 8 · Control +2", "疲労 12 → 8 · 制球 +2")) {
+            val styled = statChangeText(source)
+            assertEquals(BaseballColors.statIncrease, colorAt(styled, "8"))
+            assertEquals(BaseballColors.statIncrease, colorAt(styled, "+2"))
+        }
         val range = statChangeText("+0~2")
         assertEquals(BaseballColors.textSecondary, colorAt(range, "+0"))
         assertEquals(BaseballColors.statIncrease, colorAt(range, "2"))

@@ -444,6 +444,7 @@ private fun RecordsSegments(state: GameAggregateState, current: Phase8ScreenId, 
                         else -> false
                     }
                     androidx.compose.material3.FilterChip(selected = screen == current,
+                        colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(selectedContainerColor = BaseballColors.action, selectedLabelColor = BaseballColors.actionInk),
                         onClick = { if (screen != current) onNavigate(screen) }, enabled = Phase8ScreenProjection.isReachable(state, screen),
                         label = { Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(copy.resolve("controls.records.$label"), verbatim = true)

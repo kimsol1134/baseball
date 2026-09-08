@@ -26,14 +26,15 @@ internal fun CompanionLauncher(state: GameAggregateState, showPortrait: Boolean 
     var saving by remember { mutableStateOf(false) }
     val c = PitcherCompanionRules.current(state)
     val copy = rememberGameCopy()
+    val pro = state.pro.takeIf { state.stage in setOf(GameStage.PRO, GameStage.RETIREMENT) }
     val name = c.nickname.ifEmpty { copy.legacy(PitchHudProjection.koreanLabel(PitchKind.entries.first { it.wire == c.representative })) }
     TextButton(onClick = { open = true }, modifier = Modifier.testTag("companion.open")) {
         if (showPortrait) {
-            PlayerPortrait(seed = playerPortraitSeed(state) ?: "pitcher", stage = if ((state.highSchool?.run?.chapter?.schoolYear ?: 1) >= 3) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 28.dp)
+            PlayerPortrait(seed = playerPortraitSeed(state) ?: "pitcher", stage = if (pro != null) PlayerStage.PRO else if ((state.highSchool?.run?.chapter?.schoolYear ?: 1) >= 3) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 28.dp)
             Spacer(Modifier.width(8.dp))
-            Text("#${c.jersey} " + state.highSchool?.run?.identity?.name.orEmpty(), verbatim = true)
+            Text("#${c.jersey} " + (pro?.identityName ?: state.highSchool?.run?.identity?.name.orEmpty()), verbatim = true)
         } else Text("선수 상세")
-        if (showPortrait) Text(" · ${copy.legacy("대표 구종")}: $name", verbatim = true, color = BaseballColors.milestone)
+        if (showPortrait) Text(" · $name", verbatim = true, color = BaseballColors.milestone)
     }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()

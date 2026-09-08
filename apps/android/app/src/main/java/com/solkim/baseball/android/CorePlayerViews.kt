@@ -32,15 +32,10 @@ internal fun CorePlayerHeader(state: GameAggregateState, compact: Boolean = fals
     var details by remember { mutableStateOf(false) }
     if (compact) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { details = true }.testTag("career.playerDetails"),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PlayerPortrait(seed = seed, stage = stage, width = 32.dp)
-                Text(name, verbatim = true, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                Text(copy.resolve("mobile.core.life", GameCopyArgument.Whole((run?.lifeNumber ?: 1).toLong())),
-                    verbatim = true, style = MaterialTheme.typography.labelMedium, color = BaseballColors.textSecondary)
-                Text("›", verbatim = true, color = BaseballColors.action)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { CompanionLauncher(state, showPortrait = true) }
+                TextButton(onClick = { details = true }, modifier = Modifier.testTag("career.playerDetails")) { Text("능력") }
             }
-            CompanionLauncher(state)
             CompanionReaction(state)
             NextAppearanceCue.resolve(state)?.let { CoreNextAppearance(it) }
         }
