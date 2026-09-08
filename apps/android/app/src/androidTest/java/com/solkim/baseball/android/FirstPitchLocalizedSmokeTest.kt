@@ -76,7 +76,10 @@ class FirstPitchLocalizedSmokeTest {
         assertTrue(device.wait(Until.gone(By.res("setup.name")), 10_000))
         capture("style")
         tap("setup.confirm")
+        assertTrue("Introduction must wait for the player", device.wait(Until.hasObject(By.res("action.openTutorialPitch")), 10_000))
+        assertFalse(device.hasObject(By.res("pitch.slider")))
         tap("action.openTutorialPitch")
+        assertTrue("First-pitch action should open the mound", device.wait(Until.hasObject(By.res("pitch.slider")), 20_000))
         if (InstrumentationRegistry.getArguments().getString("qaPreferenceFailure") == "true") {
             require(context.packageName == "com.solkim.baseball.android.reset.compose.qa")
             tap("pitch.settings")
@@ -168,8 +171,7 @@ class FirstPitchLocalizedSmokeTest {
         val intervals = frameTimes.toList().zipWithNext { a, b -> (b - a) / 1_000_000.0 }.sorted()
         val medianInterval = intervals.getOrNull(intervals.size / 2)
         android.util.Log.i("BASEBALL_LAUNCH_QA", "first_slider elapsed_ms=${SystemClock.elapsedRealtime() - started} requested_hz=$requestedRate actual_hz=${display.mode.refreshRate} meter_interval_ms=$medianInterval meter_frames=${frameTimes.size} revision=${state.revision}")
-        tap("pitch.continue")
-        tap("action.completeTutorial")
+        tap("pitch.practiceSchool")
         assertTrue("School choices must follow the first pitch", device.wait(Until.hasObject(By.res(java.util.regex.Pattern.compile("action.chooseSchool:.*"))), 20_000))
         assertTrue(app.gameStore.current.highSchool?.tutorial?.completed == true)
     }

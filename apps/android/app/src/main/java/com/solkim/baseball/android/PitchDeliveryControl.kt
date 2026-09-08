@@ -77,6 +77,8 @@ public fun PitchDeliveryControl(
     fatigue: Int = 0,
     commandRating: Int = PitchReleaseWindow.BASELINE_COMMAND,
     previousCommand: Int? = null,
+    previousVelocity: Int? = null,
+    holdComparison: Boolean = false,
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
     soundEnabled: Boolean = true,
@@ -126,11 +128,16 @@ public fun PitchDeliveryControl(
     }
     // The old window stays on the bar for a moment after 제구 grows, so the wider green is visible.
     var showPrevious by remember(previousCommand) { mutableStateOf(previousCommand != null) }
-    LaunchedEffect(previousCommand) {
+    val growthGlow = remember(previousCommand) { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(previousCommand, reduceMotion, holdComparison) {
         if (previousCommand == null) return@LaunchedEffect
-        delay(2_500L)
+        growthGlow.snapTo(1f)
+        if (holdComparison) return@LaunchedEffect
+        if (reduceMotion) delay(2_500L) else growthGlow.animateTo(0f, androidx.compose.animation.core.tween(2_500))
         showPrevious = false
     }
+    var showVelocityGrowth by remember(previousVelocity, velocityTenthsKph) { mutableStateOf(previousVelocity != null && previousVelocity < velocityTenthsKph) }
+    LaunchedEffect(previousVelocity, velocityTenthsKph) { delay(2_500L); showVelocityGrowth = false }
     var lastHint by remember { mutableStateOf<String?>(null) }
     val sweep = PitchReleaseMeter.sweepSeconds(velocityTenthsKph, fatigue, reduceMotion)
     val amplitude = PitchReleaseMeter.swayAmplitude(fatigue, reduceMotion)
@@ -280,10 +287,15 @@ public fun PitchDeliveryControl(
             )
         }
         Spacer(Modifier.height(8.dp))
-        ReleaseMeterBar(meter = meter, pressing = pressing, inPerfect = inPerfect, commandRating = windowCommand, previousCommand = previousCommand.takeIf { showPrevious })
+        ReleaseMeterBar(meter = meter, pressing = pressing, inPerfect = inPerfect, commandRating = windowCommand,
+            previousCommand = previousCommand.takeIf { showPrevious }, growthGlow = if (showPrevious) growthGlow.value else 0f)
+        if (showVelocityGrowth && previousVelocity != null) Text(
+            "${previousVelocity / 10}.${previousVelocity % 10} → ${velocityTenthsKph / 10}.${velocityTenthsKph % 10} km/h", verbatim = true,
+            color = BaseballColors.action, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 4.dp).testTag("pitch.velocity.growth"))
         if (showPrevious && previousCommand != null && previousCommand < commandRating) {
             Text(
-                "제구가 올랐다. 초록 구간 ${PitchReleaseWindow.widthPermille(previousCommand) / 10}% → ${PitchReleaseWindow.widthPermille(commandRating) / 10}%",
+                rememberGameCopy().resolve("pitch.growth.wider-window"), verbatim = true,
                 color = BaseballColors.milestone,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
@@ -446,7 +458,7 @@ private fun AutoReleaseToggle(
 }
 
 @Composable
-private fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolean, commandRating: Int, previousCommand: Int? = null) {
+private fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolean, commandRating: Int, previousCommand: Int? = null, growthGlow: Float = 0f) {
     val perfectWidth = (1_000 - PitchDelivery.PERFECT_RELEASE_THRESHOLD) / 1_000f
     val windowWidth = PitchReleaseWindow.width(commandRating).toFloat()
     val copy = rememberGameCopy()
@@ -463,7 +475,7 @@ private fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolean
         drawRoundRect(BaseballColors.surfaceRaised, cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f))
         val sweet = width * windowWidth
         drawRoundRect(
-            BaseballColors.action.copy(alpha = 0.42f),
+            BaseballColors.action.copy(alpha = 0.42f + 0.38f * growthGlow),
             topLeft = Offset(width * (0.5f - windowWidth / 2f), 0f),
             size = androidx.compose.ui.geometry.Size(sweet, height),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f),

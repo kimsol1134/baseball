@@ -64,6 +64,7 @@ class TrainingUiTest {
         val learningPitch = before.highSchool!!.run.pitchLearningProject?.pitchType
         if (learningPitch != null) {
             compose.onNodeWithTag("training.learning").performScrollTo().performClick()
+            compose.onNodeWithTag("training.learning.practice").performScrollTo().performClick()
             compose.onNodeWithTag("training.target.${learningPitch.wire}").performScrollTo().assertIsDisplayed()
             assertEquals(before.highSchool!!.run.totalTrainingsCompleted, app.gameStore.current.highSchool!!.run.totalTrainingsCompleted)
         }
@@ -85,13 +86,13 @@ class TrainingUiTest {
         assertEquals(if (focus == TrainingFocus.BREAKING_BALL) target else null, evidence.targetPitch)
         assertEquals(before.highSchool!!.run.totalTrainingsCompleted + 1, after.highSchool!!.run.totalTrainingsCompleted)
         if (stillTraining) {
-            compose.onNodeWithTag("training.result").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithTag("training.result").assertIsDisplayed()
             compose.onNodeWithTag("training.result.gains").assertIsDisplayed()
         }
         device.takeScreenshot(File(context.cacheDir, "training-after.png"))
         if (stillTraining && focus == TrainingFocus.COMMAND && before.highSchool!!.run.pitcher.command != after.highSchool!!.run.pitcher.command) {
+            compose.onNodeWithTag("training.result.open").performClick()
             if (!GrowthFeedbackPresentation.controlMilestone(requireNotNull(after.meta.playerGrowth))) {
-                compose.onNodeWithTag("growth.controlWindow").assertDoesNotExist()
                 compose.onNodeWithTag("training.result.details").performScrollTo().performClick()
             }
             compose.onNodeWithTag("growth.controlWindow").performScrollTo().assertIsDisplayed()

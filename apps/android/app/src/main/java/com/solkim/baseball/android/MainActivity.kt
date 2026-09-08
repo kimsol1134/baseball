@@ -320,12 +320,14 @@ public class MainActivity : ComponentActivity() {
         val completedGamesBefore = (application as BaseballApplication).gameStore.current.meta.completedGameCount
         activityScope.launch {
             try {
-                val execution = phase8Controller.execute(
+                val beforeAction = (application as BaseballApplication).gameStore.current
+                val execution = phase8Controller.executePlayerAction(
                     screenId = action.screenId,
                     actionId = action.actionId,
                     capturedPayloads = action.capturedPayloads,
                 )
                 withContext(Dispatchers.Main) {
+                    saveTrainingFeedback(this@MainActivity, beforeAction, (application as BaseballApplication).gameStore.current)
                     // Preferences keep their current page so multiple changes can be made in place.
                     if (action.screenId != Phase8ScreenId.P027_SETTINGS || action.actionId == "resetProgress") selectedScreen = null
                     if (action.actionId == "resetProgress") showResetConfirmation = false

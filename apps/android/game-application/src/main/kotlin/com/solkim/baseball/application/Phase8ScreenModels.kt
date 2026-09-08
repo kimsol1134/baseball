@@ -1965,6 +1965,19 @@ public class Phase8Controller(
 
     public fun preferredScreen(): Phase8ScreenId = Phase8ScreenProjection.preferredScreen(store.state.value)
 
+    /** The introduction stays visible until the player explicitly opens the practice pitch. */
+    public suspend fun executePlayerAction(screenId: Phase8ScreenId, actionId: String, capturedPayloads: List<Phase8CommandPayload>? = null): Phase8Execution =
+        execute(screenId, actionId, capturedPayloads)
+
+    /** Complete the saved practice pitch before either opening another or choosing a school. */
+    public suspend fun finishPractice(sessionId: String, repeat: Boolean): Phase8Execution {
+        require(store.state.value.pitch?.sessionId == sessionId && store.state.value.pitch?.careerKind == PitchCareerKind.TUTORIAL) {
+            "phase8.practice_session_mismatch"
+        }
+        Phase7VerticalController(store).completePitchAndPostgame(sessionId)
+        return execute(Phase8ScreenId.P003_PROLOGUE, if (repeat) "openTutorialPitch" else "completeTutorial")
+    }
+
     public suspend fun execute(screenId: Phase8ScreenId, actionId: String, capturedPayloads: List<Phase8CommandPayload>? = null): Phase8Execution {
         val current = projection(screenId)
         val action = current.actions.singleOrNull { it.id == actionId } ?: throw IllegalArgumentException("phase8.action_unknown:$actionId")

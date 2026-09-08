@@ -456,7 +456,7 @@ public class HighSchoolPhase4Kernel(
         val snapshot = kernelResult.snapshot
         val next = sign(
             state.copy(
-                lastPresentation = presentationFrom(snapshot),
+                lastPresentation = presentationFrom(snapshot).copy(pitchNumber = pitchNumber),
             ),
         )
         return result(next, "tutorial_pitch_submitted", snapshot.reasonCodes, kernelResult.nextPreparation, next.lastPresentation)
