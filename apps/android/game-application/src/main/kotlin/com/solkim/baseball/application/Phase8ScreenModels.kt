@@ -623,12 +623,13 @@ public object Phase8ScreenProjection {
                 }
             }
             Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> {
-                val played = highSchool?.seasonLog.orEmpty().filter { it.played }
+                val played = highSchool?.seasonLog.orEmpty().filter { it.played && it.careerId == run?.careerId }
                 val pitchedOuts = played.sumOf { it.outs }
                 addSection(Phase8Section("career", "고교 커리어", listOf(
                     Phase8Row("선수", run?.identity?.name ?: "—", "${run?.lifeNumber ?: 0}번째 생"),
                     Phase8Row("현재 장면", run?.chapter?.title ?: "—", run?.phase?.label ?: "—"),
-                    Phase8Row("공식 경기", "${highSchool?.completedGameCounter ?: 0}경기", "직접 던진 경기"),
+                    Phase8Row("공식 경기", "${played.size + (run?.automaticGames ?: 0)}경기", "직접·자동 경기 합산"),
+                    Phase8Row("시즌 이닝", inningsLabel(pitchedOuts + (run?.automaticOuts ?: 0)), "직접·자동 투구 합산"),
                     Phase8Row("직접 던진 이닝", inningsLabel(pitchedOuts), "자동 경기는 빼고 내 손으로 던진 것만"),
                     Phase8Row("직접 던진 기록", "${run?.performance?.strikeouts ?: 0}탈삼진 ${run?.performance?.walks ?: 0}볼넷 ${run?.performance?.runsAllowed ?: 0}실점" + perfectSuffix(run), "${run?.performance?.pitches ?: 0}구"),
                 )))
@@ -1816,7 +1817,9 @@ public object Phase8ScreenProjection {
         "different_school_selected" -> "다른 학교에서 시작하기"
         "next_run_started" -> "다음 생 시작하기"
         "pro_weeks_advanced" -> "프로 주간 보내기"
-        else -> kind.replace('_', ' ').replace('-', ' ').ifBlank { "이번 주 과제" }
+        "sequence_mastery_triggered" -> "배합 성공하기"
+        "pledge_selected" -> "이번 생의 약속 정하기"
+        else -> "이번 주 과제"
     }
 
     private fun fanReasonLabel(kind: ProFanReasonKind): String = when (kind) {

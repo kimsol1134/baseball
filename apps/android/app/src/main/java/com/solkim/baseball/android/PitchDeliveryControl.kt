@@ -251,7 +251,10 @@ public fun PitchDeliveryControl(
     Column(modifier) {
         if (autoRelease) {
             Button(
-                onClick = { if (enabled) onDeliver(PitchDelivery.NEUTRAL) },
+                onClick = { if (enabled) {
+                    windUp.release(0.5, false, hapticsEnabled)
+                    onDeliver(PitchDelivery.NEUTRAL)
+                } },
                 enabled = enabled,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).gameDescription("탭 한 번으로 중립 릴리스"),
             ) {

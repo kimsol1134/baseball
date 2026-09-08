@@ -471,7 +471,8 @@ public class PitchActivity : ComponentActivity() {
                                     outingLine = board.outingLine,
                                     onInspect = { inspectingPitch = true },
                                     onReplay = { inspectingPitch = true; replayGeneration += 1 },
-                                    onNextPitch = if (outingContinues) ::continueInSession else null,
+                                    onContinueInning = if (controller.canContinueInning()) ({ continueInSession(true) }) else null,
+                                    onNextPitch = if (outingContinues) ({ continueInSession() }) else null,
                                     onPostgame = ::completeAndReturn,
                                 )
                             }
@@ -842,7 +843,7 @@ public class PitchActivity : ComponentActivity() {
         }
     }
 
-    private fun continueInSession() {
+    private fun continueInSession(continueOuting: Boolean = false) {
         if (advancingPitch || !feedbackActive) return
         advancingPitch = true
         // Read the finished pitch before the store moves on to the next session.
@@ -852,6 +853,7 @@ public class PitchActivity : ComponentActivity() {
         ).joinToString(" · ").ifBlank { null }
         activityScope.launch {
             try {
+                if (continueOuting) controller.continueInning()
                 controller.completePitchAndPostgame(sessionId)
                 val launch = controller.continueOfficialPitch()
                 withContext(Dispatchers.Main) {
@@ -1009,7 +1011,8 @@ public class PitchActivity : ComponentActivity() {
         val state = store.current
         val call = PitchHudProjection.resolveCall(state, selectedSign)
         com.solkim.baseball.core.pitch.PitchAbilityRules.expectedVelocity(
-            PitchHudProjection.pitcher(state), call, PitchHudProjection.fatigue(state))
+            PitchHudProjection.pitcher(state), call, PitchHudProjection.fatigue(state),
+            (state.highSchool?.activePitch?.sessionId ?: state.pro?.activePitch?.sessionId).orEmpty().endsWith(":outing-v2"))
     }.getOrDefault(1_350)
 
     private fun platform(): com.solkim.baseball.platform.NativePhase9Platform = (application as BaseballApplication).platform
@@ -1424,6 +1427,7 @@ internal fun PitchResultCard(
     automaticNext: Boolean = false,
     onNextPitch: (() -> Unit)?,
     onPostgame: () -> Unit,
+    onContinueInning: (() -> Unit)? = null,
 ) {
     val tone = outcomeTone(outcome)
     val verdictTitle = outcome?.let { localizedVerdict(it, battedBall) } ?: "투구 완료"
@@ -1467,6 +1471,12 @@ internal fun PitchResultCard(
                     Button(onClick = onPracticeSchool, enabled = !practiceBusy, modifier = Modifier.heightIn(min = 52.dp).testTag("pitch.practiceSchool")) {
                         Text(copy.resolve("android.onboarding.choose-school"))
                     }
+                }
+            } else if (onContinueInning != null) {
+                Text("이닝을 마쳤어요. 계속 던질까요?", style = MaterialTheme.typography.bodyMedium)
+                AdaptiveActionRow(Modifier.fillMaxWidth()) {
+                    Button(onClick = onContinueInning, modifier = Modifier.testTag("pitch.nextInning")) { Text("다음 이닝 던지기") }
+                    OutlinedButton(onClick = onPostgame, modifier = Modifier.testTag("pitch.simulateRemainder")) { Text("남은 경기 자동 진행") }
                 }
             } else if (!automaticNext) Button(onClick = if (outingContinues) (onNextPitch ?: onPostgame) else onPostgame,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("pitch.continue")) { Text(nextLabel) }

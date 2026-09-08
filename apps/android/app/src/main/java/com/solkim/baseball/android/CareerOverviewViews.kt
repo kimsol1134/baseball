@@ -211,10 +211,22 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
     val copy = rememberGameCopy()
     when (model.id) {
         Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> {
-            val games = state.highSchool?.seasonLog.orEmpty().filter { it.played && it.careerId == state.highSchool?.run?.careerId }
-            CareerStatTiles(listOf("등판" to "${games.size}", "이닝" to games.sumOf { it.outs }.let { "${it / 3}.${it % 3}" }, "탈삼진" to "${games.sumOf { it.strikeouts }}"))
+            val school = state.highSchool
+            val games = school?.seasonLog.orEmpty().filter { it.careerId == school?.run?.careerId }
+            val manual = games.filter { it.played }
+            val outs = manual.sumOf { it.outs } + (school?.run?.automaticOuts ?: 0)
+            val missingHistory = (school?.run?.automaticGames ?: 0) > games.count { !it.played && it.gameNumber >= 10_000 }
+            CareerStatTiles(listOf("등판" to "${manual.size + (school?.run?.automaticGames ?: 0)}", "이닝" to "${outs / 3}.${outs % 3}", "실점" to "${manual.sumOf { it.runsAllowed } + (school?.run?.automaticRunsAllowed ?: 0)}"))
+            Text("직접 등판 ${manual.size} · 자동 등판 ${school?.run?.automaticGames ?: 0}", style = MaterialTheme.typography.bodySmall)
+            if (missingHistory) Text("이전 자동 경기의 이닝·실점은 합산했어요. 개별 기록은 저장된 경기부터 보여드려요.", style = MaterialTheme.typography.bodySmall)
             Text("최근 등판", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            CareerGameList(games.asReversed().map { CareerGameCard(copy.resolve("career.compact.chapter", GameCopyArgument.Whole(it.chapter.toLong())), it.outs, it.strikeouts, it.runsAllowed, it.walks, it.hits, it.perfectReleases, it.teamRuns, it.opponentRuns) })
+            val combined = games.groupBy { it.gameNumber }.values.map { parts ->
+                val first = parts.firstOrNull { it.played } ?: parts.first()
+                first.copy(outs = parts.sumOf { it.outs }, pitches = parts.sumOf { it.pitches },
+                    strikeouts = parts.sumOf { it.strikeouts }, walks = parts.sumOf { it.walks },
+                    runsAllowed = parts.sumOf { it.runsAllowed }, hits = parts.sumOf { it.hits })
+            }
+            CareerGameList(combined.asReversed().map { CareerGameCard(copy.resolve("career.compact.chapter", GameCopyArgument.Whole(it.chapter.toLong())) + if (it.played && games.any { part -> !part.played && part.gameNumber == it.gameNumber }) " · 직접+자동" else if (it.played) " · 직접" else " · 자동", it.outs, it.strikeouts, it.runsAllowed, it.walks, it.hits, it.perfectReleases, it.teamRuns, it.opponentRuns) })
         }
         Phase8ScreenId.P024_WEEKLY -> {
             val weekly = state.highSchool?.weekly
@@ -309,7 +321,7 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
                     section.rows.forEachIndexed { index, row -> CareerFact(row, "season.decision.${section.id}.$index", revealDetail = true) }
                 }
             }
-            val games = pro?.currentGameLines.orEmpty().filter { it.played }
+            val games = pro?.currentGameLines.orEmpty()
             if (games.isNotEmpty()) CareerDisclosure("시즌 등판 기록", "season.games") {
                 CareerGameList(games.asReversed().map { CareerGameCard(copy.resolve("career.compact.week", GameCopyArgument.Whole(it.week.toLong())), it.outs, it.strikeouts, it.runsAllowed, it.walks, it.hits, it.perfectReleases, it.teamRuns, it.opponentRuns) })
             }

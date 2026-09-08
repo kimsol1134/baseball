@@ -15,7 +15,7 @@ public object AwakeningTreePresentation {
             return column(HighSchoolContentCatalog.awakeningNodes.single { it.id == node.parents.first() })
         }
         return HighSchoolContentCatalog.awakeningNodes.map { node ->
-            AwakeningTreeNode(choices.getValue(node.id.wire).let { it.copy(available = it.available && (state.highSchool?.run?.selectedAwakenings?.size ?: 0) < 3) }, node.branch, node.parents.map { it.wire }, column(node))
+            AwakeningTreeNode(choices.getValue(node.id.wire), node.branch, node.parents.map { it.wire }, column(node))
         }
     }
     public fun summary(state: GameAggregateState, node: AwakeningTreeNode, copy: GameCopy): AwakeningSummary {

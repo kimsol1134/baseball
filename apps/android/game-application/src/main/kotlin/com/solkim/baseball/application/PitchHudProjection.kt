@@ -4,7 +4,7 @@ import com.solkim.baseball.core.pitch.PitchLearningProject
 import com.solkim.baseball.core.pitch.PitchLearningRules
 import com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel
 import com.solkim.baseball.core.highschool.HighSchoolTutorialMound
-import com.solkim.baseball.core.highschool.toBatterSnapshot
+import com.solkim.baseball.core.highschool.currentBatter
 import com.solkim.baseball.core.highschool.toPitcherSnapshot
 import com.solkim.baseball.core.pitch.BatterSnapshot
 import com.solkim.baseball.core.pitch.PitchCall
@@ -95,7 +95,7 @@ public object PitchHudProjection {
         }
         if (pitch?.careerKind == PitchCareerKind.TUTORIAL) return HighSchoolTutorialMound.BATTER
         val highSchool = requireNotNull(state.highSchool) { "pitch.hud.highSchool_missing" }
-        return highSchool.run.toBatterSnapshot()
+        return highSchool.currentBatter()
     }
 
     public fun repertoire(state: GameAggregateState): List<PitchKind> = selectableTypes(pitcher(state))

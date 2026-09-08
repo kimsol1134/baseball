@@ -54,7 +54,7 @@ internal fun AwakeningTreeView(state: GameAggregateState, model: Phase8ScreenMod
         Column(Modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(copy.resolve("awakening.tree.slots"), verbatim = true, style = MaterialTheme.typography.labelMedium)
-                repeat(3) { index ->
+                repeat(maxOf(2, owned.size)) { index ->
                     val node = owned.getOrNull(index)?.let { id -> nodes.single { it.choice.id == id } }
                     if (node != null) Surface(onClick = { inspect(node) }, enabled = !busy, shape = MaterialTheme.shapes.small,
                         color = BaseballColors.action, modifier = Modifier.size(44.dp).gameDescription(node.choice.title)) {
@@ -65,7 +65,7 @@ internal fun AwakeningTreeView(state: GameAggregateState, model: Phase8ScreenMod
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                Text("${owned.size}/3", verbatim = true, style = MaterialTheme.typography.labelMedium, modifier = Modifier.testTag("awakening.slots"))
+                Text("${owned.size}/${maxOf(2, owned.size)}", verbatim = true, style = MaterialTheme.typography.labelMedium, modifier = Modifier.testTag("awakening.slots"))
             }
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 AwakeningTreePresentation.branches.forEach { key ->

@@ -356,6 +356,26 @@ public class Phase7VerticalController(
     }
 
     /** Returns only after the consume/terminal state is durable and the authoritative game report is saved. */
+    public fun canContinueInning(): Boolean {
+        val state = store.state.value
+        state.highSchool?.activePitch?.let {
+            return it.sessionId.endsWith(":outing-v2") && it.ended && state.highSchool.run.chapterGameClaimed &&
+                it.context.outs == 0 && it.outs < 18 && it.pitches < 80 && it.context.inning < 9 && it.context.fatigue < 90
+        }
+        state.pro?.activePitch?.let {
+            return it.sessionId.endsWith(":outing-v2") && it.ended && state.pro.role in setOf(com.solkim.baseball.core.pro.ProRole.STARTER, com.solkim.baseball.core.pro.ProRole.LONG_RELIEF) &&
+                it.context.outs == 0 && it.outs < 18 && it.pitches < 80 && it.context.inning < 9 && it.context.fatigue < 90
+        }
+        return false
+    }
+
+    public suspend fun continueInning() {
+        require(canContinueInning()) { "outing.continue_unavailable" }
+        require(store.state.value.pitch?.boundary == PitchBoundary.TERMINAL) { "outing.result_unacknowledged" }
+        if (store.state.value.highSchool?.activePitch != null) dispatch(GameCommand.HighSchool(HighSchoolPhase4Command.ContinueOuting))
+        else dispatch(GameCommand.Pro(ProCommand.ContinueOuting))
+    }
+
     public suspend fun completePitchAndPostgame(sessionId: String) {
         val state = store.state.value
         if (state.pitch?.boundary == PitchBoundary.COMPLETED) return

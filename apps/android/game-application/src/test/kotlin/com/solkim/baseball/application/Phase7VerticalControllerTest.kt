@@ -15,6 +15,62 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class Phase7VerticalControllerTest {
+    @Test fun regularInningContinuationSurvivesNativeStoreRestartWithoutClosingTheGame() = runBlocking {
+        withTempDirectory { directory ->
+            val repository = CSharpLegacyGameStoreRepository(directory, "inning-choice")
+            var store = KotlinGameStore.open("inning-choice", repository, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
+            var controller = Phase7VerticalController(store)
+            try {
+                controller.enterSetup(); controller.startHighSchool("이어던짐"); controller.beginTutorial()
+                controller.completeTutorial(); controller.chooseSchool()
+                var guard = 0
+                while (store.current.highSchool!!.run.phase != HighSchoolPhase.CHAPTER_REVIEW && guard++ < 150) {
+                    when (store.current.highSchool!!.run.phase) {
+                        HighSchoolPhase.TRAINING -> controller.commitTraining()
+                        HighSchoolPhase.RELATIONSHIP -> controller.resolveRelationship()
+                        HighSchoolPhase.AWAKENING -> controller.chooseAwakening()
+                        HighSchoolPhase.IMPORTANT_GAME -> {
+                            if (store.current.highSchool!!.activePitch == null) controller.reserveImportantGame()
+                            val id = store.current.pitch!!.sessionId
+                            if (store.current.pitch!!.boundary == PitchBoundary.PLAYING) {
+                                val request = controller.submitPitch(id, PitchHudSelection.Primary, PitchDelivery(800, 800))
+                                controller.consumePresentation(id, request)
+                                controller.completePitchAndPostgame(id)
+                                controller.continueOfficialPitch()
+                            }
+                        }
+                        else -> error("Unexpected career phase")
+                    }
+                }
+                assertTrue(guard < 150)
+                send(store, "claim-regular", GameCommand.HighSchool(com.solkim.baseball.core.highschool.HighSchoolPhase4Command.ClaimChapterGame("77423")))
+                var launch = controller.reserveImportantGame()
+                while (store.current.highSchool!!.activePitch?.ended != true && guard++ < 250) {
+                    val request = controller.submitPitch(launch.sessionId, PitchHudSelection.Primary, PitchDelivery(800, 800))
+                    controller.consumePresentation(launch.sessionId, request)
+                    if (store.current.highSchool!!.activePitch!!.ended) break
+                    controller.completePitchAndPostgame(launch.sessionId)
+                    launch = requireNotNull(controller.continueOfficialPitch())
+                }
+                assertTrue(guard < 250)
+                assertTrue(controller.canContinueInning())
+                val counter = store.current.meta.completedGameCount
+                val pitches = store.current.highSchool!!.activePitch!!.pitches
+                controller.continueInning()
+                store.close()
+                store = KotlinGameStore.open("inning-choice", repository, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
+                controller = Phase7VerticalController(store)
+                assertEquals(pitches, store.current.highSchool!!.activePitch!!.pitches)
+                assertFalse(store.current.highSchool!!.activePitch!!.ended)
+                controller.completePitchAndPostgame(launch.sessionId)
+                launch = requireNotNull(controller.continueOfficialPitch())
+                controller.submitPitch(launch.sessionId, PitchHudSelection.Primary, PitchDelivery(800, 800))
+                assertEquals(pitches + 1, store.current.highSchool!!.activePitch!!.pitches)
+                assertEquals(counter, store.current.meta.completedGameCount)
+            } finally { store.close() }
+        }
+    }
+
     @Test
     fun fileRepositoryReopensAfterReservedProcessDeath() = runBlocking {
         assertFileRepositoryReopensAtBoundary(PitchBoundary.RESERVED)

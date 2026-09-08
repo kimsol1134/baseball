@@ -8,6 +8,15 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class PitchScoreboardProjectionTest {
+    @Test fun pressureNamesTheActualTyingRunner() {
+        val loaded = BaserunnerStateSnapshot(true, true, true, 50)
+        assertEquals("동점 주자 3루", PitchScoreboardProjection.pressureLine(1, loaded))
+        assertEquals("동점 주자 2루", PitchScoreboardProjection.pressureLine(2, loaded))
+        assertEquals("동점 주자 1루", PitchScoreboardProjection.pressureLine(3, loaded))
+        assertEquals("역전 주자 3루", PitchScoreboardProjection.pressureLine(0, loaded))
+        assertEquals(null, PitchScoreboardProjection.pressureLine(4, loaded))
+    }
+
     @Test
     fun tutorialMoundUsesFirstInningTiedEmptyBasesNotNinth() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("scoreboard-tutorial"))

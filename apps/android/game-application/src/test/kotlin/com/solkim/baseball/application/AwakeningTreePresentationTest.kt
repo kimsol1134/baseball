@@ -22,14 +22,15 @@ class AwakeningTreePresentationTest {
             if (spec.tier == 3) assertEquals(nodes.single { it.choice.id == node.parents.single() }.column, node.column)
         }
     }
-    @Test fun leapAvailabilityAndThreeSlotLimitStayHonest() {
+    @Test fun advancedSkillsWaitForRebirthAndExistingThirdSkillIsPreserved() {
         val owned = listOf(HighSchoolAwakening.PINPOINT_EDGE)
         val locked = AwakeningTreePresentation.nodes(fixture(owned)).single { it.choice.id == "calm_under_pressure" }
         assertFalse(locked.choice.available)
         val leap = AwakeningTreePresentation.nodes(fixture(owned, 3)).single { it.choice.id == "calm_under_pressure" }
-        assertTrue(leap.choice.available && leap.choice.leap)
+        assertFalse(leap.choice.available, "First-life sparks cannot skip the advanced-skill gate")
         val full = fixture(listOf(HighSchoolAwakening.PINPOINT_EDGE, HighSchoolAwakening.EXPLOSIVE_FASTBALL, HighSchoolAwakening.BATTERY_SYNC), 3)
         assertTrue(AwakeningTreePresentation.nodes(full).none { it.choice.available })
+        assertEquals(3, AwakeningTreePresentation.nodes(full).count { it.choice.owned })
     }
     @Test fun summaryShowsRealTradeoffsAndDoesNotApplyOwnedSkillsTwice() {
         val state = fixture()

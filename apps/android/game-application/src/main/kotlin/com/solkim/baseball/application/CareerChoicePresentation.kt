@@ -9,7 +9,7 @@ public object CareerChoicePresentation {
     public fun awakeningTree(state: GameAggregateState): List<AwakeningChoiceView> {
         val run = state.highSchool?.run ?: return emptyList()
         val kernel = HighSchoolKernel()
-        val available = kernel.availableAwakenings(run).toSet()
+        val available = (if (run.phase == HighSchoolPhase.AWAKENING) run.awakeningOptions else kernel.availableAwakenings(run)).toSet()
         return HighSchoolContentCatalog.awakeningNodes.map { node ->
             val owned = node.id in run.selectedAwakenings
             val open = node.id in available
@@ -25,7 +25,12 @@ public object CareerChoicePresentation {
             AwakeningChoiceView(node.id.wire, HighSchoolDisplayRules.awakeningTitle(node.id.wire),
                 when(node.branch) { "power" -> "힘"; "command" -> "제구"; "breaking" -> "변화"; else -> "수싸움" }, node.tier,
                 owned, open && run.phase == HighSchoolPhase.AWAKENING && node.id in run.awakeningOptions,
-                open && missing.isNotEmpty(), missing.joinToString(" · ") { HighSchoolDisplayRules.awakeningTitle(it.wire) },
+                open && missing.isNotEmpty(), when {
+                    !owned && run.selectedAwakenings.size >= 2 -> "이번 고교 생활의 각성을 모두 익혔어요"
+                    !owned && node.tier >= 3 && run.lifeNumber == 1 -> "환생 후 도전하는 고급 각성"
+                    !owned && run.selectedAwakenings.isNotEmpty() && (run.chapter.number < 5 || run.totalTrainingsCompleted < 6 || run.performance.outs + run.automaticOuts < 36) -> "고교 후반 · 훈련 6회 · 시즌 12이닝 필요"
+                    else -> missing.joinToString(" · ") { HighSchoolDisplayRules.awakeningTitle(it.wire) }
+                },
                 listOf(feel, effects.joinToString(" · ")).filter { it.isNotBlank() }.joinToString("\n"), awakeningVoice(node.id))
         }
     }

@@ -32,8 +32,8 @@ internal fun CompanionLauncher(state: GameAggregateState, showPortrait: Boolean 
             PlayerPortrait(seed = playerPortraitSeed(state) ?: "pitcher", stage = if ((state.highSchool?.run?.chapter?.schoolYear ?: 1) >= 3) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 28.dp)
             Spacer(Modifier.width(8.dp))
             Text("#${c.jersey} " + state.highSchool?.run?.identity?.name.orEmpty(), verbatim = true)
-        } else Text("내 투수")
-        Text(" · $name", verbatim = true, color = BaseballColors.milestone)
+        } else Text("선수 상세")
+        if (showPortrait) Text(" · ${copy.legacy("대표 구종")}: $name", verbatim = true, color = BaseballColors.milestone)
     }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
