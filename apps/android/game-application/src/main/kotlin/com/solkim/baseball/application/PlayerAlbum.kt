@@ -10,12 +10,14 @@ public data class PlayerAlbumPage(
     val inningsKnown: Boolean, val rows: List<CareerGameView>, val pitches: List<AlbumPitch> = emptyList(),
     val portraitSeed: String = scope.player, val affiliation: String = "", val signature: String = "",
     val ratings: List<Int> = emptyList(), val life: Int = 1,
+    val details: List<Int> = emptyList(),
 )
 public object PlayerAlbum {
     public fun validate(pages: List<PlayerAlbumPage>) {
         require(pages.map { it.scope.id }.distinct().size == pages.size)
         pages.forEach { p ->
             require(p.scope.id.isNotBlank() && p.games >= 0 && p.outs >= 0 && p.runs >= 0 && p.strikeouts >= 0)
+            require(p.details.isEmpty() || p.details.size == 8 && p.details.all { it >= 0 })
             require(p.life > 0 && (p.ratings.isEmpty() || p.ratings.size == 4))
             require(p.rows.map { it.id }.distinct().size == p.rows.size)
             require(p.rows.all { it.outs >= 0 && it.strikeouts >= 0 && it.runs >= 0 })
@@ -32,7 +34,7 @@ public object PlayerAlbum {
             for (scope in CareerRecordPresentation.scopes(state)) {
                 if (scope.id.startsWith("pro:") && scope.id.endsWith(":all")) continue
                 val activeScope = scope.id == state.pro?.let { "pro:${it.careerId}:${it.season}" } || scope.id == state.highSchool?.run?.let { "hs:${it.careerId}" }
-                if (scope.id in pages && !activeScope) continue
+                if (scope.id in pages && !activeScope && pages.getValue(scope.id).details.isNotEmpty()) continue
                 val record = CareerRecordPresentation.resolve(state, scope.id) ?: continue
                 val old = pages[scope.id]
                 val pending = state.pro?.takeIf { it.phase == com.solkim.baseball.core.pro.ProCareerPhase.IMPORTANT_GAME && scope.id == "pro:${it.careerId}:${it.season}" }?.let { pro ->
@@ -43,7 +45,19 @@ public object PlayerAlbum {
                 pages[scope.id] = PlayerAlbumPage(scope, (record.games - if (pending != null) 1 else 0).coerceAtLeast(0),
                     (record.outs - (pending?.outs ?: 0)).coerceAtLeast(0), (record.runs - (pending?.runsAllowed ?: 0)).coerceAtLeast(0), (record.strikeouts - (pending?.strikeouts ?: 0)).coerceAtLeast(0),
                     record.inningsKnown || old?.inningsKnown == true, rows, old?.pitches.orEmpty(),
-                    old?.portraitSeed ?: scope.player, old?.affiliation.orEmpty(), old?.signature.orEmpty(), old?.ratings.orEmpty(), old?.life ?: 1)
+                    old?.portraitSeed ?: scope.player, old?.affiliation.orEmpty(), old?.signature.orEmpty(), old?.ratings.orEmpty(), old?.life ?: 1, old?.details.orEmpty())
+                val proSource = (listOfNotNull(state.pro) + state.meta.retiredProCareers).firstOrNull { scope.id.startsWith("pro:${it.careerId}:") }
+                val seasonNumber = scope.id.substringAfterLast(':').toIntOrNull()
+                val proStats = proSource?.let { (it.careerStats.filter { past -> past.season != it.currentStats.season } + it.currentStats).firstOrNull { stats -> stats.season == seasonNumber } }
+                val details = if (proStats != null) listOf(
+                    proStats.hits - (pending?.hits ?: 0), proStats.walks - (pending?.walks ?: 0),
+                    proStats.wins - if (pending?.decision?.wire == "win") 1 else 0,
+                    proStats.losses - if (pending?.decision?.wire == "loss") 1 else 0,
+                    proStats.saves - if (pending?.decision?.wire == "save") 1 else 0,
+                    proStats.starts - if (pending?.started == true) 1 else 0,
+                    proStats.homeRuns - (pending?.homeRuns ?: 0), proStats.pitches - (pending?.pitches ?: 0)
+                ).map { it.coerceAtLeast(0) } else emptyList()
+                if (details.isNotEmpty()) pages[scope.id] = pages.getValue(scope.id).copy(details = details)
                 val activePro = state.pro?.takeIf { scope.id == "pro:${it.careerId}:${it.season}" }
                 val activeHs = state.highSchool?.run?.takeIf { scope.id == "hs:${it.careerId}" }
                 val archive = state.highSchool?.archive?.firstOrNull { scope.id == "hs:${it.careerId}" }
@@ -101,7 +115,8 @@ internal object PlayerAlbumCodec {
     fun encode(pages: List<PlayerAlbumPage>): JsonValue = a(pages.map { p ->
         val rows = p.rows.map { r -> a(buildList {
             addAll(listOf(s(r.id), s(r.label), n(r.outs), n(r.strikeouts), n(r.runs), n(r.walks), n(r.hits), n(r.perfect), n(r.team), n(r.opponent), JsonValue.Bool(r.manual)))
-            if (r.decision.isNotEmpty() || r.started) addAll(listOf(s(r.decision), JsonValue.Bool(r.started)))
+            if (r.decision.isNotEmpty() || r.started || r.homeRuns != null || r.pitches != null) addAll(listOf(s(r.decision), JsonValue.Bool(r.started)))
+            if (r.homeRuns != null || r.pitches != null) addAll(listOf(r.homeRuns?.let(::n) ?: JsonValue.Null, r.pitches?.let(::n) ?: JsonValue.Null))
         }) }
         val pitches = p.pitches.map { r -> a(buildList {
             addAll(listOf(s(r.id), s(r.kind), n(r.velocity), a(r.trajectory.map(::n))))
@@ -112,8 +127,9 @@ internal object PlayerAlbumCodec {
         }) }
         a(buildList {
             addAll(listOf(s(p.scope.id), s(p.scope.title), s(p.scope.player), n(p.games), n(p.outs), n(p.runs), n(p.strikeouts), JsonValue.Bool(p.inningsKnown), a(rows), a(pitches)))
-            if (p.portraitSeed != p.scope.player || p.affiliation.isNotEmpty() || p.signature.isNotEmpty() || p.ratings.isNotEmpty() || p.life != 1)
+            if (p.portraitSeed != p.scope.player || p.affiliation.isNotEmpty() || p.signature.isNotEmpty() || p.ratings.isNotEmpty() || p.life != 1 || p.details.isNotEmpty())
                 addAll(listOf(s(p.portraitSeed), s(p.affiliation), s(p.signature), a(p.ratings.map(::n)), n(p.life)))
+            if (p.details.isNotEmpty()) add(a(p.details.map(::n)))
         })
     })
     fun decode(value: JsonValue?): List<PlayerAlbumPage> {
@@ -123,16 +139,16 @@ internal object PlayerAlbumCodec {
         fun JsonValue.int() = (this as JsonValue.Num).raw.toInt()
         fun JsonValue.bool() = (this as JsonValue.Bool).value
         return value.items().map { item ->
-            val p = item.items(); require(p.size == 10 || p.size == 15)
+            val p = item.items(); require(p.size in setOf(10, 15, 16))
             PlayerAlbumPage(RecordScope(p[0].text(), p[1].text(), p[2].text()), p[3].int(), p[4].int(), p[5].int(), p[6].int(), p[7].bool(),
-                p[8].items().map { itemRow -> val r = itemRow.items(); require(r.size == 11 || r.size == 13)
-                    CareerGameView(r[0].text(), r[1].text(), r[2].int(), r[3].int(), r[4].int(), r[5].int(), r[6].int(), r[7].int(), r[8].int(), r[9].int(), r[10].bool(), if (r.size == 13) r[11].text() else "", if (r.size == 13) r[12].bool() else false) },
+                p[8].items().map { itemRow -> val r = itemRow.items(); require(r.size in setOf(11, 13, 15))
+                    CareerGameView(r[0].text(), r[1].text(), r[2].int(), r[3].int(), r[4].int(), r[5].int(), r[6].int(), r[7].int(), r[8].int(), r[9].int(), r[10].bool(), if (r.size >= 13) r[11].text() else "", if (r.size >= 13) r[12].bool() else false, if (r.size == 15 && r[13] != JsonValue.Null) r[13].int() else null, if (r.size == 15 && r[14] != JsonValue.Null) r[14].int() else null) },
                 p[9].items().map { itemPitch -> val r = itemPitch.items(); require(r.size in setOf(4, 7, 8))
                     AlbumPitch(r[0].text(), r[1].text(), r[2].int(), r[3].items().map { it.int() },
                         if (r.size >= 7) r[4].text() else "", if (r.size >= 7) r[5].text() else "", if (r.size >= 7) r[6].items().map { it.int() } else emptyList(), if (r.size == 8) r[7].items().map { it.int() } else emptyList()) },
-                if (p.size == 15) p[10].text() else p[2].text(),
-                if (p.size == 15) p[11].text() else "", if (p.size == 15) p[12].text() else "",
-                if (p.size == 15) p[13].items().map { it.int() } else emptyList(), if (p.size == 15) p[14].int() else 1)
+                if (p.size >= 15) p[10].text() else p[2].text(),
+                if (p.size >= 15) p[11].text() else "", if (p.size >= 15) p[12].text() else "",
+                if (p.size >= 15) p[13].items().map { it.int() } else emptyList(), if (p.size >= 15) p[14].int() else 1, if (p.size == 16) p[15].items().map { it.int() } else emptyList())
         }.also(PlayerAlbum::validate)
     }
 }
