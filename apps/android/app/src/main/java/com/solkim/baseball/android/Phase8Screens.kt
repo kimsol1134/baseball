@@ -252,7 +252,7 @@ public fun Phase8Shell(
             Column(Modifier.fillMaxSize().padding(insets).consumeWindowInsets(insets).imePadding().padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (actionError != null) Phase8ErrorCard(actionError)
-                Phase8SetupFields(state, commandContext, model, onAction)
+                Phase8SetupFields(state, commandContext, model, onAction, busy)
             }
         } else if (trainingSurface) {
             TrainingScreen(nextTraining?.state ?: state, commandContext, busy || (bridgesReview && nextTraining == null),
@@ -327,6 +327,12 @@ private fun Phase8FirstPitchIntroduction(
     insets: androidx.compose.foundation.layout.PaddingValues,
     onAction: (Phase8UiAction) -> Unit,
 ) {
+    var acceptsFreshTap by remember(state.highSchool?.run?.careerId, model.id) { mutableStateOf(false) }
+    LaunchedEffect(state.highSchool?.run?.careerId, model.id) {
+        androidx.compose.runtime.withFrameNanos { }
+        kotlinx.coroutines.delay(500)
+        acceptsFreshTap = true
+    }
     val isLetter = model.id == Phase8ScreenId.P003_PROLOGUE
     val continuity = RebirthContinuity.resolve(state)
     if (isLetter && continuity != null) {
@@ -338,8 +344,8 @@ private fun Phase8FirstPitchIntroduction(
             Text(copy.resolve(if (continuity.samePlayer) "loop.reborn.same" else "loop.reborn.different"), verbatim = true,
                 style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("rebirth.ready"))
             Text(copy.resolve("loop.reborn.next"), verbatim = true, style = MaterialTheme.typography.bodyMedium)
-            model.actions.firstOrNull { it.id == "completeTutorial" }?.let { action -> Phase8ActionButton(model.id, action.copy(enabled = action.enabled && !busy), onAction, showDescription = false) }
-            model.actions.firstOrNull { it.id == "resumePitch" && it.enabled }?.let { action -> Phase8ActionButton(model.id, action.copy(enabled = !busy), onAction, showDescription = false) }
+            model.actions.firstOrNull { it.id == "completeTutorial" }?.let { action -> Phase8ActionButton(model.id, action.copy(enabled = action.enabled && !busy && acceptsFreshTap), onAction, showDescription = false) }
+            model.actions.firstOrNull { it.id == "resumePitch" && it.enabled }?.let { action -> Phase8ActionButton(model.id, action.copy(enabled = !busy && acceptsFreshTap), onAction, showDescription = false) }
                 ?: model.actions.firstOrNull { it.id == "openTutorialPitch" }?.let { action ->
                     OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) }, enabled = action.enabled && !busy,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("action.openTutorialPitch")) { Text(action.label) }
@@ -393,7 +399,7 @@ private fun Phase8FirstPitchIntroduction(
             if (actions.any { it.id == "openTutorialPitch" }) actions.filterNot { it.id == "beginTutorial" } else actions
         }
         visible.forEach { action ->
-            Phase8ActionButton(model.id, action.copy(enabled = !busy), onAction, showDescription = false)
+            Phase8ActionButton(model.id, action.copy(enabled = !busy && acceptsFreshTap), onAction, showDescription = false)
         }
     }
 }
@@ -1067,6 +1073,7 @@ private fun ColumnScope.Phase8SetupFields(
     commandContext: Phase8CommandContext,
     model: Phase8ScreenModel,
     onAction: (Phase8UiAction) -> Unit,
+    busy: Boolean = false,
 ) {
     val gameCopy = rememberGameCopy()
     val setupAction = model.actions.single { it.id == "startHighSchool" }
@@ -1249,15 +1256,15 @@ private fun ColumnScope.Phase8SetupFields(
     }
     AdaptiveActionRow(modifier = Modifier.fillMaxWidth()) {
         if (step > 0) {
-            OutlinedButton(onClick = { step -= 1 }, modifier = Modifier.heightIn(min = 56.dp)) {
+            OutlinedButton(onClick = { step -= 1 }, modifier = Modifier.heightIn(min = 48.dp)) {
                 Text("이전")
             }
         }
         if (step < lastStep) {
             Button(
                 onClick = { if (canAdvance) step += 1 },
-                enabled = canAdvance,
-                modifier = Modifier.heightIn(min = 56.dp).testTag("setup.next"),
+                enabled = canAdvance && !busy,
+                modifier = Modifier.heightIn(min = 48.dp).testTag("setup.next"),
             ) { Text("다음") }
         } else {
             val valid = setupAction.enabled && boostCost <= soulBalance && region in HighSchoolDisplayRules.regions
@@ -1281,9 +1288,9 @@ private fun ColumnScope.Phase8SetupFields(
                     val payloads = Phase8Payloads.batch(state, model.id, setupAction.id, listOf(command))
                     onAction(Phase8UiAction(model.id, setupAction.id, payloads))
                 },
-                enabled = valid,
-                modifier = Modifier.heightIn(min = 56.dp).testTag("setup.confirm"),
-            ) { Text("이 투수로 시작하기") }
+                enabled = valid && !busy,
+                modifier = Modifier.heightIn(min = 48.dp).testTag("setup.confirm"),
+            ) { Text("시작하기") }
         }
     }
 }

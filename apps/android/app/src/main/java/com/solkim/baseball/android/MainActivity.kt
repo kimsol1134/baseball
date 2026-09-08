@@ -81,6 +81,9 @@ public class MainActivity : ComponentActivity() {
     private var actionError by mutableStateOf<String?>(null)
     private var showResetConfirmation by mutableStateOf(false)
     private var restoringProgress by mutableStateOf(false)
+    private var actionInFlight by mutableStateOf(false)
+    private var previousActionScreen: Phase8ScreenId? = null
+    private var navigationTapBlockUntil = 0L
     private var selectedScreen by mutableStateOf<Phase8ScreenId?>(null)
     private var platformUiState by mutableStateOf(
         Phase9PlatformUiState(NotificationPermissionTruth.UNAVAILABLE, null),
@@ -137,7 +140,7 @@ public class MainActivity : ComponentActivity() {
                 }
                 Phase8Shell(
                     state = state,
-                    busy = busy || restoringProgress,
+                    busy = busy || restoringProgress || actionInFlight,
                     actionError = actionError,
                     currentScreen = current,
                     commandContext = commandContext,
@@ -316,6 +319,9 @@ public class MainActivity : ComponentActivity() {
     private var failingActionId: String? = null
 
     private fun performPhase8(action: Phase8UiAction) {
+        if (actionInFlight || (application as BaseballApplication).gameStore.busy.value) return
+        if (action.screenId != previousActionScreen && android.os.SystemClock.elapsedRealtime() < navigationTapBlockUntil) return
+        actionInFlight = true
         actionError = null
         val completedGamesBefore = (application as BaseballApplication).gameStore.current.meta.completedGameCount
         activityScope.launch {
@@ -328,6 +334,10 @@ public class MainActivity : ComponentActivity() {
                 )
                 withContext(Dispatchers.Main) {
                     saveTrainingFeedback(this@MainActivity, beforeAction, (application as BaseballApplication).gameStore.current)
+                    if (phase8Controller.preferredScreen() != action.screenId) {
+                        previousActionScreen = action.screenId
+                        navigationTapBlockUntil = android.os.SystemClock.elapsedRealtime() + 500
+                    }
                     // Preferences keep their current page so multiple changes can be made in place.
                     if (action.screenId != Phase8ScreenId.P027_SETTINGS || action.actionId == "resetProgress") selectedScreen = null
                     if (action.actionId == "resetProgress") showResetConfirmation = false
@@ -375,7 +385,7 @@ public class MainActivity : ComponentActivity() {
                         else -> "저장하지 못했어요. 같은 버튼을 한 번 더 눌러 주세요."
                     }
                 }
-            }
+            } finally { actionInFlight = false }
         }
     }
 
