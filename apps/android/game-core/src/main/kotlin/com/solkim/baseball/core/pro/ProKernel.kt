@@ -316,11 +316,7 @@ public class ProKernel(
         require(nextWeek <= ProCatalog.WEEKS_PER_SEASON) { "pro.week_limit" }
         val recovering = state.injuryWeeks > 0
         val skill = (state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina) / 4
-        val roles = when (state.role) {
-            ProRole.STARTER -> Triple(1, 18, 96)
-            ProRole.LONG_RELIEF -> Triple(2, 6, 42)
-            ProRole.SETUP, ProRole.CLOSER -> Triple(3, 3, 24)
-        }
+        val roles = weeklyOutingBudget(state.role)
         var activeModifiers = state.activeDecisionModifiers.orEmpty().filter { it.expiresWeek >= nextWeek }
         var outings = roles.first
         if (activeModifiers.any { it.suppressOutings }) outings = 0
@@ -392,15 +388,7 @@ public class ProKernel(
         }
         val games = if (recovering) 0 else outings
         val starts = lines.count { it.started }
-        val trainingLoad = when (plan) {
-            ProWeekPlan.DEVELOP_STUFF -> 10
-            ProWeekPlan.DEVELOP_MOVEMENT -> 8
-            ProWeekPlan.DEVELOP_WEAPON -> 9
-            ProWeekPlan.REFINE_COMMAND -> 6
-            ProWeekPlan.BUILD_STAMINA -> 7
-            ProWeekPlan.RECOVER -> -16
-            ProWeekPlan.EARN_TRUST -> 5
-        }
+        val trainingLoad = weeklyTrainingLoad(plan)
         val outingLoad = (pitches + 14) / 15
         val staminaRelief = max(0, (state.pitcher.stamina - 50) / 15)
         val fatigueDelta = if (recovering) -20 else trainingLoad + outingLoad - staminaRelief

@@ -176,6 +176,7 @@ public fun Phase8Shell(
     val trainingSurface = visibleScreen == Phase8ScreenId.P006_TRAINING || bridgesReview
     TrainingFeedbackGate(state)
     ConversationFeedbackGate(state)
+    ProWeekFeedbackGate(state)
     CareerMilestoneCelebration(state, showTrainingBloom = false)
     val currentTab = ProductTab.forScreen(visibleScreen)
     if (visibleScreen == Phase8ScreenId.P027_SETTINGS) {
@@ -770,9 +771,6 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
         Phase8ScreenId.P017_PRO_WEEK -> {
             state.pro?.let { pro -> Text("프로 선수 · ${pro.team.name} · ${if (pro.level == com.solkim.baseball.core.pro.ProLevel.MAJOR) "1군" else "2군"}",
                 color = BaseballColors.milestone, style = MaterialTheme.typography.labelLarge) }
-            Text(copy.resolve("android.week.question"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(copy.resolve("android.week.condition", com.solkim.baseball.application.GameCopyArgument.Whole((state.pro?.week ?: 0).toLong()),
-                com.solkim.baseball.application.GameCopyArgument.Whole((state.pro?.fatigue ?: 0).toLong())))
             model.sections.firstOrNull { it.id == "pitch-learning" }?.let { Phase8Sections(listOf(it)) }
             model.sections.firstOrNull { it.id.startsWith("followup:") }?.let { section ->
                 section.rows.firstOrNull()?.let { CareerFact(it, "week.followup") }
@@ -784,6 +782,10 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
             } else model.sections.firstOrNull { it.id == "role-result" }?.let { Phase8Sections(listOf(it)) }
         }
         else -> Unit
+    }
+    if (model.id == Phase8ScreenId.P017_PRO_WEEK) {
+        ProWeekPlanner(state, model, onAction)
+        return
     }
     if (model.id == Phase8ScreenId.P007_RELATIONSHIP) {
         model.actions.filter { it.enabled }.forEach { action ->
