@@ -119,10 +119,9 @@ class ProKernelTest {
     }
 
     @Test
-    fun newDirectCareerUsesRulesVersion11AndMediaDecisionOpensOnHashedWeek() {
+    fun newDirectCareerUsesCurrentRulesAndMediaDecisionOpensOnHashedWeek() {
         val started = kernel.startDirect(ProStartDirectRequest("404", "power_prospect", "미디어투수"))
         var state = started.state
-        assertEquals(11, state.proRulesVersion)
         assertEquals(ProCatalog.RULES_VERSION, state.proRulesVersion)
         val mediaWeek = ProCatalog.mediaOpportunityWeek(state.careerId, state.season, state.proRulesVersion)
         assertTrue(mediaWeek in ProCatalog.WEEKLY_SEASON_DECISION_WEEKS)

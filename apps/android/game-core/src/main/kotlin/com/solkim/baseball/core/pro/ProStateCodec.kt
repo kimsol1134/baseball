@@ -180,18 +180,19 @@ public object ProStateCodec {
     private fun DataOutputStream.writeStats(value: ProSeasonStats) {
         writeInt(value.season); writeString(value.teamId); writeInt(value.games); writeInt(value.starts); writeInt(value.inningsOuts); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.hits); writeInt(value.homeRuns); writeInt(value.pitches); writeInt(value.wins); writeInt(value.losses); writeInt(value.saves)
         writeNullable(value.postseasonGames) { writeList(it) { writePostseasonLine(it) } }
-        writeInt(value.perfectReleases)
+        writeInt(value.perfectReleases); writeNullableInt(value.earnedRuns)
     }
     private fun DataInputStream.readStats(version: Int): ProSeasonStats {
         val stats = ProSeasonStats(readInt(), readString(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt())
         val postseasonGames = if (version >= 3) readNullable { readList { readPostseasonLine() } } else null
         val perfectReleases = if (version >= 4) readInt() else 0
-        return stats.copy(postseasonGames = postseasonGames, perfectReleases = perfectReleases)
+        return stats.copy(postseasonGames = postseasonGames, perfectReleases = perfectReleases, earnedRuns = if (version >= 6) readNullableInt() else null)
     }
-    private fun DataOutputStream.writeGameLine(value: ProGameLine) { writeInt(value.season); writeInt(value.week); writeInt(value.outingNumber); writeBoolean(value.started); writeInt(value.outs); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.pitches); writeInt(value.teamRuns); writeInt(value.opponentRuns); writeString(value.decision.wire); writeBoolean(value.played); writeInt(value.hits); writeInt(value.homeRuns); writeInt(value.perfectReleases) }
+    private fun DataOutputStream.writeGameLine(value: ProGameLine) { writeInt(value.season); writeInt(value.week); writeInt(value.outingNumber); writeBoolean(value.started); writeInt(value.outs); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.pitches); writeInt(value.teamRuns); writeInt(value.opponentRuns); writeString(value.decision.wire); writeBoolean(value.played); writeInt(value.hits); writeInt(value.homeRuns); writeInt(value.perfectReleases); writeNullableInt(value.earnedRuns) }
     private fun DataInputStream.readGameLine(version: Int): ProGameLine {
         val line = ProGameLine(readInt(), readInt(), readInt(), readBoolean(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), pitchingDecision(readString()), readBoolean(), readInt(), readInt())
-        return if (version >= 4) line.copy(perfectReleases = readInt()) else line
+        val perfect = if (version >= 4) readInt() else 0
+        return line.copy(perfectReleases = perfect, earnedRuns = if (version >= 6) readNullableInt() else null)
     }
 
     private fun DataOutputStream.writeEffect(value: ProDecisionEffect) { writeInt(value.stuffDelta); writeInt(value.commandDelta); writeInt(value.movementDelta); writeInt(value.staminaDelta); writeInt(value.managerTrustDelta); writeInt(value.catcherTrustDelta); writeInt(value.fatigueDelta); writeNullableString(value.roleTarget?.wire) }
@@ -289,13 +290,13 @@ public object ProStateCodec {
 
     private fun DataOutputStream.writePitchSession(value: ProPitchSession) {
         writeString(value.sessionId); writeInt(value.week); writeString(value.seed); writeInt(value.pitchIndex); writeString(value.preparationToken); writeContext(value.context); writeMemory(value.memory); writeGame(value.game); writeLog(value.log); writeBatter(value.batter); writeScouting(value.scouting)
-        writeInt(value.pitches); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.expectedDamage); writeInt(value.actualDamage); writeInt(value.recommendationAccepted); writeInt(value.outs); writeInt(value.hits); writeInt(value.homeRuns); writeStrings(value.abilityMoments); writeInt(value.sequenceMasteryCount); writeList(value.sequencePitches) { writeSequence(it) }; writeBoolean(value.ended); writeString(value.boundary.wire); writeInt(value.perfectReleases); writeNullableString(value.assignment?.token())
+        writeInt(value.pitches); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.expectedDamage); writeInt(value.actualDamage); writeInt(value.recommendationAccepted); writeInt(value.outs); writeInt(value.hits); writeInt(value.homeRuns); writeStrings(value.abilityMoments); writeInt(value.sequenceMasteryCount); writeList(value.sequencePitches) { writeSequence(it) }; writeBoolean(value.ended); writeString(value.boundary.wire); writeInt(value.perfectReleases); writeNullableString(value.assignment?.token()); writeNullableString(value.runLedger?.token())
     }
     private fun DataInputStream.readPitchSession(version: Int): ProPitchSession {
         val sessionId = readString(); val week = readInt(); val seed = readString(); val pitchIndex = readInt(); val token = readString(); val context = readContext(); val memory = readMemory(); val game = readGame(); val log = readLog(); val batter = readBatter(); val scouting = readScouting()
         val pitches = readInt(); val strikeouts = readInt(); val walks = readInt(); val runsAllowed = readInt(); val expected = readInt(); val actual = readInt(); val accepted = readInt(); val outs = readInt(); val hits = readInt(); val homeRuns = readInt(); val moments = readStrings(); val mastery = readInt(); val sequence = readList { readSequence() }; val ended = readBoolean(); val boundary = boundary(readString()); val perfectReleases = if (version >= 4) readInt() else 0
         val assignment = if (version >= 5) readNullableString()?.let(com.solkim.baseball.core.pitch.OutingAssignment::decode) else null
-        return ProPitchSession(sessionId, week, seed, pitchIndex, token, context, memory, game, log, batter, scouting, pitches, strikeouts, walks, runsAllowed, expected, actual, accepted, outs, hits, homeRuns, moments, mastery, sequence, ended, boundary, perfectReleases, assignment)
+        return ProPitchSession(sessionId, week, seed, pitchIndex, token, context, memory, game, log, batter, scouting, pitches, strikeouts, walks, runsAllowed, expected, actual, accepted, outs, hits, homeRuns, moments, mastery, sequence, ended, boundary, perfectReleases, assignment, if (version >= 6) readNullableString()?.let(com.solkim.baseball.core.pitch.PitchRunLedger::decode) else null)
     }
     private fun DataOutputStream.writeContext(value: PlateAppearanceContext) { writeString(value.plateAppearanceId); writeULong(value.revision); writeInt(value.inning); writeInt(value.outs); writeInt(value.balls); writeInt(value.strikes); writeInt(value.pitchNumber); writeInt(value.scoreDifferential); writeInt(value.leverage); writeInt(value.fatigue) }
     private fun DataInputStream.readContext(): PlateAppearanceContext = PlateAppearanceContext(readString(), readULong(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt())

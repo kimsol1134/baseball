@@ -12,19 +12,15 @@ import kotlin.math.max
 /** Frozen fictional pro catalog copied from the current Swift/C# source set. */
 public object ProCatalog {
     /** Pro schedule, fatigue, and overload-injury rules currently used by new careers. */
-    public const val RULES_VERSION: Int = 11
+    public const val RULES_VERSION: Int = 12
     public const val BALANCE_VERSION: Int = 4
     public const val MAXIMUM_CAREER_SEASONS: Int = 20
     public const val WEEKS_PER_SEASON: Int = 24
 
-    public fun expectedRemainingOutings(week: Int, injuryWeeks: Int, role: ProRole): Int {
-        val remainingWeeks = max(0, WEEKS_PER_SEASON - week - max(0, injuryWeeks))
-        val perWeek = when (role) {
-            ProRole.STARTER -> 1
-            ProRole.LONG_RELIEF -> 2
-            ProRole.SETUP, ProRole.CLOSER -> 3
+    public fun expectedRemainingOutings(week: Int, injuryWeeks: Int, role: ProRole, rulesVersion: Int = RULES_VERSION): Int {
+        return ((week + max(0, injuryWeeks) + 1)..WEEKS_PER_SEASON).sumOf {
+            weeklyOutingBudget(role, it, rulesVersion).first
         }
-        return remainingWeeks * perWeek
     }
     public const val DEMOTION_TRUST: Int = 34
     /** "320000000" → "3억 2,000만원". Player-facing money in news and cards. */

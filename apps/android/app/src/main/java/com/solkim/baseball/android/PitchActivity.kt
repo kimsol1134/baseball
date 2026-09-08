@@ -1500,6 +1500,7 @@ private fun plateAppearanceEnds(outcome: PitchOutcome?, balls: Int, strikes: Int
     PitchOutcome.SWINGING_STRIKE, PitchOutcome.CALLED_STRIKE -> strikes >= 2
     PitchOutcome.BALL -> balls >= 3
     PitchOutcome.HIT_BY_PITCH,
+    PitchOutcome.REACHED_ON_ERROR,
     PitchOutcome.IN_PLAY_OUT,
     PitchOutcome.SINGLE,
     PitchOutcome.DOUBLE,
@@ -1531,6 +1532,7 @@ private fun perfectCatcherLine(outcome: PitchOutcome?): String = when (outcome) 
     PitchOutcome.SWINGING_STRIKE, PitchOutcome.CALLED_STRIKE -> "포수: 미트가 울렸다. 그 공이다."
     PitchOutcome.BALL -> "포수: 손끝은 완벽했다. 코스만 다시."
     PitchOutcome.FOUL -> "포수: 릴리스는 완벽했다. 한 번 더."
+    PitchOutcome.REACHED_ON_ERROR -> "포수: 잘 던졌어. 다음 타자에 집중하자."
     PitchOutcome.IN_PLAY_OUT -> "포수: 완벽한 공. 야수가 마무리했다."
     PitchOutcome.HIT_BY_PITCH, PitchOutcome.SINGLE, PitchOutcome.DOUBLE, PitchOutcome.TRIPLE, PitchOutcome.HOME_RUN -> "포수: 릴리스는 완벽했다. 맞은 건 상대 몫."
     null -> "포수: 그 감각을 기억해."
@@ -1555,6 +1557,7 @@ private fun resultCommentary(outcome: PitchOutcome?): String = when (outcome) {
     PitchOutcome.FOUL -> "빗맞았다. 다시"
     PitchOutcome.HIT_BY_PITCH -> "몸에 맞았다"
     PitchOutcome.IN_PLAY_OUT -> "야수 정면. 잡았다"
+    PitchOutcome.REACHED_ON_ERROR -> "야수가 놓쳤다 · 실책 출루"
     PitchOutcome.SINGLE -> "빈틈을 뚫렸다"
     PitchOutcome.DOUBLE -> "장타. 주자가 뛴다"
     PitchOutcome.TRIPLE -> "외야 깊숙이. 3루까지"

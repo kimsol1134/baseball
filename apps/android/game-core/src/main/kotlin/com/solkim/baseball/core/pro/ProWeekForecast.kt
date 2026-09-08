@@ -4,10 +4,10 @@ public data class ProWeekForecast(val outings: Int, val fatigueMinimum: Int, val
     val progress: Int, val required: Int, val growthActive: Boolean)
 
 /** Shared by execution and preview. Preview has no RNG and cannot expose future game outcomes. */
-internal fun weeklyOutingBudget(role: ProRole): Triple<Int, Int, Int> = when (role) {
-    ProRole.STARTER -> Triple(1, 18, 96)
+internal fun weeklyOutingBudget(role: ProRole, week: Int = 0, rulesVersion: Int = 11): Triple<Int, Int, Int> = when (role) {
+    ProRole.STARTER -> Triple(if (rulesVersion >= 12 && week > 0 && week % 6 == 0) 2 else 1, 18, 96)
     ProRole.LONG_RELIEF -> Triple(2, 6, 42)
-    ProRole.SETUP, ProRole.CLOSER -> Triple(3, 3, 24)
+    ProRole.SETUP, ProRole.CLOSER -> Triple(if (rulesVersion >= 12 && week % 2 == 0) 2 else 3, 3, 24)
 }
 internal fun weeklyTrainingLoad(plan: ProWeekPlan): Int = when (plan) {
     ProWeekPlan.DEVELOP_STUFF -> 10; ProWeekPlan.DEVELOP_MOVEMENT -> 8; ProWeekPlan.DEVELOP_WEAPON -> 9
@@ -15,7 +15,7 @@ internal fun weeklyTrainingLoad(plan: ProWeekPlan): Int = when (plan) {
 }
 public fun proWeekForecast(state: ProState, plan: ProWeekPlan): ProWeekForecast {
     val modifiers = state.activeDecisionModifiers.orEmpty().filter { it.expiresWeek >= state.week + 1 }
-    val budget = weeklyOutingBudget(state.role)
+    val budget = weeklyOutingBudget(state.role, state.week + 1, state.proRulesVersion)
     val recovering = state.injuryWeeks > 0
     val outings = if (recovering || modifiers.any { it.suppressOutings }) 0 else budget.first + modifiers.sumOf { (it.extraOutingChance - (it.extraOutingsGranted ?: 0)).coerceAtLeast(0) }
     val base = if (recovering) -20 else weeklyTrainingLoad(plan) - ((state.pitcher.stamina - 50) / 15).coerceAtLeast(0)

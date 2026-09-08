@@ -9,7 +9,7 @@ class RulesVersionMigrationTest {
         val legacy = reference.start(HighSchoolKernel.StartRequest("918220", "power_prospect"))
         val bytes = HighSchoolStateCodec.encode(legacy.snapshot)
         val next = HighSchoolKernel().completePrologue(HighSchoolKernel.AdvanceRequest(legacy.nextSeed, legacy.snapshot)).snapshot
-        assertEquals(5, next.balanceVersion)
+        assertEquals(HighSchoolGameplayRules.CURRENT, next.balanceVersion)
         assertEquals(legacy.snapshot.pitcher, next.pitcher)
         assertEquals(legacy.snapshot.careerId, next.careerId)
         assertEquals(legacy.snapshot.schedule, next.schedule)
@@ -24,7 +24,7 @@ class RulesVersionMigrationTest {
         val replay = reference.planWeek(old, "99881", ProWeekPlan.DEVELOP_STUFF).state
         assertEquals(10, replay.proRulesVersion)
         val next = ProKernel().planWeek(old, "99881", ProWeekPlan.DEVELOP_STUFF).state
-        assertEquals(11, next.proRulesVersion)
+        assertEquals(ProCatalog.RULES_VERSION, next.proRulesVersion)
         assertEquals(old.identityName, next.identityName); assertEquals(old.careerId, next.careerId); assertEquals(old.team, next.team)
         assertContentEquals(bytes, ProStateCodec.encode(old))
         assertEquals(next, ProStateCodec.decode(ProStateCodec.encode(next)))

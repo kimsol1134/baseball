@@ -29,6 +29,7 @@ import kotlin.math.max
 internal class ProAutomaticOutingSimulator(
     private val pitch: PitchKernel = PitchKernel(),
     private val modernPitching: Boolean = true,
+    private val professionalBalance: Boolean = false,
 ) {
     internal data class Line(
         val outs: Int,
@@ -40,6 +41,7 @@ internal class ProAutomaticOutingSimulator(
         val homeRuns: Int,
         val doubles: Int = 0,
         val triples: Int = 0,
+        val earnedRuns: Int? = null,
     )
 
     /**
@@ -57,6 +59,7 @@ internal class ProAutomaticOutingSimulator(
         batterOffset: Int = 0,
         callPolicy: AutoCallPolicy = AutoCallPolicy.PERFECT,
         diverseScouting: Boolean = false,
+        delivery: com.solkim.baseball.core.pitch.PitchDelivery? = null,
     ): Line {
         val rng = SplitMix64(baseSeed)
         val fielders = listOf(
@@ -78,6 +81,9 @@ internal class ProAutomaticOutingSimulator(
         var homeRuns = 0
         var doubles = 0
         var triples = 0
+        var scoring = com.solkim.baseball.core.pitch.PitchRunLedger()
+        var lastGame: GameStateSnapshot? = null
+        var lastSeed = baseSeed.toString()
         var plateAppearanceIndex = 0
         val extensionOuts = if (outsTarget >= 18) starterExtensionOuts(pitcher) else 0
         val effectiveOutsTarget = outsTarget + extensionOuts
@@ -85,7 +91,7 @@ internal class ProAutomaticOutingSimulator(
 
         while (outsTotal < effectiveOutsTarget && pitches < effectivePitchCap && plateAppearanceIndex < 60) {
             plateAppearanceIndex += 1
-            val batter = BatterSnapshot(
+            val legacyBatter = BatterSnapshot(
                 id = "week-batter-$plateAppearanceIndex",
                 name = "상대 타선",
                 contact = (50 + batterOffset + rng.nextInt(9) - 4).coerceIn(20, 80),
@@ -93,6 +99,7 @@ internal class ProAutomaticOutingSimulator(
                 power = (50 + batterOffset + rng.nextInt(9) - 4).coerceIn(20, 80),
                 batSide = if (rng.nextInt(100) < 32) BatSide.LEFT else BatSide.RIGHT,
             )
+            val batter = if (professionalBalance) ProfessionalLineup.batter("lineup-$baseSeed", plateAppearanceIndex, batterOffset) else legacyBatter
             val hotZone = com.solkim.baseball.core.pitch.PitchZone(rng.nextInt(3), rng.nextInt(3))
             val mirrored = com.solkim.baseball.core.pitch.PitchZone(2 - hotZone.row, 2 - hotZone.column)
             val weaknessDraw = rng.nextInt(2)
@@ -165,12 +172,15 @@ internal class ProAutomaticOutingSimulator(
                         seedText, pitcher, batter, scouting, context,
                         preparation.preparationToken, call,
                         memory, game, carriedLog,
-                    ),
+                    ), delivery,
                 )
                 val snapshot = result.snapshot
+                if (professionalBalance) scoring = scoring.advance(snapshot)
+                lastGame = result.gameState
+                lastSeed = result.nextSeed
                 pitches += 1
                 if (snapshot.result == PlateAppearanceResult.STRIKEOUT) strikeouts += 1
-                if (snapshot.result == PlateAppearanceResult.WALK) walks += 1
+                if (snapshot.result == PlateAppearanceResult.WALK && (!professionalBalance || snapshot.outcome != PitchOutcome.HIT_BY_PITCH)) walks += 1
                 if (snapshot.result == PlateAppearanceResult.HIT) {
                     hits += 1
                     when (snapshot.outcome) {
@@ -206,7 +216,11 @@ internal class ProAutomaticOutingSimulator(
                 preparation = if (modernPitching) result.nextPreparation ?: break else pitch.prepareLegacy(PitchKernel.PrepareRequest(seedText, pitcher, batter, scouting, context, memory, game, carriedLog))
             }
         }
-        return Line(outsTotal, strikeouts, walks, runsAllowed, pitches, hits, homeRuns, doubles, triples)
+        if (professionalBalance && lastGame != null) {
+            scoring = settleReliefRuns(pitch, lastGame!!, scoring, lastSeed)
+            runsAllowed = scoring.runs
+        }
+        return Line(outsTotal, strikeouts, walks, runsAllowed, pitches, hits, homeRuns, doubles, triples, if (professionalBalance) scoring.earnedRuns else null)
     }
 
     private fun prepare(request: PitchKernel.PrepareRequest): com.solkim.baseball.core.pitch.PitchPreparation =

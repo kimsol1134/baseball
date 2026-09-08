@@ -260,7 +260,7 @@ public data class HighSchoolResult(
     val eventHash: String,
 )
 
-public object HighSchoolGameplayRules { public const val CURRENT: Int = 5; public const val SWIFT_REFERENCE: Int = 4 }
+public object HighSchoolGameplayRules { public const val CURRENT: Int = 6; public const val SWIFT_REFERENCE: Int = 4 }
 
 public class HighSchoolKernel(private val balanceRulesVersion: Int = HighSchoolGameplayRules.CURRENT) {
     init { require(balanceRulesVersion in HighSchoolGameplayRules.SWIFT_REFERENCE..HighSchoolGameplayRules.CURRENT) }
@@ -528,7 +528,7 @@ public class HighSchoolKernel(private val balanceRulesVersion: Int = HighSchoolG
         val focus = if (rehab) HighSchoolTrainingFocus.RECOVERY else requestedFocus
         val wind = windFor(state.careerId)
         if (rehab) return clamp(state.fatigue + wind.trainingFatigueModifier(focus) - wind.recoveryBonus - 24, 0, 100)
-        val base = when (intensity) { HighSchoolTrainingIntensity.LIGHT -> 3; HighSchoolTrainingIntensity.STANDARD -> 8; HighSchoolTrainingIntensity.INTENSIVE -> 15 }
+        val base = when (intensity) { HighSchoolTrainingIntensity.LIGHT -> 3; HighSchoolTrainingIntensity.STANDARD -> 8; HighSchoolTrainingIntensity.INTENSIVE -> if (balanceRulesVersion >= 6) 11 else 15 }
         return clamp(state.fatigue + base + (if (HighSchoolContentCatalog.BALANCE_VERSION >= 4) trainingFatigueModifier(focus) else 0) +
             wind.trainingFatigueModifier(focus) + (if (focus == HighSchoolTrainingFocus.RECOVERY) -wind.recoveryBonus - 18 else 0), 0, 100)
     }

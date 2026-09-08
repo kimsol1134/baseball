@@ -851,6 +851,7 @@ internal fun outcomeTone(outcome: PitchOutcome?): Color = when (outcome) {
     PitchOutcome.IN_PLAY_OUT -> BaseballColors.action
 
     PitchOutcome.BALL,
+    PitchOutcome.REACHED_ON_ERROR,
     PitchOutcome.FOUL,
     PitchOutcome.HIT_BY_PITCH -> BaseballColors.warning
 
@@ -875,6 +876,7 @@ internal fun localizedVerdict(outcome: PitchOutcome, battedBall: BattedBall?): S
             else -> "뜬공 아웃"
         }
     }
+    PitchOutcome.REACHED_ON_ERROR -> "실책 출루"
     PitchOutcome.SINGLE -> "안타"
     PitchOutcome.DOUBLE -> "2루타"
     PitchOutcome.TRIPLE -> "3루타"

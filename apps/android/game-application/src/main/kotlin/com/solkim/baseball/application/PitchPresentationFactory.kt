@@ -112,7 +112,7 @@ public object PitchPresentationFactory {
 
     private fun PitchOutcome.impactKind(): ImpactKind = when (this) {
         PitchOutcome.BALL, PitchOutcome.CALLED_STRIKE, PitchOutcome.SWINGING_STRIKE -> ImpactKind.MISS
-        PitchOutcome.FOUL, PitchOutcome.IN_PLAY_OUT, PitchOutcome.SINGLE,
+        PitchOutcome.FOUL, PitchOutcome.IN_PLAY_OUT, PitchOutcome.SINGLE, PitchOutcome.REACHED_ON_ERROR,
         PitchOutcome.DOUBLE, PitchOutcome.TRIPLE, PitchOutcome.HOME_RUN -> ImpactKind.PLATE
         PitchOutcome.HIT_BY_PITCH -> ImpactKind.GLOVE
     }

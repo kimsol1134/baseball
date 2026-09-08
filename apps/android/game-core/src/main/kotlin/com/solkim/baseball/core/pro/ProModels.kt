@@ -268,6 +268,7 @@ public data class ProSeasonStats(
     val saves: Int = 0,
     val postseasonGames: List<ProPostseasonGameLine>? = null,
     val perfectReleases: Int = 0,
+    val earnedRuns: Int? = null,
 ) {
     public val runPerNinePermille: Int
         get() = if (inningsOuts == 0) 9_990 else runsAllowed * 27_000 / inningsOuts
@@ -297,6 +298,7 @@ public data class ProGameLine(
     val hits: Int = 0,
     val homeRuns: Int = 0,
     val perfectReleases: Int = 0,
+    val earnedRuns: Int? = null,
 )
 
 public data class ProRivalBatter(
@@ -392,6 +394,7 @@ public data class ProPitchSession(
     val boundary: ProPitchBoundary = ProPitchBoundary.PLAYING,
     val perfectReleases: Int = 0,
     val assignment: com.solkim.baseball.core.pitch.OutingAssignment? = null,
+    val runLedger: com.solkim.baseball.core.pitch.PitchRunLedger? = null,
 )
 
 public data class ProStartLinkedRequest(

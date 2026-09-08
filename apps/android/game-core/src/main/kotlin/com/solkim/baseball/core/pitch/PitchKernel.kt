@@ -49,6 +49,7 @@ public enum class PitchOutcome(public val wire: String) {
     FOUL("foul"),
     IN_PLAY_OUT("in_play_out"),
     SINGLE("single"),
+    REACHED_ON_ERROR("reached_on_error"),
     DOUBLE("double"),
     TRIPLE("triple"),
     HOME_RUN("home_run"),
@@ -67,6 +68,7 @@ public enum class PlateAppearanceResult(public val wire: String) {
     WALK("walk"),
     IN_PLAY_OUT("in_play_out"),
     HIT("hit"),
+    REACHED_ON_ERROR("reached_on_error"),
 }
 
 public enum class PitchAbilityKind(public val wire: String) {
@@ -900,7 +902,7 @@ private class RivalMemoryEngine {
 
     private fun observationWeight(observation: RivalPitchObservation): Int = when (observation.outcome) {
         PitchOutcome.SINGLE, PitchOutcome.DOUBLE, PitchOutcome.TRIPLE, PitchOutcome.HOME_RUN -> 6
-        PitchOutcome.FOUL, PitchOutcome.IN_PLAY_OUT -> 4
+        PitchOutcome.FOUL, PitchOutcome.IN_PLAY_OUT, PitchOutcome.REACHED_ON_ERROR -> 4
         PitchOutcome.BALL, PitchOutcome.CALLED_STRIKE, PitchOutcome.HIT_BY_PITCH -> 2
         PitchOutcome.SWINGING_STRIKE -> 1
     }
@@ -1134,7 +1136,7 @@ private class CatcherRecommendationEngine {
     }
 }
 
-public class PitchKernel(private val legacyRecommendations: Boolean = false) {
+public class PitchKernel(private val legacyRecommendations: Boolean = false, private val professionalBalance: Boolean = false) {
     private val recommendationEngine = CatcherRecommendationEngine()
     private val rivalMemoryEngine = RivalMemoryEngine()
 
@@ -1646,7 +1648,7 @@ public class PitchKernel(private val legacyRecommendations: Boolean = false) {
             parameters.pitcher.effectiveMastery.stamina,
         )
         val effective = clamp(command * 10 - fatiguePressure * 2 - effect.commandPenalty, 100, 900)
-        val spread = clamp(520 - effective / 2, 70, 470)
+        val spread = if (professionalBalance) clamp(750 - effective / 3, 450, 700) else clamp(520 - effective / 2, 70, 470)
         var offsetX = generator.nextInt(spread * 2 + 1) - spread
         var offsetY = generator.nextInt(spread * 2 + 1) - spread
         val wildChance = clamp(
@@ -1794,21 +1796,24 @@ public class PitchKernel(private val legacyRecommendations: Boolean = false) {
         val fastball = parameters.call.pitchType == PitchKind.FOUR_SEAM
         val heightMatch = if (fastball && landed.row == 0) 55 else if (fastball && landed.row == 2) -30 else if (!fastball && landed.row == 2) 50 else if (!fastball && landed.row == 0) -55 else 0
         val platoon = platoonContactBonus(parameters.pitcher.throwingHand, parameters.batter.batSide, parameters.call.pitchType)
+        // A single saturating edge prevents correlated ratings from multiplying whiffs.
+        val rawEdge = difficulty + velocityEdge + speedGap + heightMatch
+        val contactEdge = if (professionalBalance) 30 + ((rawEdge - 30) * 145 / (145 + abs(rawEdge - 30))) else rawEdge
         val contactChance = clamp(
-            790 + (parameters.batter.contact - 50) * 6 + (if (pitchMatched) 90 else -70) + (if (zoneMatched) 50 else -35) +
+            (if (professionalBalance) 865 else 790) + (parameters.batter.contact - 50) * 6 + (if (pitchMatched) 90 else -70) + (if (zoneMatched) 50 else -35) +
                 (if (pitchMatched) capped / 5 else 0) + plan.bias.contact + platoon + scoutingContact -
-                (difficulty + velocityEdge + speedGap + heightMatch),
+                contactEdge,
             120,
             940,
         )
         if (generator.nextInt(1000) >= contactChance) return Resolution(PitchOutcome.SWINGING_STRIKE, null)
-        val foulChance = clamp(470 + (effectiveProfileMovement - parameters.batter.contact) * 3 + plan.bias.foul, 260, 620)
+        val foulChance = clamp((if (professionalBalance) 350 else 470) + (effectiveProfileMovement - parameters.batter.contact) * 3 + plan.bias.foul, 260, 620)
         if (generator.nextInt(1000) < foulChance) return Resolution(PitchOutcome.FOUL, null)
         val contactQuality = clamp(
-            429 + (parameters.batter.power - 50) * 3 + (parameters.batter.contact - 50) * 2 + (if (pitchMatched) 90 else -70) +
+            (if (professionalBalance) 450 else 429) + (parameters.batter.power - 50) * 3 + (parameters.batter.contact - 50) * 2 + (if (pitchMatched) 90 else -70) +
                 (if (zoneMatched) 45 else -35) + (if (pitchMatched) capped / 8 else 0) -
-                (effectiveWeakContact - 50) * 2 - (effectiveMovement - 50) -
-                (effectiveProfileMovement - 50) - powerSpecialization / 2 -
+                (if (professionalBalance) (effectiveWeakContact - 50) / 2 else (effectiveWeakContact - 50) * 2) - (if (professionalBalance) (effectiveMovement - 50) / 3 else effectiveMovement - 50) -
+                (if (professionalBalance) (effectiveProfileMovement - 50) / 3 else effectiveProfileMovement - 50) - powerSpecialization / (if (professionalBalance) 5 else 2) -
                 max(0, execution.executionQuality - 500) / 5 + scoutingQuality -
                 max(0, execution.velocityTenthsKph - 1400) / 5 - heightMatch / 2 + generator.nextInt(301) - 150,
             0,
@@ -1817,7 +1822,10 @@ public class PitchKernel(private val legacyRecommendations: Boolean = false) {
         val pull = pullShift(parameters.batter.batSide, landed.column)
         val exitVelocity = clamp(1000 + contactQuality * 3 / 4 + (parameters.batter.power - 50) * 6 + generator.nextInt(181) - 90, 700, 1900)
         val launchAngle = clamp(-100 + generator.nextInt(521) + (contactQuality - 450) / 8 + (1 - landed.row) * 55, -150, 520)
-        val quality = battedQuality(exitVelocity, launchAngle)
+        val quality = if (professionalBalance && exitVelocity < 1545) {
+            val fit = if (launchAngle < 90) 30 + max(0, launchAngle + 150) / 5 else max(0, 240 - abs(launchAngle - 170) * 7 / 10 - if (launchAngle > 340) launchAngle - 340 else 0)
+            (exitVelocity * 7 / 10 + fit - 600).coerceIn(0, 758)
+        } else battedQuality(exitVelocity, launchAngle)
         return Resolution(
             BattedBallBands.outcome(quality),
             BattedBall(exitVelocity, launchAngle, -450 + max(0, pull) + generator.nextInt(901 - abs(pull)), quality),
@@ -1851,6 +1859,7 @@ public class PitchKernel(private val legacyRecommendations: Boolean = false) {
         PitchOutcome.FOUL -> CountAdvance(context.balls, min(2, context.strikes + 1), null)
         PitchOutcome.IN_PLAY_OUT -> CountAdvance(context.balls, context.strikes, PlateAppearanceResult.IN_PLAY_OUT)
         PitchOutcome.SINGLE, PitchOutcome.DOUBLE, PitchOutcome.TRIPLE, PitchOutcome.HOME_RUN -> CountAdvance(context.balls, context.strikes, PlateAppearanceResult.HIT)
+        PitchOutcome.REACHED_ON_ERROR -> CountAdvance(context.balls, context.strikes, PlateAppearanceResult.REACHED_ON_ERROR)
         PitchOutcome.HIT_BY_PITCH -> CountAdvance(context.balls, context.strikes, PlateAppearanceResult.WALK)
     }
 
@@ -1922,6 +1931,11 @@ public class PitchKernel(private val legacyRecommendations: Boolean = false) {
         if (sector == FieldingSector.INFIELD && (final == PitchOutcome.DOUBLE || final == PitchOutcome.HOME_RUN)) final = PitchOutcome.SINGLE
         else if (sector == FieldingSector.OUTFIELD && final == PitchOutcome.HOME_RUN) final = PitchOutcome.DOUBLE
         if (final == PitchOutcome.DOUBLE && sector != FieldingSector.INFIELD && isTripleShape(ball) && generator.nextInt(1000) < 245) final = PitchOutcome.TRIPLE
+        // Model a routine grounder mishandled with first base open. Existing runners hold,
+        // so earned-run reconstruction never needs speculative advancement on this error.
+        if (professionalBalance && final == PitchOutcome.IN_PLAY_OUT && sector == FieldingSector.INFIELD &&
+            ball.launchAngleTenthsDegrees < 90 && !gameState.runners.firstOccupied &&
+            generator.nextInt(1000) < (110 - defenseRating).coerceIn(20, 90)) final = PitchOutcome.REACHED_ON_ERROR
         val impact = when {
             outcomeValue(final) < outcomeValue(neutral) -> DefenseImpact.HELPED_PITCHER
             outcomeValue(final) > outcomeValue(neutral) -> DefenseImpact.HURT_PITCHER
@@ -2007,7 +2021,7 @@ public class PitchKernel(private val legacyRecommendations: Boolean = false) {
     private fun isTripleShape(ball: BattedBall): Boolean = abs(ball.directionTenthsDegrees) >= 250 && ball.launchAngleTenthsDegrees in 120..280
 
     private fun outcomeValue(outcome: PitchOutcome): Int = when (outcome) {
-        PitchOutcome.SINGLE -> 1
+        PitchOutcome.SINGLE, PitchOutcome.REACHED_ON_ERROR -> 1
         PitchOutcome.DOUBLE -> 2
         PitchOutcome.TRIPLE -> 3
         PitchOutcome.HOME_RUN -> 4
@@ -2064,6 +2078,8 @@ public class PitchKernel(private val legacyRecommendations: Boolean = false) {
             } else if (doublePlayCompleted) {
                 after = BaserunnerStateSnapshot(false, runners.secondOccupied, runners.thirdOccupied, runners.leadRunnerSpeed)
             }
+        } else if (result == PlateAppearanceResult.REACHED_ON_ERROR) {
+            after = runners.copy(firstOccupied = true)
         } else if (result == PlateAppearanceResult.WALK) {
             runs = if (runners.firstOccupied && runners.secondOccupied && runners.thirdOccupied) 1 else 0
             after = BaserunnerStateSnapshot(true, runners.secondOccupied || runners.firstOccupied, runners.thirdOccupied || (runners.firstOccupied && runners.secondOccupied), runners.leadRunnerSpeed)

@@ -46,6 +46,7 @@ public object PitchDramaCamera {
 
     public val FAIR_BALL_OUTCOMES: Set<PitchOutcome> = setOf(
         PitchOutcome.IN_PLAY_OUT,
+        PitchOutcome.REACHED_ON_ERROR,
         PitchOutcome.SINGLE,
         PitchOutcome.DOUBLE,
         PitchOutcome.TRIPLE,
@@ -55,6 +56,7 @@ public object PitchDramaCamera {
     public val BATTED_OUTCOMES: Set<PitchOutcome> = setOf(
         PitchOutcome.FOUL,
         PitchOutcome.IN_PLAY_OUT,
+        PitchOutcome.REACHED_ON_ERROR,
         PitchOutcome.SINGLE,
         PitchOutcome.DOUBLE,
         PitchOutcome.TRIPLE,

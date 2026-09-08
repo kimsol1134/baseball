@@ -18,7 +18,7 @@ public object ProWire {
     public const val STATE_SCHEMA: String = "baseball-pro-state-v1"
     public const val COMMAND_SCHEMA: String = "baseball-pro-command-v1"
     /** Command envelopes and state payloads evolve independently. */
-    public const val STATE_SCHEMA_VERSION: Int = 5
+    public const val STATE_SCHEMA_VERSION: Int = 6
     public const val SCHEMA_VERSION: Int = 1
     public const val MAX_COMMAND_ID_LENGTH: Int = 128
 }

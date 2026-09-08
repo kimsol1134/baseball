@@ -47,7 +47,7 @@ public class ProKernel(
     pitch: PitchKernel? = null,
     private val gameplayRulesVersion: Int = CURRENT_RULES_VERSION,
 ) {
-    private val pitch = pitch ?: PitchKernel(legacyRecommendations = gameplayRulesVersion < 11)
+    private val pitch = pitch ?: PitchKernel(legacyRecommendations = gameplayRulesVersion < 11, professionalBalance = gameplayRulesVersion >= 12)
     init { require(gameplayRulesVersion in 1..CURRENT_RULES_VERSION) }
     public companion object {
         public const val CURRENT_RULES_VERSION: Int = ProCatalog.RULES_VERSION
@@ -124,6 +124,7 @@ public class ProKernel(
         }
 
         public fun liveBatterOffset(state: ProState, week: Int? = null): Int {
+            if (state.proRulesVersion >= 12) return if (state.level == ProLevel.MAJOR) 0 else -7
             val skill = (state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina) / 4
             if (usesCareerArcRules(state)) {
                 val climate = liveClimate(state, week) ?: return DifficultyScale.pro(state.season)
@@ -157,6 +158,13 @@ public class ProKernel(
                     command = (pitcher.command - secondaryDecline).coerceIn(20, 80),
                     movement = (pitcher.movement - primaryDecline).coerceIn(20, 80),
                     stamina = (pitcher.stamina - secondaryDecline).coerceIn(20, 80),
+                    pitchProfiles = if (proRulesVersion >= 12) pitcher.pitchProfiles?.map { profile -> profile.copy(
+                        velocityTenthsKph = (profile.velocityTenthsKph - primaryDecline * 3).coerceAtLeast(1000),
+                        whiff = (profile.whiff - primaryDecline).coerceAtLeast(20),
+                        movement = (profile.movement - primaryDecline).coerceAtLeast(20),
+                        weakContact = (profile.weakContact - primaryDecline).coerceAtLeast(20),
+                        control = (profile.control - secondaryDecline).coerceAtLeast(20),
+                        command = (profile.command - secondaryDecline).coerceAtLeast(20)) } else pitcher.pitchProfiles,
                 )
             }
             val decline = when {
@@ -172,7 +180,7 @@ public class ProKernel(
         }
     }
 
-    private val automaticOuting = ProAutomaticOutingSimulator(this.pitch, modernPitching = gameplayRulesVersion >= 11)
+    private val automaticOuting = ProAutomaticOutingSimulator(this.pitch, modernPitching = gameplayRulesVersion >= 11, professionalBalance = gameplayRulesVersion >= 12)
 
     public fun startLinked(request: ProStartLinkedRequest): ProResult {
         val seed = seed(request.seed)
@@ -319,7 +327,7 @@ public class ProKernel(
         require(nextWeek <= ProCatalog.WEEKS_PER_SEASON) { "pro.week_limit" }
         val recovering = state.injuryWeeks > 0
         val skill = (state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina) / 4
-        val roles = weeklyOutingBudget(state.role)
+        val roles = weeklyOutingBudget(state.role, nextWeek, gameplayRulesVersion)
         var activeModifiers = state.activeDecisionModifiers.orEmpty().filter { it.expiresWeek >= nextWeek }
         var outings = roles.first
         if (activeModifiers.any { it.suppressOutings }) outings = 0
@@ -386,6 +394,7 @@ public class ProKernel(
                     played = false,
                     hits = line.hits,
                     homeRuns = line.homeRuns,
+                    earnedRuns = line.earnedRuns,
                 )
             }
         }
@@ -442,6 +451,8 @@ public class ProKernel(
             strikeouts = state.currentStats.strikeouts + strikeouts,
             walks = state.currentStats.walks + walks,
             runsAllowed = state.currentStats.runsAllowed + runsAllowed,
+            earnedRuns = if (gameplayRulesVersion >= 12 && (state.currentStats.earnedRuns != null || state.currentStats.games == 0))
+                lines.takeIf { it.all { line -> line.earnedRuns != null } }?.sumOf { it.earnedRuns ?: 0 }?.plus(state.currentStats.earnedRuns ?: 0) else null,
             hits = state.currentStats.hits + hits,
             homeRuns = state.currentStats.homeRuns + homeRuns,
             pitches = state.currentStats.pitches + pitches,
@@ -735,7 +746,7 @@ public class ProKernel(
         }
         val seed = seed(seedText)
         val rival = availabilityState.currentRival ?: ProCatalog.rivalFor(availabilityState.team.id, availabilityState.season, availabilityState.week, availabilityState.seasonTrigger ?: ProSeasonTrigger.STANDINGS_RACE)
-        val batter = BatterSnapshot(
+        val batter = if (gameplayRulesVersion >= 12) ProfessionalLineup.batter(rival.teamId, 1, liveBatterOffset(availabilityState)) else BatterSnapshot(
             id = rival.id,
             name = rival.name,
             contact = 48 + (proHash(rival.id) % 13UL).toInt(),
@@ -787,6 +798,7 @@ public class ProKernel(
         val log = GameLogSnapshot("${availabilityState.careerId}:important:${availabilityState.importantGames}", 0UL, 0, emptyList())
         val preparation = pitch.prepare(PitchKernel.PrepareRequest(seedText, PitchLearningRules.playable(availabilityState.pitcher, availabilityState.pitchLearningProject), batter, scouting, context, memory, game, log))
         val session = ProPitchSession(
+            runLedger = if (gameplayRulesVersion >= 12) com.solkim.baseball.core.pitch.PitchRunLedger.entry(game.runners, entryOuts) else null,
             sessionId = "${availabilityState.careerId}:important:${availabilityState.importantGames}" + if (legacyEntry) "" else ":outing-v2",
             week = availabilityState.week,
             seed = seedText,
@@ -863,12 +875,13 @@ public class ProKernel(
             val spot = (nextTurn - 1) % 9 + 1
             val rival = state.currentRival
             val baseId = rival?.id ?: session.batter.id.substringBefore(":lineup:")
-            session.batter.copy(id = "$baseId:lineup:$spot", name = "상대 ${spot}번 타자",
+            if (gameplayRulesVersion >= 12) ProfessionalLineup.batter(rival?.teamId ?: state.team.id, nextTurn, liveBatterOffset(state)) else session.batter.copy(id = "$baseId:lineup:$spot", name = "상대 ${spot}번 타자",
                 contact = 48 + (proHash("$baseId:$spot:contact") % 17UL).toInt(),
                 power = 45 + (proHash("$baseId:$spot:power") % 23UL).toInt(),
                 batSide = if (spot % 3 == 0) BatSide.LEFT else BatSide.RIGHT)
         } else session.batter
         var nextSession = session.copy(
+            runLedger = session.runLedger?.advance(snapshot),
             batter = nextBatter,
             seed = submitted.nextSeed,
             pitchIndex = session.pitchIndex + 1,
@@ -879,7 +892,7 @@ public class ProKernel(
             log = submitted.gameLog,
             pitches = session.pitches + 1,
             strikeouts = session.strikeouts + if (snapshot.result == PlateAppearanceResult.STRIKEOUT) 1 else 0,
-            walks = session.walks + if (snapshot.result == PlateAppearanceResult.WALK) 1 else 0,
+            walks = session.walks + if (snapshot.result == PlateAppearanceResult.WALK && (gameplayRulesVersion < 12 || snapshot.outcome != PitchOutcome.HIT_BY_PITCH)) 1 else 0,
             runsAllowed = session.runsAllowed + snapshot.runsScored,
             expectedDamage = session.expectedDamage + (entry?.expectedDamage ?: 0),
             actualDamage = session.actualDamage + (entry?.actualDamage ?: 0),
@@ -950,19 +963,23 @@ public class ProKernel(
         val directOuts = session.outs
         val scheduledOuts = scheduled?.outs ?: 0
         val complementOuts = max(0, scheduledOuts - directOuts)
+        val complement = if (gameplayRulesVersion >= 12 && complementOuts > 0) automaticOuting.simulate(
+            PitchLearningRules.playable(state.pitcher, state.pitchLearningProject), state.fatigue, complementOuts, complementOuts * 7 + 12,
+            seed(session.seed).value xor 0x434F4D50UL, liveBatterOffset(state), diverseScouting = true) else null
+        val settled = session.runLedger?.let { settleReliefRuns(pitch, session.game, it, session.seed) }
         fun retained(value: Int): Int =
             if (scheduledOuts > 0) (value * complementOuts + scheduledOuts / 2) / scheduledOuts else 0
-        val outs = if (scheduled == null) directOuts else complementOuts + directOuts
-        val strikeouts = retained(scheduled?.strikeouts ?: 0) + session.strikeouts
-        val walks = retained(scheduled?.walks ?: 0) + session.walks
-        val runsAllowed = retained(scheduled?.runsAllowed ?: 0) + session.runsAllowed
-        val pitches = retained(scheduled?.pitches ?: 0) + session.pitches
-        val hits = retained(scheduled?.hits ?: 0) + session.hits
-        val homeRuns = retained(scheduled?.homeRuns ?: 0) + session.homeRuns
+        val outs = if (gameplayRulesVersion >= 12) directOuts + (complement?.outs ?: 0) else if (scheduled == null) directOuts else complementOuts + directOuts
+        val strikeouts = (complement?.strikeouts ?: if (gameplayRulesVersion >= 12) 0 else retained(scheduled?.strikeouts ?: 0)) + session.strikeouts
+        val walks = (complement?.walks ?: if (gameplayRulesVersion >= 12) 0 else retained(scheduled?.walks ?: 0)) + session.walks
+        val runsAllowed = (complement?.runsAllowed ?: if (gameplayRulesVersion >= 12) 0 else retained(scheduled?.runsAllowed ?: 0)) + (settled?.runs ?: session.runsAllowed)
+        val pitches = (complement?.pitches ?: if (gameplayRulesVersion >= 12) 0 else retained(scheduled?.pitches ?: 0)) + session.pitches
+        val hits = (complement?.hits ?: if (gameplayRulesVersion >= 12) 0 else retained(scheduled?.hits ?: 0)) + session.hits
+        val homeRuns = (complement?.homeRuns ?: if (gameplayRulesVersion >= 12) 0 else retained(scheduled?.homeRuns ?: 0)) + session.homeRuns
         val opponentEarlier = rng.nextInt(4)
         val lateTeam = rng.nextInt(3)
         val lateBullpen = if (started) rng.nextInt(3) else 0
-        val opponentRuns = opponentEarlier + runsAllowed + lateBullpen
+        val opponentRuns = opponentEarlier + runsAllowed + (session.runLedger?.inheritedScored ?: 0) + lateBullpen
         val entryDifferential = session.context.scoreDifferential + if (session.sessionId.endsWith(":outing-v2")) session.runsAllowed else 0
         val teamRuns = max(0, opponentEarlier + entryDifferential + lateTeam)
         val decision = proDecision(started, state.role == ProRole.CLOSER, outs, runsAllowed, teamRuns, opponentRuns)
@@ -983,6 +1000,7 @@ public class ProKernel(
             hits = hits,
             homeRuns = homeRuns,
             perfectReleases = session.perfectReleases,
+            earnedRuns = settled?.let { (complement?.earnedRuns ?: 0) + it.earnedRuns },
         )
         val lines = state.currentGameLines.toMutableList()
         if (scheduledIndex >= 0) lines[scheduledIndex] = line else lines += line
@@ -994,6 +1012,7 @@ public class ProKernel(
             strikeouts = state.currentStats.strikeouts - (scheduled?.strikeouts ?: 0) + line.strikeouts,
             walks = state.currentStats.walks - (scheduled?.walks ?: 0) + line.walks,
             runsAllowed = state.currentStats.runsAllowed - (scheduled?.runsAllowed ?: 0) + line.runsAllowed,
+            earnedRuns = if (lines.all { it.earnedRuns != null }) lines.sumOf { it.earnedRuns ?: 0 } else null,
             hits = state.currentStats.hits - (scheduled?.hits ?: 0) + line.hits,
             homeRuns = state.currentStats.homeRuns - (scheduled?.homeRuns ?: 0) + line.homeRuns,
             pitches = state.currentStats.pitches - (scheduled?.pitches ?: 0) + line.pitches,
@@ -1988,7 +2007,7 @@ public class ProKernel(
             OffseasonDecision.RETIRE -> error("unreachable")
         }
         val season = state.season + 1
-        val pitcher = projectedPitcher(state.pitcher, age, CURRENT_RULES_VERSION, recoveryYear = state.journeyState?.recoveryYearPending == true)
+        val pitcher = projectedPitcher(state.pitcher, age, gameplayRulesVersion, recoveryYear = state.journeyState?.recoveryYearPending == true)
         val contract = if (state.journeyState != null && state.contract != null) state.contract else state.contract?.copy(
             annualSalary = max(state.contract.annualSalary, 40_000_000 + service * 50_000_000),
             rolePromise = state.role,
@@ -2205,12 +2224,15 @@ public class ProKernel(
 
     private fun requireStatsShape(value: ProSeasonStats, season: Int, teamId: String, code: String) {
         require(value.season == season && value.teamId == teamId) { "${code}_identity" }
+        require(value.earnedRuns == null || value.earnedRuns in 0..value.runsAllowed) { "pro.earned_runs" }
         require(value.games >= 0 && value.starts in 0..value.games && value.inningsOuts >= 0 && value.strikeouts >= 0 && value.walks >= 0 && value.runsAllowed >= 0 && value.hits >= 0 && value.homeRuns >= 0 && value.pitches >= 0 && value.wins >= 0 && value.losses >= 0 && value.saves >= 0) { "${code}_values" }
         require(value.wins + value.losses <= value.games) { "${code}_decisions" }
     }
 
     private fun requireCurrentStatsMatchLines(stats: ProSeasonStats, lines: List<ProGameLine>) {
         require(stats.starts == lines.count { it.started }) { "pro.stats_starts" }
+        require(lines.all { it.earnedRuns == null || it.earnedRuns in 0..it.runsAllowed }) { "pro.line_earned_runs" }
+        require(stats.earnedRuns == null || (lines.all { it.earnedRuns != null } && stats.earnedRuns == lines.sumOf { it.earnedRuns ?: 0 })) { "pro.stats_earned_runs" }
         require(stats.inningsOuts == lines.sumOf { it.outs }) { "pro.stats_outs" }
         require(stats.strikeouts == lines.sumOf { it.strikeouts }) { "pro.stats_strikeouts" }
         require(stats.walks == lines.sumOf { it.walks }) { "pro.stats_walks" }
@@ -2920,6 +2942,16 @@ public class ProKernel(
         } else 0
         if (state.proRulesVersion < HALL_OF_FAME_FORMULA_VERSION) {
             return (strikeouts / 150 + outs / 300 + decisions / 12 + quality * 2 + awardCount * 8 + state.serviceYears * 3).coerceIn(0, 100)
+        }
+        if (state.proRulesVersion >= 12) {
+            val qualitySeasons = state.careerStats.count {
+                it.inningsOuts >= 180 && (it.earnedRuns?.let { er -> er * 27_000L / it.inningsOuts } ?: it.runPerNinePermille.toLong()) < 3_800
+            }
+            val wins = state.careerStats.sumOf { it.wins }
+            val saves = state.careerStats.sumOf { it.saves }
+            return (min(15, state.serviceYears) + min(22, strikeouts / 140) + min(18, max(outs / 450, saves / 20)) +
+                min(14, wins / 15 + saves / 25) + min(15, qualitySeasons) + min(10, awardCount) + autumnBonus +
+                state.nationalTeamHistory.count { it.result == ProNationalTournamentResult.GOLD } * ProNationalTeamRules.HOF_GOLD_BONUS).coerceIn(0, 100)
         }
         val longevity = min(15, max(0, state.serviceYears))
         val strikeoutContribution = min(22, max(0, strikeouts) / 200)

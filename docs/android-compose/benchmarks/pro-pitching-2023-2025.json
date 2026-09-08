@@ -1,0 +1,51 @@
+{
+  "source": "https://www.koreabaseball.com/Record/Team/Pitcher/Basic1.aspx",
+  "retrieved": "2026-09-09",
+  "selection": "정규시즌, 연도별 합계; 2026 진행 시즌 제외",
+  "seasons": [
+    {
+      "season": 2023,
+      "games": 720,
+      "outs": 38503,
+      "hits": 12969,
+      "homeRuns": 924,
+      "walks": 5140,
+      "hitByPitch": 696,
+      "strikeouts": 9970,
+      "runs": 6622,
+      "earnedRuns": 5905
+    },
+    {
+      "season": 2024,
+      "games": 720,
+      "outs": 38367,
+      "hits": 13929,
+      "homeRuns": 1438,
+      "walks": 5265,
+      "hitByPitch": 783,
+      "strikeouts": 10826,
+      "runs": 7740,
+      "earnedRuns": 6972
+    },
+    {
+      "season": 2025,
+      "games": 720,
+      "outs": 38321,
+      "hits": 12824,
+      "homeRuns": 1191,
+      "walks": 5123,
+      "hitByPitch": 806,
+      "strikeouts": 11024,
+      "runs": 6813,
+      "earnedRuns": 6115
+    }
+  ],
+  "pooledRates": {
+    "ERA": 4.4516,
+    "RA9": 4.9633,
+    "K9": 7.4584,
+    "BB9": 3.6397,
+    "HR9": 0.8328,
+    "WHIP": 1.4389
+  }
+}

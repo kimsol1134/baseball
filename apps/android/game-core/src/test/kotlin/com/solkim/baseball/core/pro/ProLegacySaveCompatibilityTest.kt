@@ -19,7 +19,8 @@ class ProLegacySaveCompatibilityTest {
 
     @Test fun schemaThreeSavesOpenAndReadTheirRecordsBack() {
         val finished = ProStateCodec.decode(fixture("pro-state-v3-finished.bin"))
-        assertEquals(5, ProWire.STATE_SCHEMA_VERSION, "schema 3 fixtures must survive the assignment extension")
+        assertEquals(6, ProWire.STATE_SCHEMA_VERSION, "schema 3 fixtures must survive earned-run tracking")
+        kotlin.test.assertNull(finished.currentStats.earnedRuns)
         assertEquals("민서준", finished.identityName)
         assertTrue(finished.currentGameLines.any { it.played }, "the archived outing survives")
         assertEquals(finished.currentGameLines.count { it.played }, finished.currentStats.games)
