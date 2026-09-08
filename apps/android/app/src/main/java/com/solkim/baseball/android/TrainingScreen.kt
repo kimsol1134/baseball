@@ -59,19 +59,20 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                 color = if (run.fatigue >= 70 || run.armRisk >= 55) BaseballColors.warning else BaseballColors.textSecondary)
             if (rehab) Text("재활 중이다. 오늘은 회복만.", color = BaseballColors.warning)
             else if (recommended == TrainingFocus.RECOVERY) Text("코치: 몸이 무겁다. 오늘은 쉬자.", color = BaseballColors.warning)
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("훈련 선택", style = MaterialTheme.typography.labelLarge)
+                Text(copy.resolve("training.controls.recommended", GameCopyArgument.UserText(copy.legacy(trainingChoiceLabel(recommended)))),
+                    verbatim = true, color = BaseballColors.textSecondary, style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.testTag("training.recommendation"))
+            }
             Column(Modifier.testTag("training.choices"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 TrainingFocus.entries.chunked(3).forEach { row ->
-                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    AdaptiveActionRow(Modifier.fillMaxWidth()) {
                         row.forEach { option ->
                             TrainingChoice(focus == option, !busy && (!rehab || option == TrainingFocus.RECOVERY),
-                                Modifier.weight(1f).fillMaxHeight().testTag("training.focus.${option.wire}"),
+                                Modifier.testTag("training.focus.${option.wire}"),
                                 onClick = { focusWire = option.wire }) {
-                                Text(when (option) {
-                                    TrainingFocus.VELOCITY -> "구위"; TrainingFocus.COMMAND -> "제구"; TrainingFocus.BREAKING_BALL -> "변화구"
-                                    TrainingFocus.STAMINA -> "체력"; TrainingFocus.RECOVERY -> "회복"; TrainingFocus.GAME_PLANNING -> "수싸움"
-                                }, fontWeight = FontWeight.Bold)
-                                if (option == recommended) Text(copy.resolve("training.compact.recommended"), verbatim = true,
-                                    style = MaterialTheme.typography.labelSmall)
+                                Text(trainingChoiceLabel(option), fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -90,20 +91,14 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
             }
             if (!rehab) {
                 Text(copy.resolve("training.compact.intensity"), verbatim = true, style = MaterialTheme.typography.labelLarge)
-                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                AdaptiveActionRow(Modifier.fillMaxWidth()) {
                     TrainingIntensity.entries.forEach { level ->
-                        val forecast = TrainingPresentation.preview(state, focus, level)
                         TrainingChoice(intensity == level, !busy,
-                            Modifier.weight(1f).fillMaxHeight().testTag("training.intensity.${level.wire}"),
+                            Modifier.testTag("training.intensity.${level.wire}"),
                             onClick = { intensityWire = level.wire }) {
                             Text(TrainingPresentation.intensityTitle(level, focus), style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold)
-                            if (focus != TrainingFocus.RECOVERY && !forecast.atTalentWall) Text(
-                                copy.resolve("training.compact.chance", GameCopyArgument.Whole(forecast.jackpotChancePercent.toLong())),
-                                verbatim = true, style = MaterialTheme.typography.labelSmall)
-                            fun signed(value: Int) = if (value > 0) "+$value" else "$value"
-                            Text(copy.resolve("feedback.training.cost", GameCopyArgument.UserText(signed(forecast.fatigueChange)), GameCopyArgument.UserText(signed(forecast.armRiskChange))),
-                                verbatim = true, style = MaterialTheme.typography.labelSmall, color = BaseballColors.textSecondary)
+
                         }
                     }
                 }
@@ -169,11 +164,11 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                             TrainingChoice(selectedPlan == plan.id, !busy && TrainingPlans.availableSteps(state, plan) > 0, Modifier.fillMaxWidth().testTag("training.plan.${plan.id}"),
                                 onClick = { selectedPlan = plan.id }) {
                                 Text(copy.resolve("training.plan.${plan.id}"), verbatim = true, fontWeight = FontWeight.Bold)
-                                Text(plan.steps.joinToString(" → ") { (step, _) -> copy.legacy(TrainingPlans.label(step)) },
-                                    verbatim = true, style = MaterialTheme.typography.bodyMedium)
                             }
                         }
                         val plan = TrainingPlans.options.single { it.id == selectedPlan }
+                        Text(plan.steps.joinToString(" → ") { (step, _) -> copy.legacy(TrainingPlans.label(step)) },
+                            verbatim = true, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("training.plan.steps"))
                         Text(copy.resolve("training.plan.limit", GameCopyArgument.Whole(TrainingPlans.availableSteps(state, plan).toLong())),
                             verbatim = true, style = MaterialTheme.typography.bodySmall)
                         Text(copy.resolve("training.plan.intensities"), verbatim = true, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
@@ -226,8 +221,8 @@ private fun TrainingChoice(selected: Boolean, enabled: Boolean, modifier: Modifi
         shape = MaterialTheme.shapes.small,
         border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) BaseballColors.action else BaseballColors.border),
         modifier = modifier.heightIn(min = 48.dp).semantics { this.selected = selected }) {
-        Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(3.dp), content = content)
+        Column(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center, content = content)
     }
 }
 
@@ -262,4 +257,13 @@ internal fun TrainingResultCard(state: GameAggregateState, afterNumber: Int, com
             }
         }
     }
+}
+
+private fun trainingChoiceLabel(focus: TrainingFocus): String = when (focus) {
+    TrainingFocus.VELOCITY -> "구위"
+    TrainingFocus.COMMAND -> "제구"
+    TrainingFocus.BREAKING_BALL -> "변화구"
+    TrainingFocus.STAMINA -> "체력"
+    TrainingFocus.RECOVERY -> "회복"
+    TrainingFocus.GAME_PLANNING -> "수싸움"
 }
