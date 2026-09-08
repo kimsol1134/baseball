@@ -70,8 +70,8 @@ internal fun SeedChallengeDialog(
                 }
                 Text(copy.resolve("android.challenge.style"))
                 HighSchoolDisplayRules.presets.forEach { choice ->
-                    OutlinedButton(onClick = { preset = choice.id }, modifier = Modifier.fillMaxWidth()) {
-                        Text(copy.resolve("android.challenge.preset.${choice.id}") + if (preset == choice.id) " ✓" else "")
+                    SetupSelectionButton(selected = preset == choice.id, onClick = { preset = choice.id }, modifier = Modifier.fillMaxWidth()) {
+                        Text(copy.resolve("android.challenge.preset.${choice.id}"))
                     }
                 }
                 if (!canStart) Text(copy.resolve("android.challenge.wait"))

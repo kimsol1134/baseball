@@ -75,7 +75,7 @@ class CompactCareerUiTest {
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.6f)) {
                 BaseballMigrationTheme {
-                    Box(Modifier.requiredSize(360.dp, 620.dp)) {
+                    Box(Modifier.requiredSize(360.dp, 480.dp)) {
                         TrainingScreen(state, Phase8CommandContext(), false, null, PaddingValues(0.dp), 0, 0,
                             onDismiss = {}, onCommit = {
                                 val next = HighSchoolPhase4Kernel().commitTraining("918220", state.highSchool!!,

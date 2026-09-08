@@ -1475,8 +1475,8 @@ internal fun PitchResultCard(
             } else if (onContinueInning != null) {
                 Text("이닝을 마쳤어요. 계속 던질까요?", style = MaterialTheme.typography.bodyMedium)
                 AdaptiveActionRow(Modifier.fillMaxWidth()) {
-                    Button(onClick = onContinueInning, modifier = Modifier.testTag("pitch.nextInning")) { Text("다음 이닝 던지기") }
-                    OutlinedButton(onClick = onPostgame, modifier = Modifier.testTag("pitch.simulateRemainder")) { Text("남은 경기 자동 진행") }
+                    Button(onClick = onContinueInning, modifier = Modifier.testTag("pitch.nextInning")) { Text("다음 이닝") }
+                    OutlinedButton(onClick = onPostgame, modifier = Modifier.testTag("pitch.simulateRemainder")) { Text("남은 경기 자동") }
                 }
             } else if (!automaticNext) Button(onClick = if (outingContinues) (onNextPitch ?: onPostgame) else onPostgame,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("pitch.continue")) { Text(nextLabel) }

@@ -88,7 +88,7 @@ private fun Phase9ReminderOfferSurface(
             Text("다음 장면을 놓치지 않도록 기기 알림을 켤 수 있습니다.", style = MaterialTheme.typography.bodyLarge)
             Button(
                 onClick = { onAction(capturePlatformAction(state, screen, PlatformAction.REQUEST_NOTIFICATION_PERMISSION)) },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
             ) { Text("알림 켜기") }
             androidx.compose.material3.TextButton(
                 onClick = { onAction(capturePlatformAction(state, screen, PlatformAction.DISMISS_REMINDER_OFFER)) },
@@ -124,17 +124,18 @@ private fun Phase9ShareSurface(
             Text("한 생을 카드 한 장으로. 이미지와 글이 함께 나간다.", style = MaterialTheme.typography.bodyLarge)
             selectedId?.let { LifeCardVisual(state, it) }
             state.highSchool?.archive.orEmpty().asReversed().forEach { record ->
-                OutlinedButton(
+                SetupSelectionButton(
+                    selected = record.careerId == selectedId,
                     onClick = { onSelectedLifeCardCareerIdChanged(record.careerId) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 ) {
-                    Text(if (record.careerId == selectedId) "선택됨 · ${record.lifeNumber}번째 생" else "${record.lifeNumber}번째 생 기록 선택")
+                    Text("${record.lifeNumber}번째 생")
                 }
             }
             Button(
                 onClick = { sharePayload?.let { onAction(capturePlatformAction(state, model.id, PlatformAction.SHARE_LIFE_CARD, sharePayload = it)) } },
                 enabled = shareAllowed,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).gameDescription(if (shareAllowed) "라이프 카드 공유" else "아직 마친 생이 없어 공유할 수 없다"),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).gameDescription(if (shareAllowed) "라이프 카드 공유" else "아직 마친 생이 없어 공유할 수 없다"),
             ) { Text("라이프 카드 공유") }
         }
     }

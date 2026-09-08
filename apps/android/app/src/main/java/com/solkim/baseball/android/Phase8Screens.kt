@@ -1,5 +1,9 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.PitchBoundary
+
+import androidx.compose.foundation.background
+
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.width
 
@@ -351,7 +355,7 @@ private fun Phase8FirstPitchIntroduction(
             model.actions.firstOrNull { it.id == "resumePitch" && it.enabled }?.let { action -> Phase8ActionButton(model.id, action.copy(enabled = !busy && acceptsFreshTap), onAction, showDescription = false) }
                 ?: model.actions.firstOrNull { it.id == "openTutorialPitch" }?.let { action ->
                     OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) }, enabled = action.enabled && !busy,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("action.openTutorialPitch")) { Text(action.label) }
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("action.openTutorialPitch")) { Text(if (state.pitch?.boundary in setOf(PitchBoundary.COMMITTED, PitchBoundary.CONSUMED, PitchBoundary.TERMINAL)) "결과 확인" else "연습 투구") }
                 }
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 continuity.legacyTitle?.let { Text(copy.resolve("loop.reborn.inherited", GameCopyArgument.UserText(copy.legacy(it))), verbatim = true, color = BaseballColors.milestone) }
@@ -417,17 +421,26 @@ private val recordScreens = listOf(Phase8ScreenId.P025_RECORDS_LEAGUE, Phase8Scr
 /** The records tab used to land on the first reachable screen and stop there. Every record screen is one tap away. */
 @Composable
 private fun RecordsSegments(state: GameAggregateState, current: Phase8ScreenId, onNavigate: (Phase8ScreenId) -> Unit) {
+    val copy = rememberGameCopy()
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         recordScreens.chunked(3).forEach { group ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
                 group.forEach { screen ->
-                    val label = when (screen) {
+                    val fullLabel = when (screen) {
                         Phase8ScreenId.P025_RECORDS_LEAGUE -> "통산 기록"
                         Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> "경기 기록"
                         Phase8ScreenId.P026_ACHIEVEMENTS -> "업적"
                         Phase8ScreenId.P024_WEEKLY -> "주간 노트"
                         Phase8ScreenId.P028_LIFECARD -> "라이프 카드"
                         else -> "돌아올 자리"
+                    }
+                    val label = when (screen) {
+                        Phase8ScreenId.P025_RECORDS_LEAGUE -> "career"
+                        Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> "games"
+                        Phase8ScreenId.P026_ACHIEVEMENTS -> "achievements"
+                        Phase8ScreenId.P024_WEEKLY -> "week"
+                        Phase8ScreenId.P028_LIFECARD -> "card"
+                        else -> "return"
                     }
                     val badge = when (screen) {
                         Phase8ScreenId.P026_ACHIEVEMENTS -> state.highSchool?.unacknowledgedAchievements?.isNotEmpty() == true
@@ -436,8 +449,13 @@ private fun RecordsSegments(state: GameAggregateState, current: Phase8ScreenId, 
                     }
                     androidx.compose.material3.FilterChip(selected = screen == current,
                         onClick = { if (screen != current) onNavigate(screen) }, enabled = Phase8ScreenProjection.isReachable(state, screen),
-                        label = { Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) { Text(label); if (badge) Text("●", verbatim = true, color = BaseballColors.milestone) } },
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("records.tab.${screen.wire}"))
+                        label = { Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(copy.resolve("controls.records.$label"), verbatim = true)
+                            Box(Modifier.size(6.dp).background(if (badge) BaseballColors.milestone else androidx.compose.ui.graphics.Color.Transparent,
+                                androidx.compose.foundation.shape.CircleShape))
+                        } },
+                        modifier = Modifier.heightIn(min = 48.dp).testTag("records.tab.${screen.wire}")
+                            .gameDescription(copy.legacy(fullLabel) + if (badge) " · " + copy.legacy("새 소식") else ""))
                 }
             }
         }
@@ -1210,7 +1228,7 @@ private fun ColumnScope.Phase8SetupFields(
             Text("야구혼을 써서 이번 생의 출발을 바꾼다.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
             SetupSoulBoost.entries.forEach { boost ->
                 val selected = boost in boosts
-                SetupOption("${setupBoostLabel(boost)} · 야구혼 ${boost.cost}", setupBoostDetail(boost), selected, enabled = selected || boostCost + boost.cost <= soulBalance) {
+                SetupOption(setupBoostLabel(boost), gameCopy.resolve("controls.setup.boost-cost", GameCopyArgument.Whole(boost.cost.toLong())) + " · " + setupBoostDetail(boost), selected, enabled = selected || boostCost + boost.cost <= soulBalance) {
                     selectedBoostIds = (if (selected) boosts - boost else boosts + boost).joinToString(",") { it.wire }
                 }
             }
@@ -1285,14 +1303,16 @@ private fun setupStepTitle(step: Int): String = when (step) {
 }
 
 @Composable
-private fun SetupSelectionButton(
+internal fun SetupSelectionButton(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         modifier = modifier.heightIn(min = 48.dp).semantics { this.selected = selected },
         colors = ButtonDefaults.outlinedButtonColors(
@@ -1312,12 +1332,11 @@ private fun SetupSelectionButton(
 
 @Composable
 private fun SetupOption(label: String, detail: String, selected: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
-    OutlinedButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) BaseballColors.action else BaseballColors.border)) {
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal, color = if (selected) BaseballColors.action else BaseballColors.textPrimary)
-            if (detail.isNotBlank()) Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        SetupSelectionButton(selected = selected, onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
+            Text(label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
         }
+        if (detail.isNotBlank()) Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -1468,6 +1487,7 @@ private fun Phase8ActionButton(
     showDescription: Boolean = false,
 ) {
     val label = when (action.id) {
+        "completeTutorial" -> "학교 선택"
         "prepareLegacy" -> "능력 고르기"
         "quickRebirth" -> "환생하기"
         "finalizeArchive" -> "이번 생 마무리"

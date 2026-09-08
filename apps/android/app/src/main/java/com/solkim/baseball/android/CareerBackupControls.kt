@@ -74,9 +74,9 @@ internal fun CareerBackupControls(state: GameAggregateState, busy: Boolean = fal
     }
     Text("기기를 바꾸거나 앱을 지우기 전에 기록을 파일로 보관해 주세요.")
     OutlinedButton(onClick = { save.launch("baseball-career.json") }, enabled = !working && !busy && (state.highSchool != null || state.pro != null),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("backup.export")) { Text("기록을 파일로 보관") }
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("backup.export")) { Text("백업 저장") }
     OutlinedButton(onClick = { open.launch(arrayOf("application/json", "application/octet-stream")) }, enabled = !working && !busy,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("backup.import")) { Text("보관한 기록 불러오기") }
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("backup.import")) { Text("백업 불러오기") }
     message?.let { Text(it, modifier = Modifier.testTag("backup.message").semantics { liveRegion = LiveRegionMode.Polite }) }
     if (restored) TextButton(onClick = { onContinue(store.current) }, enabled = !working && !busy, modifier = Modifier.testTag("backup.continue")) {
         Text(copy.resolve("settings2.continue"), verbatim = true)
@@ -102,6 +102,6 @@ internal fun CareerBackupControls(state: GameAggregateState, busy: Boolean = fal
                     message = "기록을 불러오지 못했어요. 현재 기록을 확인한 뒤 다시 시도해 주세요."
                 } finally { working = false }
             }
-        }, modifier = Modifier.testTag("backup.confirm")) { Text("이 기록 불러오기") } },
+        }, modifier = Modifier.testTag("backup.confirm")) { Text("불러오기") } },
         dismissButton = { TextButton(onClick = { pending = null; preview = null }) { Text("취소") } })
 }

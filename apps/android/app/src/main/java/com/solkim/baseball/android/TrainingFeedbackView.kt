@@ -150,6 +150,6 @@ internal fun TrainingFeedbackPanel(record: JSONObject, onContinue: () -> Unit) {
                 else -> "현재 몸 상태를 보고 다음 훈련을 골라보세요."
             }, style = MaterialTheme.typography.bodyMedium)
         }
-        Button(onClick = onContinue, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("training.feedback.continue")) { Text("확인하고 계속하기") }
+        Button(onClick = onContinue, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("training.feedback.continue")) { Text("계속하기") }
     }
 }

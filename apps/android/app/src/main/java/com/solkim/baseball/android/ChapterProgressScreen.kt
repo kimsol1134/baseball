@@ -61,7 +61,7 @@ internal fun ChapterProgressScreen(state: GameAggregateState, model: Phase8Scree
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(copy.resolve("chapter.compact.optional"), verbatim = true, color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodyMedium)
                 OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) }, enabled = !busy,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("action.claimChapterGame")) { Text(action.label) }
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("action.claimChapterGame")) { Text("직접 등판") }
             }
         }
         TextButton(onClick = { onNavigate(Phase8ScreenId.P011_HIGH_SCHOOL_CAREER) }, modifier = Modifier.testTag("chapter.allRecords")) {

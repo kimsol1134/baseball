@@ -36,8 +36,8 @@ public object TrainingPresentation {
     public fun intensityTitle(value: TrainingIntensity, focus: TrainingFocus): String =
         if (focus == TrainingFocus.RECOVERY) when (value) {
             TrainingIntensity.LIGHT -> "푹 쉬기"
-            TrainingIntensity.STANDARD -> "가볍게 몸 풀기"
-            TrainingIntensity.INTENSIVE -> "쉬면서도 던지기"
+            TrainingIntensity.STANDARD -> "몸 풀기"
+            TrainingIntensity.INTENSIVE -> "투구 병행"
         } else when (value) {
             TrainingIntensity.LIGHT -> "가볍게"
             TrainingIntensity.STANDARD -> "보통"

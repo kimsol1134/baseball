@@ -67,20 +67,25 @@ internal fun AwakeningTreeView(state: GameAggregateState, model: Phase8ScreenMod
                 Spacer(Modifier.weight(1f))
                 Text("${owned.size}/${maxOf(2, owned.size)}", verbatim = true, style = MaterialTheme.typography.labelMedium, modifier = Modifier.testTag("awakening.slots"))
             }
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
                 AwakeningTreePresentation.branches.forEach { key ->
+                    val active = branch == key
                     Surface(onClick = {
                         inspect(nodes.firstOrNull { it.branch == key && it.choice.available } ?: nodes.first { it.branch == key })
-                    }, enabled = !busy, shape = MaterialTheme.shapes.small, color = BaseballColors.surfaceRaised,
-                        border = BorderStroke(if (branch == key) 2.dp else 1.dp, if (branch == key) BaseballColors.action else BaseballColors.border),
-                        modifier = Modifier.weight(1f).fillMaxHeight().semantics { this.selected = branch == key; role = Role.Tab }.testTag("awakening.branch.$key")) {
-                        Column(Modifier.padding(horizontal = 3.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            AwakeningGlyph(key, if (branch == key) BaseballColors.action else BaseballColors.textSecondary, Modifier.size(22.dp))
-                            Text(copy.resolve("awakening.tree.branch.$key"), verbatim = true, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center)
+                    }, enabled = !busy, shape = MaterialTheme.shapes.small,
+                        color = if (active) BaseballColors.action else BaseballColors.surfaceRaised,
+                        border = BorderStroke(if (active) 2.dp else 1.dp, if (active) BaseballColors.action else BaseballColors.border),
+                        modifier = Modifier.heightIn(min = 48.dp).semantics { this.selected = active; role = Role.Tab }
+                            .testTag("awakening.branch.$key").gameDescription(copy.resolve("awakening.tree.branch.$key"))) {
+                        Box(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
+                            Text(copy.resolve("controls.awakening.$key"), verbatim = true, style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold, color = if (active) BaseballColors.actionInk else BaseballColors.textPrimary)
                         }
                     }
                 }
             }
+            Text(copy.resolve("awakening.tree.branch.$branch"), verbatim = true, style = MaterialTheme.typography.labelMedium,
+                color = BaseballColors.textSecondary)
         }
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             val visible = nodes.filter { it.branch == branch }
@@ -158,11 +163,14 @@ internal fun AwakeningTreeView(state: GameAggregateState, model: Phase8ScreenMod
                 }
             }
         }
+        if (!canConfirm && !selected.choice.owned && selected.choice.requirement.isBlank()) {
+            Text(copy.resolve(if (owned.size >= 2) "awakening.tree.complete" else "awakening.tree.unavailable"),
+                verbatim = true, style = MaterialTheme.typography.labelSmall, color = BaseballColors.textSecondary)
+        }
         Button(onClick = {
             if (canConfirm) onAction(Phase8UiAction(model.id, action.id, action.payloads))
-        }, enabled = canConfirm, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("awakening.confirm")) {
-            Text(copy.resolve(when { selected.choice.owned -> "awakening.tree.learned"; owned.size >= 3 -> "awakening.tree.complete";
-                canConfirm -> "awakening.tree.choose"; else -> "awakening.tree.unavailable" }), verbatim = true)
+        }, enabled = canConfirm, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("awakening.confirm")) {
+            Text(copy.resolve(if (selected.choice.owned) "controls.awakening.learned" else "controls.awakening.learn"), verbatim = true)
         }
         Spacer(Modifier.height(4.dp))
     }

@@ -57,7 +57,10 @@ class CareerParityUiTest {
                                 ?: actions.first { it.enabled && it.id == "prepareLegacy" }
                             c.execute(screen, chosen.id)
                         }
-                        Phase8ScreenId.P015_REBIRTH -> c.execute(screen, "finalizeArchive")
+                        Phase8ScreenId.P015_REBIRTH -> {
+                            if (c.projection(screen).actions.single { it.id == "finalizeArchive" }.enabled) c.execute(screen, "finalizeArchive")
+                            else c.execute(Phase8ScreenId.P014_RUN_RECAP, "prepareLegacy")
+                        }
                         else -> {
                             val action = c.projection(screen).actions.firstOrNull { it.enabled && it.id !in setOf("abandonPitch", "suspendPitch") } ?: error("No action at $screen")
                             c.execute(screen, action.id)
@@ -120,8 +123,11 @@ class CareerParityUiTest {
         val school = original.highSchool!!
         val core = com.solkim.baseball.core.highschool.HighSchoolKernel()
         val root = com.solkim.baseball.core.highschool.HighSchoolAwakening.PINPOINT_EDGE
-        var run = school.run.copy(selectedAwakenings = listOf(root), awakeningSparks = 3,
-            pitcher = core.previewAwakening(school.run.pitcher, root))
+        // A legal leap now requires a reborn player in the later school years with enough training and innings.
+        var run = school.run.copy(selectedAwakenings = listOf(root), awakeningSparks = 3, lifeNumber = 2,
+            chapter = com.solkim.baseball.core.highschool.HighSchoolContentCatalog.chapters[4],
+            totalTrainingsCompleted = 6, automaticOuts = 36,
+            pitcher = core.previewAwakening(school.run.pitcher, root).copy(command = 60))
         run = core.resignShadowState(run.copy(awakeningOptions = core.availableAwakenings(run)))
         val nextSchool = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel().commitShadowState(school.copy(run = run))
         val state = original.copy(highSchool = nextSchool).let { it.copy(commitment = it.recomputeCommitment()) }
@@ -178,7 +184,8 @@ class CareerParityUiTest {
         compose.onNodeWithTag("rebirth.memories").performScrollTo().performClick()
         compose.onNodeWithTag("rebirth.previousSelf").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("rebirth.memories").performScrollTo().performClick()
-        compose.onNodeWithTag("action.completeTutorial").performClick()
+        compose.mainClock.advanceTimeBy(600) // Respect the new-scene tap guard before starting school.
+        compose.onNodeWithTag("action.completeTutorial").assertIsEnabled().performClick()
         compose.waitForIdle()
         assertEquals(Phase8ScreenId.P005_SCHOOL_SELECTION, Phase8ScreenProjection.preferredScreen(state))
         assertEquals(pitcher, state.highSchool?.run?.pitcher)

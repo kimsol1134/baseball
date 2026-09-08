@@ -256,7 +256,7 @@ public fun PitchDeliveryControl(
                     onDeliver(PitchDelivery.NEUTRAL)
                 } },
                 enabled = enabled,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).gameDescription("탭 한 번으로 중립 릴리스"),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).gameDescription("탭 한 번으로 중립 릴리스"),
             ) {
                 Text("탭 한 번으로 던지기")
             }

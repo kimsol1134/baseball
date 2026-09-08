@@ -30,9 +30,12 @@ class TrainingUiTest {
         val inst = InstrumentationRegistry.getInstrumentation()
         val context = inst.targetContext
         require(context.packageName.endsWith(".compose.qa"))
-        val app = context.applicationContext as BaseballApplication
-        assertEquals("Use a fresh disposable QA install", GameStage.OPENING, app.gameStore.current.stage)
-        val controller = Phase8Controller(app.gameStore)
+        val directory = java.nio.file.Files.createTempDirectory(context.cacheDir.toPath(), "training-ui-")
+        val repository = CSharpLegacyGameStoreRepository(directory, "training-ui")
+        val store = runBlocking { KotlinGameStore.open("training-ui", repository, NativeAuthorityMode.NATIVE_AUTHORITATIVE) }
+        try {
+        assertEquals(GameStage.OPENING, store.current.stage)
+        val controller = Phase8Controller(store)
         runBlocking {
             controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
             controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
@@ -41,14 +44,14 @@ class TrainingUiTest {
             val school = controller.projection(Phase8ScreenId.P005_SCHOOL_SELECTION).actions.first().id
             controller.execute(Phase8ScreenId.P005_SCHOOL_SELECTION, school)
         }
-        val before = app.gameStore.current
+        val before = store.current
         val fontScale = InstrumentationRegistry.getArguments().getString("trainingFontScale")?.toFloatOrNull() ?: 1f
         val focus = if (InstrumentationRegistry.getArguments().getString("trainingFocus") == "command") TrainingFocus.COMMAND else TrainingFocus.BREAKING_BALL
         val intensity = if (focus == TrainingFocus.COMMAND) TrainingIntensity.STANDARD else TrainingIntensity.LIGHT
         val target = TrainingPresentation.targets(before).last()
         compose.setContent {
-            val state by app.gameStore.state.collectAsState()
-            val busy by app.gameStore.busy.collectAsState()
+            val state by store.state.collectAsState()
+            val busy by store.busy.collectAsState()
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) { BaseballMigrationTheme {
                 Phase8Shell(state, busy, null, Phase8ScreenProjection.preferredScreen(state), controller.context,
                     onNavigate = {}, onAction = { action -> runBlocking { controller.execute(action.screenId, action.actionId, action.capturedPayloads) }; Unit })
@@ -60,23 +63,23 @@ class TrainingUiTest {
         for (option in TrainingFocus.entries) compose.onNodeWithTag("training.focus.${option.wire}").assertExists()
         compose.onNodeWithTag("training.focus.command").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("training.focus.recovery").performScrollTo().assertIsDisplayed()
-        assertEquals(before.highSchool!!.run.totalTrainingsCompleted, app.gameStore.current.highSchool!!.run.totalTrainingsCompleted)
+        assertEquals(before.highSchool!!.run.totalTrainingsCompleted, store.current.highSchool!!.run.totalTrainingsCompleted)
         val learningPitch = before.highSchool!!.run.pitchLearningProject?.pitchType
         if (learningPitch != null) {
             compose.onNodeWithTag("training.learning").performScrollTo().performClick()
             compose.onNodeWithTag("training.learning.practice").performScrollTo().performClick()
             compose.onNodeWithTag("training.target.${learningPitch.wire}").performScrollTo().assertIsDisplayed()
-            assertEquals(before.highSchool!!.run.totalTrainingsCompleted, app.gameStore.current.highSchool!!.run.totalTrainingsCompleted)
+            assertEquals(before.highSchool!!.run.totalTrainingsCompleted, store.current.highSchool!!.run.totalTrainingsCompleted)
         }
         compose.onNodeWithTag("training.focus.${focus.wire}").performScrollTo().performClick()
         if (focus == TrainingFocus.BREAKING_BALL) compose.onNodeWithTag("training.target.${target.wire}").performScrollTo().performClick()
         compose.onNodeWithTag("training.intensity.${intensity.wire}").performScrollTo().performClick()
         compose.waitForIdle()
-        assertEquals(before.highSchool!!.run.totalTrainingsCompleted, app.gameStore.current.highSchool!!.run.totalTrainingsCompleted)
+        assertEquals(before.highSchool!!.run.totalTrainingsCompleted, store.current.highSchool!!.run.totalTrainingsCompleted)
         device.takeScreenshot(File(context.cacheDir, "training-selected.png"))
         compose.onNodeWithTag("training.commit").assertIsDisplayed().performClick()
         compose.waitForIdle()
-        val after = app.gameStore.current
+        val after = store.current
         // A chapter can hold a single training. Committing the last one leaves the training screen for
         // the next milestone, and the result card lives on the screen that just closed.
         val stillTraining = after.highSchool!!.run.phase.name == "TRAINING"
@@ -99,13 +102,17 @@ class TrainingUiTest {
         }
         runBlocking {
             val reopened = KotlinGameStore.open(after.installId,
-                CSharpLegacyGameStoreRepository(File(context.getExternalFilesDir(null), "save").toPath(), after.installId),
+                repository,
                 NativeAuthorityMode.NATIVE_AUTHORITATIVE)
             try {
                 assertEquals(after.highSchool!!.trainingEvidence, reopened.current.highSchool!!.trainingEvidence)
                 assertEquals(after.meta.playerGrowth, reopened.current.meta.playerGrowth)
             }
             finally { reopened.close() }
+        }
+        } finally {
+            store.close()
+            java.nio.file.Files.walk(directory).use { paths -> paths.sorted(Comparator.reverseOrder()).forEach { java.nio.file.Files.deleteIfExists(it) } }
         }
     }
 }

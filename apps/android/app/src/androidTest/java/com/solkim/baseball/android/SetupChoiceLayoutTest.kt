@@ -23,9 +23,9 @@ class SetupChoiceLayoutTest {
         compose.setContent { CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, scale)) {
             BaseballMigrationTheme { Phase8Shell(state, false, null, Phase8ScreenId.P002_SETUP, Phase8CommandContext(), onNavigate = {}, onAction = {}) }
         } }
-        compose.onNodeWithTag("setup.next").performScrollTo().performClick()
+        compose.onNodeWithTag("setup.next").assertIsDisplayed().performClick()
         compose.onNodeWithTag("setup.preset.stats").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("setup.next").performScrollTo().performClick()
+        compose.onNodeWithTag("setup.next").assertIsDisplayed().performClick()
         for (font in listOf(1f, 1.6f)) {
             compose.runOnIdle { scale = font }
             for (pitch in listOf("slider", "curveball", "changeup")) {
@@ -34,5 +34,8 @@ class SetupChoiceLayoutTest {
             }
             compose.onAllNodes(hasText("선택됨", substring = true)).assertCountEquals(0)
         }
+        compose.onNodeWithTag("setup.next").assertIsDisplayed().performClick()
+        compose.onNodeWithText("혹독하게").performScrollTo().performClick().assertIsSelected()
+        compose.onAllNodes(hasText("야구혼", substring = true) and hasClickAction()).assertCountEquals(0)
     }
 }
