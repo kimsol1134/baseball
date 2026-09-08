@@ -12,7 +12,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.solkim.baseball.application.*
-import com.solkim.baseball.core.highschool.HighSchoolLineageRules
 import com.solkim.baseball.design.BaseballColors
 import kotlinx.coroutines.launch
 import com.solkim.baseball.android.LocalizedGameText as Text
@@ -134,13 +133,10 @@ internal fun CompanionProfile(state: GameAggregateState, busy: Boolean, onChange
         c.memories.asReversed().filterNot { it.id == c.pinned }.drop(3).take(memoriesShown).forEach { CompanionMemory(it, false, busy, onChange) }
         if (c.memories.size > memoriesShown + 3) TextButton(onClick = { memoriesShown += 12 }) { Text("기억 더 보기") }
     }
-    state.highSchool?.let { school ->
-        val recovered = HighSchoolLineageRules.recovered(school.inheritance, school.archive)
-        val active = recovered.lineageLoadout
-        if (active != null) {
+    CareerUiRules.lineage(state)?.let { mastery ->
+        run {
             Text("다음 생으로 이어지는 힘", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(SignatureLegacyDisplay.title(active.legacyId, copy).orEmpty(), verbatim = true)
-            val mastery = recovered.lineageMasteries.first { it.family == com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules.definition(active.legacyId).family }
+            Text(SignatureLegacyDisplay.title(mastery.legacyId, copy).orEmpty(), verbatim = true)
             Text(copy.resolve("companion.lineage", GameCopyArgument.Whole(mastery.rank.toLong()), GameCopyArgument.Whole(mastery.contributions.toLong())), verbatim = true)
             Text(copy.resolve("companion.lineage.effect.${if (mastery.family == "battery" && mastery.rank >= 2) "battery" else mastery.rank}"), verbatim = true, style = MaterialTheme.typography.bodySmall)
             mastery.nextThreshold?.let { Text(copy.resolve("companion.lineage.next", GameCopyArgument.Whole((it - mastery.contributions).toLong())), verbatim = true) }

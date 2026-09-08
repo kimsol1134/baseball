@@ -1036,10 +1036,7 @@ public class PitchActivity : ComponentActivity() {
 
     private fun selectedPitchVelocity(): Int = runCatching {
         val state = store.current
-        val call = PitchHudProjection.resolveCall(state, selectedSign)
-        com.solkim.baseball.core.pitch.PitchAbilityRules.expectedVelocity(
-            PitchHudProjection.pitcher(state), call, PitchHudProjection.fatigue(state),
-            (state.highSchool?.activePitch?.sessionId ?: state.pro?.activePitch?.sessionId).orEmpty().endsWith(":outing-v2"))
+        com.solkim.baseball.application.CareerUiRules.selectedVelocity(state, selectedSign)
     }.getOrDefault(1_350)
 
     private fun platform(): com.solkim.baseball.platform.NativePhase9Platform = (application as BaseballApplication).platform

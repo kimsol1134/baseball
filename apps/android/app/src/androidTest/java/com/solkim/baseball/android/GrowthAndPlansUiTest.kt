@@ -1,5 +1,8 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.fixtures.*
+import com.solkim.baseball.application.*
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
@@ -9,8 +12,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import com.solkim.baseball.application.*
-import com.solkim.baseball.core.highschool.*
 import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.design.BaseballMigrationTheme
 import org.junit.Assert.*
@@ -36,7 +37,7 @@ class GrowthAndPlansUiTest {
         assertNull(captured)
         compose.onNodeWithTag("training.plan.balanced").performClick()
         compose.onNodeWithTag("training.plan.execute").assertIsDisplayed().performClick()
-        val command = (captured!!.capturedPayloads.single().envelope.command as GameCommand.HighSchool).command as HighSchoolPhase4Command.TrainingBlock
+        val command = (captured!!.capturedPayloads.single().envelope.command as GameCommand.HighSchool).command as FixtureTrainingBlock
         assertEquals(listOf(TrainingFocus.VELOCITY, TrainingFocus.RECOVERY, TrainingFocus.COMMAND), command.requests.map { it.first })
         assertTrue(command.stopForSafety)
         compose.onNodeWithTag("training.plan.execute").assertDoesNotExist()

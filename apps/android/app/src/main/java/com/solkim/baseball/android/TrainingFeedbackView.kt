@@ -15,53 +15,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.solkim.baseball.application.*
-import com.solkim.baseball.core.highschool.toPitcherSnapshot
 import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.android.LocalizedGameText as Text
 import org.json.JSONArray
 import org.json.JSONObject
 
 /** Display-only receipt. Acknowledgement never runs or repeats a game command. */
-internal fun trainingFeedbackRecord(before: GameAggregateState, after: GameAggregateState): JSONObject? {
-    val old = before.highSchool?.run ?: return null
-    val next = after.highSchool?.run ?: return null
-    if (old.careerId != next.careerId || next.totalTrainingsCompleted <= old.totalTrainingsCompleted) return null
-    val last = next.lastTraining ?: return null
-    fun ratings(state: GameAggregateState) = state.highSchool!!.run.pitcher.let { JSONArray(listOf(it.stuff, it.command, it.movement, it.stamina)) }
-    val evidence = after.highSchool!!.trainingEvidence.filter { it.careerId == next.careerId && it.trainingNumber > old.totalTrainingsCompleted }
-    val velocities = JSONArray()
-    val oldPitcher = old.toPitcherSnapshot()
-    val newPitcher = next.toPitcherSnapshot()
-    newPitcher.pitchProfiles.orEmpty().forEach { profile ->
-        if (oldPitcher.pitchProfiles.orEmpty().any { it.pitchType == profile.pitchType }) {
-            val call = com.solkim.baseball.core.pitch.PitchCall(profile.pitchType, com.solkim.baseball.core.pitch.PitchZone(1, 1), com.solkim.baseball.core.pitch.ZoneIntent.STRIKE, com.solkim.baseball.core.pitch.PitchIntensity.NORMAL)
-            val from = com.solkim.baseball.core.pitch.PitchAbilityRules.expectedVelocity(oldPitcher, call, old.fatigue)
-            val to = com.solkim.baseball.core.pitch.PitchAbilityRules.expectedVelocity(newPitcher, call, next.fatigue)
-            if (from != to) velocities.put(JSONObject().put("pitch", TrainingPresentation.pitchLabel(profile.pitchType)).put("before", from).put("after", to))
-        }
-    }
-    val oldMastery = old.pitcher.effectiveMastery
-    val newMastery = next.pitcher.effectiveMastery
-    val mastery = listOf(newMastery.stuff, newMastery.command, newMastery.movement, newMastery.stamina).sumOf { it.toLong() } -
-        listOf(oldMastery.stuff, oldMastery.command, oldMastery.movement, oldMastery.stamina).sumOf { it.toLong() }
-    val forecast = if (next.totalTrainingsCompleted == old.totalTrainingsCompleted + 1 && old.phase == com.solkim.baseball.core.highschool.HighSchoolPhase.TRAINING)
-        TrainingPresentation.preview(before, last.focus, last.intensity) else null
-    return JSONObject().put("career", next.careerId).put("number", last.number)
-        .put("count", next.totalTrainingsCompleted - old.totalTrainingsCompleted)
-        .put("before", ratings(before)).put("after", ratings(after))
-        .put("fatigueBefore", old.fatigue).put("fatigueAfter", next.fatigue)
-        .put("armBefore", old.armRisk).put("armAfter", next.armRisk)
-        .put("focus", last.focus.wire).put("intensity", last.intensity.wire).put("bloomed", last.bloomed)
-        .put("experience", next.development?.experience?.get(com.solkim.baseball.core.highschool.HighSchoolDevelopment.index(last.focus)) ?: 0)
-        .put("experienceEarned", next.development?.lastExperienceEarned ?: 0)
-        .put("breakthrough", next.talent.pressure(last.focus))
-        .put("breakthroughTarget", next.talent.grade(last.focus).bloomThreshold.takeIf { it != Int.MAX_VALUE } ?: 0)
-        .put("supportApplied", next.development?.supportAppliedTraining == last.number)
-        .put("extraGrowth", forecast != null && last.growth > forecast.maximumGrowth).put("atWall", forecast?.atTalentWall == true)
-        .put("learningBefore", old.pitchLearningProject?.practiceCredits ?: 0).put("learningAfter", next.pitchLearningProject?.practiceCredits ?: 0)
-        .put("mastery", mastery.coerceAtLeast(0)).put("velocities", velocities).put("rehab", next.injuryRecovery > 0)
-        .put("targets", JSONArray(evidence.mapNotNull { it.targetPitch?.let(TrainingPresentation::pitchLabel) }.distinct()))
-}
+internal fun trainingFeedbackRecord(before: GameAggregateState, after: GameAggregateState): JSONObject? = trainingReceipt(before, after)?.let(::JSONObject)
 
 internal fun saveTrainingFeedback(context: Context, before: GameAggregateState, after: GameAggregateState) {
     val record = trainingFeedbackRecord(before, after) ?: return

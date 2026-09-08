@@ -1,9 +1,10 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.fixtures.*
+import com.solkim.baseball.application.*
+
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import com.solkim.baseball.application.*
-import com.solkim.baseball.core.pro.*
 import com.solkim.baseball.design.BaseballMigrationTheme
 import org.junit.Rule
 import org.junit.Test

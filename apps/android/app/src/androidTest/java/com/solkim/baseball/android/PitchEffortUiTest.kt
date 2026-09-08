@@ -1,5 +1,8 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.fixtures.*
+import com.solkim.baseball.application.*
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
@@ -27,7 +30,7 @@ class PitchEffortUiTest {
                     selection = selection,
                     selectedZone = (selection as? com.solkim.baseball.application.PitchHudSelection.Manual)?.zone ?: primary.call.zone,
                     selectedIntensity = (selection as? com.solkim.baseball.application.PitchHudSelection.Manual)?.intensity ?: PitchIntensity.NORMAL,
-                    batSide = com.solkim.baseball.core.pitch.BatSide.RIGHT, currentPitchLine = "포심", primaryExplanation = "",
+                    batSide = com.solkim.baseball.application.BatSide.RIGHT, currentPitchLine = "포심", primaryExplanation = "",
                     holdToReleasePrompt = "길게 눌러 와인드업", ready = true, velocityTenthsKph = 1420, commandRating = 50,
                     autoRelease = false, autoReleaseLabel = "", catcherConfidenceLabel = "", catcherTrustLabel = "", fatigue = 0,
                     reduceMotion = true, hapticsEnabled = false, soundEnabled = false, tension = 0.0,

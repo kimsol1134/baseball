@@ -1,5 +1,8 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.fixtures.*
+import com.solkim.baseball.application.*
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Surface
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -13,8 +16,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import com.solkim.baseball.application.*
-import com.solkim.baseball.core.highschool.*
 import com.solkim.baseball.design.BaseballMigrationTheme
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -133,7 +134,7 @@ class CompactCareerUiTest {
         assertEquals(Phase8ScreenId.P010_CHAPTER, captured?.screenId)
         assertEquals("advanceChapter", captured?.actionId)
         val commands = captured!!.capturedPayloads.map { (it.envelope.command as GameCommand.HighSchool).command }
-        assertTrue(commands.first() is HighSchoolPhase4Command.AdvanceChapter)
-        assertTrue(commands.last() is HighSchoolPhase4Command.Training)
+        assertTrue(commands.first() is FixtureAdvanceChapter)
+        assertTrue(commands.last() is FixtureTrainingCommand)
     }
 }

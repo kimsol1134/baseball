@@ -1,5 +1,8 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.fixtures.*
+import com.solkim.baseball.application.*
+
 import androidx.compose.runtime.*
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.*
@@ -12,7 +15,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import com.solkim.baseball.application.*
 import com.solkim.baseball.design.BaseballMigrationTheme
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
@@ -121,15 +123,15 @@ class CareerParityUiTest {
     @Test fun treeSupportsLargeJapaneseTextAndShowsOnlyLegalLeap() {
         val original = fixture(awakening = true)
         val school = original.highSchool!!
-        val core = com.solkim.baseball.core.highschool.HighSchoolKernel()
-        val root = com.solkim.baseball.core.highschool.HighSchoolAwakening.PINPOINT_EDGE
+        val core = com.solkim.baseball.application.fixtures.HighSchoolKernel()
+        val root = com.solkim.baseball.application.fixtures.HighSchoolAwakening.PINPOINT_EDGE
         // A legal leap now requires a reborn player in the later school years with enough training and innings.
         var run = school.run.copy(selectedAwakenings = listOf(root), awakeningSparks = 3, lifeNumber = 2,
-            chapter = com.solkim.baseball.core.highschool.HighSchoolContentCatalog.chapters[4],
+            chapter = com.solkim.baseball.application.fixtures.HighSchoolContentCatalog.chapters[4],
             totalTrainingsCompleted = 6, automaticOuts = 36,
             pitcher = core.previewAwakening(school.run.pitcher, root).copy(command = 60))
         run = core.resignShadowState(run.copy(awakeningOptions = core.availableAwakenings(run)))
-        val nextSchool = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel().commitShadowState(school.copy(run = run))
+        val nextSchool = com.solkim.baseball.application.fixtures.HighSchoolPhase4Kernel().commitShadowState(school.copy(run = run))
         val state = original.copy(highSchool = nextSchool).let { it.copy(commitment = it.recomputeCommitment()) }
         var config by mutableStateOf(android.content.res.Configuration(InstrumentationRegistry.getInstrumentation().targetContext.resources.configuration).apply { setLocale(java.util.Locale.JAPANESE) })
         compose.setContent {

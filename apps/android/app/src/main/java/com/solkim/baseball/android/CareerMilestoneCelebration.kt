@@ -14,7 +14,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.solkim.baseball.application.*
-import com.solkim.baseball.core.highschool.HighSchoolPitchingDecision
 import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.android.LocalizedGameText as Text
 
@@ -24,7 +23,7 @@ internal fun CareerMilestoneCelebration(state: GameAggregateState, showTrainingB
     val school = state.highSchool ?: return
     val run = school.run
     val copy = rememberGameCopy()
-    val wins = school.seasonLog.count { it.played && it.decision == HighSchoolPitchingDecision.WIN }
+    val wins = CareerUiRules.schoolWins(state)
     var seenTraining by rememberSaveable(run.careerId) { mutableStateOf(run.totalTrainingsCompleted) }
     var seenLearning by rememberSaveable(run.careerId) { mutableStateOf(run.pitchLearningProject?.completed == true) }
     var seenAwakenings by rememberSaveable(run.careerId) { mutableStateOf(run.selectedAwakenings.size) }

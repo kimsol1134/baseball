@@ -1,5 +1,8 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.fixtures.*
+import com.solkim.baseball.application.*
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,8 +13,6 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import com.solkim.baseball.application.*
-import com.solkim.baseball.core.highschool.*
 import com.solkim.baseball.design.BaseballMigrationTheme
 import org.junit.Assert.*
 import org.junit.Rule

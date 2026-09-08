@@ -1,5 +1,8 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.fixtures.*
+import com.solkim.baseball.application.*
+
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -7,8 +10,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
-import com.solkim.baseball.application.*
-import com.solkim.baseball.core.highschool.*
 import com.solkim.baseball.design.BaseballMigrationTheme
 import org.junit.Rule
 import org.junit.Test

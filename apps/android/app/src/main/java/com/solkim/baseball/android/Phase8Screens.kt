@@ -163,7 +163,7 @@ public fun Phase8Shell(
         return
     }
     val bridgesReview = visibleScreen == Phase8ScreenId.P010_CHAPTER &&
-        (state.highSchool?.run?.chapter?.number ?: 8) < com.solkim.baseball.core.highschool.HighSchoolContentCatalog.chapters.size
+        (state.highSchool?.run?.chapter?.number ?: 8) < com.solkim.baseball.application.CareerUiRules.chapterCount
     var previewAttempt by remember { mutableStateOf(0) }
     val bridgeKey = "${state.highSchool?.run?.careerId}:${state.revision}"
     val nextTrainingLoad by produceState<Pair<String, Result<com.solkim.baseball.application.NextTrainingPreview?>>?>(null, bridgeKey, visibleScreen, previewAttempt) {
@@ -280,9 +280,7 @@ public fun Phase8Shell(
                                 }
                             } },
                             confirmButton = { TextButton(enabled = proName.isNotBlank() && !busy, onClick = {
-                                val command = com.solkim.baseball.application.GameCommand.Pro(com.solkim.baseball.core.pro.ProCommand.StartDirect(
-                                    com.solkim.baseball.core.pro.ProStartDirectRequest(commandContext.seed(state, "pro-direct"), proPreset, proName.trim())))
-                                val payloads = Phase8Payloads.batch(state, model.id, action.id, listOf(command))
+                                val payloads = com.solkim.baseball.application.CareerUiRules.startProfessional(state, commandContext, proPreset, proName)
                                 proSetup = false
                                 onAction(Phase8UiAction(model.id, action.id, payloads))
                             }, modifier = Modifier.testTag("opening.startPro")) { Text("프로 시작") } },
@@ -773,7 +771,7 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
             }
         }
         Phase8ScreenId.P017_PRO_WEEK -> {
-            state.pro?.let { pro -> Text("프로 선수 · ${pro.team.name} · ${if (pro.level == com.solkim.baseball.core.pro.ProLevel.MAJOR) "1군" else "2군"}",
+            state.pro?.let { pro -> Text(com.solkim.baseball.application.CareerUiRules.proContext(state),
                 color = BaseballColors.milestone, style = MaterialTheme.typography.labelLarge) }
             model.sections.firstOrNull { it.id == "pitch-learning" }?.let { Phase8Sections(listOf(it)) }
             model.sections.firstOrNull { it.id.startsWith("followup:") }?.let { section ->

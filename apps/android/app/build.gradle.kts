@@ -157,6 +157,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.junit)
+    androidTestImplementation(testFixtures(project(":game-application")))
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)

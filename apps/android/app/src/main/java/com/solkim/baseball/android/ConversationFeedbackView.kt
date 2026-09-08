@@ -12,7 +12,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.solkim.baseball.application.*
-import com.solkim.baseball.core.pro.label
 import com.solkim.baseball.design.BaseballColors
 import org.json.JSONArray
 import org.json.JSONObject
@@ -30,7 +29,7 @@ internal fun conversationFeedbackRecord(before: GameAggregateState, after: GameA
         val old = oldPro.pitcher.let { listOf(it.stuff, it.command, it.movement, it.stamina) }
         val next = nextPro.pitcher.let { listOf(it.stuff, it.command, it.movement, it.stamina) }
         listOf("구위", "제구", "무브먼트", "체력").forEachIndexed { index, label -> change(label, AbilityDisplayScale.rating(old[index]), AbilityDisplayScale.rating(next[index])) }
-        if (nextPro.role != oldPro.role) lines.add(0, "보직: ${nextPro.role.label}")
+        if (nextPro.role != oldPro.role) lines.add(0, "보직: ${CareerUiRules.proRole(after)}")
         if (nextPro.activeDecisionModifiers != oldPro.activeDecisionModifiers) lines += "다음 등판 준비에 반영됐어요."
         return JSONObject().put("kind", "pro").put("career", nextPro.careerId).put("number", nextPro.decisionHistory.size)
             .put("speaker", nextPro.decisionHistory.last().choiceTitle).put("lines", JSONArray(lines.ifEmpty { listOf("선택한 계획으로 다음 일정을 준비해요.") }))

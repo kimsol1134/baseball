@@ -13,7 +13,6 @@ import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.solkim.baseball.application.*
-import com.solkim.baseball.core.highschool.HighSchoolDraftOutcome
 import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.android.LocalizedGameText as Text
 
@@ -131,7 +130,7 @@ internal fun CareerLegacyPicker(model: Phase8ScreenModel, actions: List<Phase8Ac
                 .clickable(enabled = action.enabled) { selectedId = action.id }) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val family = com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == action.id.substringAfter(':') }?.family
+                    val family = CareerUiRules.legacyFamily(action.id.substringAfter(':'))
                     val glyph = when (family) { "power" -> "rising_four_seam"; "command" -> "pinpoint_edge"; "breaking" -> "curveball_clock"; "endurance" -> "iron_arm"; else -> "calm_under_pressure" }
                     AwakeningGlyph(glyph, if (chosen) BaseballColors.action else BaseballColors.milestone, Modifier.size(30.dp))
                     Text(action.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
@@ -251,9 +250,7 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
             val rows = model.sections.firstOrNull { it.id == "achievements" }?.rows.orEmpty()
             val unlocked = state.highSchool?.achievements.orEmpty()
             val pending = state.highSchool?.unacknowledgedAchievements.orEmpty()
-            val rules = com.solkim.baseball.core.highschool.HighSchoolAchievementRules
-            val legacyOnly = setOf(rules.MAJOR_DEBUT, rules.HUNDRED_STRIKEOUTS, rules.HALL_OF_FAME)
-            val ids = rules.all.filter { it !in legacyOnly || it in unlocked }
+            val ids = CareerUiRules.achievementIds(state)
             val items = ids.zip(rows).sortedBy { (id, _) -> if (id in pending) 0 else if (id in unlocked) 1 else 2 }
             var selectedId by remember { mutableStateOf<String?>(null) }
             items.chunked(2).forEach { pair ->

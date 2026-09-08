@@ -1,11 +1,12 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.fixtures.*
+import com.solkim.baseball.application.*
+
 import androidx.compose.runtime.*
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
-import com.solkim.baseball.application.*
-import com.solkim.baseball.core.highschool.*
 import com.solkim.baseball.design.BaseballMigrationTheme
 import org.junit.Assert.*
 import org.junit.Rule
@@ -31,7 +32,7 @@ class CareerMeaningUiTest {
         val event = HighSchoolContentCatalog.events.first { it.id == "evt-coach-role" }
         val run = core.resignShadowState(school.run.copy(phase = HighSchoolPhase.RELATIONSHIP,
             currentRelationshipCategory = "coach", currentRelationshipTarget = HighSchoolRelationshipTarget.COACH, currentRelationshipEvent = event))
-        val next = core.resolveRelationship(HighSchoolKernel.RelationshipRequest("99881", run, HighSchoolRelationshipResponse.CHALLENGE)).snapshot
+        val next = core.resolveRelationship(FixtureRelationshipRequest("99881", run, HighSchoolRelationshipResponse.CHALLENGE)).snapshot
         val before = GameAggregateState.initial("meaning-ui").copy(stage = GameStage.HIGH_SCHOOL, highSchool = school.copy(run = run))
         val after = before.copy(highSchool = school.copy(run = next))
         val record = requireNotNull(conversationFeedbackRecord(before, after))
@@ -60,7 +61,7 @@ class CareerMeaningUiTest {
         val school = school()
         val team = HighSchoolDraftTeamRules.bestTeam(school.run.pitcher)
         val run = HighSchoolKernel().resignShadowState(school.run.copy(phase = HighSchoolPhase.COMPLETED,
-            draftResult = HighSchoolDraftResult(com.solkim.baseball.core.highschool.HighSchoolDraftOutcome.DRAFTED, 72, "4라운드", team.id, team, 4, 32, 120000000)))
+            draftResult = HighSchoolDraftResult(com.solkim.baseball.application.HighSchoolDraftOutcome.DRAFTED, 72, "4라운드", team.id, team, 4, 32, 120000000)))
         val hs = HighSchoolPhase4Kernel().commitShadowState(school.copy(run = run))
         val state = GameAggregateState.initial("meaning-ui").copy(stage = GameStage.HIGH_SCHOOL, highSchool = hs)
         compose.setContent { BaseballMigrationTheme {

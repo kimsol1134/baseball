@@ -1,5 +1,8 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.fixtures.*
+import com.solkim.baseball.application.*
+
 import android.content.res.Configuration
 import android.os.LocaleList
 import androidx.compose.foundation.layout.*
@@ -16,10 +19,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import com.solkim.baseball.application.*
-import com.solkim.baseball.core.highschool.*
-import com.solkim.baseball.core.highschool.HighSchoolDraftOutcome
-import com.solkim.baseball.core.pro.*
 import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.design.BaseballMigrationTheme
 import org.junit.Assert.*
