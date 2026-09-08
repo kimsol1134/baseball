@@ -40,6 +40,8 @@ internal fun CorePlayerHeader(state: GameAggregateState, compact: Boolean = fals
                     verbatim = true, style = MaterialTheme.typography.labelMedium, color = BaseballColors.textSecondary)
                 Text("›", verbatim = true, color = BaseballColors.action)
             }
+            CompanionLauncher(state)
+            CompanionReaction(state)
             NextAppearanceCue.resolve(state)?.let { CoreNextAppearance(it) }
         }
         if (details) AlertDialog(onDismissRequest = { details = false },
@@ -139,13 +141,6 @@ internal fun CoreRebirthStartComparison(preview: RebirthStartPreview) {
     Column(Modifier.fillMaxWidth().testTag("rebirth.startComparison"), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(copy.resolve("mobile.polish.life-transition", GameCopyArgument.Whole(preview.previousLife.toLong()), GameCopyArgument.Whole(preview.nextLife.toLong())),
             verbatim = true, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = BaseballColors.action)
-        Text(copy.resolve("mobile.polish.next-challenge"), verbatim = true, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-        Text(copy.resolve("loop.reborn.next"), verbatim = true, modifier = Modifier.testTag("rebirth.nextChallenge"), style = MaterialTheme.typography.bodyMedium)
-        if (preview.previousStrikeouts > 0) {
-            var records by remember { mutableStateOf(false) }
-            TextButton(onClick = { records = !records }) { Text(copy.resolve("mobile.core.career-details"), verbatim = true) }
-            if (records) Text(copy.resolve("mobile.polish.personal-best-goal", GameCopyArgument.Whole(preview.previousStrikeouts.toLong())), verbatim = true)
-        }
         Text(copy.resolve("mobile.polish.start-comparison"), verbatim = true, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Spacer(Modifier.weight(1f))
