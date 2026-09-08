@@ -179,17 +179,27 @@ private fun AlbumCardPreview(card: AlbumShareCard, seed: String, pro: Boolean, c
 
 @Composable
 internal fun AlbumStatGrid(stats: List<Pair<String, String>>) {
-    stats.chunked(3).forEach { row ->
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            row.forEach { (label, value) ->
-                Surface(color = BaseballColors.surfaceRaised, modifier = Modifier.weight(1f)) {
-                    Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
-                        Text(label, verbatim = true, style = MaterialTheme.typography.labelSmall, color = BaseballColors.textSecondary)
-                        Text(value, verbatim = true, style = MaterialTheme.typography.titleMedium)
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val valueStyle = MaterialTheme.typography.titleMedium
+    val widestValue = stats.maxOfOrNull { measurer.measure(androidx.compose.ui.text.AnnotatedString(it.second), valueStyle).size.width } ?: 0
+    val minCellWidth = (with(density) { widestValue.toDp() } + 22.dp).coerceAtLeast(76.dp)
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val columns = ((maxWidth + 8.dp) / (minCellWidth + 8.dp)).toInt().coerceIn(1, 3)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            stats.chunked(columns).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { (label, value) ->
+                        Surface(color = BaseballColors.surfaceRaised, modifier = Modifier.weight(1f)) {
+                            Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                                Text(label, verbatim = true, style = MaterialTheme.typography.labelSmall, color = BaseballColors.textSecondary)
+                                Text(value, verbatim = true, style = valueStyle)
+                            }
+                        }
                     }
+                    repeat(columns-row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
-        Spacer(Modifier.height(6.dp))
     }
 }

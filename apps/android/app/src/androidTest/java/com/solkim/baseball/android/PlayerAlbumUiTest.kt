@@ -81,6 +81,27 @@ class PlayerAlbumUiTest {
         compose.onNodeWithText("カードのプレビュー").assertIsDisplayed()
         compose.onNodeWithText("閉じる").performClick()
     }
+    @Test fun detailedNumbersStayOnOneLineForALargeTextBaseballFan() {
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) { BaseballMigrationTheme {
+                Surface(color = BaseballColors.canvas, contentColor = BaseballColors.textPrimary) {
+                    Column(Modifier.width(280.dp)) { AlbumStatGrid(listOf("IP" to "162.2", "NP" to "2480", "WHIP" to "1.08", "K/BB" to "10.25")) }
+                }
+            } }
+        }
+        for (value in listOf("162.2", "2480", "1.08", "10.25")) {
+            val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            compose.onNodeWithText(value).performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertEquals("A baseball number must not wrap: $value", 1, layouts.single().lineCount)
+            val layout = layouts.single()
+            assertEquals("The complete number must be on the line", value.length, layout.getLineEnd(0, visibleEnd = true))
+            assertTrue("Number extends beyond the cell: $value", layout.getLineRight(0) <= layout.size.width + 1f)
+            assertTrue("Number is clipped vertically: $value", layout.getBoundingBox(value.lastIndex).bottom <= layout.size.height + 1f)
+        }
+        val inst = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        androidx.test.uiautomator.UiDevice.getInstance(inst).takeScreenshot(java.io.File(inst.targetContext.cacheDir, "persona-large-stats.png"))
+    }
     @Test fun largeTextStillAllowsCardPreviewAndClosing() {
         compose.setContent { val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) { BaseballMigrationTheme {
