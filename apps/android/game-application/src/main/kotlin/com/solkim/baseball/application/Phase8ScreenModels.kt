@@ -284,6 +284,7 @@ public data class Phase8ActionModel(
     public val enabled: Boolean,
     public val payloads: List<Phase8CommandPayload> = emptyList(),
     public val destructive: Boolean = false,
+    public val effects: List<ChoiceEffect> = emptyList(),
 ) {
     public val contentDescription: String get() = "$label. $description"
 }
@@ -449,7 +450,7 @@ public object Phase8ScreenProjection {
         val actions = mutableListOf<Phase8ActionModel>()
 
         fun addSection(section: Phase8Section) { sections += section }
-        fun addAction(actionId: String, label: String, description: String, enabled: Boolean, commands: List<GameCommand> = emptyList(), destructive: Boolean = false) {
+        fun addAction(actionId: String, label: String, description: String, enabled: Boolean, commands: List<GameCommand> = emptyList(), destructive: Boolean = false, effects: List<ChoiceEffect> = emptyList()) {
             actions += Phase8ActionModel(
                 id = actionId,
                 label = label,
@@ -457,6 +458,7 @@ public object Phase8ScreenProjection {
                 enabled = enabled,
                 payloads = if (enabled) Phase8Payloads.batch(state, id, actionId, commands) else emptyList(),
                 destructive = destructive,
+                effects = effects,
             )
         }
 
@@ -586,6 +588,7 @@ public object Phase8ScreenProjection {
                         run?.let { ConversationPresentation.preview(it, context.seed(state, "relationship:${response.wire}"), response) } ?: relationshipChoiceDetail(event?.category, response),
                         run?.phase == HighSchoolPhase.RELATIONSHIP,
                         listOf(hs(HighSchoolPhase4Command.Relationship(context.seed(state, "relationship:${response.wire}"), response))),
+                        effects = run?.let { ConversationPresentation.previewEffects(it, context.seed(state, "relationship:${response.wire}"), response) }.orEmpty(),
                     )
                 }
             }

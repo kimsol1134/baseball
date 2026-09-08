@@ -758,9 +758,9 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
                 section.rows.firstOrNull()?.let { row ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         when (role) {
-                            "coach" -> PlayerPortrait(seed = row.label, role = AvatarRole.COACH, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
-                            "catcher" -> PlayerPortrait(seed = row.label, role = AvatarRole.CATCHER, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
-                            "rival" -> PlayerPortrait(seed = row.label, role = AvatarRole.RIVAL, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
+                            "coach" -> PlayerPortrait(seed = run?.let(RelationshipNarrative::speaker) ?: row.label, role = AvatarRole.COACH, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
+                            "catcher" -> PlayerPortrait(seed = run?.let(RelationshipNarrative::speaker) ?: row.label, role = AvatarRole.CATCHER, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
+                            "rival" -> PlayerPortrait(seed = run?.let(RelationshipNarrative::speaker) ?: row.label, role = AvatarRole.RIVAL, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
                             else -> Unit
                         }
                         Text(row.label, fontWeight = FontWeight.Bold)
@@ -792,6 +792,10 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
         model.actions.filter { it.enabled }.forEach { action ->
             CompactChoiceCard(action.label, action.description, action.enabled, "action.${action.id}") {
                 onAction(Phase8UiAction(model.id, action.id, action.payloads))
+            }
+            if (action.effects.size > com.solkim.baseball.application.ChoiceEffect.highlighted(action.effects).size) CareerDisclosure("효과 자세히", "effect.details.${action.id}") {
+                action.effects.forEach { effect -> Text(effect.localized(copy), verbatim = true,
+                    color = if (effect.favorable) BaseballColors.action else BaseballColors.warning) }
             }
         }
     } else Phase8ChoiceGrid(model, onAction)

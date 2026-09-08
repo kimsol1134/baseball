@@ -43,10 +43,13 @@ public object ConversationPresentation {
         if (lines.isEmpty()) lines += "대화를 마쳤어요. 다음 일정을 준비해요."
         return lines
     }
-    public fun preview(run: HighSchoolState, seed: String, response: HighSchoolRelationshipResponse): String {
-        if (run.phase != HighSchoolPhase.RELATIONSHIP) return RelationshipNarrative.choice(run, response)?.detail.orEmpty()
+    public fun effectItems(before: HighSchoolState, after: HighSchoolState): List<ChoiceEffect> = effects(before, after).map(ChoiceEffect::fromSource)
+    public fun previewEffects(run: HighSchoolState, seed: String, response: HighSchoolRelationshipResponse): List<ChoiceEffect> {
+        if (run.phase != HighSchoolPhase.RELATIONSHIP) return emptyList()
         val kernel = HighSchoolKernel()
-        return effects(run, kernel.resolveRelationship(HighSchoolKernel.RelationshipRequest(seed, kernel.resignShadowState(run), response)).snapshot).take(2).joinToString(" · ")
+        return effectItems(run, kernel.resolveRelationship(HighSchoolKernel.RelationshipRequest(seed, kernel.resignShadowState(run), response)).snapshot)
     }
+    public fun preview(run: HighSchoolState, seed: String, response: HighSchoolRelationshipResponse): String =
+        ChoiceEffect.summary(previewEffects(run, seed, response))
     private fun signed(n: Int): String = if (n > 0) "+$n" else "$n"
 }

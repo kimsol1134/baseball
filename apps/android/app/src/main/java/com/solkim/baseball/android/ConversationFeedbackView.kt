@@ -3,6 +3,8 @@ package com.solkim.baseball.android
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -48,6 +50,7 @@ internal fun saveConversationFeedback(context: Context, before: GameAggregateSta
 @Composable
 internal fun ConversationFeedbackGate(state: GameAggregateState) {
     val context = LocalContext.current
+    val copy = rememberGameCopy()
     val prefs = remember(context) { context.getSharedPreferences("conversation.feedback", Context.MODE_PRIVATE) }
     var raw by remember(prefs) { mutableStateOf(prefs.getString("pending", null)) }
     DisposableEffect(prefs) {
@@ -62,14 +65,12 @@ internal fun ConversationFeedbackGate(state: GameAggregateState) {
     if (record.optString("career") != career || record.optInt("number") > count) return
     AlertDialog(onDismissRequest = {}, containerColor = BaseballColors.surfaceRaised, modifier = Modifier.testTag("conversation.result"),
         title = { Text("대화로 달라진 것") },
-        text = { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(record.optString("speaker"), style = MaterialTheme.typography.titleMedium)
             val lines = record.getJSONArray("lines")
-            repeat(minOf(4, lines.length())) {
-                val line = lines.getString(it)
-                val cost = line.startsWith("피로 +") || line.startsWith("팔 부담 +") ||
-                    Regex("^(구위|제구|무브먼트|체력|신뢰|감독 신뢰|포수 신뢰|관심도) -").containsMatchIn(line)
-                Text(line, color = if (cost) BaseballColors.warning else BaseballColors.action)
+            repeat(lines.length()) {
+                val effect = ChoiceEffect.fromSource(lines.getString(it))
+                Text(effect.localized(copy), verbatim = true, color = if (effect.favorable) BaseballColors.action else BaseballColors.warning)
             }
         } },
         confirmButton = { TextButton(onClick = {

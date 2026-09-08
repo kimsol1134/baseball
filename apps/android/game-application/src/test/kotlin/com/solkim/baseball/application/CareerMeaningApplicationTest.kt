@@ -49,7 +49,7 @@ class CareerMeaningApplicationTest {
         for (response in HighSchoolRelationshipResponse.entries) {
             val preview = ConversationPresentation.preview(run, "99881", response)
             val after = core.resolveRelationship(HighSchoolKernel.RelationshipRequest("99881", run, response)).snapshot
-            assertEquals(ConversationPresentation.effects(run, after).take(2).joinToString(" · "), preview)
+            assertEquals(ChoiceEffect.summary(ConversationPresentation.effectItems(run, after)), preview)
             assertTrue(preview.isNotBlank())
         }
     }
