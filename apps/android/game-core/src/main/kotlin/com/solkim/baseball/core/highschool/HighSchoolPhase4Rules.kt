@@ -444,6 +444,8 @@ public object HighSchoolAchievementRules {
 }
 
 public object HighSchoolTournamentRules {
+    public fun belongsTo(tournament: HighSchoolTournamentSnapshot, careerId: String): Boolean =
+        tournament.bracketSeed == Hashing.fnv1a64Hex("bracket|$careerId|${tournament.chapter}")
     public const val BOARD_SIZE: Int = 8
 
     private val names = mapOf(

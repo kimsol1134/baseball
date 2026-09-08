@@ -2230,7 +2230,11 @@ public class ProKernel(
         val games = values.firstOrNull()?.let { it.wins + it.losses + it.draws } ?: 0
         require(values.all {
             it.teamName == ProCatalog.team(it.teamId).name && it.wins >= 0 && it.losses >= 0 && it.draws >= 0 &&
-                it.wins + it.losses + it.draws == games && it.gamesBehindPermille >= 0
+                it.wins + it.losses + it.draws == games &&
+                // Win percentage excludes draws. Its leader can have a smaller W-L differential
+                // than another team, yielding a legitimate negative half-game gap.
+                (it.gamesBehindPermille >= 0 || it.gamesBehindPermille ==
+                    ((values.first().wins - it.wins) + (it.losses - values.first().losses)) * 500)
         }) { "${code}_values" }
         require(values.count { it.isPlayerTeam } == 1) { "${code}_player" }
     }

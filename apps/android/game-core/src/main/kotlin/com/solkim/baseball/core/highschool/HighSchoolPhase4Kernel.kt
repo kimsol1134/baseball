@@ -677,7 +677,7 @@ public class HighSchoolPhase4Kernel(
             )
         }
         val pledge = if (state.challenge.active) state.pledge else pledgeUpdate(state.copy(run = nextRun, seasonLog = nextSeasonLog))
-        val tournaments = if (state.challenge.active) state.tournaments else state.tournaments.updateForChapter(nextRun.chapter.number)
+        val tournaments = if (state.challenge.active) state.tournaments else state.tournaments.updateForChapter(nextRun.chapter.number, nextRun.careerId, state.archive.isEmpty())
         val board = if (state.challenge.active) state.prospectBoard else HighSchoolProspectRankingRules.board(nextRun)
         val returnPlan = if (state.challenge.active) state.returnPlan else HighSchoolReturnPlan(
             destination = HighSchoolReturnDestination.HIGH_SCHOOL,
@@ -1183,7 +1183,7 @@ public class HighSchoolPhase4Kernel(
         require(state.archive.map { it.careerId }.distinct().size == state.archive.size) { "phase4.archive_ids" }
         require(state.archive.zipWithNext().all { (before, after) -> before.completedGameCounterAtArchive <= after.completedGameCounterAtArchive }) { "phase4.archive_counter_order" }
         require(state.archive.all { it.completedGameCounterAtArchive <= state.completedGameCounter }) { "phase4.archive_counter" }
-        require(state.tournaments.map { it.chapter }.distinct().size == state.tournaments.size) { "phase4.tournament_duplicate" }
+        require(state.tournaments.map { it.chapter to it.bracketSeed }.distinct().size == state.tournaments.size) { "phase4.tournament_duplicate" }
         state.tournaments.forEach { tournament ->
             require(tournament.chapter in setOf(2, 4, 6, 8)) { "phase4.tournament_chapter" }
             require(tournament.playerRound == when {
@@ -1207,7 +1207,8 @@ public class HighSchoolPhase4Kernel(
         require(state.inheritance.inheritanceRulesVersion == null || state.inheritance.inheritanceRulesVersion in 1..2) { "phase4.inheritance_rules" }
         require(state.run.balanceVersion in 1..HighSchoolGameplayRules.CURRENT) { "phase4.balance_version" }
         require(state.run.worldRulesVersion in 1..HighSchoolContentCatalog.WORLD_RULES_VERSION) { "phase4.world_rules_version" }
-        require(state.run.recentRelationshipEventIds.distinct().size == state.run.recentRelationshipEventIds.size) { "phase4.relationship_recent" }
+        // This is the chronological last-eight history; a returning event can legitimately recur.
+        require(state.run.recentRelationshipEventIds.size <= 8 && state.run.recentRelationshipEventIds.all(String::isNotBlank)) { "phase4.relationship_recent" }
         state.run.currentGameScenario?.let { scenario ->
             require(state.run.currentGameScenarioId == scenario.id) { "phase4.scenario_id" }
             require(scenario.inning in 1..20 && scenario.outs in 0..2 && scenario.leverage in 0..1_000) { "phase4.scenario_bounds" }
@@ -1382,8 +1383,8 @@ public class HighSchoolPhase4Kernel(
         fielding = snapshot.fieldingResolution,
     )
 
-    private fun List<HighSchoolTournamentSnapshot>.updateForChapter(chapter: Int): List<HighSchoolTournamentSnapshot> =
-        map { if (it.chapter == chapter) it.copy(completed = true) else it }
+    private fun List<HighSchoolTournamentSnapshot>.updateForChapter(chapter: Int, careerId: String, firstLife: Boolean): List<HighSchoolTournamentSnapshot> =
+        map { if (it.chapter == chapter && (firstLife || HighSchoolTournamentRules.belongsTo(it, careerId))) it.copy(completed = true) else it }
 
 }
 
