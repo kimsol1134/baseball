@@ -37,6 +37,9 @@ internal class HighSchoolAutomaticOutingSimulator(
         val runsAllowed: Int,
         val pitches: Int,
         val hits: Int,
+        val homeRuns: Int = 0,
+        val teamRuns: Int = 0,
+        val opponentRuns: Int = runsAllowed,
     )
 
     internal fun simulate(
@@ -61,10 +64,15 @@ internal class HighSchoolAutomaticOutingSimulator(
             // Kotlin ledger does not currently retain those two values, but the draws are
             // part of the authoritative RNG stream and must still be consumed before the
             // next outing's base seed is selected.
-            consumeHighSchoolTeamRunDraws(rng)
-            line
+            val support = HighSchoolSeasonLineRules.highSchoolTeamRuns(rng)
+            val bullpenRuns = HighSchoolSeasonLineRules.restOfHighSchoolTeamRuns(max(0, 27 - line.outs), rng)
+            line.copy(teamRuns = support, opponentRuns = line.runsAllowed + bullpenRuns)
         }
     }
+
+    internal fun simulateRemainder(state: HighSchoolState, session: HighSchoolPitchSession): Line = simulateOuting(
+        state, session.context.fatigue, max(0, 18 - session.outs), max(0, 90 - session.pitches),
+        difficultyScale(state.chapter.number, state.lifeNumber), session.seed.toULong(), session)
 
     private fun simulateOuting(
         state: HighSchoolState,
@@ -73,6 +81,7 @@ internal class HighSchoolAutomaticOutingSimulator(
         pitchCap: Int,
         batterOffset: Int,
         baseSeed: ULong,
+        continuation: HighSchoolPitchSession? = null,
     ): Line {
         var rng = SplitMix64(baseSeed)
         val pitcher = state.toPitcherSnapshot()
@@ -82,6 +91,7 @@ internal class HighSchoolAutomaticOutingSimulator(
         var runsAllowed = 0
         var pitches = 0
         var hits = 0
+        var homeRuns = 0
         val extensionOuts = if (outsTarget >= 18) starterExtensionOuts(pitcher) else 0
         val effectiveOutsTarget = outsTarget + extensionOuts
         val effectivePitchCap = pitchCap + extensionOuts * 4
@@ -91,13 +101,13 @@ internal class HighSchoolAutomaticOutingSimulator(
         ).map { position ->
             com.solkim.baseball.core.pitch.FielderSnapshot("week-$position", position, position, 50, 50, 50)
         }
-        var inning = InningStateSnapshot(1, HalfInning.TOP, 0)
-        var runners = BaserunnerStateSnapshot(false, false, false, 52)
-        var runsOnBoard = 0
+        var inning = continuation?.game?.toGameState()?.inningState ?: InningStateSnapshot(1, HalfInning.TOP, 0)
+        var runners = continuation?.game?.toGameState()?.runners ?: BaserunnerStateSnapshot(false, false, false, 52)
+        var runsOnBoard = continuation?.game?.runsAllowed ?: 0
         var currentFatigue = startingFatigue.coerceIn(0, 95)
         var benchMemory: RivalMemorySnapshot? = null
         var plateAppearanceIndex = 0
-        var carriedLog = GameLogSnapshot("week-outing", 0UL, 0, emptyList())
+        var carriedLog = continuation?.log?.toGameLog() ?: GameLogSnapshot("week-outing", 0UL, 0, emptyList())
 
         while (lineOuts < effectiveOutsTarget && pitches < effectivePitchCap && plateAppearanceIndex < 60) {
             plateAppearanceIndex += 1
@@ -134,7 +144,7 @@ internal class HighSchoolAutomaticOutingSimulator(
             // 초말을 무시하면 초의 세 번째 아웃이 통째로 사라진다.
             val outsBefore = absoluteOuts(inning)
             var context = PlateAppearanceContext(
-                plateAppearanceId = "week-pa-$plateAppearanceIndex",
+                plateAppearanceId = "week-pa-$plateAppearanceIndex:outing-v2",
                 revision = 0UL,
                 inning = inning.inning,
                 outs = inning.outs,
@@ -165,6 +175,7 @@ internal class HighSchoolAutomaticOutingSimulator(
                 if (snapshot.result == PlateAppearanceResult.STRIKEOUT) strikeouts += 1
                 if (snapshot.result == PlateAppearanceResult.WALK) walks += 1
                 if (snapshot.outcome in setOf(PitchOutcome.SINGLE, PitchOutcome.DOUBLE, PitchOutcome.TRIPLE, PitchOutcome.HOME_RUN)) hits += 1
+                if (snapshot.outcome == PitchOutcome.HOME_RUN) homeRuns += 1
                 currentFatigue = snapshot.fatigueAfterPitch.coerceIn(0, 95)
                 if (snapshot.ended) {
                     runsAllowed += snapshot.runsScored
@@ -196,15 +207,7 @@ internal class HighSchoolAutomaticOutingSimulator(
                 nextPreparation = following
             }
         }
-        return Line(lineOuts, strikeouts, walks, runsAllowed, pitches, hits)
-    }
-
-    private fun consumeHighSchoolTeamRunDraws(rng: SplitMix64) {
-        // LeagueBaseline.highSchoolTeamRuns and restOfHighSchoolTeamRuns each call
-        // SplitMix64.nextInt(1_000) exactly once. Their returned values are not part of
-        // the current Kotlin chapter ledger, but their RNG effects are authoritative.
-        rng.nextInt(1_000)
-        rng.nextInt(1_000)
+        return Line(lineOuts, strikeouts, walks, runsAllowed, pitches, hits, homeRuns)
     }
 
     private fun starterExtensionOuts(pitcher: com.solkim.baseball.core.pitch.PitcherSnapshot): Int {

@@ -132,7 +132,7 @@ internal class ProAutomaticOutingSimulator(
             var memory = benchMemory
             val outsBefore = absoluteOuts(inning)
             var context = PlateAppearanceContext(
-                plateAppearanceId = "week-pa-$plateAppearanceIndex",
+                plateAppearanceId = "week-pa-$plateAppearanceIndex:outing-v2",
                 revision = 0UL,
                 inning = inning.inning,
                 outs = inning.outs,

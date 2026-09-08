@@ -43,6 +43,7 @@ public sealed interface ProCommand {
     public data class ApplySeasonDecision(val seed: String, val decisionId: String, val choiceId: String) : ProCommand
     public data class ReserveImportantGame(val seed: String) : ProCommand
     public data class SubmitPitch(val pitchSessionId: String, val call: PitchCall, val delivery: PitchDelivery = PitchDelivery.NEUTRAL) : ProCommand
+    public data object ContinueOuting : ProCommand
     public data object FinishImportantGame : ProCommand
     public data class ReviewSeason(val seed: String) : ProCommand
     public data class AcknowledgeSeasonSettlement(val seed: String, val settlementId: String) : ProCommand
@@ -138,6 +139,7 @@ public object ProCommandCodec {
         is ProCommand.ApplySeasonDecision -> "applySeasonDecision"
         is ProCommand.ReserveImportantGame -> "reserveImportantGame"
         is ProCommand.SubmitPitch -> "submitPitch"
+        ProCommand.ContinueOuting -> "continueOuting"
         ProCommand.FinishImportantGame -> "finishImportantGame"
         is ProCommand.ReviewSeason -> "reviewSeason"
         is ProCommand.AcknowledgeSeasonSettlement -> "acknowledgeSeasonSettlement"
@@ -170,6 +172,7 @@ public object ProCommandCodec {
             command.pitchSessionId, command.call.pitchType.wire, command.call.zone.row.toString(), command.call.zone.column.toString(),
             command.call.zoneIntent.wire, command.call.intensity.wire, command.delivery.releaseAccuracy.toString(), command.delivery.aimAccuracy.toString(),
         ))
+        ProCommand.ContinueOuting -> pack(emptyList())
         ProCommand.FinishImportantGame -> pack(emptyList())
         is ProCommand.ReviewSeason -> pack(listOf(command.seed))
         is ProCommand.AcknowledgeSeasonSettlement -> pack(listOf(command.seed, command.settlementId))
@@ -210,6 +213,7 @@ public object ProCommandCodec {
         "submitPitch" -> unpack(payload, 8).let { values ->
             ProCommand.SubmitPitch(values[0], PitchCall(pitchKind(values[1]), PitchZone(values[2].int("pitch.row"), values[3].int("pitch.column")), zoneIntent(values[4]), intensity(values[5])), PitchDelivery(values[6].int("pitch.release"), values[7].int("pitch.aim")))
         }
+        "continueOuting" -> exactPayload(payload) { ProCommand.ContinueOuting }
         "finishImportantGame" -> exactPayload(payload) { ProCommand.FinishImportantGame }
         "reviewSeason" -> unpack(payload, 1).let { ProCommand.ReviewSeason(it.single()) }
         "acknowledgeSeasonSettlement" -> unpack(payload, 2).let { ProCommand.AcknowledgeSeasonSettlement(it[0], it[1]) }
@@ -395,6 +399,7 @@ public class ProCommandStore(
             require(command.pitchSessionId == state.activePitch?.sessionId) { "pro.command.pitch_session_mismatch" }
             kernel.submitPitch(state, command.pitchSessionId, command.call, command.delivery)
         }
+        ProCommand.ContinueOuting -> kernel.continueOuting(state)
         ProCommand.FinishImportantGame -> kernel.finishImportantGame(state)
         is ProCommand.ReviewSeason -> kernel.reviewSeason(state, command.seed)
         is ProCommand.AcknowledgeSeasonSettlement -> kernel.acknowledgeSeasonSettlement(state, command.seed, command.settlementId)

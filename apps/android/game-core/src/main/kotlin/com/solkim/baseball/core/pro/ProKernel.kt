@@ -761,7 +761,7 @@ public class ProKernel(
         )
         val entryInning = postseasonEntryInning(availabilityState)
         val context = PlateAppearanceContext(
-            plateAppearanceId = "${availabilityState.careerId}:season:${availabilityState.season}:week:${availabilityState.week}:important",
+            plateAppearanceId = "${availabilityState.careerId}:season:${availabilityState.season}:week:${availabilityState.week}:important:outing-v2",
             revision = 0UL,
             inning = entryInning,
             outs = 1,
@@ -783,7 +783,7 @@ public class ProKernel(
         val log = GameLogSnapshot("${availabilityState.careerId}:important:${availabilityState.importantGames}", 0UL, 0, emptyList())
         val preparation = pitch.prepare(PitchKernel.PrepareRequest(seedText, PitchLearningRules.playable(availabilityState.pitcher, availabilityState.pitchLearningProject), batter, scouting, context, memory, game, log))
         val session = ProPitchSession(
-            sessionId = "${availabilityState.careerId}:important:${availabilityState.importantGames}",
+            sessionId = "${availabilityState.careerId}:important:${availabilityState.importantGames}:outing-v2",
             week = availabilityState.week,
             seed = seedText,
             pitchIndex = 0,
@@ -830,7 +830,7 @@ public class ProKernel(
             call.pitchType,
             call.zone,
             call.zoneIntent,
-            PitchAbilityRules.nominalVelocity(state.pitcher, call.pitchType, call.intensity, session.context.fatigue) / 10,
+            PitchAbilityRules.expectedVelocity(state.pitcher, call, session.context.fatigue, session.sessionId.endsWith(":outing-v2")) / 10,
             snapshot.outcome,
         )
         val sequenceMoment = PitchSequenceEvaluator.evaluate(
@@ -839,13 +839,34 @@ public class ProKernel(
             sequencePitch,
             preparation.rivalAdaptation,
         )
-        val nextContext = snapshot.toProContext(session.context, submitted.gameState)
-        val nextSession = session.copy(
+        val wholeInning = session.sessionId.endsWith(":outing-v2")
+        val outingEnded = if (wholeInning) snapshot.inningTransition.inningEnded ||
+            (snapshot.ended && session.pitches + 1 >= 60) else snapshot.ended
+        val nextTurn = (session.context.plateAppearanceId.substringAfterLast(":batter:").toIntOrNull() ?: 1) + 1
+        val nextContext = snapshot.toProContext(session.context, submitted.gameState).let {
+            if (wholeInning) it.copy(
+                plateAppearanceId = if (snapshot.ended) "${session.sessionId}:batter:$nextTurn" else it.plateAppearanceId,
+                balls = if (snapshot.ended) 0 else it.balls,
+                strikes = if (snapshot.ended) 0 else it.strikes,
+                scoreDifferential = session.context.scoreDifferential - snapshot.runsScored,
+            ) else it
+        }
+        val nextBatter = if (wholeInning && snapshot.ended) {
+            val spot = (nextTurn - 1) % 9 + 1
+            val rival = state.currentRival
+            val baseId = rival?.id ?: session.batter.id.substringBefore(":lineup:")
+            session.batter.copy(id = "$baseId:lineup:$spot", name = "상대 ${spot}번 타자",
+                contact = 48 + (proHash("$baseId:$spot:contact") % 17UL).toInt(),
+                power = 45 + (proHash("$baseId:$spot:power") % 23UL).toInt(),
+                batSide = if (spot % 3 == 0) BatSide.LEFT else BatSide.RIGHT)
+        } else session.batter
+        var nextSession = session.copy(
+            batter = nextBatter,
             seed = submitted.nextSeed,
             pitchIndex = session.pitchIndex + 1,
             preparationToken = submitted.nextPreparation?.preparationToken ?: "",
             context = nextContext,
-            memory = submitted.rivalMemory,
+            memory = submitted.rivalMemory.copy(matchupId = "${state.pitcher.id}:${nextBatter.id}"),
             game = submitted.gameState,
             log = submitted.gameLog,
             pitches = session.pitches + 1,
@@ -861,10 +882,15 @@ public class ProKernel(
             abilityMoments = submitted.abilityMoment?.wire?.let { session.abilityMoments + it } ?: session.abilityMoments,
             sequenceMasteryCount = session.sequenceMasteryCount + if (sequenceMoment != null) 1 else 0,
             sequencePitches = if (snapshot.ended) emptyList() else (session.sequencePitches + sequencePitch).takeLast(3),
-            ended = snapshot.ended,
-            boundary = if (snapshot.ended) ProPitchBoundary.COMPLETED else ProPitchBoundary.PLAYING,
+            ended = outingEnded,
+            boundary = if (outingEnded) ProPitchBoundary.COMPLETED else ProPitchBoundary.PLAYING,
             perfectReleases = session.perfectReleases + if (delivery.isPerfectRelease) 1 else 0,
         )
+        val following = if (!outingEnded && snapshot.ended) pitch.prepare(PitchKernel.PrepareRequest(
+            nextSession.seed, PitchLearningRules.playable(state.pitcher, state.pitchLearningProject), nextSession.batter,
+            nextSession.scouting, nextSession.context, nextSession.memory, nextSession.game, nextSession.log))
+        else submitted.nextPreparation
+        nextSession = nextSession.copy(preparationToken = following?.preparationToken ?: "")
         val next = state.copy(
             revision = state.revision + 1UL,
             activePitch = nextSession,
@@ -874,7 +900,22 @@ public class ProKernel(
             lastFielding = snapshot.fieldingResolution,
             commitment = "",
         )
-        return result(next, submitted.nextSeed, listOf("pro_pitch_submitted"), submitted.nextPreparation, snapshot.trajectoryPresentation)
+        return result(next, submitted.nextSeed, listOf("pro_pitch_submitted"), following, snapshot.trajectoryPresentation)
+    }
+
+    public fun continueOuting(state: ProState): ProResult {
+        validate(state, ProCareerPhase.IMPORTANT_GAME)
+        val session = requireNotNull(state.activePitch)
+        require(session.sessionId.endsWith(":outing-v2") && session.ended &&
+            state.role in setOf(ProRole.STARTER, ProRole.LONG_RELIEF) && session.game.inningState?.outs == 0 && session.outs < 18 &&
+            session.pitches < 80 && session.context.inning < 9 && session.context.fatigue < 90) { "outing.continue_unavailable" }
+        val resumed = session.copy(ended = false, boundary = ProPitchBoundary.PLAYING,
+            context = session.context.copy(inning = session.context.inning + 1, outs = 0, balls = 0, strikes = 0, pitchNumber = 1),
+            game = session.game.copy(inningState = InningStateSnapshot(session.context.inning + 1, HalfInning.TOP, 0), runners = BaserunnerStateSnapshot.EMPTY))
+        val preparation = pitch.prepare(PitchKernel.PrepareRequest(resumed.seed, PitchLearningRules.playable(state.pitcher, state.pitchLearningProject),
+            resumed.batter, resumed.scouting, resumed.context, resumed.memory, resumed.game, resumed.log))
+        return result(state.copy(revision = state.revision + 1UL, activePitch = resumed.copy(preparationToken = preparation.preparationToken), commitment = ""),
+            resumed.seed, listOf("outing_continued"), preparation)
     }
 
     public fun finishImportantGame(state: ProState): ProResult {
@@ -907,7 +948,8 @@ public class ProKernel(
         val lateTeam = rng.nextInt(3)
         val lateBullpen = if (started) rng.nextInt(3) else 0
         val opponentRuns = opponentEarlier + runsAllowed + lateBullpen
-        val teamRuns = max(0, opponentEarlier + session.context.scoreDifferential + lateTeam)
+        val entryDifferential = session.context.scoreDifferential + if (session.sessionId.endsWith(":outing-v2")) session.runsAllowed else 0
+        val teamRuns = max(0, opponentEarlier + entryDifferential + lateTeam)
         val decision = proDecision(started, state.role == ProRole.CLOSER, outs, runsAllowed, teamRuns, opponentRuns)
         val line = ProGameLine(
             season = state.season,

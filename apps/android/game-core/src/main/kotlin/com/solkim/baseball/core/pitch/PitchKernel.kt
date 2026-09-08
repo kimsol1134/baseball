@@ -530,8 +530,8 @@ public object PitchAbilityRules {
     }
 
     /** Pre-pitch UI estimate using the same fatigue, effort and mastery rules as delivery. */
-    public fun expectedVelocity(pitcher: PitcherSnapshot, call: PitchCall, fatigue: Int): Int =
-        nominalVelocity(pitcher, call.pitchType, call.intensity, fatigue, pitcher.effectiveMastery.stuff)
+    public fun expectedVelocity(pitcher: PitcherSnapshot, call: PitchCall, fatigue: Int, balancedEffort: Boolean = false): Int =
+        nominalVelocity(pitcher, call.pitchType, call.intensity, fatigue, pitcher.effectiveMastery.stuff, balancedEffort)
 
     public fun readout(pitcher: PitcherSnapshot, call: PitchCall, context: PlateAppearanceContext): PitchAbilityReadout {
         val profile = pitcher.profile(call.pitchType)
@@ -548,7 +548,7 @@ public object PitchAbilityRules {
             weakContactRating = profile?.weakContact ?: 50,
             nominalVelocityTenthsKph = nominalVelocity(
                 pitcher, call.pitchType, call.intensity, context.fatigue,
-                pitcher.effectiveMastery.stuff,
+                pitcher.effectiveMastery.stuff, context.plateAppearanceId.contains(":outing-v2"),
             ),
             fatigueCost = fatigueCost(call.intensity, profile),
             effectiveFatigue = effectiveFatigue(context.fatigue, pitcher.stamina, pitcher.effectiveMastery.stamina),
@@ -598,12 +598,18 @@ public object PitchAbilityRules {
         intensity: PitchIntensity,
         fatigue: Int,
         mastery: Int = 0,
+        balancedEffort: Boolean = false,
     ): Int {
         val profile = pitcher.profile(type)
         val base = profile?.velocityTenthsKph ?: baseVelocity(type) + (pitcher.stuff - 50) * 2
         val pressure = effectiveFatigue(fatigue, pitcher.stamina, pitcher.effectiveMastery.stamina)
         val stuffContribution = MasteryEffectRules.bonusForContribution(max(0, pitcher.stuff - 20), mastery) / 8
-        val raw = base + stuffContribution + intensity(intensity).velocityBonusTenthsKph - pressure
+        val velocityBonus = if (balancedEffort) when (intensity) {
+            PitchIntensity.CONTROLLED -> -25
+            PitchIntensity.NORMAL -> 0
+            PitchIntensity.MAX_EFFORT -> 25
+        } else intensity(intensity).velocityBonusTenthsKph
+        val raw = base + stuffContribution + velocityBonus - pressure
         val ceiling = when (intensity) {
             PitchIntensity.CONTROLLED -> maximumProfileVelocity(type) - 20
             PitchIntensity.NORMAL -> maximumProfileVelocity(type)
@@ -1673,7 +1679,7 @@ public class PitchKernel {
             parameters.call.pitchType,
             parameters.call.intensity,
             parameters.context.fatigue,
-            parameters.pitcher.effectiveMastery.stuff,
+            parameters.pitcher.effectiveMastery.stuff, parameters.context.plateAppearanceId.contains(":outing-v2"),
         ) +
             generator.nextInt(21) - 10 + releaseShift * 10 / 500 + if (delivery?.isPerfectRelease == true) 6 else 0
         val velocity = min(PitchAbilityRules.MAXIMUM_EXECUTED_VELOCITY_TENTHS_KPH, rawVelocity)

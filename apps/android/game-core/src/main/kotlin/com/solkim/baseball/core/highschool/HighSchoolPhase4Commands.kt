@@ -51,6 +51,7 @@ public sealed interface HighSchoolPhase4Command {
         val call: PitchCall,
         val delivery: PitchDelivery = PitchDelivery.NEUTRAL,
     ) : HighSchoolPhase4Command
+    public data object ContinueOuting : HighSchoolPhase4Command
     public data object FinishImportantGame : HighSchoolPhase4Command
     public data class ChooseAwakening(val seed: String, val awakening: HighSchoolAwakening) : HighSchoolPhase4Command
     public data class AdvanceChapter(val seed: String) : HighSchoolPhase4Command
@@ -194,6 +195,7 @@ public class HighSchoolPhase4CommandStore(
             }
             kernel.submitPitch(state, command.sessionId, command.call, command.delivery)
         }
+        HighSchoolPhase4Command.ContinueOuting -> kernel.continueOuting(state)
         HighSchoolPhase4Command.FinishImportantGame -> kernel.finishImportantGame(state)
         is HighSchoolPhase4Command.ChooseAwakening -> kernel.chooseAwakening(command.seed, state, command.awakening)
         is HighSchoolPhase4Command.AdvanceChapter -> kernel.advanceChapter(command.seed, state)

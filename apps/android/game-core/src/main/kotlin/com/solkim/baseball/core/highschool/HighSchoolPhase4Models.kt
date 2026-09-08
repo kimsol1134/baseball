@@ -571,3 +571,25 @@ internal fun HighSchoolState.legacyScoutingSnapshot(): BatterScoutingSnapshot = 
     chaseTendency = rival.discipline.coerceIn(20, 80),
     reliability = 60,
 )
+
+/** New outing sessions rotate the opposing lineup; legacy reservations retain their exact batter. */
+public fun HighSchoolPhase4State.currentBatter(): BatterSnapshot {
+    val base = run.toBatterSnapshot()
+    val session = activePitch ?: return base
+    if (!session.sessionId.endsWith(":outing-v2") || !session.context.plateAppearanceId.contains(":batter:")) return base
+    val turn = session.context.plateAppearanceId.substringAfterLast(":batter:").toIntOrNull() ?: 1
+    val spot = (turn - 1) % 9 + 1
+    val edge = listOf(0, 2, 6, 8, 4, 0, -3, -5, -2)[spot - 1]
+    return base.copy(id = "${run.rival.id}:lineup:$spot", name = "상대 ${spot}번 타자",
+        contact = (base.contact + edge).coerceIn(20, 90), power = (base.power + edge).coerceIn(20, 90),
+        batSide = if (spot % 3 == 0) BatSide.LEFT else BatSide.RIGHT)
+}
+
+internal fun HighSchoolPhase4State.currentScouting(): BatterScoutingSnapshot {
+    val batter = currentBatter()
+    if (batter.id == run.rival.id) return run.toScoutingSnapshot()
+    val rules = com.solkim.baseball.core.pitch.BatterScoutingProfileRules
+    val profile = rules.profile(rules.archetype(run.rival.archetype), "highschool:${batter.id}")
+    return BatterScoutingSnapshot(profile.hotZone, profile.coldZone, profile.pitchStrength,
+        profile.pitchWeakness, (100 - batter.discipline).coerceIn(20, 80), reliability = 60)
+}

@@ -241,27 +241,27 @@ public class HighSchoolPhase4Kernel(
             ?: (HighSchoolContentCatalog.scenarios + HighSchoolContentCatalog.regularScenarios).firstOrNull { it.id == state.run.currentGameScenarioId }
             ?: error("importantGame.scenario_missing")
         val pitcher = state.run.toPitcherSnapshot()
-        val batter = state.run.toBatterSnapshot()
-        val scouting = state.run.toScoutingSnapshot()
+        val batter = state.currentBatter()
+        val scouting = state.currentScouting()
         val context = HighSchoolPitchContext(
-            plateAppearanceId = "${state.run.careerId}:game:$gameNumber:pa:1",
+            plateAppearanceId = "${state.run.careerId}:game:$gameNumber:pa:1:outing-v2",
             revision = 0UL,
-            inning = scenario.inning,
-            outs = scenario.outs,
+            inning = if (state.run.chapterGameClaimed) 1 else scenario.inning,
+            outs = if (state.run.chapterGameClaimed) 0 else scenario.outs,
             balls = 0,
             strikes = 0,
             pitchNumber = 1,
-            scoreDifferential = scenario.scoreDifferential ?: 0,
+            scoreDifferential = if (state.run.chapterGameClaimed) 0 else scenario.scoreDifferential ?: 0,
             leverage = scenario.leverage,
             fatigue = state.run.fatigue.coerceIn(0, 100),
         )
         val initialMemory = HighSchoolPitchMemory()
         val initialGame = HighSchoolPitchGame(
-            inning = scenario.inning,
-            outs = scenario.outs,
-            firstOccupied = scenario.firstOccupied,
-            secondOccupied = scenario.secondOccupied,
-            thirdOccupied = scenario.thirdOccupied,
+            inning = if (state.run.chapterGameClaimed) 1 else scenario.inning,
+            outs = if (state.run.chapterGameClaimed) 0 else scenario.outs,
+            firstOccupied = !state.run.chapterGameClaimed && scenario.firstOccupied,
+            secondOccupied = !state.run.chapterGameClaimed && scenario.secondOccupied,
+            thirdOccupied = !state.run.chapterGameClaimed && scenario.thirdOccupied,
         )
         val initialLog = HighSchoolPitchLog("${state.run.careerId}:game:$gameNumber")
         val preparation = pitch.prepare(
@@ -277,7 +277,7 @@ public class HighSchoolPhase4Kernel(
             ),
         )
         val session = HighSchoolPitchSession(
-            sessionId = "${state.run.careerId}:important:$gameNumber",
+            sessionId = "${state.run.careerId}:important:$gameNumber:outing-v2",
             gameNumber = gameNumber,
             seed = seed,
             pitchIndex = 0,
@@ -313,7 +313,7 @@ public class HighSchoolPhase4Kernel(
         require(session.sessionId == sessionId) { "pitch.session_stale" }
         require(!session.ended) { "pitch.ended" }
         val pitcher = state.run.toPitcherSnapshot()
-        val batter = state.run.toBatterSnapshot()
+        val batter = state.currentBatter()
         val scouting = scoutingForSession(state)
         val submitParameters = PitchKernel.SubmitRequest(
             seed = session.seed,
@@ -352,7 +352,7 @@ public class HighSchoolPhase4Kernel(
             pitchType = call.pitchType,
             zone = call.zone,
             intent = call.zoneIntent,
-            expectedVelocityKph = PitchAbilityRules.nominalVelocity(pitcher, call.pitchType, call.intensity, session.context.fatigue) / 10,
+            expectedVelocityKph = PitchAbilityRules.expectedVelocity(pitcher, call, session.context.fatigue, session.sessionId.endsWith(":outing-v2")) / 10,
             outcome = snapshot.outcome,
         )
         val sequenceMoment = PitchSequenceEvaluator.evaluate(
@@ -362,11 +362,19 @@ public class HighSchoolPhase4Kernel(
             rivalAdaptation = preparation.rivalAdaptation,
         )
         val nextSequencePitches = if (snapshot.ended) emptyList() else (session.sequencePitches + sequencePitch).takeLast(3)
-        val nextContext = snapshot.toNextContext(session.context, result.gameState)
+        val wholeInning = session.sessionId.endsWith(":outing-v2")
+        val outingEnded = if (wholeInning) snapshot.inningTransition.inningEnded ||
+            (snapshot.ended && session.pitches + 1 >= 60) else snapshot.ended
+        val nextContext = snapshot.toNextContext(session.context, result.gameState).let {
+            if (wholeInning) it.copy(
+                plateAppearanceId = if (snapshot.ended) "${session.sessionId}:batter:${(session.context.plateAppearanceId.substringAfterLast(":batter:").toIntOrNull() ?: 1) + 1}" else it.plateAppearanceId,
+                scoreDifferential = session.context.scoreDifferential - snapshot.runsScored,
+            ) else it
+        }
         val nextMemory = result.rivalMemory.toPhase4Memory()
         val nextGame = result.gameState.toPhase4Game()
         val nextLog = result.gameLog.toPhase4Log()
-        val nextSession = session.copy(
+        var nextSession = session.copy(
             seed = result.nextSeed,
             pitchIndex = session.pitchIndex + 1,
             preparationToken = result.nextPreparation?.preparationToken ?: "",
@@ -384,11 +392,19 @@ public class HighSchoolPhase4Kernel(
             outs = session.outs + snapshot.inningTransition.outsRecorded,
             hits = session.hits + if (snapshot.outcome in setOf(PitchOutcome.SINGLE, PitchOutcome.DOUBLE, PitchOutcome.TRIPLE, PitchOutcome.HOME_RUN)) 1 else 0,
             abilityMoments = result.abilityMoment?.wire?.let { session.abilityMoments + it } ?: session.abilityMoments,
-            ended = snapshot.ended,
+            ended = outingEnded,
             sequenceMasteryCount = session.sequenceMasteryCount + if (sequenceMoment != null) 1 else 0,
             sequencePitches = nextSequencePitches,
             perfectReleases = session.perfectReleases + if (delivery.isPerfectRelease) 1 else 0,
         )
+        val following = if (!outingEnded && snapshot.ended) {
+            val pending = state.copy(activePitch = nextSession)
+            val nextBatter = pending.currentBatter()
+            pitch.prepare(PitchKernel.PrepareRequest(nextSession.seed, pitcher, nextBatter,
+                pending.currentScouting(), nextSession.context.toPitchContext(),
+                nextSession.memory.toRivalMemory(pitcher.id, nextBatter.id), nextSession.game.toGameState(), nextSession.log.toGameLog()))
+        } else result.nextPreparation
+        nextSession = nextSession.copy(preparationToken = following?.preparationToken ?: "")
         val deliveryAchievements = HighSchoolAchievementRules.updateDelivery(
             state.achievements.toSet(), delivery.releaseAccuracy, delivery.aimAccuracy,
         )
@@ -406,7 +422,7 @@ public class HighSchoolPhase4Kernel(
                 lastPresentation = presentationFrom(snapshot),
             ),
         )
-        return result(next, "pitch_submitted", snapshot.reasonCodes, result.nextPreparation, next.lastPresentation)
+        return result(next, "pitch_submitted", snapshot.reasonCodes, following, next.lastPresentation)
     }
 
     /**
@@ -495,8 +511,8 @@ public class HighSchoolPhase4Kernel(
     private fun scoutingForSession(state: HighSchoolPhase4State): com.solkim.baseball.core.pitch.BatterScoutingSnapshot {
         val session = state.activePitch ?: return state.run.toScoutingSnapshot()
         val pitcher = state.run.toPitcherSnapshot()
-        val batter = state.run.toBatterSnapshot()
-        val current = state.run.toScoutingSnapshot()
+        val batter = state.currentBatter()
+        val current = state.currentScouting()
         fun matches(scouting: com.solkim.baseball.core.pitch.BatterScoutingSnapshot): Boolean = pitch.matchesPreparation(
             PitchKernel.PrepareRequest(session.seed, pitcher, batter, scouting, session.context.toPitchContext(),
                 session.memory.toRivalMemory(pitcher.id, batter.id), session.game.toGameState(), session.log.toGameLog()),
@@ -511,7 +527,7 @@ public class HighSchoolPhase4Kernel(
     public fun prepareActivePitch(state: HighSchoolPhase4State): PitchPreparation {
         val session = state.activePitch ?: error("pitch.no_session")
         val pitcher = state.run.toPitcherSnapshot()
-        val batter = state.run.toBatterSnapshot()
+        val batter = state.currentBatter()
         val scouting = scoutingForSession(state)
         return pitch.prepare(
             PitchKernel.PrepareRequest(
@@ -525,6 +541,21 @@ public class HighSchoolPhase4Kernel(
                 gameLog = session.log.toGameLog(),
             ),
         )
+    }
+
+    public fun continueOuting(state: HighSchoolPhase4State): HighSchoolPhase4Result {
+        val session = requireNotNull(state.activePitch)
+        require(session.sessionId.endsWith(":outing-v2") && session.ended && state.run.chapterGameClaimed &&
+            session.game.outs == 0 && session.outs < 18 && session.pitches < 80 && session.context.inning < 9 && session.context.fatigue < 90) { "outing.continue_unavailable" }
+        val resumed = session.copy(ended = false,
+            context = session.context.copy(inning = session.context.inning + 1, outs = 0, balls = 0, strikes = 0, pitchNumber = 1),
+            game = session.game.copy(inning = session.context.inning + 1, outs = 0, firstOccupied = false, secondOccupied = false, thirdOccupied = false))
+        val pending = state.copy(activePitch = resumed)
+        val pitcher = state.run.toPitcherSnapshot()
+        val batter = pending.currentBatter()
+        val preparation = pitch.prepare(PitchKernel.PrepareRequest(resumed.seed, pitcher, batter, pending.currentScouting(),
+            resumed.context.toPitchContext(), resumed.memory.toRivalMemory(pitcher.id, batter.id), resumed.game.toGameState(), resumed.log.toGameLog()))
+        return result(sign(pending.copy(activePitch = resumed.copy(preparationToken = preparation.preparationToken))), "outing_continued", preparation = preparation)
     }
 
     public fun finishImportantGame(state: HighSchoolPhase4State): HighSchoolPhase4Result {
@@ -542,19 +573,41 @@ public class HighSchoolPhase4Kernel(
             outs = session.outs,
             hits = session.hits,
             sequenceMasteryCount = session.sequenceMasteryCount,
-            scoreDifferentialAtEntry = session.context.scoreDifferential,
+            scoreDifferentialAtEntry = if (state.run.chapterGameClaimed) 0 else state.run.currentGameScenario?.scoreDifferential ?: 0,
             homeRuns = session.log.entries.count { it.outcome == PitchOutcome.HOME_RUN },
             perfectReleases = session.perfectReleases,
         )
-        val nextRun = highSchool.recordImportantGame(
+        var nextRun = highSchool.recordImportantGame(
             HighSchoolKernel.GameRequest(session.seed, highSchool.resignShadowState(state.run.copy(pitcher = state.run.pitchLearningProject?.let { state.run.pitcher.copy(pitchProfiles = PitchLearningRules.advance(state.run.pitcher.pitchProfiles, it, it)) } ?: state.run.pitcher)), report),
         ).snapshot
-        val line = HighSchoolSeasonLineRules.line(
+        var line = HighSchoolSeasonLineRules.line(
             session.seed,
             state.run,
             report,
             outingNumber = state.seasonLog.size + 1,
         ).copy(abilityMoments = session.abilityMoments, regular = state.run.chapterGameClaimed, perfectReleases = session.perfectReleases)
+        val remainder = if (state.run.chapterGameClaimed && session.sessionId.endsWith(":outing-v2") && !state.challenge.active)
+            HighSchoolAutomaticOutingSimulator().simulateRemainder(state.run, session) else null
+        if (remainder != null) nextRun = highSchool.resignShadowState(nextRun.copy(
+            automaticOuts = nextRun.automaticOuts + remainder.outs,
+            automaticRunsAllowed = nextRun.automaticRunsAllowed + remainder.runsAllowed))
+        if (remainder != null) {
+            val whole = HighSchoolSeasonLineRules.line(session.seed, state.run,
+                report.copy(outs = session.outs + remainder.outs, runsAllowed = session.runsAllowed + remainder.runsAllowed,
+                    scoreDifferentialAtEntry = null), line.outingNumber)
+            line = line.copy(started = true, teamRuns = whole.teamRuns, opponentRuns = whole.opponentRuns,
+                decision = when {
+                    whole.teamRuns > whole.opponentRuns && whole.outs >= 15 -> HighSchoolPitchingDecision.WIN
+                    whole.teamRuns < whole.opponentRuns && whole.runsAllowed > 0 -> HighSchoolPitchingDecision.LOSS
+                    else -> HighSchoolPitchingDecision.NO_DECISION
+                })
+        }
+        val remainderLine = remainder?.let {
+            line.copy(pitches = it.pitches, strikeouts = it.strikeouts, walks = it.walks, runsAllowed = it.runsAllowed,
+                expectedDamage = 0, actualDamage = 0, abilityMoments = emptyList(), rivalStrikeouts = 0,
+                outs = it.outs, played = false, hits = it.hits, homeRuns = it.homeRuns, perfectReleases = 0,
+                decision = HighSchoolPitchingDecision.NO_DECISION)
+        }
         val nextCounter = if (state.challenge.active) state.completedGameCounter else
             HighSchoolCompletedGameCounterRules.record(state.completedGameCounter)
         val nextReceipts = if (state.challenge.active) state.completedGameReceipts else {
@@ -576,7 +629,7 @@ public class HighSchoolPhase4Kernel(
                 )
             }
         }
-        val nextSeasonLog = if (state.challenge.active) state.seasonLog else state.seasonLog + line
+        val nextSeasonLog = if (state.challenge.active) state.seasonLog else state.seasonLog + listOfNotNull(remainderLine) + line
         val reportAchievements = if (state.challenge.active) state.achievements else HighSchoolAchievementRules.updateReport(
             state.achievements.toSet(), report,
         )
@@ -632,8 +685,28 @@ public class HighSchoolPhase4Kernel(
         return result(sign(updateProgress(state.copy(run = next))), "chapter_game_claimed")
     }
 
+    private fun automaticChapterLog(seed: String, state: HighSchoolPhase4State): List<HighSchoolSeasonLine> {
+        // Store the exact automatic lines used by the aggregate, with explicit provenance.
+        // Old saves retain their known aggregate without inventing missing hit/strikeout data.
+        val simulated = HighSchoolAutomaticOutingSimulator().simulate(state.run, state.run.chapter, seed.toULong())
+            .let { if (state.run.chapterGameClaimed) it.drop(1) else it }
+        return simulated.mapIndexed { index, line ->
+            HighSchoolSeasonLine(state.run.careerId, state.run.lifeNumber, state.run.chapter.number,
+                10_000 + state.run.chapter.number * 10 + index, line.pitches, line.strikeouts, line.walks,
+                line.runsAllowed, 0, 0, emptyList(), season = state.run.chapter.schoolYear,
+                week = state.run.chapter.number, outingNumber = state.seasonLog.size + index + 1,
+                started = true, outs = line.outs, teamRuns = line.teamRuns, opponentRuns = line.opponentRuns,
+                decision = when {
+                    line.teamRuns > line.opponentRuns && line.outs >= 15 -> HighSchoolPitchingDecision.WIN
+                    line.teamRuns < line.opponentRuns && line.runsAllowed > 0 -> HighSchoolPitchingDecision.LOSS
+                    else -> HighSchoolPitchingDecision.NO_DECISION
+                }, played = false, hits = line.hits, homeRuns = line.homeRuns, regular = true)
+        }
+    }
+
     public fun advanceChapter(seed: String, state: HighSchoolPhase4State): HighSchoolPhase4Result {
         val next = highSchool.advanceChapter(HighSchoolKernel.AdvanceRequest(seed, state.run)).snapshot
+        val automaticLog = automaticChapterLog(seed, state)
         val weekly = if (state.challenge.active) state.weekly else HighSchoolWeeklyRules.record(
             state.weekly,
             "chapters_advanced",
@@ -646,10 +719,12 @@ public class HighSchoolPhase4Kernel(
             next.school?.name ?: next.identity.region,
         )
         val tournaments = if (state.challenge.active || tournament == null) state.tournaments else state.tournaments + tournament
-        return result(sign(updateProgress(state.copy(run = next, weekly = weekly, tournaments = tournaments))), "chapter_advanced", listOf("chapter.${next.chapter.number}"))
+        return result(sign(updateProgress(state.copy(run = next, weekly = weekly, tournaments = tournaments,
+            seasonLog = if (state.challenge.active) state.seasonLog else state.seasonLog + automaticLog))), "chapter_advanced", listOf("chapter.${next.chapter.number}"))
     }
 
     public fun resolveDraft(seed: String, state: HighSchoolPhase4State): HighSchoolPhase4Result {
+        val automaticLog = if (state.challenge.active) emptyList() else automaticChapterLog(seed, state)
         val next = highSchool.resolveDraft(HighSchoolKernel.AdvanceRequest(seed, state.run)).snapshot
         val pledge = if (state.challenge.active) state.pledge else pledgeUpdate(state.copy(run = next))
         val unlocked = if (state.challenge.active) state.achievements else HighSchoolAchievementRules.updateHighSchool(state.achievements.toSet(), next, state.archive)
@@ -660,6 +735,7 @@ public class HighSchoolPhase4Kernel(
         }
         return result(sign(updateProgress(state.copy(
             run = next,
+            seasonLog = state.seasonLog + automaticLog,
             pledge = pledge,
             achievements = achievementProgress.unlocked,
             unacknowledgedAchievements = achievementProgress.unacknowledged,
@@ -1161,7 +1237,7 @@ public class HighSchoolPhase4Kernel(
     private fun pledgeUpdate(state: HighSchoolPhase4State): HighSchoolPledgeState? = HighSchoolPledgeRules.update(
         state.pledge,
         state.run,
-        cleanGameCount = state.seasonLog.count { it.runsAllowed == 0 && it.pitches > 0 },
+        cleanGameCount = state.seasonLog.count { it.played && it.runsAllowed == 0 && it.pitches > 0 },
         rivalStrikeouts = state.seasonLog.sumOf { it.rivalStrikeouts },
     )
 
@@ -1176,7 +1252,7 @@ public class HighSchoolPhase4Kernel(
                 reason = "지난 고교 3년에서 아쉽게 놓친 목표입니다.",
             )
         }
-        val cleanGames = state.seasonLog.count { it.runsAllowed == 0 && it.pitches > 0 }
+        val cleanGames = state.seasonLog.count { it.played && it.runsAllowed == 0 && it.pitches > 0 }
         val rivalStrikeouts = state.seasonLog.sumOf { it.rivalStrikeouts }
         val candidate = HighSchoolPledgeRules.options(
             state.weekly.stableUserId,
