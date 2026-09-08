@@ -85,6 +85,7 @@ public class MainActivity : ComponentActivity() {
     private var openingMound by mutableStateOf(false)
     private var previousActionScreen: Phase8ScreenId? = null
     private var navigationTapBlockUntil = 0L
+    private var navigationTapBlocked by mutableStateOf(false)
     private var selectedScreen by mutableStateOf<Phase8ScreenId?>(null)
     private var platformUiState by mutableStateOf(
         Phase9PlatformUiState(NotificationPermissionTruth.UNAVAILABLE, null),
@@ -141,7 +142,7 @@ public class MainActivity : ComponentActivity() {
                 }
                 if (openingMound) MoundLoadingView() else Phase8Shell(
                     state = state,
-                    busy = busy || restoringProgress || actionInFlight,
+                    busy = busy || restoringProgress || actionInFlight || (navigationTapBlocked && current != previousActionScreen),
                     actionError = actionError,
                     currentScreen = current,
                     commandContext = commandContext,
@@ -342,7 +343,15 @@ public class MainActivity : ComponentActivity() {
                     saveProWeekFeedback(this@MainActivity, beforeAction, (application as BaseballApplication).gameStore.current)
                     if (phase8Controller.preferredScreen() != action.screenId) {
                         previousActionScreen = action.screenId
-                        navigationTapBlockUntil = android.os.SystemClock.elapsedRealtime() + 500
+                        val deadline = android.os.SystemClock.elapsedRealtime() + 500
+                        navigationTapBlockUntil = deadline
+                        navigationTapBlocked = true
+                        activityScope.launch {
+                            kotlinx.coroutines.delay(500)
+                            withContext(Dispatchers.Main) {
+                                if (navigationTapBlockUntil == deadline) navigationTapBlocked = false
+                            }
+                        }
                     }
                     // Preferences keep their current page so multiple changes can be made in place.
                     if (action.screenId != Phase8ScreenId.P027_SETTINGS || action.actionId == "resetProgress") selectedScreen = null

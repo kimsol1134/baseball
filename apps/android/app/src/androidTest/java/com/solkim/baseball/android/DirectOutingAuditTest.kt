@@ -46,7 +46,7 @@ class DirectOutingAuditTest {
         for ((base, occupied) in listOf(1 to runners.firstOccupied, 2 to runners.secondOccupied, 3 to runners.thirdOccupied)) {
             val marker = device.wait(Until.findObject(By.res("visual.base.$base")), 5_000)
             assertNotNull("Each base must be visible", marker)
-            assertEquals(occupied, marker!!.isSelected)
+            assertEquals("Base $base occupancy", occupied, marker!!.isChecked)
         }
         device.takeScreenshot(File(context.cacheDir, "audit-live-mound.png"))
         val b = slider.visibleBounds
