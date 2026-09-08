@@ -63,6 +63,7 @@ public object CSharpLegacyAggregateBridge {
                 standaloneSoulBalance = ProRetirementCodec.balance(payload.objectOrNull("meta")?.get("standaloneSoulBalance")),
                 seedChallenge = SeedChallengeCodec.decode(payload.objectOrNull("meta")?.get("seedChallenge")),
                 playerGrowth = PlayerGrowthReceipt.decode(payload.objectOrNull("meta")?.get("playerGrowth")),
+                companion = PitcherCompanionCodec.decode(payload.objectOrNull("meta")?.get("companion")),
             ),
             pitch = pitch,
             settings = payload.objectOrNull("settings")?.toSettings() ?: GameSettingsState(),
@@ -76,6 +77,12 @@ public object CSharpLegacyAggregateBridge {
         val projected = project(payload, payload.ulongOrDefault("revision", 0UL), payload.canonicalPlaceholder())
         val eventName: String
         val next = when (val command = envelope.command) {
+            is GameCommand.UpdateCompanion -> {
+                eventName = "companion.updated"
+                val companion = PitcherCompanionRules.apply(projected, command.operation, command.value)
+                val meta = LinkedHashMap((payload["meta"] as JsonValue.Obj).entries).apply { put("companion", PitcherCompanionCodec.encode(companion)) }
+                JsonValue.Obj(LinkedHashMap(payload.entries).apply { put("meta", JsonValue.Obj(meta)) })
+            }
             is GameCommand.UpdateSettings -> {
                 eventName = "settings.updated"
                 payload.withSettings(command.settings)

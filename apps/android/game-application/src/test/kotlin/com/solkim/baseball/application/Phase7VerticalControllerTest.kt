@@ -565,7 +565,7 @@ class Phase7VerticalControllerTest {
         is GameCommand.SetPitchHoldCall -> command.sessionId
         is GameCommand.HighSchool,
         is GameCommand.Pro,
-        is GameCommand.UpdateSettings,
+        is GameCommand.UpdateCompanion, is GameCommand.UpdateSettings,
         is GameCommand.RecordAnalytics -> "phase7-shell"
     }
 }

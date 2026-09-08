@@ -11,7 +11,7 @@ import kotlin.math.min
  * archive finalization and applied once when the next life starts.
  */
 public object HighSchoolLineageRules {
-    public const val RULES_VERSION: Int = 1
+    public const val RULES_VERSION: Int = 2
 
     private val families = listOf("power", "command", "breaking", "endurance", "gamecraft", "battery")
 
@@ -58,6 +58,19 @@ public object HighSchoolLineageRules {
         )
     }
 
+    /** Rebuild from one archived choice per life. Never applies a bonus to a live pitcher. */
+    public fun recovered(inheritance: HighSchoolInheritanceState, archive: List<HighSchoolArchiveRecord>): HighSchoolInheritanceState {
+        if (archive.isEmpty()) return inheritance
+        val source = inheritance.lineageLoadout?.sourceLifeNumber ?: archive.last().lifeNumber
+        val selected = inheritance.selectedSignatureLegacyId
+        val choices = archive.sortedBy { it.lifeNumber }.mapNotNull {
+            if (it.lifeNumber == source && selected != null) selected else it.selectedSignatureLegacyId
+        }
+        return inheritance.copy(lineageMasteries = masteries(choices), lineageLoadout = selected?.let {
+            loadout(it, choices, source)
+        })
+    }
+
     public data class Applied(
         val pitcher: HighSchoolPitcher,
         val talent: HighSchoolTalent,
@@ -70,7 +83,7 @@ public object HighSchoolLineageRules {
         talent: HighSchoolTalent,
     ): Applied {
         if (loadout == null) return Applied(pitcher, talent, 50)
-        require(loadout.rulesVersion == RULES_VERSION) { "lineage.rules_version" }
+        require(loadout.rulesVersion in 1..RULES_VERSION) { "lineage.rules_version" }
         require(loadout.masteryRank in 0..3 && loadout.contributions >= 0) { "lineage.loadout" }
         val family = HighSchoolSignatureLegacyRules.definition(loadout.legacyId).family
         var updatedTalent = talent

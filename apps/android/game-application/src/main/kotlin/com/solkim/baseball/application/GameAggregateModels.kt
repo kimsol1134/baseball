@@ -171,9 +171,11 @@ public data class GameMetaState(
     val standaloneSoulBalance: Int = 0,
     val seedChallenge: SeedChallengeSession? = null,
     val playerGrowth: PlayerGrowthReceipt? = null,
+    val companion: PitcherCompanion? = null,
 ) {
     public fun validate() {
         playerGrowth?.validate()
+        companion?.validate()
         require(completedGameCount >= 0UL) { "meta.completed_games" }
         listOf(achievementIds, weeklyReceiptIds, returnPlanReceiptIds, decisionReceiptIds, lifeArchiveCareerIds)
             .forEach { values -> require(values.distinct().size == values.size && values.all(String::isNotBlank)) { "meta.receipts" } }
@@ -342,6 +344,7 @@ public sealed interface GameCommand {
     /** Clears a previously consumed presentation snapshot before the next pitch input. */
     public data class ClearPitchPresentation(public val sessionId: String) : GameCommand
     /** Compose-owned durable settings; production persistence remains guarded by the store mode. */
+    public data class UpdateCompanion(val operation: String, val value: String) : GameCommand
     public data class UpdateSettings(public val settings: GameSettingsState) : GameCommand
     public data class SetPitchHoldCall(public val sessionId: String, public val holdCall: Boolean) : GameCommand
     public data class RecordAnalytics(
@@ -378,6 +381,7 @@ public data class GameCommandEnvelope(
             GameCommand.ResetProgress,
             is GameCommand.HighSchool,
             is GameCommand.Pro,
+            is GameCommand.UpdateCompanion,
             is GameCommand.UpdateSettings,
             is GameCommand.RecordAnalytics -> Unit
             is GameCommand.ClearPitchPresentation -> require(value.sessionId == sessionId) { "game.command.session_mismatch" }

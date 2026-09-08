@@ -41,7 +41,7 @@ public class HighSchoolPhase4Kernel(
             require(loadout.sourceLifeNumber == null || loadout.sourceLifeNumber < request.lifeNumber) {
                 "lineage.source_life"
             }
-            require(loadout.rulesVersion == HighSchoolLineageRules.RULES_VERSION) { "lineage.rules_version" }
+            require(loadout.rulesVersion in 1..HighSchoolLineageRules.RULES_VERSION) { "lineage.rules_version" }
         }
         request.inheritedLineageMasteries.forEach { mastery ->
             require(mastery.family in setOf("power", "command", "breaking", "endurance", "gamecraft", "battery")) {
@@ -731,11 +731,11 @@ public class HighSchoolPhase4Kernel(
             selectedSignatureLegacyId = state.selectedSignatureLegacyId,
             unlockedSignatureLegacyIds = (state.inheritance.unlockedSignatureLegacyIds + state.selectedSignatureLegacyId).distinct(),
             lineageMasteries = HighSchoolLineageRules.masteries(
-                (state.archive.mapNotNull { it.selectedSignatureLegacyId } + state.selectedSignatureLegacyId).distinct(),
+                (state.archive.mapNotNull { it.selectedSignatureLegacyId } + state.selectedSignatureLegacyId),
             ),
             lineageLoadout = HighSchoolLineageRules.loadout(
                 legacyId = state.selectedSignatureLegacyId,
-                selectedLegacyIds = (state.archive.mapNotNull { it.selectedSignatureLegacyId } + state.selectedSignatureLegacyId).distinct(),
+                selectedLegacyIds = (state.archive.mapNotNull { it.selectedSignatureLegacyId } + state.selectedSignatureLegacyId),
                 sourceLifeNumber = state.run.lifeNumber,
             ),
         )
@@ -771,10 +771,11 @@ public class HighSchoolPhase4Kernel(
     public fun beginRebirth(state: HighSchoolPhase4State, seed: String, dayKey: String = state.selectedDayKey, setup: HighSchoolRebirthSetup? = null): HighSchoolPhase4Result {
         require(state.run.phase == HighSchoolPhase.COMPLETED) { "rebirth.phase" }
         require(state.archive.any { it.careerId == state.run.careerId }) { "rebirth.archive_required" }
+        val inheritance = HighSchoolLineageRules.recovered(state.inheritance, state.archive)
         val boosts = setup?.soulBoosts.orEmpty()
         require(boosts.distinct().size == boosts.size) { "rebirth.boost_duplicate" }
         val cost = boosts.sumOf { it.cost }
-        require(cost <= state.inheritance.soulPoints) { "rebirth.insufficient_soul" }
+        require(cost <= inheritance.soulPoints) { "rebirth.insufficient_soul" }
         setup?.let {
             require(it.primaryPitch != it.learningPitch && it.learningPitch != PitchKind.FOUR_SEAM) { "rebirth.repertoire" }
         }
@@ -783,15 +784,15 @@ public class HighSchoolPhase4Kernel(
             previousPlayerName = state.run.identity.name,
             previousSchoolName = state.run.school?.name,
             previousCareerId = state.run.careerId,
-            inheritedMemoryCount = state.inheritance.inheritedMemories.size,
-            inheritedSignatureLegacyId = state.inheritance.selectedSignatureLegacyId,
+            inheritedMemoryCount = inheritance.inheritedMemories.size,
+            inheritedSignatureLegacyId = inheritance.selectedSignatureLegacyId,
             previousArmWarning = state.run.armRisk >= HighSchoolContentCatalog.ARM_WARNING_THRESHOLD,
             previousUndrafted = state.run.draftResult?.outcome == HighSchoolDraftOutcome.UNDRAFTED,
             recentEventIds = state.run.recentRelationshipEventIds.takeLast(3),
             previousCoachName = state.run.school?.coachName,
             previousRivalName = state.run.rival.name,
-            inheritedLegacyId = state.inheritance.selectedSignatureLegacyId,
-            automaticInheritanceTotal = state.inheritance.automaticSoulEarned,
+            inheritedLegacyId = inheritance.selectedSignatureLegacyId,
+            automaticInheritanceTotal = inheritance.automaticSoulEarned,
             hadRunsAllowed = state.run.performance.runsAllowed > 0,
             hadCollapseGame = state.run.performance.runsAllowed > 0,
         )
@@ -801,16 +802,16 @@ public class HighSchoolPhase4Kernel(
             stableUserId = state.weekly.stableUserId,
             weekKey = state.weekly.weekKey,
             dayKey = dayKey,
-            lifeNumber = state.inheritance.nextLifeNumber,
+            lifeNumber = inheritance.nextLifeNumber,
             creationAllocation = HighSchoolAllocation(),
-            inheritedSoulPoints = state.inheritance.soulPoints - cost,
+            inheritedSoulPoints = inheritance.soulPoints - cost,
             inheritedSoulDomain = setup?.soulDomain,
-            inheritedSoulTotal = state.inheritance.automaticSoulEarned,
-            inheritedMemories = state.inheritance.inheritedMemories,
-            inheritedSignatureLegacyId = state.inheritance.selectedSignatureLegacyId,
-            inheritedLineageMasteries = state.inheritance.lineageMasteries,
-            lineageLoadout = state.inheritance.lineageLoadout,
-            inheritanceRulesVersion = state.inheritance.inheritanceRulesVersion,
+            inheritedSoulTotal = inheritance.automaticSoulEarned,
+            inheritedMemories = inheritance.inheritedMemories,
+            inheritedSignatureLegacyId = inheritance.selectedSignatureLegacyId,
+            inheritedLineageMasteries = inheritance.lineageMasteries,
+            lineageLoadout = inheritance.lineageLoadout,
+            inheritanceRulesVersion = inheritance.inheritanceRulesVersion,
             inheritedNextRunIntent = state.nextRunIntent,
             identity = setup?.identity ?: state.run.identity,
             difficulty = setup?.difficulty ?: state.run.difficulty,
@@ -834,7 +835,7 @@ public class HighSchoolPhase4Kernel(
                 achievements = state.achievements,
                 unacknowledgedAchievements = state.unacknowledgedAchievements,
                 weekly = weekly,
-                inheritance = state.inheritance.copy(soulPoints = state.inheritance.soulPoints - cost),
+                inheritance = inheritance.copy(soulPoints = inheritance.soulPoints - cost),
                 nextRunIntent = state.nextRunIntent,
             rebirthEcho = echo,
                 seasonLog = state.seasonLog,

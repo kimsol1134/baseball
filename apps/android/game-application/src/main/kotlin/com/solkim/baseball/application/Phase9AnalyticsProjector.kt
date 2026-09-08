@@ -347,6 +347,7 @@ public object Phase9AnalyticsProjector {
                     )
                 }
             }
+            is GameCommand.UpdateCompanion -> Unit
             is GameCommand.UpdateSettings -> Unit
             is GameCommand.SetPitchHoldCall -> Unit
             is GameCommand.RecordAnalytics -> Unit

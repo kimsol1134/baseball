@@ -212,6 +212,7 @@ public object GameStateReducer {
                 is GameCommand.ResumePitch -> resumePitch(state, command)
                 is GameCommand.AbandonPitch -> abandonPitch(state, command)
                 is GameCommand.ClearPitchPresentation -> clearPitchPresentation(state, command)
+                is GameCommand.UpdateCompanion -> state.copy(meta = state.meta.copy(companion = PitcherCompanionRules.apply(state, command.operation, command.value))) to "companion.updated"
                 is GameCommand.UpdateSettings -> updateSettings(state, command)
                 is GameCommand.SetPitchHoldCall -> setPitchHoldCall(state, command)
                 is GameCommand.RecordAnalytics -> recordAnalytics(state, command)
@@ -477,7 +478,7 @@ public object GameStateReducer {
             else -> AnalyticsReceipt("command:${envelope.commandId}", eventName, nextRevision, previousState.commitment)
         }
         val base = reducedState.copy(
-            meta = reducedState.meta.copy(playerGrowth = PlayerGrowthReceipt.transition(previousState, reducedState, envelope.commandId)),
+            meta = reducedState.meta.copy(playerGrowth = PlayerGrowthReceipt.transition(previousState, reducedState, envelope.commandId), companion = PitcherCompanionRules.transition(previousState, reducedState)),
             revision = nextRevision,
             commandReceipts = reducedState.commandReceipts + receipt,
             analytics = reducedState.analytics.copy(receipts = reducedState.analytics.receipts + analyticsReceipt),

@@ -65,6 +65,7 @@ public object GameCommandCodec {
         is GameCommand.ResumePitch -> "resumePitch"
         is GameCommand.AbandonPitch -> "abandonPitch"
         is GameCommand.ClearPitchPresentation -> "clearPitchPresentation"
+        is GameCommand.UpdateCompanion -> "updateCompanion"
         is GameCommand.UpdateSettings -> "updateSettings"
         is GameCommand.SetPitchHoldCall -> "setPitchHoldCall"
         is GameCommand.RecordAnalytics -> "recordAnalytics"
@@ -93,6 +94,7 @@ public object GameCommandCodec {
         is GameCommand.ResumePitch -> pack(listOf(command.sessionId))
         is GameCommand.AbandonPitch -> pack(listOf(command.sessionId, command.reason))
         is GameCommand.ClearPitchPresentation -> pack(listOf(command.sessionId))
+        is GameCommand.UpdateCompanion -> pack(listOf(command.operation, command.value))
         is GameCommand.UpdateSettings -> pack(listOf(
             command.settings.autoReleaseEnabled.toString(),
             command.settings.soundEnabled.toString(),
@@ -129,6 +131,7 @@ public object GameCommandCodec {
         "resumePitch" -> unpack(payload, 1).let { GameCommand.ResumePitch(requireSession(root, it.single())) }
         "abandonPitch" -> unpack(payload, 2).let { GameCommand.AbandonPitch(requireSession(root, it[0]), it[1]) }
         "clearPitchPresentation" -> unpack(payload, 1).let { GameCommand.ClearPitchPresentation(requireSession(root, it.single())) }
+        "updateCompanion" -> unpack(payload, 2).let { GameCommand.UpdateCompanion(it[0], it[1]) }
         "updateSettings" -> unpack(payload, 7).let { values ->
             GameCommand.UpdateSettings(GameSettingsState(
                 autoReleaseEnabled = strictBoolean(values[0], "settings.autoRelease"),
