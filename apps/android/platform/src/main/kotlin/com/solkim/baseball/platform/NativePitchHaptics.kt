@@ -23,7 +23,8 @@ public object NativePitchHaptics {
         PitchHapticCue.SWEET -> longArrayOf(0, 18)
         PitchHapticCue.GRIP -> longArrayOf(0, 32)
         PitchHapticCue.RELEASE -> longArrayOf(0, 28)
-        PitchHapticCue.PERFECT -> longArrayOf(0, 28, 60, 38)
+        // A heavy first hit and a tight aftershock, distinct even on on/off-only motors.
+        PitchHapticCue.PERFECT -> longArrayOf(0, 75, 30, 45)
         PitchHapticCue.PERFECT_ZONE -> longArrayOf(0, 20)
         PitchHapticCue.ERROR -> longArrayOf(0, 18, 80, 18)
         PitchHapticCue.SUCCESS -> longArrayOf(0, 18, 60, 28)
@@ -45,11 +46,17 @@ public object NativePitchHaptics {
                 PitchHapticCue.PERFECT, PitchHapticCue.SUCCESS, PitchHapticCue.STRIKEOUT -> VibrationEffect.EFFECT_DOUBLE_CLICK
                 else -> VibrationEffect.EFFECT_CLICK
             }
-            val optimized = Build.VERSION.SDK_INT >= 30 && motor.areEffectsSupported(preset).firstOrNull() == Vibrator.VIBRATION_EFFECT_SUPPORT_YES
-            val effect = if (optimized) VibrationEffect.createPredefined(preset) else VibrationEffect.createWaveform(timings(cue), -1)
+            // Perfect uses our impact pattern even when the device supports a softer stock double click.
+            val optimized = cue != PitchHapticCue.PERFECT && Build.VERSION.SDK_INT >= 30 && motor.areEffectsSupported(preset).firstOrNull() == Vibrator.VIBRATION_EFFECT_SUPPORT_YES
+            val amplitudePerfect = cue == PitchHapticCue.PERFECT && motor.hasAmplitudeControl()
+            val effect = when {
+                amplitudePerfect -> VibrationEffect.createWaveform(timings(cue), intArrayOf(0, 255, 0, 220), -1)
+                optimized -> VibrationEffect.createPredefined(preset)
+                else -> VibrationEffect.createWaveform(timings(cue), -1)
+            }
             if (Build.VERSION.SDK_INT >= 33) motor.vibrate(effect, VibrationAttributes.Builder().setUsage(VibrationAttributes.USAGE_TOUCH).build())
             else motor.vibrate(effect, AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION).build())
-            if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) Log.i("BaseballPitchHaptics", "cue=$cue route=${if (optimized) "preset" else "waveform"} requested=true")
+            if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) Log.i("BaseballPitchHaptics", "cue=$cue route=${if (amplitudePerfect) "amplitude-waveform" else if (optimized) "preset" else "waveform"} requested=true")
             true
         }.getOrDefault(false)
     }

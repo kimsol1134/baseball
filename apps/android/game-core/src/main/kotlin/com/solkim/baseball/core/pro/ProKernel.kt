@@ -819,7 +819,7 @@ public class ProKernel(
         require(!session.ended) { "pro.pitch_ended" }
         require(session.boundary != ProPitchBoundary.COMPLETED) { "pro.pitch_boundary_completed" }
         val preparation = pitch.prepare(PitchKernel.PrepareRequest(session.seed, PitchLearningRules.playable(state.pitcher, state.pitchLearningProject), session.batter, session.scouting, session.context, session.memory, session.game, session.log))
-        require(preparation.preparationToken == session.preparationToken) { "pro.pitch_preparation_stale" }
+        // Authoritative submit validates current or exact legacy preparation against this state.
         val submitted = pitch.submit(
             PitchKernel.SubmitRequest(session.seed, PitchLearningRules.playable(state.pitcher, state.pitchLearningProject), session.batter, session.scouting, session.context, session.preparationToken, call, session.memory, session.game, session.log),
             delivery,

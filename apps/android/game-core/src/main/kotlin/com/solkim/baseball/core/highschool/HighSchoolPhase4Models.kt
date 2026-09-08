@@ -555,7 +555,15 @@ public fun HighSchoolState.toBatterSnapshot(): BatterSnapshot = BatterSnapshot(
     batSide = BatSide.RIGHT,
 )
 
-internal fun HighSchoolState.toScoutingSnapshot(): BatterScoutingSnapshot = BatterScoutingSnapshot(
+internal fun HighSchoolState.toScoutingSnapshot(): BatterScoutingSnapshot {
+    val rules = com.solkim.baseball.core.pitch.BatterScoutingProfileRules
+    val profile = rules.profile(rules.archetype(rival.archetype), "highschool:${rival.id}")
+    return BatterScoutingSnapshot(profile.hotZone, profile.coldZone, profile.pitchStrength,
+        profile.pitchWeakness, (100 - rival.discipline).coerceIn(20, 80), reliability = 60)
+}
+
+/** Retained only to finish a game reserved before varied scouting was introduced. */
+internal fun HighSchoolState.legacyScoutingSnapshot(): BatterScoutingSnapshot = BatterScoutingSnapshot(
     hotZone = PitchZone(1, 1),
     coldZone = PitchZone(0, 2),
     pitchStrength = PitchKind.FOUR_SEAM,

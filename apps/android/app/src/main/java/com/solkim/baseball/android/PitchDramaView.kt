@@ -178,14 +178,14 @@ private fun DrawScope.drawPitchShot(
     val takenFreeze = isTakenPitchCatcherFreeze(outcome, progress)
     // 결과 프리즈의 착지 링은 궤적 위에 올려야 점이 가려지지 않는다.
     if (!takenFreeze) {
-        drawCatcherMitt(outcome, progress, actualX, actualY, scale, ::place)
+        drawCatcherMitt(outcome, progress, actualX, actualY, scale, ::place, request?.velocityDeciKph ?: 0, reduceMotion)
     }
 
     // 날아오는 공 & 맞은 뒤 떠나는 공
-    drawIncomingBall(replayPoints, outcome, battedBall, progress, scale, ::place, perfect, reduceMotion)
+    drawIncomingBall(replayPoints, outcome, battedBall, progress, scale, ::place, perfect, reduceMotion, request?.velocityDeciKph ?: 0)
 
     if (takenFreeze) {
-        drawCatcherMitt(outcome, progress, actualX, actualY, scale, ::place)
+        drawCatcherMitt(outcome, progress, actualX, actualY, scale, ::place, request?.velocityDeciKph ?: 0, reduceMotion)
     }
 
     // 배트 컨택 시 임팩트 섬광
@@ -336,6 +336,8 @@ private fun DrawScope.drawCatcherMitt(
     actualY: Double,
     scale: Float,
     place: (Offset) -> Offset,
+    velocityTenthsKph: Int = 0,
+    reduceMotion: Boolean = false,
 ) {
     if (outcome in PitchDramaCamera.FAIR_BALL_OUTCOMES) return
 
@@ -345,6 +347,13 @@ private fun DrawScope.drawCatcherMitt(
         val ringRadius = RESULT_LANDING_RING_RADIUS_DP.dp.toPx()
         val dotRadius = RESULT_LANDING_DOT_RADIUS_DP.dp.toPx()
         val ringStroke = max(2f, 2.2.dp.toPx())
+        val hit = ((progress - PitchDramaCamera.CONTACT_PROGRESS) / 0.14f).coerceIn(0f, 1f)
+        if (!reduceMotion && hit < 1f) {
+            val impact = com.solkim.baseball.application.PitchGrowthFeel.impactScale(velocityTenthsKph)
+            drawCircle(BaseballColors.fieldChalk.copy(alpha = (1f - hit) * 0.55f),
+                radius = ringRadius * (1f + hit * impact), center = target,
+                style = Stroke(width = ringStroke * impact))
+        }
         drawCircle(
             color = BaseballColors.fieldChalk.copy(alpha = 0.55f),
             radius = ringRadius * 1.35f,
@@ -387,9 +396,11 @@ private fun DrawScope.drawIncomingBall(
     place: (Offset) -> Offset,
     perfect: Boolean = false,
     reduceMotion: Boolean = false,
+    velocityTenthsKph: Int = 0,
 ) {
     if (points.size < 2) return
 
+    val speedScale = com.solkim.baseball.application.PitchGrowthFeel.trailScale(velocityTenthsKph)
     val flight = PitchDramaCamera.incomingFlight(progress)
     val takenFreeze = isTakenPitchCatcherFreeze(outcome, progress)
     val freezeTrail = keepFullIncomingTrail(outcome, progress)
@@ -419,7 +430,7 @@ private fun DrawScope.drawIncomingBall(
     val trailWidth = if (takenFreeze) {
         max(2f, 3.6f * scale)
     } else {
-        max(1.6f, (2.2f + 5.6f * flight) * scale)
+        max(1.6f, (2.2f + 5.6f * flight) * scale * speedScale)
     }
     drawPath(
         trailPath,
@@ -436,7 +447,7 @@ private fun DrawScope.drawIncomingBall(
             color = (if (perfect) BaseballColors.milestone else BaseballColors.fieldChalk).copy(alpha = 0.35f + 0.45f * flight),
             start = streakFrom,
             end = endPt,
-            strokeWidth = max(2.4f, (3.2f + 4.8f * flight) * scale),
+            strokeWidth = max(2.4f, (3.2f + 4.8f * flight) * scale * speedScale),
             cap = StrokeCap.Round,
         )
     }

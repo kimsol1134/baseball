@@ -341,13 +341,7 @@ public object PitchHudProjection {
         val call = when (selection) {
             PitchHudSelection.Primary -> preparation.primaryRecommendation.call
             PitchHudSelection.Alternative -> preparation.alternativeRecommendation.call
-            is PitchHudSelection.Manual -> {
-                val matched = listOf(
-                    preparation.primaryRecommendation,
-                    preparation.alternativeRecommendation,
-                ).firstOrNull { it.call.pitchType == selection.pitchType && it.call.zone == selection.zone }
-                matched?.call ?: PitchCall(selection.pitchType, selection.zone, selection.intent, selection.intensity)
-            }
+            is PitchHudSelection.Manual -> PitchCall(selection.pitchType, selection.zone, selection.intent, selection.intensity)
         }
         require(call.pitchType in allowed) { "pitch.not_in_repertoire" }
         return call

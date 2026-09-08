@@ -314,7 +314,7 @@ public class HighSchoolPhase4Kernel(
         require(!session.ended) { "pitch.ended" }
         val pitcher = state.run.toPitcherSnapshot()
         val batter = state.run.toBatterSnapshot()
-        val scouting = state.run.toScoutingSnapshot()
+        val scouting = scoutingForSession(state)
         val submitParameters = PitchKernel.SubmitRequest(
             seed = session.seed,
             pitcher = pitcher,
@@ -328,7 +328,7 @@ public class HighSchoolPhase4Kernel(
             gameLog = session.log.toGameLog(),
         )
         // The preparation read is also the source evaluator's pre-pitch rival view. It is
-        // deliberately checked against the durable token before the authoritative submit.
+        // validated against the durable token by the authoritative submit.
         val preparation = pitch.prepare(
             PitchKernel.PrepareRequest(
                 seed = session.seed,
@@ -341,7 +341,7 @@ public class HighSchoolPhase4Kernel(
                 gameLog = session.log.toGameLog(),
             ),
         )
-        require(preparation.preparationToken == session.preparationToken) { "pitch.preparation_stale" }
+        // Authoritative submit validates current or exact legacy preparation against this state.
         val result = pitch.submit(
             submitParameters,
             delivery,
@@ -492,11 +492,27 @@ public class HighSchoolPhase4Kernel(
         )
     }
 
+    private fun scoutingForSession(state: HighSchoolPhase4State): com.solkim.baseball.core.pitch.BatterScoutingSnapshot {
+        val session = state.activePitch ?: return state.run.toScoutingSnapshot()
+        val pitcher = state.run.toPitcherSnapshot()
+        val batter = state.run.toBatterSnapshot()
+        val current = state.run.toScoutingSnapshot()
+        fun matches(scouting: com.solkim.baseball.core.pitch.BatterScoutingSnapshot): Boolean = pitch.matchesPreparation(
+            PitchKernel.PrepareRequest(session.seed, pitcher, batter, scouting, session.context.toPitchContext(),
+                session.memory.toRivalMemory(pitcher.id, batter.id), session.game.toGameState(), session.log.toGameLog()),
+            session.preparationToken,
+        )
+        if (matches(current)) return current
+        val legacy = state.run.legacyScoutingSnapshot()
+        require(matches(legacy)) { "pitch.preparation_stale" }
+        return legacy
+    }
+
     public fun prepareActivePitch(state: HighSchoolPhase4State): PitchPreparation {
         val session = state.activePitch ?: error("pitch.no_session")
         val pitcher = state.run.toPitcherSnapshot()
         val batter = state.run.toBatterSnapshot()
-        val scouting = state.run.toScoutingSnapshot()
+        val scouting = scoutingForSession(state)
         return pitch.prepare(
             PitchKernel.PrepareRequest(
                 seed = session.seed,

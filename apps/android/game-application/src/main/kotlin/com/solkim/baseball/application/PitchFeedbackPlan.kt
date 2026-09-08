@@ -23,9 +23,9 @@ public object PitchFeedbackPlan {
     public fun mittGain(velocityTenthsKph: Int): Float =
         if (velocityTenthsKph <= 0) 1f else (0.8f + (velocityTenthsKph - 1_300).coerceIn(0, 200) / 200f * 0.4f)
 
-    /** Mitt pitch follows velocity slightly; a perfect release lands lower and heavier. */
+    /** Faster pitches hit the mitt with a lower, heavier tone; perfect retains its extra accent. */
     public fun mittRate(velocityTenthsKph: Int, perfect: Boolean): Float {
-        val base = if (velocityTenthsKph <= 0) 1f else (0.96f + (velocityTenthsKph - 1_300).coerceIn(0, 200) / 200f * 0.08f)
+        val base = if (velocityTenthsKph <= 0) 1f else 1.04f - PitchGrowthFeel.speedWeight(velocityTenthsKph) * 0.14f
         return if (perfect) base * 0.9f else base
     }
 
@@ -50,7 +50,7 @@ public object PitchFeedbackPlan {
             add(PitchFeedbackEvent(0, PitchAudioCue.RELEASE))
             // The air rush rides between the hand and the mitt, louder the harder the pitch is thrown.
             if (!reducedMotion && contact > 200) {
-                add(PitchFeedbackEvent(hold + 70, PitchAudioCue.FLIGHT, gain = mittGain(velocityTenthsKph), rate = mittRate(velocityTenthsKph, false)))
+                add(PitchFeedbackEvent(hold + 70, PitchAudioCue.FLIGHT, gain = mittGain(velocityTenthsKph), rate = 0.95f + PitchGrowthFeel.speedWeight(velocityTenthsKph) * 0.1f))
             }
             val mitt = contactCue == PitchAudioCue.CATCH
             add(PitchFeedbackEvent(contact, contactCue, when { outcome == PitchOutcome.FOUL -> PitchHapticCue.FOUL; outcome == PitchOutcome.BALL -> if (terminal) PitchHapticCue.WALK else null; outcome == PitchOutcome.HOME_RUN -> PitchHapticCue.HOME_RUN; outcome in setOf(PitchOutcome.SINGLE, PitchOutcome.DOUBLE, PitchOutcome.TRIPLE) -> PitchHapticCue.HIT; strikeout -> PitchHapticCue.STRIKEOUT; success -> PitchHapticCue.SUCCESS; else -> PitchHapticCue.ERROR },

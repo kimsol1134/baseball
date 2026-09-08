@@ -21,6 +21,28 @@ import kotlin.test.assertTrue
 class HighSchoolPhase4KernelTest {
     private val kernel = HighSchoolPhase4Kernel()
 
+    @Test fun variedScoutingAndOldReservedGameBothRemainPlayable() {
+        val ready = setupImportantGame()
+        val profiles = HighSchoolContentCatalog.rivals.map { ready.run.copy(rival = it).toScoutingSnapshot() }
+        assertTrue(profiles.map { it.coldZone }.distinct().size >= 3)
+        assertTrue(profiles.map { it.pitchWeakness }.distinct().size >= 2)
+        assertTrue(profiles.all { it.coldZone != it.hotZone })
+        val reserved = kernel.reserveImportantGame("918220", ready).state
+        val session = requireNotNull(reserved.activePitch)
+        val oldRequest = com.solkim.baseball.core.pitch.PitchKernel.PrepareRequest(
+            session.seed, reserved.run.toPitcherSnapshot(), reserved.run.toBatterSnapshot(),
+            reserved.run.legacyScoutingSnapshot(), session.context.toPitchContext(),
+            session.memory.toRivalMemory().copy(matchupId = "${reserved.run.toPitcherSnapshot().id}:${reserved.run.toBatterSnapshot().id}"), session.game.toGameState(), session.log.toGameLog())
+        val oldPreparation = com.solkim.baseball.core.pitch.PitchKernel().prepareLegacy(oldRequest)
+        val oldSaved = kernel.commitShadowState(reserved.copy(activePitch = session.copy(preparationToken = oldPreparation.preparationToken)))
+        val restored = HighSchoolPhase4StateCodec.decode(HighSchoolPhase4StateCodec.encode(oldSaved))
+        val newRecommendation = kernel.prepareActivePitch(restored)
+        val played = kernel.submitPitch(restored, session.sessionId, newRecommendation.primaryRecommendation.call).state
+        assertTrue(played.activePitch!!.pitches > session.pitches)
+        val tampered = restored.copy(activePitch = restored.activePitch!!.copy(preparationToken = "invalid"))
+        assertFailsWith<IllegalArgumentException> { kernel.prepareActivePitch(tampered) }
+    }
+
     @Test
     fun eightChapterVerticalsCompleteAcrossSeedsAndRestartAtDurableBoundaries() {
         repeat(8) { offset ->

@@ -19,6 +19,20 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
 class PitchHudProjectionTest {
+    @Test fun manualEffortIsNeverOverwrittenByMatchingCatcherPitchAndZone() = runBlocking {
+        val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("manual-effort"))
+        val controller = Phase7VerticalController(store)
+        controller.enterSetup()
+        controller.startHighSchool("민서준")
+        controller.beginTutorial()
+        controller.reserveTutorialPitch()
+        val primary = PitchHudProjection.model(store.current).preparation.primaryRecommendation.call
+        val call = PitchHudProjection.resolveCall(store.current, PitchHudSelection.Manual(
+            primary.pitchType, primary.zone, ZoneIntent.STRIKE, PitchIntensity.MAX_EFFORT))
+        assertEquals(PitchIntensity.MAX_EFFORT, call.intensity)
+        assertEquals(ZoneIntent.STRIKE, call.zoneIntent)
+    }
+
     @Test
     fun tutorialHudProjectsIosOrderCopyAndSliderDefault() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("hud-tutorial-ios"))

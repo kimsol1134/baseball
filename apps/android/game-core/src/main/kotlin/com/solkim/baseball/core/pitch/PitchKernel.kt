@@ -529,6 +529,10 @@ public object PitchAbilityRules {
         PitchKind.CHANGEUP -> 1480
     }
 
+    /** Pre-pitch UI estimate using the same fatigue, effort and mastery rules as delivery. */
+    public fun expectedVelocity(pitcher: PitcherSnapshot, call: PitchCall, fatigue: Int): Int =
+        nominalVelocity(pitcher, call.pitchType, call.intensity, fatigue, pitcher.effectiveMastery.stuff)
+
     public fun readout(pitcher: PitcherSnapshot, call: PitchCall, context: PlateAppearanceContext): PitchAbilityReadout {
         val profile = pitcher.profile(call.pitchType)
         return PitchAbilityReadout(
@@ -941,6 +945,8 @@ private class CatcherRecommendationEngine {
         reliability: Int,
         gameState: GameStateSnapshot?,
         lastPitch: PitchAnalysisEntry?,
+        observations: List<RivalPitchObservation> = emptyList(),
+        legacy: Boolean = false,
     ): Pair<PitchRecommendation, PitchRecommendation> {
         val twoStrikes = context.strikes == 2
         val protectZone = context.balls == 3
@@ -994,7 +1000,54 @@ private class CatcherRecommendationEngine {
             reasonCodes = listOf("scouting.avoid_hot_zone", "sequence.change_speed", if (protectZone) "count.avoid_walk" else "count.alternative"),
             shortReason = recommendationReason(listOf("scouting.avoid_hot_zone"), ""),
         )
-        return primary to alternative
+        if (legacy) return primary to alternative
+        // Rank legal targets from actual scouting and recent matchup evidence. No refresh RNG.
+        val recent = observations.takeLast(4)
+        fun target(excluding: PitchZone? = null): PitchZone =
+            BatterScoutingProfileRules.allZones.filter { it != excluding }.maxBy { zone ->
+                var score = if (zone == scouting.coldZone) 45 else 0
+                if (zone == scouting.hotZone) score -= 90
+                if (zone.row == 1 && zone.column == 1) score -= 35
+                if (protectZone || situation.demandsControl) {
+                    if (zone.row == 1 || zone.column == 1) score += 45
+                }
+                if (situation.doublePlayChance || situation.sacrificeFlyRisk) score += zone.row * 25
+                if (twoStrikes && !protectZone && primaryPitch != PitchKind.FOUR_SEAM) score += zone.row * 12
+                recent.forEachIndexed { index, pitch ->
+                    if (pitch.zone == zone) score -= 24 + index * 14
+                }
+                score
+            }
+        val zone = target()
+        val changedLocation = recent.lastOrNull()?.zone != null && recent.last().zone != zone
+        val intent = if (protectZone || situation.demandsControl) ZoneIntent.STRIKE
+            else if (twoStrikes && scouting.chaseTendency >= 50 && batter.discipline < 65) ZoneIntent.CHASE
+            else ZoneIntent.EDGE
+        val reason = when {
+            protectZone -> "볼이 많아. 존 안에서 승부하자."
+            situation.doublePlayChance -> "낮게 던져 땅볼을 노리자."
+            situation.sacrificeFlyRisk -> "뜬공을 줄이게 낮게 가자."
+            mustChange -> "방금 공에 적응했어. 다른 구종으로 가자."
+            changedLocation -> "같은 곳은 읽혀. 이번엔 코스를 바꾸자."
+            intent == ZoneIntent.CHASE -> "두 스트라이크야. 존 밖으로 헛스윙을 노리자."
+            reliability < 60 -> "아직 탐색 중이야. 존 경계로 반응을 보자."
+            zone == scouting.coldZone -> "약점 코스로 먼저 승부하자."
+            else -> "강한 코스를 피해 승부하자."
+        }
+        val playable = pitcher.pitchProfiles?.map { it.pitchType }
+        val otherType = alternative.call.pitchType.takeIf { playable == null || it in playable } ?: primaryPitch
+        val otherZone = target(zone)
+        return primary.copy(
+            call = primary.call.copy(zone = zone, zoneIntent = ZoneIntentRules.clamp(intent, zone),
+                intensity = if (context.fatigue >= 60) PitchIntensity.CONTROLLED else primary.call.intensity),
+            reasonCodes = listOf(if (changedLocation) "sequence.change_location" else "scouting.target", situation.countCode),
+            shortReason = reason,
+        ) to alternative.copy(
+            call = alternative.call.copy(pitchType = otherType, zone = otherZone,
+                zoneIntent = if (protectZone || situation.demandsControl) ZoneIntent.STRIKE else ZoneIntentRules.clamp(ZoneIntent.EDGE, otherZone)),
+            reasonCodes = listOf("sequence.alternative_target"),
+            shortReason = if (otherType != primaryPitch) "다른 구종과 코스로 타이밍을 흔들자." else "같은 구종으로 다른 코스를 찌르자.",
+        )
     }
 
     private fun recommendedPrimaryPitch(
@@ -1079,7 +1132,9 @@ public class PitchKernel {
     private val recommendationEngine = CatcherRecommendationEngine()
     private val rivalMemoryEngine = RivalMemoryEngine()
 
-    public fun preparePitch(parameters: PreparePitchParams): PitchPreparation {
+    public fun preparePitch(parameters: PreparePitchParams): PitchPreparation = preparePitchVersion(parameters, false)
+
+    private fun preparePitchVersion(parameters: PreparePitchParams, legacy: Boolean): PitchPreparation {
         val seed = validate(parameters)
         val adaptation = rivalMemoryEngine.analyze(parameters.rivalMemory, parameters.context)
         val plan = commitBatterPlan(parameters, adaptation, seed)
@@ -1098,6 +1153,8 @@ public class PitchKernel {
             reliability,
             parameters.gameState,
             parameters.gameLog?.entries?.lastOrNull(),
+            parameters.rivalMemory?.recentObservations.orEmpty(),
+            legacy,
         )
         val token = preparationToken(parameters, plan.commitment, recommendations.first, recommendations.second)
         return PitchPreparation(
@@ -1144,9 +1201,13 @@ public class PitchKernel {
             reliability,
             parameters.gameState,
             parameters.gameLog?.entries?.lastOrNull(),
+            parameters.rivalMemory?.recentObservations.orEmpty(),
         )
         val expectedToken = preparationToken(prepareParameters, plan.commitment, recommendations.first, recommendations.second)
-        if (parameters.preparationToken != expectedToken) {
+        // Accept an exact previous-algorithm token only for the same complete immutable state.
+        // The next preparation always upgrades to current recommendations.
+        if (parameters.preparationToken != expectedToken &&
+            parameters.preparationToken != preparePitchVersion(prepareParameters, true).preparationToken) {
             throw PitchKernelException("invalid_preparation_token", "pitch preparation token is invalid or stale")
         }
         val execution = executePitch(parameters, delivery, seed)
@@ -1385,6 +1446,18 @@ public class PitchKernel {
     public fun prepare(request: PrepareRequest): PitchPreparation = preparePitch(
         PreparePitchParams(request.seed, request.pitcher, request.batter, request.scouting, request.context, request.rivalMemory, request.gameState, request.gameLog)
     )
+
+    internal fun prepareLegacy(request: PrepareRequest): PitchPreparation = preparePitchVersion(
+        PreparePitchParams(request.seed, request.pitcher, request.batter, request.scouting,
+            request.context, request.rivalMemory, request.gameState, request.gameLog), true)
+
+    /** Exact compatibility check for a saved preparation; never accepts a token from different state. */
+    public fun matchesPreparation(request: PrepareRequest, token: String): Boolean {
+        val params = PreparePitchParams(request.seed, request.pitcher, request.batter, request.scouting,
+            request.context, request.rivalMemory, request.gameState, request.gameLog)
+        return preparePitchVersion(params, false).preparationToken == token ||
+            prepareLegacy(request).preparationToken == token
+    }
 
     public fun submit(request: SubmitRequest, delivery: PitchDelivery? = null): PitchKernelResult = submitPitch(
         SubmitPitchParams(request.seed, request.pitcher, request.batter, request.scouting, request.context, request.preparationToken, request.call, request.rivalMemory, request.gameState, request.gameLog),
