@@ -1126,7 +1126,6 @@ private fun PitchScoreboardBar(board: PitchScoreboardModel, perfectStreak: Int =
         board.scoreDiff < 0 -> BaseballColors.negative
         else -> BaseballColors.textPrimary
     }
-    val occupied = board.runners.firstOccupied || board.runners.secondOccupied || board.runners.thirdOccupied
     Surface(
         color = BaseballColors.surface,
         modifier = Modifier
@@ -1179,16 +1178,11 @@ private fun PitchScoreboardBar(board: PitchScoreboardModel, perfectStreak: Int =
             ) {
                 PipGroup(label = "B", count = board.balls, max = 3, activeColor = BaseballColors.warning)
                 PipGroup(label = "S", count = board.strikes, max = 2, activeColor = BaseballColors.action)
-                RunnerDiamond(board.runners)
-                Text(
-                    text = board.situationText,
-                    color = if (occupied) BaseballColors.warning else BaseballColors.textSecondary,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                )
+                BaseOccupancyDiagram(listOfNotNull(1.takeIf { board.runners.firstOccupied }, 2.takeIf { board.runners.secondOccupied }, 3.takeIf { board.runners.thirdOccupied }), Modifier.size(44.dp), compact = true)
+                val pressure = PitchScoreboardProjection.pressureLine(board.scoreDiff, board.runners)
+                if (pressure != null) Text(pressure, modifier = Modifier.weight(1f), color = BaseballColors.warning,
+                    style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                else Spacer(Modifier.weight(1f))
                 Text(
                     text = "피로 ${board.fatigue}",
                     color = if (board.fatigue >= 70) BaseballColors.warning else BaseballColors.textTertiary,
@@ -1226,29 +1220,7 @@ private fun PipGroup(label: String, count: Int, max: Int, activeColor: ComposeCo
     }
 }
 
-@Composable
-private fun RunnerDiamond(runners: BaserunnerStateSnapshot) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clearAndSetSemantics { },
-    ) {
-        DiamondPip(filled = runners.secondOccupied)
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            DiamondPip(filled = runners.thirdOccupied)
-            DiamondPip(filled = runners.firstOccupied)
-        }
-    }
-}
 
-@Composable
-private fun DiamondPip(filled: Boolean) {
-    Box(
-        modifier = Modifier
-            .size(8.dp)
-            .clip(RoundedCornerShape(1.dp))
-            .background(if (filled) BaseballColors.warning else BaseballColors.border.copy(alpha = 0.45f)),
-    )
-}
 
 @Composable
 private fun PitchMatchupCard(

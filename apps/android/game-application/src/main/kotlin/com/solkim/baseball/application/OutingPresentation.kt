@@ -4,7 +4,17 @@ import com.solkim.baseball.core.pitch.*
 import com.solkim.baseball.core.highschool.*
 import com.solkim.baseball.core.pro.*
 
-public data class OutingBriefing(val title: String, val situation: String, val score: String, val goal: String, val reward: String, val story: String)
+public data class OutingBriefing(val title: String, val situation: String, val score: String, val goal: String, val reward: String, val story: String,
+    val inning: Int, val outs: Int, val bases: List<Int>, val lead: Int, val starterTrial: Boolean, val rewardTrust: Int) {
+    public fun localized(copy: GameCopy): OutingBriefing {
+        val runners = if (bases.isEmpty()) copy.resolve("improve.outing.empty-bases") else copy.resolve("improve.outing.bases", GameCopyArgument.UserText(bases.joinToString("·")))
+        return this.copy(title = copy.legacy(title), goal = copy.legacy(goal), story = copy.legacy(story),
+            score = if (lead == 0) copy.resolve("improve.outing.tied") else copy.resolve(if (lead > 0) "improve.outing.lead" else "improve.outing.trail", GameCopyArgument.Whole(kotlin.math.abs(lead).toLong())),
+            situation = copy.resolve("improve.outing.situation", GameCopyArgument.Whole(inning.toLong()), GameCopyArgument.Whole(outs.toLong()), GameCopyArgument.UserText(runners)),
+            reward = listOfNotNull(copy.resolve("improve.outing.chance").takeIf { starterTrial },
+                copy.resolve("improve.outing.reward", GameCopyArgument.Whole(rewardTrust.toLong())).takeIf { rewardTrust > 0 }).joinToString(" · "))
+    }
+}
 
 public object OutingPresentation {
     public fun briefing(state: GameAggregateState, context: Phase8CommandContext = Phase8CommandContext()): OutingBriefing? {
@@ -24,7 +34,8 @@ public object OutingPresentation {
             board.scoreText, assignment?.let(::goal) ?: "이번 이닝에 집중해요.",
             listOfNotNull("선발 기회".takeIf { trial }, "감독 신뢰 +$reward".takeIf { assignment != null && reward > 0 }).joinToString(" · "),
             if (pro != null) ProKernel().importantHeadline(pro.seasonTrigger ?: ProSeasonTrigger.STANDINGS_RACE, pro.currentRival, pro.level)
-            else preview.highSchool?.run?.currentGameScenario?.narrative.orEmpty())
+            else preview.highSchool?.run?.currentGameScenario?.narrative.orEmpty(), board.inning, board.outs,
+            listOfNotNull(1.takeIf { board.runners.firstOccupied }, 2.takeIf { board.runners.secondOccupied }, 3.takeIf { board.runners.thirdOccupied }), board.scoreDiff, trial, if (assignment != null) reward else 0)
     }
     public fun isStarterTrial(state: GameAggregateState): Boolean = assignment(state)?.goal == OutingGoal.STARTER_TEST
     public fun assignment(state: GameAggregateState): OutingAssignment? = state.pro?.activePitch?.assignment ?: state.highSchool?.activePitch?.assignment

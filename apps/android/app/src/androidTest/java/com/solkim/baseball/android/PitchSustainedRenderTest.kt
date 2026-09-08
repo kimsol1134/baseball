@@ -27,6 +27,10 @@ class PitchSustainedRenderTest {
         context.getSharedPreferences("launch-qa", 0).edit().putInt("refresh-rate", 120).commit()
         val device = UiDevice.getInstance(inst)
         device.wakeUp()
+        val existing = app.gameStore.current.pitch
+        if (existing != null && existing.boundary !in setOf(com.solkim.baseball.application.PitchBoundary.COMPLETED, com.solkim.baseball.application.PitchBoundary.ABANDONED)) {
+            context.startActivity(PitchActivity.intent(context, existing.sessionId, app.gameStore.current.revision.toString()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } else {
         context.startActivity(requireNotNull(context.packageManager.getLaunchIntentForPackage(context.packageName))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
         // A disposable QA install starts at the opening screen, so the career this render sample needs
@@ -36,9 +40,8 @@ class PitchSustainedRenderTest {
             requireNotNull(device.wait(Until.findObject(By.res("setup.next")), 10_000)).click()
             requireNotNull(device.wait(Until.findObject(By.res("setup.confirm")), 10_000)).click()
         }
-        val open = device.wait(Until.findObject(By.res("action.openTutorialPitch")), 20_000)
-        assertNotNull("the tutorial pitch must be reachable from a fresh install", open)
-        requireNotNull(open).click()
+        device.wait(Until.findObject(By.res("pitch.practiceIntroduction.start").enabled(true)), 20_000)?.click()
+        }
         // The replay this test samples exists only after a pitch has been thrown.
         if (!device.wait(Until.hasObject(By.res("pitch.replay")), 5_000)) {
             val slider = requireNotNull(device.wait(Until.findObject(By.res("pitch.slider")), 20_000)).visibleBounds

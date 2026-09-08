@@ -20,6 +20,11 @@ class OutingBriefingTest {
             assertTrue(preview.situation.startsWith("${reserved.activePitch!!.context.inning}회"))
             assertEquals(OutingPresentation.goal(reserved.activePitch!!.assignment!!), preview.goal)
             assertFalse(preview.story.contains("선발 맞대결"))
+            for (language in listOf(GameLanguage.ENGLISH, GameLanguage.JAPANESE)) {
+                val localized = preview.localized(GameCopy(language))
+                assertFalse(Regex("[가-힣]").containsMatchIn(localized.situation + localized.reward + localized.score))
+                if (preview.rewardTrust > 0) assertTrue(localized.reward.contains("+${preview.rewardTrust}"))
+            }
             assertContentEquals(before, ProStateCodec.encode(pro))
         }
     }

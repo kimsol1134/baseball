@@ -346,6 +346,7 @@ public fun Phase8Shell(
 
             Phase8ScreenContent(
                 state = state,
+                busy = busy,
                 commandContext = commandContext,
                 model = if (pinnedAction == null || pinnedAction.id == "quickRebirth") model else model.copy(actions = model.actions.filterNot { it.id == pinnedAction.id }),
                 onAction = onAction,
@@ -532,6 +533,7 @@ private fun TabIcon(tab: ProductTab, isSelected: Boolean) {
 @Composable
 private fun Phase8ScreenContent(
     state: GameAggregateState,
+    busy: Boolean,
     commandContext: Phase8CommandContext,
     model: Phase8ScreenModel,
     onAction: (Phase8UiAction) -> Unit,
@@ -563,7 +565,7 @@ private fun Phase8ScreenContent(
                     Phase8ScreenId.P013_DRAFT -> { Phase8DraftReveal(state, model); Phase8Actions(model, onAction) }
                     Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P018_PRO_IMPORTANT_GAME -> OutingBriefingView(state, model, commandContext, onAction)
                     Phase8ScreenId.P007_RELATIONSHIP, Phase8ScreenId.P017_PRO_WEEK ->
-                        Phase8DecisionChoices(state, model, onAction)
+                        Phase8DecisionChoices(state, model, onAction, busy)
                     in compactCareerScreens -> {
                         CompactCareerOverview(state, model, onAction)
                         if (model.id !in setOf(Phase8ScreenId.P022_PRO_LEGACY, Phase8ScreenId.P026_ACHIEVEMENTS)) Phase8Actions(model, onAction)
@@ -573,6 +575,7 @@ private fun Phase8ScreenContent(
                         Phase8Actions(model, onAction)
                     }
                 }
+                if (model.id !in setOf(Phase8ScreenId.P007_RELATIONSHIP, Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P017_PRO_WEEK, Phase8ScreenId.P018_PRO_IMPORTANT_GAME)) {
                 var showsDetails by remember(model.id) { mutableStateOf(false) }
                 TextButton(onClick = { showsDetails = !showsDetails }, modifier = Modifier.testTag("career.storyDetails")) {
                     Text(rememberGameCopy().resolve("mobile.core.career-details"), verbatim = true)
@@ -590,6 +593,7 @@ private fun Phase8ScreenContent(
                     onAction = onPlatformAction,
                     onViewportExposure = onViewportExposure,
                 )                }
+                }
 
             }
         }
@@ -745,7 +749,7 @@ private fun Phase8DraftReveal(state: GameAggregateState, model: Phase8ScreenMode
 }
 
 @Composable
-private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit) {
+private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit, busy: Boolean) {
     val copy = rememberGameCopy()
     var details by rememberSaveable(model.id.wire) { mutableStateOf(false) }
     var roleChoices by rememberSaveable(state.pro?.careerId, state.pro?.season) { mutableStateOf(false) }
@@ -786,7 +790,7 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
         else -> Unit
     }
     if (model.id == Phase8ScreenId.P017_PRO_WEEK) {
-        ProWeekPlanner(state, model, onAction)
+        ProWeekPlanner(state, model, busy, onAction)
         return
     }
     if (model.id == Phase8ScreenId.P007_RELATIONSHIP) {

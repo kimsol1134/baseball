@@ -14,19 +14,19 @@ import com.solkim.baseball.android.LocalizedGameText as Text
 
 @Composable
 internal fun OutingBriefingView(state: GameAggregateState, model: Phase8ScreenModel, context: Phase8CommandContext, onAction: (Phase8UiAction) -> Unit) {
-    val briefing = remember(state, context) { OutingPresentation.briefing(state, context) }
+    val copy = rememberGameCopy()
+    val briefing = remember(state, context) { OutingPresentation.briefing(state, context) }?.localized(copy)
     if (briefing != null) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            playerPortraitSeed(state)?.let { PlayerPortrait(seed = it, width = 36.dp) }
-            Text(briefing.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("outing.role"))
+            playerPortraitSeed(state)?.let { PlayerPortrait(seed = it, stage = if (state.stage in setOf(GameStage.PRO, GameStage.RETIREMENT)) PlayerStage.PRO else if ((state.highSchool?.run?.chapter?.schoolYear ?: 1) >= 3) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 36.dp) }
+            Text(briefing.title, verbatim = true, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("outing.role"))
         }
-        Text(briefing.score, style = MaterialTheme.typography.headlineMedium, color = BaseballColors.milestone)
-        Text(briefing.situation, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("outing.situation"))
+        VisualOutingSituation(briefing)
         HorizontalDivider()
         Text("이번 목표", style = MaterialTheme.typography.labelLarge)
-        Text(briefing.goal, style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag("outing.goal"))
-        if (briefing.reward.isNotBlank()) Text(briefing.reward, color = BaseballColors.action)
-        if (briefing.story.isNotBlank()) CareerDisclosure("상대와 경기 이야기", "outing.details") { Text(briefing.story) }
+        Text(briefing.goal, verbatim = true, style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag("outing.goal"))
+        if (briefing.reward.isNotBlank()) Text(briefing.reward, verbatim = true, color = BaseballColors.action)
+        if (briefing.story.isNotBlank()) CareerDisclosure("상대와 경기 이야기", "outing.details") { Text(briefing.story, verbatim = true) }
     }
     model.actions.filter { it.enabled }.forEach { action ->
         OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },

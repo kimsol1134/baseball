@@ -76,9 +76,9 @@ class FirstPitchLocalizedSmokeTest {
         assertTrue(device.wait(Until.gone(By.res("setup.name")), 10_000))
         capture("style")
         tap("setup.confirm")
-        assertTrue("Introduction must wait for the player", device.wait(Until.hasObject(By.res("action.openTutorialPitch")), 10_000))
-        assertFalse(device.hasObject(By.res("pitch.slider")))
-        tap("action.openTutorialPitch")
+        assertTrue("Introduction must wait on the actual mound", device.wait(Until.hasObject(By.res("pitch.practiceIntroduction.start")), 10_000))
+        assertNull(app.gameStore.current.highSchool?.lastPresentation)
+        tap("pitch.practiceIntroduction.start")
         assertTrue("First-pitch action should open the mound", device.wait(Until.hasObject(By.res("pitch.slider")), 20_000))
         if (InstrumentationRegistry.getArguments().getString("qaPreferenceFailure") == "true") {
             require(context.packageName == "com.solkim.baseball.android.reset.compose.qa")

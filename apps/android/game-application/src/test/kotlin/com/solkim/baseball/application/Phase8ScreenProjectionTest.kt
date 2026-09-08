@@ -319,7 +319,7 @@ class Phase8ScreenProjectionTest {
         assertTrue(contract.actions.single { it.id == "startDirect" }.payloads.isNotEmpty())
         controller.execute(Phase8ScreenId.P016_PRO_CONTRACT, "startDirect", contract.actions.single { it.id == "startDirect" }.payloads)
         assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
-        assertEquals(10, initialStore.current.pro?.proRulesVersion)
+        assertEquals(11, initialStore.current.pro?.proRulesVersion)
         assertEquals(ProCatalog.RULES_VERSION, initialStore.current.pro?.proRulesVersion)
         val weekly = controller.projection(Phase8ScreenId.P017_PRO_WEEK)
         assertEquals(6, weekly.actions.count { it.id.startsWith("proPlan:") })

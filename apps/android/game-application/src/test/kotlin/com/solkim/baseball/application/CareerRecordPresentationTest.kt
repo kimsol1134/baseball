@@ -5,6 +5,15 @@ import com.solkim.baseball.core.highschool.*
 import kotlin.test.*
 
 class CareerRecordPresentationTest {
+    @Test fun missingHistoricalInningsAreUnknownRatherThanZero() {
+        val base = HighSchoolPhase4Kernel().start(HighSchoolPhase4StartRequest("918220", "power_prospect", "history", "2026-W37", "2026-09-08")).state
+        val archive = HighSchoolArchiveRecord("older-life", 1, "지난투수", null, null, false, 50, null,
+            listOf(40, 40, 40, 40), 4, 60, 10, 2, 3, emptyList(), null, null, false, 0, 4UL)
+        val state = GameAggregateState.initial("history").copy(highSchool = base.copy(archive = listOf(archive)), stage = GameStage.HIGH_SCHOOL)
+        val view = CareerRecordPresentation.resolve(state, "hs:older-life")!!
+        assertEquals(4, view.games); assertEquals("—", view.innings); assertTrue(view.incomplete)
+        assertTrue(view.rows.isEmpty())
+    }
     @Test fun professionalOutingsAndSeasonTotalsSurviveScopeChangesAndArchive() {
         val k = ProKernel()
         val start = k.startDirect(ProStartDirectRequest("918220", "power_prospect", "기록투수")).state

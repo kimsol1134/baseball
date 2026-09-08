@@ -22,7 +22,9 @@ class OutingBriefingUiTest {
             Phase8Shell(state, false, null, Phase8ScreenId.P018_PRO_IMPORTANT_GAME, Phase8CommandContext(), onNavigate = {}, onAction = {})
         } }
         compose.onNodeWithTag("outing.role").assertTextEquals("마무리 등판").assertIsDisplayed()
-        compose.onNodeWithTag("outing.situation").assertTextContains("9회", substring = true).assertIsDisplayed()
+        compose.onNodeWithTag("outing.situation").assertIsDisplayed()
+        compose.onNodeWithTag("visual.base.1", useUnmergedTree = true).assertIsNotSelected()
+        compose.onNodeWithTag("visual.out.0", useUnmergedTree = true).assertIsNotSelected()
         compose.onNodeWithTag("outing.goal").assertTextEquals("리드를 지켜 이닝 마무리").assertIsDisplayed()
         compose.onAllNodesWithText("선발 맞대결", substring = true).assertCountEquals(0)
         compose.onNodeWithTag("action.openProImportantGame").assertIsDisplayed()

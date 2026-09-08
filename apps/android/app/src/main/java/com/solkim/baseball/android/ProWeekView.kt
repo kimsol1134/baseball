@@ -19,8 +19,9 @@ import org.json.JSONObject
 import com.solkim.baseball.android.LocalizedGameText as Text
 
 @Composable
-internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit) {
-    val plans = model.actions.filter { it.id.startsWith("proPlan:") }
+internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel, busy: Boolean = false, onAction: (Phase8UiAction) -> Unit) {
+    val order = listOf("develop_stuff", "refine_command", "develop_movement", "build_stamina", "recover", "earn_trust")
+    val plans = model.actions.filter { it.id.startsWith("proPlan:") }.sortedBy { order.indexOf(it.id.substringAfter(':')) }
     var selected by rememberSaveable(state.pro?.careerId) { mutableStateOf(plans.firstOrNull()?.id) }
     val action = plans.firstOrNull { it.id == selected } ?: plans.firstOrNull() ?: return
     val preview = ProWeekPresentation.preview(state, action.id) ?: return
@@ -28,7 +29,7 @@ internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel,
     plans.chunked(3).forEach { row ->
         AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
             row.forEach { choice ->
-                FilterChip(selected = action.id == choice.id, enabled = choice.enabled, onClick = { selected = choice.id },
+                FilterChip(selected = action.id == choice.id, enabled = choice.enabled && !busy, onClick = { selected = choice.id },
                     colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BaseballColors.action, selectedLabelColor = BaseballColors.actionInk),
                     label = { Text(ProWeekPresentation.title(choice.id)) }, modifier = Modifier.heightIn(min = 48.dp).testTag("week.select.${choice.id}"))
             }
@@ -37,12 +38,13 @@ internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel,
     Column(Modifier.fillMaxWidth().testTag("week.preview"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(preview.growth); Text(preview.schedule); Text(preview.condition, color = BaseballColors.textSecondary)
     }
-    Button(enabled = action.enabled, onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
+    Button(enabled = action.enabled && !busy, onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("week.commit")) { Text("이번 주 진행") }
+    if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag("week.busy"))
     model.actions.firstOrNull { it.id == "proAdvanceSegment" && it.enabled }?.let { batch ->
         CareerDisclosure("여러 주 진행", "week.batch") {
             Text("대화나 중요한 경기가 나오면 멈춰요.")
-            OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, batch.id, batch.payloads)) }) { Text("감독에게 맡기기") }
+            OutlinedButton(enabled = !busy, onClick = { onAction(Phase8UiAction(model.id, batch.id, batch.payloads)) }) { Text("감독에게 맡기기") }
         }
     }
 }
@@ -74,7 +76,7 @@ internal fun ProWeekFeedbackGate(state: GameAggregateState) {
                 Text("성장", style = MaterialTheme.typography.titleSmall)
                 val growth = r.getJSONArray("growth")
                 if (growth.length() == 0) Text("몸 상태와 이번 주 경기를 확인해요.")
-                repeat(growth.length()) { Text(growth.getString(it), color = BaseballColors.action) }
+                repeat(growth.length()) { StatChangeText(growth.getString(it), color = BaseballColors.action) }
                 Text("이번 주 경기", style = MaterialTheme.typography.titleSmall)
                 Text("${r.getInt("games")}경기 · ${r.getInt("outs") / 3}.${r.getInt("outs") % 3}이닝 · ${r.getInt("strikeouts")}탈삼진 · ${r.getInt("runs")}실점")
                 Text("몸 상태", style = MaterialTheme.typography.titleSmall)

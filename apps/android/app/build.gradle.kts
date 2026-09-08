@@ -98,6 +98,7 @@ android {
         debug {
             // Isolated launch QA leaves any existing development career untouched.
             applicationIdSuffix = when {
+                providers.gradleProperty("baseballAuditQa").orNull == "true" -> ".audit.compose.qa"
                 providers.gradleProperty("baseballResetQa").orNull == "true" -> ".reset.compose.qa"
                 providers.gradleProperty("baseballCoreQa").orNull == "true" -> ".core.compose.qa"
                 providers.gradleProperty("baseballLaunchQa").orNull == "true" -> ".compose.qa"

@@ -5,6 +5,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.solkim.baseball.application.*
@@ -21,11 +24,12 @@ internal fun MoundLoadingView() {
 
 /** Only a display acknowledgement: no pitch, reward or career command is sent by this button. */
 @Composable
+@OptIn(ExperimentalComposeUiApi::class)
 internal fun FirstPracticeIntroduction(autoRelease: Boolean = false, onStart: () -> Unit) {
     var ready by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { withFrameNanos { }; delay(500); ready = true }
     AlertDialog(onDismissRequest = {}, containerColor = BaseballColors.surfaceRaised,
-        modifier = Modifier.testTag("pitch.practiceIntroduction"),
+        modifier = Modifier.semantics { testTagsAsResourceId = true }.testTag("pitch.practiceIntroduction"),
         title = { Text("연습 투구") },
         text = { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("포수가 구종과 코스를 골라뒀어요.")
@@ -36,6 +40,7 @@ internal fun FirstPracticeIntroduction(autoRelease: Boolean = false, onStart: ()
 
 /** Resume old saves/explicitly paused practice without bringing back the discarded instruction page. */
 @Composable
+@OptIn(ExperimentalComposeUiApi::class)
 internal fun PracticeEntryRecovery(state: GameAggregateState, model: Phase8ScreenModel, busy: Boolean, error: String?, onAction: (Phase8UiAction) -> Unit, onExitChallenge: (() -> Unit)? = null) {
     var requested by remember(state.highSchool?.run?.careerId) { mutableStateOf(false) }
     val open = model.actions.firstOrNull { it.id == "openTutorialPitch" && it.enabled }
@@ -48,7 +53,7 @@ internal fun PracticeEntryRecovery(state: GameAggregateState, model: Phase8Scree
         if (fresh && !busy && error == null && !requested && open != null) run(open)
     }
     if (busy || (fresh && error == null)) { MoundLoadingView(); return }
-    Surface(Modifier.fillMaxSize(), color = BaseballColors.canvas, contentColor = BaseballColors.textPrimary) {
+    Surface(Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }, color = BaseballColors.canvas, contentColor = BaseballColors.textPrimary) {
     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("연습 투구", style = MaterialTheme.typography.headlineSmall)
         error?.let { Text(it, color = BaseballColors.warning) }

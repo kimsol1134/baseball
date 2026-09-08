@@ -5,8 +5,8 @@ public data class RecordScope(val id: String, val title: String, val player: Str
 public data class CareerGameView(val id: String, val label: String, val outs: Int, val strikeouts: Int, val runs: Int,
     val walks: Int, val hits: Int, val perfect: Int, val team: Int, val opponent: Int, val manual: Boolean)
 public data class CareerRecordView(val scope: RecordScope, val games: Int, val outs: Int, val runs: Int, val strikeouts: Int,
-    val rows: List<CareerGameView>, val incomplete: Boolean) {
-    public val innings: String get() = "${outs / 3}.${outs % 3}"
+    val rows: List<CareerGameView>, val incomplete: Boolean, val inningsKnown: Boolean = true) {
+    public val innings: String get() = if (inningsKnown) "${outs / 3}.${outs % 3}" else "—"
 }
 public object CareerRecordPresentation {
     public fun scopes(state: GameAggregateState): List<RecordScope> {
@@ -50,11 +50,15 @@ public object CareerRecordPresentation {
         val historical = hs.archive.firstOrNull { it.careerId == id }
         val manual = source.filter { it.played }
         val knownAuto = source.filter { !it.played }
-        val expectedGames = (run?.performance?.importantGamesCompleted ?: historical?.importantGames ?: 0) + (run?.automaticGames ?: 0)
+        val expectedManual = run?.performance?.importantGamesCompleted ?: historical?.importantGames ?: 0
+        val automaticGames = groups.values.count { parts -> parts.none { it.played } }
+        val expectedGames = expectedManual + (run?.automaticGames ?: automaticGames)
         val totalOuts = maxOf(rows.sumOf { it.outs }, maxOf(manual.sumOf { it.outs }, run?.performance?.outs ?: 0) + (run?.automaticOuts ?: knownAuto.sumOf { it.outs }))
         val totalRuns = maxOf(rows.sumOf { it.runs }, (run?.performance?.runsAllowed ?: historical?.runsAllowed ?: manual.sumOf { it.runsAllowed }) + (run?.automaticRunsAllowed ?: knownAuto.sumOf { it.runsAllowed }))
-        val missing = expectedGames > rows.size || totalOuts > rows.sumOf { it.outs }
+        val inningsKnown = (manual.map { it.gameNumber }.distinct().size >= expectedManual || (run?.performance?.outs ?: 0) > 0) &&
+            (run == null || run.automaticGames <= automaticGames || run.automaticOuts > 0)
+        val missing = expectedGames > rows.size || totalOuts > rows.sumOf { it.outs } || !inningsKnown
         return CareerRecordView(scope, maxOf(rows.size, expectedGames), totalOuts, totalRuns,
-            maxOf(manual.sumOf { it.strikeouts }, run?.performance?.strikeouts ?: historical?.strikeouts ?: 0) + knownAuto.sumOf { it.strikeouts }, rows, missing)
+            maxOf(manual.sumOf { it.strikeouts }, run?.performance?.strikeouts ?: historical?.strikeouts ?: 0) + knownAuto.sumOf { it.strikeouts }, rows, missing, inningsKnown)
     }
 }
