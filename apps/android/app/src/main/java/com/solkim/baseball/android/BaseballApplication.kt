@@ -75,7 +75,7 @@ public class BaseballApplication : Application() {
             val shadowDirectory = filesDir.toPath().resolve(
                 "compose-dev-shadow-${Hashing.sha256Hex("$installId|aggregate-shadow").take(32)}",
             )
-            FileShadowFixtureGameStoreRepository(shadowDirectory)
+            FileShadowFixtureGameStoreRepository(shadowDirectory, resetSideEffects = phase9ResetSideEffects())
         }
         gameStore = runBlocking(Dispatchers.IO) {
             KotlinGameStore.open(

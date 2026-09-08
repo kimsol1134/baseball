@@ -42,6 +42,11 @@ public interface GameStoreRepository {
  */
 public interface ShadowFixtureGameStoreRepository : GameStoreRepository
 
+/** Only explicit progress deletion may begin a new receipt/revision chain. */
+public interface FreshProgressGameStoreRepository : GameStoreRepository {
+    public suspend fun saveFreshProgress(value: GameAggregateState): SaveWriteResult<GameAggregateState>
+}
+
 public class InMemoryShadowFixtureGameStoreRepository(
     initial: GameAggregateState,
 ) : ShadowFixtureGameStoreRepository {
@@ -92,20 +97,59 @@ public class InMemoryShadowFixtureGameStoreRepository(
 public class FileShadowFixtureGameStoreRepository(
     public val directory: java.nio.file.Path,
     clock: com.solkim.baseball.persistence.SaveClock = com.solkim.baseball.persistence.SystemSaveClock,
-) : ShadowFixtureGameStoreRepository {
+    private val resetSideEffects: ResetSideEffects = NoResetSideEffects,
+    faults: com.solkim.baseball.persistence.SaveFaultInjector = com.solkim.baseball.persistence.SaveFaultInjector.NONE,
+) : ShadowFixtureGameStoreRepository, FreshProgressGameStoreRepository {
     private val delegate = com.solkim.baseball.persistence.AtomicJsonRepository(
         layout = com.solkim.baseball.persistence.SaveFileLayout(directory),
+        codec = GameAggregateCodec,
+        clock = clock,
+        faults = faults,
+    )
+    // Persist the fresh state outside the files being cleared, before touching the old save.
+    private val resetIntent = com.solkim.baseball.persistence.AtomicJsonRepository(
+        layout = com.solkim.baseball.persistence.SaveFileLayout(directory.resolve("progress-reset")),
         codec = GameAggregateCodec,
         clock = clock,
     )
 
     override suspend fun save(value: GameAggregateState, revision: ULong): SaveWriteResult<GameAggregateState> =
-        withContext(Dispatchers.IO) { delegate.save(value, revision) }
+        withContext(Dispatchers.IO) { finishPendingReset(); delegate.save(value, revision) }
 
     override suspend fun load(): SaveLoadResult<GameAggregateState> =
-        withContext(Dispatchers.IO) { delegate.load() }
+        withContext(Dispatchers.IO) { finishPendingReset(); delegate.load() }
 
-    override suspend fun reset(): Unit = withContext(Dispatchers.IO) { delegate.reset() }
+    override suspend fun saveFreshProgress(value: GameAggregateState): SaveWriteResult<GameAggregateState> = withContext(Dispatchers.IO) {
+        finishPendingReset()
+        validateFreshProgress(value)
+        resetIntent.save(value, value.revision)
+        requireNotNull(finishPendingReset())
+    }
+
+    private fun validateFreshProgress(value: GameAggregateState) {
+        value.validate()
+        require(value.revision == 1UL && value.stage == GameStage.OPENING && value.highSchool == null && value.pro == null && value.pitch == null &&
+            value.commandReceipts.singleOrNull()?.eventName == "game.reset") { "reset.intent_invalid" }
+    }
+
+    private fun finishPendingReset(): SaveWriteResult<GameAggregateState>? {
+        val pending = resetIntent.load()
+        if (pending.status == SaveLoadStatus.NO_SAVE) return null
+        require(pending.status in setOf(SaveLoadStatus.LOADED_CANONICAL, SaveLoadStatus.RECOVERED_BACKUP)) { "reset.intent_unavailable" }
+        val fresh = requireNotNull(pending.envelope).payload
+        validateFreshProgress(fresh)
+        delegate.reset()
+        val written = delegate.save(fresh, fresh.revision)
+        resetSideEffects.clearAnalytics()
+        resetSideEffects.clearReview()
+        resetSideEffects.clearReminders()
+        resetSideEffects.clearScopedEpoch()
+        resetSideEffects.clearShareCache()
+        resetIntent.reset()
+        return written
+    }
+
+    override suspend fun reset(): Unit = withContext(Dispatchers.IO) { delegate.reset(); resetIntent.reset() }
 }
 
 public class IoGameStoreRepository(
@@ -629,6 +673,7 @@ public class KotlinGameStore private constructor(
     private val mutex = Mutex()
     private val _state = MutableStateFlow(initial)
     private val _busy = MutableStateFlow(false)
+    private var pendingFreshProgressCommandId: String? = null
 
     override val state: StateFlow<GameAggregateState> = _state.asStateFlow()
     override val busy: StateFlow<Boolean> = _busy.asStateFlow()
@@ -681,6 +726,7 @@ public class KotlinGameStore private constructor(
         _busy.value = true
         try {
             val before = state.value
+            check(pendingFreshProgressCommandId == null || envelope.command == GameCommand.ResetProgress) { "game.store.reset_pending" }
             val nativeLegacyRepository = repository as? NativeAuthoritativeGameStoreRepository
             val reduced = nativeLegacyRepository?.dispatchLegacy(before, envelope)
                 ?: GameStateReducer.dispatch(before, envelope)
@@ -690,10 +736,14 @@ public class KotlinGameStore private constructor(
             }
             if (nativeLegacyRepository == null) {
                 val save = repository ?: throw IllegalStateException("game.store.repository_missing")
-                save.save(reduced.state, reduced.state.revision)
+                if (envelope.command == GameCommand.ResetProgress && save is FreshProgressGameStoreRepository) {
+                    pendingFreshProgressCommandId = envelope.commandId
+                    save.saveFreshProgress(reduced.state)
+                } else save.save(reduced.state, reduced.state.revision)
             }
             // StateFlow publication is after verified read-back and before observer/SDK work.
             _state.value = reduced.state
+            pendingFreshProgressCommandId = null
             analyticsProjection?.publishAfterSave(before, reduced.state)
             return reduced
         } finally {
@@ -715,12 +765,17 @@ public class KotlinGameStore private constructor(
             }
             val candidate = requireNotNull(load.envelope).payload
             require(candidate.installId == before.installId) { "game.store.reconcile_install" }
-            require(candidate.revision >= before.revision) { "game.store.reconcile_rollback" }
-            if (candidate.revision == before.revision) {
+            val confirmedFreshProgress = repository is FreshProgressGameStoreRepository && pendingFreshProgressCommandId != null &&
+                candidate.commandReceipts.singleOrNull()?.let { it.commandId == pendingFreshProgressCommandId && it.eventName == "game.reset" } == true &&
+                candidate.revision == 1UL && candidate.stage == GameStage.OPENING && candidate.highSchool == null && candidate.pro == null && candidate.pitch == null
+            require(candidate.revision >= before.revision || confirmedFreshProgress) { "game.store.reconcile_rollback" }
+            if (candidate.revision == before.revision && !confirmedFreshProgress) {
+                pendingFreshProgressCommandId = null
                 return@withLock ReconcileResult(false, before.revision, candidate.revision, before)
             }
             if (repository !is NativeAuthoritativeGameStoreRepository) candidate.validate()
             _state.value = candidate
+            pendingFreshProgressCommandId = null
             analyticsProjection?.publishAfterSave(before, candidate)
             ReconcileResult(true, before.revision, candidate.revision, candidate)
         } finally {
