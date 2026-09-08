@@ -1935,7 +1935,7 @@ internal fun PitchEffortControl(
                 }
             }
         }
-        AdaptiveActionRow(Modifier.fillMaxWidth()) {
+        AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
             PitchIntensity.entries.forEach { intensity ->
                 val isSelected = selectedIntensity == intensity
                 Surface(
@@ -1957,12 +1957,20 @@ internal fun PitchEffortControl(
                             PitchIntensity.MAX_EFFORT -> "전력"
                         }, color = if (isSelected) BaseballColors.actionInk else BaseballColors.textPrimary,
                             style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                        if (!compact && recommendedIntensity == intensity) Text("포수 추천",
-                            color = if (isSelected) BaseballColors.actionInk else BaseballColors.textSecondary,
-                            style = MaterialTheme.typography.labelSmall)
+
                     }
                 }
             }
+        }
+        if (!compact && recommendedIntensity != null) {
+            val copy = rememberGameCopy()
+            val label = when (recommendedIntensity) {
+                PitchIntensity.CONTROLLED -> "제구 우선"
+                PitchIntensity.NORMAL -> "균형"
+                PitchIntensity.MAX_EFFORT -> "전력"
+            }
+            Text(copy.resolve("controls.pitch.recommended", GameCopyArgument.UserText(copy.legacy(label))),
+                verbatim = true, style = MaterialTheme.typography.labelSmall, color = BaseballColors.textSecondary)
         }
         if (!compact) Text(when (selectedIntensity) {
             PitchIntensity.CONTROLLED -> "제구 ↑ · 구속 ↓ · 체력 절약"

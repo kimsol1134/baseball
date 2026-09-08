@@ -17,8 +17,8 @@ internal fun CompactChoiceCard(title: String, detail: String, enabled: Boolean, 
     actionLabel: String = "선택", onInfo: (() -> Unit)? = null, onSelect: () -> Unit) {
     Surface(color = BaseballColors.surfaceRaised, shape = MaterialTheme.shapes.medium) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            AdaptiveActionRow(Modifier.fillMaxWidth()) {
+                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 onInfo?.let { TextButton(onClick = it, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("정보") } }
                 TextButton(onClick = onSelect, enabled = enabled, contentPadding = PaddingValues(horizontal = 8.dp),
                     modifier = Modifier.heightIn(min = 48.dp).testTag(tag).gameDescription("$title. $detail")) { Text(actionLabel) }

@@ -31,8 +31,8 @@ internal fun CareerDisclosure(title: String, tag: String, content: @Composable (
 @Composable
 internal fun CareerStatTiles(stats: List<Pair<String, String>>) {
     val copy = rememberGameCopy()
-    // AdaptiveActionRow also stacks at large accessibility font sizes.
-    AdaptiveActionRow(Modifier.fillMaxWidth()) {
+    // Statistic tiles use equal columns; actions keep their natural width.
+    AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
         stats.forEach { (label, value) ->
             Surface(color = BaseballColors.surfaceRaised, shape = RoundedCornerShape(12.dp)) {
                 Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {

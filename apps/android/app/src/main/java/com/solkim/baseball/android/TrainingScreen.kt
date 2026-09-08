@@ -67,7 +67,7 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
             }
             Column(Modifier.testTag("training.choices"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 TrainingFocus.entries.chunked(3).forEach { row ->
-                    AdaptiveActionRow(Modifier.fillMaxWidth()) {
+                    AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
                         row.forEach { option ->
                             TrainingChoice(focus == option, !busy && (!rehab || option == TrainingFocus.RECOVERY),
                                 Modifier.testTag("training.focus.${option.wire}"),
@@ -91,7 +91,7 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
             }
             if (!rehab) {
                 Text(copy.resolve("training.compact.intensity"), verbatim = true, style = MaterialTheme.typography.labelLarge)
-                AdaptiveActionRow(Modifier.fillMaxWidth()) {
+                AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
                     TrainingIntensity.entries.forEach { level ->
                         TrainingChoice(intensity == level, !busy,
                             Modifier.testTag("training.intensity.${level.wire}"),

@@ -3,31 +3,50 @@ package com.solkim.baseball.android
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.dp
 
-/** Give labels their natural width; stack whole controls when a row cannot fit. */
+/** Natural-width actions wrap individually. Segmented choices explicitly request equal columns. */
 @Composable
-internal fun AdaptiveActionRow(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun AdaptiveActionRow(modifier: Modifier = Modifier, equalWidth: Boolean = false, content: @Composable () -> Unit) {
     Layout(content = content, modifier = modifier) { measurables, constraints ->
         val gap = 8.dp.roundToPx()
-        val naturalWidths = measurables.map { it.maxIntrinsicWidth(Constraints.Infinity) }
-        val required = naturalWidths.sumOf { it.toLong() } + gap * (measurables.size - 1).coerceAtLeast(0)
-        val width = if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.constrainWidth(required.toInt())
-        val stacked = required > width
-        val extra = if (stacked || measurables.isEmpty()) 0 else (width - required.toInt()) / measurables.size
-        val placeables = measurables.mapIndexed { index, measurable ->
-            measurable.measure(Constraints.fixedWidth(if (stacked) width else naturalWidths[index] + extra))
+        val minimumWidth = 48.dp.roundToPx()
+        val natural = measurables.map { it.maxIntrinsicWidth(Constraints.Infinity).coerceAtLeast(minimumWidth) }
+        val wanted = (natural.sumOf { it.toLong() } + gap * (natural.size - 1).coerceAtLeast(0)).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        val width = constraints.constrainWidth(wanted)
+        var columns = if (natural.isEmpty()) 1 else minOf(natural.size,
+            ((width.toLong() + gap) / (natural.max().toLong() + gap)).toInt().coerceAtLeast(1))
+        if (equalWidth && natural.size == 4 && columns == 3) columns = 2
+        val cellWidth = ((width - gap * (columns - 1)) / columns).coerceAtLeast(0)
+        val children = measurables.mapIndexed { index, measurable ->
+            measurable.measure(Constraints.fixedWidth(if (equalWidth) cellWidth else natural[index].coerceAtMost(width)))
         }
-        val height = if (stacked) placeables.sumOf { it.height } + gap * (placeables.size - 1).coerceAtLeast(0)
-            else placeables.maxOfOrNull { it.height } ?: 0
+        val rows = mutableListOf<MutableList<Placeable>>()
+        var rowWidth = 0
+        children.forEach { child ->
+            if (rows.isEmpty() || (rows.last().isNotEmpty() && rowWidth.toLong() + gap + child.width > width)) {
+                rows += mutableListOf<Placeable>()
+                rowWidth = 0
+            }
+            if (rows.last().isNotEmpty()) rowWidth += gap
+            rows.last().add(child)
+            rowWidth += child.width
+        }
+        val heights = rows.map { row -> row.maxOf { it.height } }
+        val height = heights.sum() + gap * (rows.size - 1).coerceAtLeast(0)
         layout(width, constraints.constrainHeight(height)) {
-            var offset = 0
-            placeables.forEach { child ->
-                child.placeRelative(if (stacked) 0 else offset, if (stacked) offset else (height - child.height) / 2)
-                offset += (if (stacked) child.height else child.width) + gap
+            var y = 0
+            rows.forEachIndexed { index, row ->
+                var x = 0
+                row.forEach { child ->
+                    child.placeRelative(x, y + (heights[index] - child.height) / 2)
+                    x += child.width + gap
+                }
+                y += heights[index] + gap
             }
         }
     }

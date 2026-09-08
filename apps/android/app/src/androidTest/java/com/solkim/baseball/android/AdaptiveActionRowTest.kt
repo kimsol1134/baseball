@@ -26,6 +26,24 @@ import org.junit.Test
 class AdaptiveActionRowTest {
     @get:Rule val compose = createComposeRule()
 
+    @Test fun shortActionsKeepNaturalWidthAndOnlyOverflowingActionsWrap() {
+        compose.setContent { BaseballMigrationTheme {
+            AdaptiveActionRow(Modifier.width(280.dp)) {
+                Button(onClick = {}, modifier = Modifier.testTag("natural.first")) { Text("선택") }
+                Button(onClick = {}, modifier = Modifier.testTag("natural.second")) { Text("닫기") }
+                Button(onClick = {}, modifier = Modifier.testTag("natural.third")) { Text("남은 경기 자동 진행") }
+            }
+        } }
+        val first = compose.onNodeWithTag("natural.first").fetchSemanticsNode().boundsInRoot
+        val second = compose.onNodeWithTag("natural.second").fetchSemanticsNode().boundsInRoot
+        val third = compose.onNodeWithTag("natural.third").fetchSemanticsNode().boundsInRoot
+        val density = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
+        assertTrue(first.width / density < 110f)
+        assertEquals(first.top, second.top, 1f)
+        assertTrue(third.top >= first.bottom)
+        assertTrue(first.width / density >= 48f)
+    }
+
     @Test fun shortActionsStayReadableAcrossWidthsLanguagesAndFontSizes() {
         val layouts = mutableMapOf<String, androidx.compose.ui.text.TextLayoutResult>()
         var clicks = 0
@@ -80,7 +98,7 @@ class AdaptiveActionRowTest {
         compose.onNodeWithTag("setup.hand.left").performClick()
         compose.onNodeWithTag("setup.hand.left").assertIsSelected()
         val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
-        compose.onNodeWithText("이 투수로 시작하기", useUnmergedTree = true)
+        compose.onNodeWithText("시작하기", useUnmergedTree = true)
             .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(results) }
         assertEquals(1, results.single().lineCount)
         // Compose may retain a paragraph wider than the shrink-wrapped Text node.
