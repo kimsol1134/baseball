@@ -79,6 +79,7 @@ public fun PitchDeliveryControl(
     previousCommand: Int? = null,
     previousVelocity: Int? = null,
     holdComparison: Boolean = false,
+    compact: Boolean = false,
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
     soundEnabled: Boolean = true,
@@ -257,6 +258,7 @@ public fun PitchDeliveryControl(
                 Text("탭 한 번으로 던지기")
             }
         } else {
+        if (!compact) {
         Text(
             prompt,
             style = MaterialTheme.typography.bodyMedium,
@@ -287,6 +289,7 @@ public fun PitchDeliveryControl(
             )
         }
         Spacer(Modifier.height(8.dp))
+        }
         ReleaseMeterBar(meter = meter, pressing = pressing, inPerfect = inPerfect, commandRating = windowCommand,
             previousCommand = previousCommand.takeIf { showPrevious }, growthGlow = if (showPrevious) growthGlow.value else 0f)
         if (showVelocityGrowth && previousVelocity != null) Text(
@@ -302,13 +305,13 @@ public fun PitchDeliveryControl(
                 modifier = Modifier.padding(top = 4.dp).testTag("pitch.controlWindow.growth"),
             )
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(if (compact) 4.dp else 12.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(92.dp)
+                .height(if (compact) 64.dp else 92.dp)
                 .background(
-                    if (pressing) BaseballColors.action.copy(alpha = 0.18f) else BaseballColors.action,
+                    if (!enabled) BaseballColors.surfaceSoft else if (pressing) BaseballColors.action.copy(alpha = 0.18f) else BaseballColors.action,
                     RoundedCornerShape(18.dp),
                 )
                 .testTag("pitch.slider").gameDescription(sliderDescription)
@@ -388,24 +391,30 @@ public fun PitchDeliveryControl(
             contentAlignment = Alignment.Center,
         ) {
             if (pressing) {
-                Canvas(Modifier.size(72.dp)) {
+                Canvas(if (compact) Modifier.size(64.dp).align(Alignment.CenterEnd).padding(end = 8.dp) else Modifier.size(72.dp)) {
                     val center = Offset(size.width / 2f, size.height / 2f)
+                    // Only the drawing is scaled. Drag distance and scoring keep the same units.
+                    val visualScale = if (compact) 0.4f else 1f
                     drawCircle(
                         BaseballColors.fieldChalk.copy(alpha = 0.35f),
-                        radius = 15.dp.toPx(),
+                        radius = 15.dp.toPx() * visualScale,
                         center = center,
                         style = Stroke(1.5.dp.toPx()),
                     )
                     drawCircle(BaseballColors.fieldChalk.copy(alpha = 0.5f), radius = 2.5.dp.toPx(), center = center)
                     drawCircle(
                         if (onTarget) BaseballColors.action else BaseballColors.fieldChalk,
-                        radius = 13.dp.toPx(),
-                        center = center + aim,
+                        radius = 13.dp.toPx() * visualScale,
+                        center = center + aim * visualScale,
                         style = Stroke(2.5.dp.toPx()),
                     )
                 }
+                if (compact) Text(prompt, modifier = Modifier.align(Alignment.CenterStart).padding(start = 12.dp, end = 76.dp),
+                    style = MaterialTheme.typography.labelMedium, color = BaseballColors.textPrimary)
             } else {
-                Text(holdPrompt, color = BaseballColors.actionInk, style = MaterialTheme.typography.titleMedium)
+                Text(if (compact && !enabled) rememberGameCopy().resolve("compact.pitch.wait")
+                    else if (compact && holdHint) rememberGameCopy().resolve("compact.pitch.hold-too-short") else holdPrompt,
+                    color = if (enabled) BaseballColors.actionInk else BaseballColors.textSecondary, style = MaterialTheme.typography.titleMedium)
             }
             val ring = ringProgress.value
             if (ring > 0f && ring < 1f) {

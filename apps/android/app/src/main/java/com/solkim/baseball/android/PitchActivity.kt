@@ -359,6 +359,7 @@ public class PitchActivity : ComponentActivity() {
                                     hud?.scoutingTitle?.takeIf { it.isNotBlank() }?.let { Text(it, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium) }
                                     hud?.scoutingBody?.takeIf { it.isNotBlank() }?.let { Text(it, color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodySmall) }
                                     hud?.scoutingAvoid?.takeIf { it.isNotBlank() }?.let { Text(it, color = BaseballColors.warning, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold) }
+                                    board.outingLine?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                                     hud?.catcherTrustLabel?.takeIf { it.isNotBlank() }?.let { Text(it, color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodySmall) }
                                 }
                             },
@@ -1168,14 +1169,7 @@ private fun PitchScoreboardBar(board: PitchScoreboardModel, perfectStreak: Int =
                     fontWeight = FontWeight.SemiBold,
                 )
             }
-            board.outingLine?.let { line ->
-                Text(
-                    text = line,
-                    color = BaseballColors.textTertiary,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = FontFamily.Monospace,
-                )
-            }
+
         }
     }
 }
@@ -1641,130 +1635,36 @@ internal fun PitchControlsCard(
         border = BorderStroke(1.dp, BaseballColors.border.copy(alpha = 0.4f)),
         modifier = Modifier.fillMaxSize(),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // What just happened stays on screen while the next pitch is prepared.
-                lastPitchLine?.let { PitchCoachStrip(label = "직전", tip = it, modifier = Modifier.testTag("pitch.lastPitch")) }
-                if (practice) {
-                    Text(rememberGameCopy().resolve("feedback.practice.guide.$practiceStep"), style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.testTag("pitch.practiceInvite"))
-                } else coachTip?.let { PitchCoachStrip(label = "코치", tip = it) }
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(PitchHudProjection.zoneLabel(selectedZone, batSide),
-                        modifier = Modifier.fillMaxWidth().testTag("pitch.selected-zone.${selectedZone.row}.${selectedZone.column}"),
-                        maxLines = 2, style = MaterialTheme.typography.labelMedium, color = BaseballColors.textSecondary)
-                    AdaptiveActionRow(Modifier.fillMaxWidth()) {
-                        CatcherOptionSegment(
-                            label = primary?.call?.let { PitchHudProjection.koreanLabel(it.pitchType) + " · " + PitchHudProjection.zoneLabel(it.zone, batSide) } ?: "포수 사인",
-                            selected = selection is PitchHudSelection.Primary,
-                            enabled = ready && !aimingLocked,
-                            modifier = Modifier.testTag("pitch.recommendation"),
-                            onClick = { choose(PitchHudSelection.Primary) },
-                        )
-                        if (alternative != null) CatcherOptionSegment(
-                            label = PitchHudProjection.koreanLabel(alternative.call.pitchType) + " · " + PitchHudProjection.zoneLabel(alternative.call.zone, batSide),
-                            selected = selection is PitchHudSelection.Alternative,
-                            enabled = ready && !aimingLocked,
-                            modifier = Modifier.testTag("pitch.alternative"),
-                            onClick = { choose(PitchHudSelection.Alternative) },
-                        )
-                    }
-                }
-                if (selectedReason.isNotBlank()) {
-                    Text(
-                        text = copy.legacy("포수") + ": " + copy.sentences(selectedReason),
-                        verbatim = true,
-                        color = BaseballColors.textSecondary,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = if (rationaleOpen) 6 else 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth().testTag("pitch.rationale").clickable { rationaleOpen = !rationaleOpen },
-                    )
-                }
-                Box(Modifier.fillMaxWidth().height(188.dp).clip(RoundedCornerShape(12.dp)).background(BaseballColors.fieldNight)) {
-                    Image(painterResource(R.drawable.batter_stance), contentDescription = null,
-                        contentScale = ContentScale.Fit, modifier = Modifier.align(Alignment.CenterStart).width(112.dp).height(176.dp).alpha(0.3f))
-                    Box(Modifier.width(224.dp).align(Alignment.CenterEnd).padding(end = 8.dp)) {
-                        PitchZoneGrid(selected = selectedZone, recommended = primary?.call?.zone, enabled = ready && !aimingLocked, showsLabels = false) { zone ->
-                            choose(PitchHudSelection.Manual(selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM,
-                                zone, selectedIntent, selectedIntensity))
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    repertoire.forEach { kind ->
-                        val label = if (kind.wire == signaturePitch && signatureName.isNotEmpty()) signatureName + " · " + copy.legacy(PitchHudProjection.koreanLabel(kind)) else copy.legacy(PitchHudProjection.koreanLabel(kind))
-                        val isSelected = selectedType == kind
-                        Surface(
-                            color = if (isSelected) BaseballColors.action.copy(alpha = 0.18f) else BaseballColors.surfaceSoft,
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) BaseballColors.action else BaseballColors.border.copy(alpha = 0.5f)),
-                            modifier = Modifier
-                                .widthIn(min = 88.dp)
-                                .heightIn(min = 48.dp)
-                                .testTag("pitch.type.${kind.wire}")
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable(enabled = ready && !aimingLocked) {
-                                    if (hapticsEnabled) controlsView.pitchTouchFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK, hapticsEnabled)
-                                    choose(PitchHudSelection.Manual(kind, selectedZone, selectedIntent, selectedIntensity))
-                                }
-                                .semantics { role = Role.Button }.gameDescription("$label ${if (isSelected) "선택됨" else "선택 가능"}"),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = label,
-                                    verbatim = true,
-                                    modifier = Modifier.padding(horizontal = 12.dp),
-                                    softWrap = false,
-                                    color = if (isSelected) BaseballColors.action else BaseballColors.textSecondary,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                )
-                            }
-                        }
-                    }
-                }
-                PitchManualPlan(
-                    repertoireType = selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM,
-                    selectedZone = selectedZone,
-                    selectedIntent = selectedIntent,
-                    selectedIntensity = selectedIntensity,
-                    enabled = ready && !aimingLocked,
-                    onChange = { type, zone, intent, intensity ->
-                        if (hapticsEnabled) controlsView.pitchTouchFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK, hapticsEnabled)
-                        choose(PitchHudSelection.Manual(type, zone, intent, intensity))
-                    },
-                )
-                AdaptiveActionRow(Modifier.fillMaxWidth()) {
-                    if (canFastForward) TextButton(onClick = onFastForward, enabled = ready && !aimingLocked, modifier = Modifier.testTag("pitch.fastForward")) {
-                        Text("이 타석 넘기기")
-                    }
-                    TextButton(onClick = { settingsOpen = true }, modifier = Modifier.testTag("pitch.settings")) { Text("조작 설정") }
-                }
-            }
-            PitchEffortControl(
-                selectedIntensity = selectedIntensity,
-                recommendedIntensity = primary?.call?.intensity,
-                expectedVelocity = velocityTenthsKph,
-                enabled = ready && !aimingLocked,
-                onChange = { intensity ->
+        Column(Modifier.fillMaxSize().padding(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            // The core choices come first. Scrolling is a fallback for accessibility text sizes.
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).testTag("pitch.choices"), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                PitchTypeChoices(repertoire, selectedType, ready && !aimingLocked, signaturePitch, signatureName) { type ->
                     if (hapticsEnabled) controlsView.pitchTouchFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK, hapticsEnabled)
-                    choose(PitchHudSelection.Manual(selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM,
-                        selectedZone, selectedIntent, intensity))
-                },
-            )
+                    choose(PitchHudSelection.Manual(type, selectedZone, selectedIntent, selectedIntensity))
+                }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(PitchHudProjection.zoneLabel(selectedZone, batSide), modifier = Modifier.weight(1f).testTag("pitch.selected-zone.${selectedZone.row}.${selectedZone.column}"),
+                        style = MaterialTheme.typography.labelMedium, color = BaseballColors.action)
+                    CatcherOptionSegment(copy.resolve("compact.pitch.sign"), selection is PitchHudSelection.Primary, ready && !aimingLocked,
+                        modifier = Modifier.widthIn(min = 48.dp).testTag("pitch.recommendation")) { choose(PitchHudSelection.Primary) }
+                    if (alternative != null) CatcherOptionSegment(copy.resolve("compact.pitch.alternative"), selection is PitchHudSelection.Alternative, ready && !aimingLocked,
+                        modifier = Modifier.widthIn(min = 48.dp).testTag("pitch.alternative")) { choose(PitchHudSelection.Alternative) }
+                    TextButton(onClick = { settingsOpen = true }, contentPadding = PaddingValues(horizontal = 4.dp), modifier = Modifier.testTag("pitch.settings")) { Text("설정", style = MaterialTheme.typography.labelMedium) }
+                }
+                PitchZoneGrid(selected = selectedZone, recommended = primary?.call?.zone, enabled = ready && !aimingLocked, showsLabels = false) { zone ->
+                    choose(PitchHudSelection.Manual(selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM, zone, selectedIntent, selectedIntensity))
+                }
+                PitchEffortControl(selectedIntensity, primary?.call?.intensity, ready && !aimingLocked,
+                    expectedVelocity = velocityTenthsKph, compact = true, onChange = { intensity ->
+                        if (hapticsEnabled) controlsView.pitchTouchFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK, hapticsEnabled)
+                        choose(PitchHudSelection.Manual(selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM, selectedZone, selectedIntent, intensity))
+                    })
+            }
             PitchDeliveryControl(
                 autoRelease = autoRelease,
                 enabled = ready,
-                holdPrompt = if (practice) copy.resolve("android.onboarding.slider-hint") else holdToReleasePrompt,
+                holdPrompt = copy.resolve("compact.pitch.hold"),
+                compact = true,
                 onDeliver = onDeliver,
                 onPressingChange = { aimingLocked = it },
                 velocityTenthsKph = velocityTenthsKph,
@@ -1791,7 +1691,20 @@ internal fun PitchControlsCard(
             onDismissRequest = { settingsOpen = false },
             title = { Text("조작 설정") },
             text = {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.fillMaxWidth().heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(selectedPitchLine, style = MaterialTheme.typography.titleMedium)
+                    if (selectedReason.isNotBlank()) Text(copy.sentences(selectedReason), verbatim = true, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("pitch.rationale"))
+                    if (practice) Text(copy.resolve("feedback.practice.guide.$practiceStep"), verbatim = true, style = MaterialTheme.typography.bodyMedium)
+                    lastPitchLine?.let { Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.testTag("pitch.lastPitch")) }
+                    Text(when (selectedIntensity) {
+                        PitchIntensity.CONTROLLED -> "제구 ↑ · 구속 ↓ · 체력 절약"
+                        PitchIntensity.NORMAL -> "구속과 제구의 균형"
+                        PitchIntensity.MAX_EFFORT -> "구속 ↑ · 제구 ↓ · 체력 소모 ↑"
+                    }, style = MaterialTheme.typography.bodySmall)
+                    PitchManualPlan(selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM, selectedZone, selectedIntent, selectedIntensity, ready && !aimingLocked) { type, zone, intent, intensity ->
+                        choose(PitchHudSelection.Manual(type, zone, intent, intensity))
+                    }
+                    if (canFastForward) TextButton(onClick = { settingsOpen = false; onFastForward() }, enabled = ready && !aimingLocked, modifier = Modifier.testTag("pitch.fastForward")) { Text("이 타석 넘기기") }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("빠른 진행")
@@ -1843,8 +1756,7 @@ private fun PitchCompactMatchup(
         ) {
             Text(
                 listOf(copy.legacy(batterName),
-                    copy.resolve(when (batSide) { BatSide.LEFT -> "content.batter-side.left.label"; BatSide.RIGHT -> "content.batter-side.right.label"; BatSide.SWITCH -> "content.batter-side.switch.label" }),
-                    copy.legacy(adaptationBandLabel)).filter { it.isNotBlank() }.joinToString(" · "),
+                    copy.resolve(when (batSide) { BatSide.LEFT -> "content.batter-side.left.label"; BatSide.RIGHT -> "content.batter-side.right.label"; BatSide.SWITCH -> "content.batter-side.switch.label" })).filter { it.isNotBlank() }.joinToString(" · "),
                 verbatim = true,
                 modifier = Modifier.weight(1f),
                 color = BaseballColors.textPrimary,
@@ -1925,11 +1837,8 @@ private fun PitchZoneGrid(
                     ) {
                         if (showsLabels) Text(zoneName, style = MaterialTheme.typography.labelSmall, color = if (isSelected) BaseballColors.action else BaseballColors.textSecondary)
                         else if (isSelected) Box(Modifier.size(18.dp).border(2.dp, BaseballColors.action, CircleShape))
-                        if (!showsLabels && zone == recommended) {
-                            Text("포수 추천", style = MaterialTheme.typography.labelSmall,
-                                color = BaseballColors.action.copy(alpha = if (isSelected) 1f else 0.55f),
-                                modifier = Modifier.align(Alignment.BottomCenter).testTag("pitch.recommended.$row.$col"))
-                        }
+                        if (!showsLabels && zone == recommended) Box(Modifier.align(Alignment.TopEnd).padding(5.dp).size(6.dp)
+                            .background(BaseballColors.milestone, CircleShape).testTag("pitch.recommended.$row.$col"))
                     }
                 }
             }
@@ -1970,12 +1879,12 @@ private fun CatcherOptionSegment(
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) BaseballColors.action else BaseballColors.border),
         modifier = modifier
-            .heightIn(min = 44.dp)
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(10.dp))
             .clickable(enabled = enabled, onClick = onClick)
             .semantics { role = Role.Button }.gameDescription("$label ${if (selected) "선택됨" else "선택 가능"}"),
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)) {
             Text(
                 text = label,
                 color = if (selected) BaseballColors.action else BaseballColors.textPrimary,
@@ -1999,6 +1908,7 @@ internal fun PitchEffortControl(
     recommendedIntensity: PitchIntensity?,
     enabled: Boolean,
     expectedVelocity: Int? = null,
+    compact: Boolean = false,
     onChange: (PitchIntensity) -> Unit,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -2009,7 +1919,7 @@ internal fun PitchEffortControl(
             Text("힘 배분", style = MaterialTheme.typography.labelMedium, color = BaseballColors.textSecondary)
             expectedVelocity?.let { velocity ->
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("예상 구속", style = MaterialTheme.typography.labelSmall, color = BaseballColors.textSecondary)
+                    if (!compact) Text("예상 구속", style = MaterialTheme.typography.labelSmall, color = BaseballColors.textSecondary)
                     Text(String.format(java.util.Locale.US, "%.1f km/h", velocity / 10.0),
                         style = MaterialTheme.typography.labelSmall, color = BaseballColors.action, verbatim = true)
                 }
@@ -2037,19 +1947,19 @@ internal fun PitchEffortControl(
                             PitchIntensity.MAX_EFFORT -> "전력"
                         }, color = if (isSelected) BaseballColors.actionInk else BaseballColors.textPrimary,
                             style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                        if (recommendedIntensity == intensity) Text("포수 추천",
+                        if (!compact && recommendedIntensity == intensity) Text("포수 추천",
                             color = if (isSelected) BaseballColors.actionInk else BaseballColors.textSecondary,
                             style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
         }
-        Text(when (selectedIntensity) {
+        if (!compact) Text(when (selectedIntensity) {
             PitchIntensity.CONTROLLED -> "제구 ↑ · 구속 ↓ · 체력 절약"
             PitchIntensity.NORMAL -> "구속과 제구의 균형"
             PitchIntensity.MAX_EFFORT -> "구속 ↑ · 제구 ↓ · 체력 소모 ↑"
         }, style = MaterialTheme.typography.labelSmall, color = BaseballColors.textSecondary)
-        if (!discovered) Text("던지기 전에 힘을 골라보세요.", style = MaterialTheme.typography.labelSmall, color = BaseballColors.action)
+        if (!discovered && !compact) Text("던지기 전에 힘을 골라보세요.", style = MaterialTheme.typography.labelSmall, color = BaseballColors.action)
     }
 }
 
