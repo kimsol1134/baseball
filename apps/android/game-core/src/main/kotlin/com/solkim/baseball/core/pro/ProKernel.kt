@@ -2546,7 +2546,7 @@ public class ProKernel(
         val foe = rival?.let { "${it.teamName} ${it.name}" } ?: "상대 팀 중심타자"
         return when (trigger) {
             ProSeasonTrigger.MAJOR_DEBUT -> "처음 서는 1군 마운드. ${foe}가 기다린다."
-            ProSeasonTrigger.OPENING_STATEMENT -> "개막 시리즈 선발 맞대결. ${foe} 앞에서 올해의 첫인상을 만든다."
+            ProSeasonTrigger.OPENING_STATEMENT -> "개막 시리즈의 승부처. ${foe} 앞에서 올해의 첫인상을 만든다."
             ProSeasonTrigger.CALL_UP_AUDITION -> "콜업이 눈앞이다. ${foe}를 막으면 1군 문이 열린다."
             ProSeasonTrigger.RECORD_CHASE -> "기록이 걸린 등판. ${foe} 앞에서 내 공을 증명한다."
             ProSeasonTrigger.ROLE_SHOWDOWN -> "${foe}와의 승부로 다음 자리가 갈린다."

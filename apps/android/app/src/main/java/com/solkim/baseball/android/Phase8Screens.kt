@@ -341,7 +341,7 @@ public fun Phase8Shell(
         ) {
             if (actionError != null) Phase8ErrorCard(actionError)
 
-            if (model.id.group in setOf(Phase8Group.CAREER_CORE, Phase8Group.PRO, Phase8Group.RECAP_REBIRTH) && model.id !in setOf(Phase8ScreenId.P014_RUN_RECAP, Phase8ScreenId.P015_REBIRTH)) {
+            if (model.id.group in setOf(Phase8Group.CAREER_CORE, Phase8Group.PRO, Phase8Group.RECAP_REBIRTH) && model.id !in setOf(Phase8ScreenId.P014_RUN_RECAP, Phase8ScreenId.P015_REBIRTH, Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P018_PRO_IMPORTANT_GAME)) {
                 CorePlayerHeader(state, compact = true)
             }
             if (visibleScreen in recordScreens) RecordsSegments(state, visibleScreen, onNavigate)
@@ -562,6 +562,7 @@ private fun Phase8ScreenContent(
                     Phase8ScreenId.P005_SCHOOL_SELECTION -> Phase8SchoolChoices(state, model, onAction)
                     Phase8ScreenId.P016_PRO_CONTRACT -> if (model.actions.any { it.id.startsWith("acceptOffer:") }) Phase8ContractChoices(model, onAction) else { Phase8Sections(model.sections); Phase8Actions(model, onAction) }
                     Phase8ScreenId.P013_DRAFT -> { Phase8DraftReveal(state, model); Phase8Actions(model, onAction) }
+                    Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P018_PRO_IMPORTANT_GAME -> OutingBriefingView(state, model, commandContext, onAction)
                     Phase8ScreenId.P007_RELATIONSHIP, Phase8ScreenId.P017_PRO_WEEK ->
                         Phase8DecisionChoices(state, model, onAction)
                     in compactCareerScreens -> {

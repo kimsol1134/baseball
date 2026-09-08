@@ -473,6 +473,7 @@ public class PitchActivity : ComponentActivity() {
                             ) {
                                 val outingContinues = hud?.canContinueInSession == true
                                 PitchResultCard(
+                                    starterTrial = com.solkim.baseball.application.OutingPresentation.isStarterTrial(gameState),
                                     outcome = outcome,
                                     battedBall = battedBall,
                                     velocityTenthsKph = request?.velocityDeciKph ?: 0,
@@ -1433,6 +1434,7 @@ private fun AdaptationBar(
 
 @Composable
 internal fun PitchResultCard(
+    starterTrial: Boolean = false,
     practice: Boolean = false,
     onPracticeAgain: (() -> Unit)? = null,
     onPracticeSchool: () -> Unit = {},
@@ -1500,8 +1502,9 @@ internal fun PitchResultCard(
                 }
             } else if (onContinueInning != null) {
                 Text("이닝을 마쳤어요. 계속 던질까요?", style = MaterialTheme.typography.bodyMedium)
+                if (starterTrial) Text("자동 진행하면 직접 투구 테스트는 여기서 끝나요.", color = BaseballColors.warning, style = MaterialTheme.typography.bodySmall)
                 AdaptiveActionRow(Modifier.fillMaxWidth()) {
-                    Button(onClick = onContinueInning, modifier = Modifier.testTag("pitch.nextInning")) { Text("다음 이닝") }
+                    Button(onClick = onContinueInning, modifier = Modifier.testTag("pitch.nextInning")) { Text(if (starterTrial) "테스트 이어 던지기" else "다음 이닝") }
                     OutlinedButton(onClick = onPostgame, modifier = Modifier.testTag("pitch.simulateRemainder")) { Text("남은 경기 자동") }
                 }
             } else if (!automaticNext) Button(onClick = if (outingContinues) (onNextPitch ?: onPostgame) else onPostgame,
