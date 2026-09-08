@@ -25,7 +25,7 @@ class LongHorizonBalanceAuditTest {
     private fun mastery(m: AbilityMasterySnapshot) = m.stuff + m.command + m.movement + m.stamina
 
     @Test fun eighteenCurrentRuleProCareersRunUntilRetirementWithSeasonCheckpoints() {
-        val output = file("pro-seasons.csv", "seed,preset,policy,season,age,level,role,stuff,command,movement,stamina,mastery,games,outs,k,h,bb,r,w,l,sv,injured_weeks,injury_events,max_fatigue,rating_flat_training_weeks,manual_pitches")
+        val output = file("pro-seasons.csv", "seed,preset,policy,season,age,level,role,stuff,command,movement,stamina,mastery,games,outs,k,h,bb,r,w,l,sv,injured_weeks,injury_events,max_fatigue,rating_flat_training_weeks,manual_pitches,er,hr,np")
         val summaries = file("pro-careers.csv", "seed,preset,policy,seasons,hall_of_fame_score,awards,stuff,command,movement,stamina,mastery")
         for (initialSeed in seeds) for (preset in presets) for (policy in listOf("power", "balanced", "recovery")) {
             val k = ProKernel()
@@ -85,8 +85,11 @@ class LongHorizonBalanceAuditTest {
                     assertTrue(stats.wins + stats.losses + stats.saves <= stats.games)
                     assertTrue(stats.strikeouts <= stats.inningsOuts)
                     assertTrue(stats.homeRuns <= stats.hits)
+                    assertNotNull(stats.earnedRuns)
+                    assertTrue(stats.earnedRuns!! in 0..stats.runsAllowed)
+                    if (stats.inningsOuts >= 180) assertTrue(stats.strikeouts * 27.0 / stats.inningsOuts < 14.0, "season strikeouts escaped realistic range")
                     row(output, listOf(initialSeed, preset, policy, stats.season, state.age, state.level.wire, state.role.wire) + ratings(state.pitcher) +
-                        listOf(mastery(state.pitcher.effectiveMastery), stats.games, stats.inningsOuts, stats.strikeouts, stats.hits, stats.walks, stats.runsAllowed, stats.wins, stats.losses, stats.saves, injuredWeeks, injuries, maxFatigue, flatWeeks, manual))
+                        listOf(mastery(state.pitcher.effectiveMastery), stats.games, stats.inningsOuts, stats.strikeouts, stats.hits, stats.walks, stats.runsAllowed, stats.wins, stats.losses, stats.saves, injuredWeeks, injuries, maxFatigue, flatWeeks, manual, stats.earnedRuns, stats.homeRuns, stats.pitches))
                     val checkpoint = directory.resolve("pro-$initialSeed-$preset-$policy.checkpoint")
                     Files.write(checkpoint, ProStateCodec.encode(state))
                     val restored = ProStateCodec.decode(Files.readAllBytes(checkpoint))

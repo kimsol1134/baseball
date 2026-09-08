@@ -56,7 +56,7 @@ for p in colors:
     ax[0,0].plot([v['season'] for v in values],[v['displayedRatingTotal'] for v in values],label=labels[p],color=colors[p],linewidth=2)
     ax[0,1].plot([v['season'] for v in values],[v['k9'] for v in values],label=labels[p],color=colors[p],linewidth=2)
 ax[0,0].set(title='Career growth',xlabel='Season',ylabel='Displayed rating total (4 attributes)',ylim=(0,400),xticks=[1,5,10,15,20]);ax[0,0].legend(frameon=False)
-ax[0,1].set(title='Strikeouts increasingly dominate late careers',xlabel='Season',ylabel='K / 9 innings',ylim=(0,27),xticks=[1,5,10,15,20])
+ax[0,1].set(title='Strikeout rate across the career',xlabel='Season',ylabel='K / 9 innings',ylim=(0,27),xticks=[1,5,10,15,20])
 ax[1,0].bar([labels[p] for p in colors],[summary['proPolicies'][p]['injuredWeeksPerSeason'] for p in colors],color=list(colors.values()))
 ax[1,0].set(title='Time spent injured',ylabel='Weeks per season')
 for preset,label,color in [('power_prospect','Power pitcher','#285ce4'),('precision_commander','Command pitcher','#9662ba')]:

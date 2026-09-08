@@ -120,8 +120,9 @@ class Phase8CareerCompletionStoreTest {
             var session = openFileSession("phase8-twenty-season", directory, native = true)
             session.completeHighSchoolAndEnterPro()
             while (true) {
-                val season = requireNotNull(session.store.current.pro).season
                 session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
+                // Contract/season transitions inside the walk can advance the calendar.
+                val season = requireNotNull(session.store.current.pro).season
                 session.executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
                 session.finishSettlementIfOpen()
                 session.finishNationalTeamIfOpen()
@@ -138,6 +139,7 @@ class Phase8CareerCompletionStoreTest {
                 session.finishInvestmentIfOpen()
             }
             assertEquals(ProCatalog.MAXIMUM_CAREER_SEASONS, session.store.current.pro?.season)
+            assertEquals((1..ProCatalog.MAXIMUM_CAREER_SEASONS).toList(), session.store.current.pro!!.careerStats.map { it.season }.sorted())
             assertEquals(ProCareerPhase.RETIREMENT_DECISION, session.store.current.pro?.phase)
             session.executeFirst(Phase8ScreenId.P021_PRO_RETIREMENT, "retire")
             assertTrue(
