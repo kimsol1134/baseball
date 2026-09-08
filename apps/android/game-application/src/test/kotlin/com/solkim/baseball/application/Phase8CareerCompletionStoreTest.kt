@@ -116,6 +116,7 @@ class Phase8CareerCompletionStoreTest {
     @Test
     fun nativeFileStoreWalksLinkedCareerToSeasonTwentyRetirement() = runBlocking {
         withTempDirectory { directory ->
+            val audit = nativeAuditFile("native-linked-20-seasons.csv")
             var session = openFileSession("phase8-twenty-season", directory, native = true)
             session.completeHighSchoolAndEnterPro()
             while (true) {
@@ -131,6 +132,7 @@ class Phase8CareerCompletionStoreTest {
                 }
                 assertEquals(expectedPhase, session.store.current.pro?.phase, "season $season review")
                 session = session.reopenAndAssert(expectedPhase, "season-$season")
+                nativeAuditRow(audit, session.store.current, "season-$season")
                 if (expectedPhase == ProCareerPhase.RETIREMENT_DECISION) break
                 session.executeFirst(Phase8ScreenId.P020_OFFSEASON, "offseason:continue")
                 session.finishInvestmentIfOpen()
@@ -154,6 +156,7 @@ class Phase8CareerCompletionStoreTest {
             assertEquals(retired, archived.copy(commandReceipts = retired.commandReceipts, commitment = retired.commitment))
             val oldLife = requireNotNull(session.store.current.highSchool).run.lifeNumber
             val beforePreview = session.store.current
+            val preservedAlbum = beforePreview.meta.album
             val quick = session.controller.projection(Phase8ScreenId.P015_REBIRTH).actions.single { it.id == "quickRebirth" }
             val preview = assertNotNull(RebirthStartPreview.resolve(beforePreview, quick))
             assertEquals(preview, RebirthStartPreview.resolve(beforePreview, quick))
@@ -170,6 +173,12 @@ class Phase8CareerCompletionStoreTest {
             assertEquals(ProCareerPhase.COMPLETED, session.store.current.pro?.phase)
             assertEquals(retired.careerId, session.store.current.pro?.careerId)
             assertEquals(archived, session.store.current.meta.retiredProCareers.single())
+            for (page in preservedAlbum) {
+                val kept = session.store.current.meta.album.single { it.scope.id == page.scope.id }
+                assertEquals(page.rows, kept.rows)
+                assertEquals(page.pitches, kept.pitches)
+            }
+            nativeAuditRow(audit, session.store.current, "reborn-after-retirement")
             session.store.close()
         }
     }
@@ -209,6 +218,50 @@ class Phase8CareerCompletionStoreTest {
                 try { assertEquals(after, reopened.current) } finally { reopened.close() }
             } finally { session.store.close() }
         }
+    }
+
+    @Test fun nativeThreeLivesKeepEveryArchivedOuting() = runBlocking {
+        withTempDirectory { directory ->
+            val id = "native-three-lives"
+            val audit = nativeAuditFile("native-three-lives.csv")
+            var session = openFileSession(id, directory, native = true)
+            try {
+                session.completeHighSchoolAndEnterPro(enterPro = false)
+                repeat(3) { index ->
+                    if (index > 0) session.finishAnotherHighSchoolLife()
+                    val before = session.store.current
+                    assertEquals(index + 1, before.highSchool!!.run.lifeNumber)
+                    nativeAuditRow(audit, before, "life-${index+1}-finished")
+                    if (index < 2) {
+                        session.executeFirst(Phase8ScreenId.P015_REBIRTH, "quickRebirth")
+                        for (page in before.meta.album) {
+                            val kept = session.store.current.meta.album.single { it.scope.id == page.scope.id }
+                            assertEquals(page.rows, kept.rows)
+                            assertEquals(page.pitches, kept.pitches)
+                        }
+                        val saved = session.store.current
+                        session.store.close()
+                        session = openFileSession(id, directory, native = true)
+                        assertEquals(saved, session.store.current)
+                        assertFalse(session.store.current.settings.autoReleaseEnabled)
+                    }
+                }
+                assertEquals(3, session.store.current.highSchool!!.archive.size)
+            } finally { session.store.close() }
+        }
+    }
+
+    private fun nativeAuditFile(name: String): Path {
+        val directory = java.nio.file.Paths.get("../../../artifacts/android-compose/long-horizon")
+        Files.createDirectories(directory)
+        return directory.resolve(name).also { Files.writeString(it, "checkpoint,life,pro_season,stage,stuff,command,movement,stamina,archive_lives,album_pages,album_outings,save_revision\n") }
+    }
+    private fun nativeAuditRow(path: Path, state: GameAggregateState, checkpoint: String) {
+        val p = if (state.stage == GameStage.HIGH_SCHOOL) state.highSchool!!.run.pitcher.let { listOf(it.stuff,it.command,it.movement,it.stamina) }
+            else state.pro?.pitcher?.let { listOf(it.stuff,it.command,it.movement,it.stamina) }
+                ?: state.highSchool!!.run.pitcher.let { listOf(it.stuff,it.command,it.movement,it.stamina) }
+        val values = listOf(checkpoint,state.highSchool?.run?.lifeNumber,state.pro?.season,state.stage.wire) + p + listOf(state.highSchool?.archive?.size, state.meta.album.size, state.meta.album.sumOf { it.rows.size },state.revision)
+        Files.writeString(path, values.joinToString(",") + "\n", java.nio.file.StandardOpenOption.APPEND)
     }
 
     private suspend fun openFileSession(installId: String, directory: Path, native: Boolean = false): CareerSession {
@@ -273,6 +326,16 @@ class Phase8CareerCompletionStoreTest {
             assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
             assertEquals(ProCareerPhase.WEEKLY_PLAN, store.current.pro?.phase)
             assertFalse(store.current.settings.autoReleaseEnabled)
+        }
+
+        suspend fun finishAnotherHighSchoolLife() {
+            executeFirst(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
+            executeFirst(Phase8ScreenId.P005_SCHOOL_SELECTION)
+            advanceHighSchoolUntil(HighSchoolPhase.DRAFT)
+            executeFirst(Phase8ScreenId.P013_DRAFT, "resolveDraft")
+            executeFirst(Phase8ScreenId.P014_RUN_RECAP, "prepareLegacy")
+            executeFirst(Phase8ScreenId.P014_RUN_RECAP) { it.id.startsWith("selectLegacy:") }
+            executeFirst(Phase8ScreenId.P015_REBIRTH, "finalizeArchive")
         }
 
         suspend fun finishSettlementIfOpen() {
