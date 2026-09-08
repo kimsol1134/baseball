@@ -69,18 +69,18 @@ public class NativePlayerAlbumShareService(private val context: Context) {
             text(value, x-3, 678f, 306, 121, if (i==0) 107f else 94f, if (i==0) blue else navy, true, true)
         }
         rect(58f, 825f, 1022f, 827f, navy)
-        card.line.take(12).chunked(6).forEachIndexed { row, cells ->
+        card.line.take(14).chunked(7).forEachIndexed { row, cells ->
             cells.forEachIndexed { col, (label, value) ->
-                val x = 60f + col*164f; val y = 856f + row*108f
-                text(label, x, y, 150, 33, 25f, muted, true)
-                text(value, x, y+39, 150, 53, 39f, navy, true, true)
+                val x = 60f + col*140f; val y = 856f + row*108f
+                text(label, x, y, 130, 33, 25f, muted, true)
+                text(value, x, y+39, 130, 53, 36f, navy, true, true)
             }
         }
         rect(58f, 1082f, 1022f, 1084f, Color.rgb(199, 201, 200))
-        card.rates.filter { it.first != "WHIP" }.take(5).forEachIndexed { i, (label, value) ->
-            val x = 60f + i*197f
-            text(label, x, 1113f, 180, 35, 25f, muted, true)
-            text(value, x, 1153f, 180, 65, 40f, navy, true, true)
+        card.rates.filter { it.first != "WHIP" }.take(6).forEachIndexed { i, (label, value) ->
+            val x = 60f + i*164f
+            text(label, x, 1113f, 150, 35, 25f, muted, true)
+            text(value, x, 1153f, 150, 65, 36f, navy, true, true)
         }
         rect(0f, 1260f, 1080f, 1350f, navy)
         text(card.appName, 60f, 1288f, 950, 40, 26f, Color.rgb(200, 210, 226))

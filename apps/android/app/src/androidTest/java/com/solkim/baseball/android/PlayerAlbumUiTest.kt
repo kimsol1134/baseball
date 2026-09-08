@@ -21,7 +21,7 @@ import org.junit.Assert.*
 class PlayerAlbumUiTest {
     @get:Rule val compose = createComposeRule()
     private fun state(): GameAggregateState {
-        val game = CareerGameView("pro:album:1:2:1", "1시즌 · 2주차 · 직접", 6, 4, 0, 0, 0, 2, 3, 1, true, "save")
+        val game = CareerGameView("pro:album:1:2:1", "1시즌 · 2주차 · 직접", 6, 4, 0, 0, 0, 2, 3, 1, true, "save", earnedRuns = 0)
         val pitch = AlbumPitch("saved-pitch", "four_seam", 1492, (0..24).flatMap { listOf(it, it*8, 18000-it*700, 1500-it*10) }, "saved-game", "swinging_strike", listOf(9, 2, 1, 1, 0))
         val page = PlayerAlbumPage(RecordScope("pro:album:1", "프로 1시즌", "앨범투수"), 1, 6, 0, 4, true, listOf(game), listOf(pitch), affiliation = "대구 포지")
         return GameAggregateState.initial("album-test").copy(meta = GameMetaState(album = listOf(page))).committed()
@@ -61,7 +61,7 @@ class PlayerAlbumUiTest {
     }
     @Test fun exportContainsACompleteBaseballStatLine() {
         val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
-        val stats = AlbumPitchingStats(28, 486, 184, 43, 122, 36, 25, 15, 4, 0, 12, 2480)
+        val stats = AlbumPitchingStats(28, 486, 184, 43, 122, 36, 25, 15, 4, 0, 12, 2480, earnedRuns = 35)
         val card = com.solkim.baseball.platform.AlbumShareCard("시즌 결산", "민서준", "대구 포지 · 프로 3시즌", emptyList(), "1번째 생 · 대표 구종 포심", "야구 못하면 또 환생함", stats.line, stats.rates)
         val name = PlayerPortraitResolver.resolveDrawableName("민서준", AvatarRole.PLAYER, PlayerStage.PRO)
         val id = context.resources.getIdentifier(name, "drawable", context.packageName)

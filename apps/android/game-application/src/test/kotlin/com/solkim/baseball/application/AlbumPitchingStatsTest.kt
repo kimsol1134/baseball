@@ -4,12 +4,20 @@ import com.solkim.baseball.core.pro.*
 import kotlin.test.*
 
 class AlbumPitchingStatsTest {
+    @Test fun earnedRunsRemainDistinctFromScoreboardAndSurviveAlbumEncoding() {
+        val row = CareerGameView("pro:p:1:1:1", "경기", 18, 6, 3, 2, 4, 1, 4, 3, true, earnedRuns = 2)
+        val page = PlayerAlbumPage(RecordScope("pro:p:1", "시즌", "선수"), 1, 18, 3, 6, true, listOf(row))
+        assertEquals(page, PlayerAlbumCodec.decode(PlayerAlbumCodec.encode(listOf(page))).single())
+        val stats = AlbumPitchingStats.from(page)
+        assertEquals("3.00", stats.rates.toMap()["ERA"])
+        assertEquals("4.50", stats.rates.toMap()["RA/9"])
+    }
     @Test fun fractionalInningsUseOutsAndRatesRoundToTwoPlaces() {
         val stats = AlbumPitchingStats(1, 7, 5, 1, 3, 1)
         assertEquals("2.1", stats.innings)
         assertEquals("1.71", stats.whip)
-        assertEquals(mapOf("WHIP" to "1.71", "K/9" to "19.29", "BB/9" to "3.86", "H/9" to "11.57", "K/BB" to "5.00", "RA/9" to "3.86"), stats.rates.toMap())
-        assertFalse(stats.rates.any { it.first == "ERA" })
+        assertEquals(mapOf("ERA" to "—", "WHIP" to "1.71", "K/9" to "19.29", "BB/9" to "3.86", "H/9" to "11.57", "K/BB" to "5.00", "RA/9" to "3.86"), stats.rates.toMap())
+        assertEquals("—", stats.rates.toMap()["ERA"])
     }
     @Test fun missingHistoryAndZeroDenominatorsAreNeverShownAsPerfectStats() {
         assertEquals("—", AlbumPitchingStats(0, 0, 0, 0, 0, 0).whip)

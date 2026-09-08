@@ -17,10 +17,11 @@ public object PlayerAlbum {
         require(pages.map { it.scope.id }.distinct().size == pages.size)
         pages.forEach { p ->
             require(p.scope.id.isNotBlank() && p.games >= 0 && p.outs >= 0 && p.runs >= 0 && p.strikeouts >= 0)
-            require(p.details.isEmpty() || p.details.size == 8 && p.details.all { it >= 0 })
+            require(p.details.isEmpty() || p.details.size in 8..9 && p.details.all { it >= 0 })
             require(p.life > 0 && (p.ratings.isEmpty() || p.ratings.size == 4))
             require(p.rows.map { it.id }.distinct().size == p.rows.size)
-            require(p.rows.all { it.outs >= 0 && it.strikeouts >= 0 && it.runs >= 0 })
+            require(p.rows.all { it.outs >= 0 && it.strikeouts >= 0 && it.runs >= 0 && (it.earnedRuns == null || it.earnedRuns in 0..it.runs) })
+            require(p.details.size < 9 || p.details[8] <= p.runs)
             require(p.pitches.map { it.id }.distinct().size == p.pitches.size)
             require(p.pitches.all { it.id.isNotBlank() && it.trajectory.size % 4 == 0 && it.trajectory.size <= 4096 && (it.flight.isEmpty() || it.flight.size == 3 && it.flight[0] > 0) &&
                 (it.context.isEmpty() || it.context.size == 5 && it.context[0] > 0 && it.context[1] in 0..2 && it.context.drop(2).all { n -> n in 0..1 }) })
@@ -56,7 +57,7 @@ public object PlayerAlbum {
                     proStats.saves - if (pending?.decision?.wire == "save") 1 else 0,
                     proStats.starts - if (pending?.started == true) 1 else 0,
                     proStats.homeRuns - (pending?.homeRuns ?: 0), proStats.pitches - (pending?.pitches ?: 0)
-                ).map { it.coerceAtLeast(0) } else emptyList()
+                ).map { it.coerceAtLeast(0) } + (if (proStats.earnedRuns != null && (pending == null || pending.earnedRuns != null)) listOf((proStats.earnedRuns ?: 0) - (pending?.earnedRuns ?: 0)) else emptyList()) else emptyList()
                 if (details.isNotEmpty()) pages[scope.id] = pages.getValue(scope.id).copy(details = details)
                 val activePro = state.pro?.takeIf { scope.id == "pro:${it.careerId}:${it.season}" }
                 val activeHs = state.highSchool?.run?.takeIf { scope.id == "hs:${it.careerId}" }
@@ -115,8 +116,9 @@ internal object PlayerAlbumCodec {
     fun encode(pages: List<PlayerAlbumPage>): JsonValue = a(pages.map { p ->
         val rows = p.rows.map { r -> a(buildList {
             addAll(listOf(s(r.id), s(r.label), n(r.outs), n(r.strikeouts), n(r.runs), n(r.walks), n(r.hits), n(r.perfect), n(r.team), n(r.opponent), JsonValue.Bool(r.manual)))
-            if (r.decision.isNotEmpty() || r.started || r.homeRuns != null || r.pitches != null) addAll(listOf(s(r.decision), JsonValue.Bool(r.started)))
-            if (r.homeRuns != null || r.pitches != null) addAll(listOf(r.homeRuns?.let(::n) ?: JsonValue.Null, r.pitches?.let(::n) ?: JsonValue.Null))
+            if (r.decision.isNotEmpty() || r.started || r.homeRuns != null || r.pitches != null || r.earnedRuns != null) addAll(listOf(s(r.decision), JsonValue.Bool(r.started)))
+            if (r.homeRuns != null || r.pitches != null || r.earnedRuns != null) addAll(listOf(r.homeRuns?.let(::n) ?: JsonValue.Null, r.pitches?.let(::n) ?: JsonValue.Null))
+            if (r.earnedRuns != null) add(n(r.earnedRuns))
         }) }
         val pitches = p.pitches.map { r -> a(buildList {
             addAll(listOf(s(r.id), s(r.kind), n(r.velocity), a(r.trajectory.map(::n))))
@@ -141,8 +143,8 @@ internal object PlayerAlbumCodec {
         return value.items().map { item ->
             val p = item.items(); require(p.size in setOf(10, 15, 16))
             PlayerAlbumPage(RecordScope(p[0].text(), p[1].text(), p[2].text()), p[3].int(), p[4].int(), p[5].int(), p[6].int(), p[7].bool(),
-                p[8].items().map { itemRow -> val r = itemRow.items(); require(r.size in setOf(11, 13, 15))
-                    CareerGameView(r[0].text(), r[1].text(), r[2].int(), r[3].int(), r[4].int(), r[5].int(), r[6].int(), r[7].int(), r[8].int(), r[9].int(), r[10].bool(), if (r.size >= 13) r[11].text() else "", if (r.size >= 13) r[12].bool() else false, if (r.size == 15 && r[13] != JsonValue.Null) r[13].int() else null, if (r.size == 15 && r[14] != JsonValue.Null) r[14].int() else null) },
+                p[8].items().map { itemRow -> val r = itemRow.items(); require(r.size in setOf(11, 13, 15, 16))
+                    CareerGameView(r[0].text(), r[1].text(), r[2].int(), r[3].int(), r[4].int(), r[5].int(), r[6].int(), r[7].int(), r[8].int(), r[9].int(), r[10].bool(), if (r.size >= 13) r[11].text() else "", if (r.size >= 13) r[12].bool() else false, if (r.size >= 15 && r[13] != JsonValue.Null) r[13].int() else null, if (r.size >= 15 && r[14] != JsonValue.Null) r[14].int() else null, if (r.size == 16) r[15].int() else null) },
                 p[9].items().map { itemPitch -> val r = itemPitch.items(); require(r.size in setOf(4, 7, 8))
                     AlbumPitch(r[0].text(), r[1].text(), r[2].int(), r[3].items().map { it.int() },
                         if (r.size >= 7) r[4].text() else "", if (r.size >= 7) r[5].text() else "", if (r.size >= 7) r[6].items().map { it.int() } else emptyList(), if (r.size == 8) r[7].items().map { it.int() } else emptyList()) },

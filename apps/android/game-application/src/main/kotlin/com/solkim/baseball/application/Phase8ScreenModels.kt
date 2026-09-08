@@ -843,7 +843,7 @@ public object Phase8ScreenProjection {
                         addSection(Phase8Section("role-result", "감독의 대답", listOf(Phase8Row(request.requested.label, result))))
                     }
                 }
-                val remaining = if (pro == null) 0 else ProCatalog.expectedRemainingOutings(pro.week, pro.injuryWeeks, pro.role)
+                val remaining = if (pro == null) 0 else ProCatalog.expectedRemainingOutings(pro.week, pro.injuryWeeks, pro.role, pro.proRulesVersion)
                 val tensions = pro?.seasonTensions.orEmpty().take(2).map { tension ->
                     Phase8Row(tension.title, tension.detail, "시즌 긴장")
                 }

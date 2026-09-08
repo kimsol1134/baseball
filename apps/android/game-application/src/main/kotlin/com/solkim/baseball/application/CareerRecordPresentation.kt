@@ -3,7 +3,7 @@ package com.solkim.baseball.application
 /** Stable selectors include the career: a new life never inherits the previous player's filter. */
 public data class RecordScope(val id: String, val title: String, val player: String)
 public data class CareerGameView(val id: String, val label: String, val outs: Int, val strikeouts: Int, val runs: Int,
-    val walks: Int, val hits: Int, val perfect: Int, val team: Int, val opponent: Int, val manual: Boolean, val decision: String = "", val started: Boolean = false, val homeRuns: Int? = null, val pitches: Int? = null) {
+    val walks: Int, val hits: Int, val perfect: Int, val team: Int, val opponent: Int, val manual: Boolean, val decision: String = "", val started: Boolean = false, val homeRuns: Int? = null, val pitches: Int? = null, val earnedRuns: Int? = null) {
     public val chronologicalKey: String get() = id.split(':').takeLast(if (id.startsWith("pro:")) 3 else 1).joinToString(":") { it.padStart(8, '0') }
 }
 public data class CareerRecordView(val scope: RecordScope, val games: Int, val outs: Int, val runs: Int, val strikeouts: Int,
@@ -33,12 +33,12 @@ public object CareerRecordPresentation {
             val liveRows = pro.currentGameLines.filter { season == null || it.season == season }
                 .distinctBy { "${it.season}:${it.week}:${it.outingNumber}" }.asReversed().map {
                     CareerGameView("pro:${pro.careerId}:${it.season}:${it.week}:${it.outingNumber}", "${it.season}시즌 · ${it.week}주차 · ${if (it.played) "직접" else "자동"}",
-                        it.outs, it.strikeouts, it.runsAllowed, it.walks, it.hits, it.perfectReleases, it.teamRuns, it.opponentRuns, it.played, it.decision.wire, it.started, it.homeRuns, it.pitches)
+                        it.outs, it.strikeouts, it.runsAllowed, it.walks, it.hits, it.perfectReleases, it.teamRuns, it.opponentRuns, it.played, it.decision.wire, it.started, it.homeRuns, it.pitches, it.earnedRuns)
                 }
             val archived = state.meta.album.filter { it.scope.id.startsWith("pro:${pro.careerId}:") && (season == null || it.scope.id.substringAfterLast(':').toIntOrNull() == season) }.flatMap { it.rows }
             val rows = (archived + liveRows).associateBy { it.id }.values.toList().sortedByDescending { it.chronologicalKey }
             val games = stats.sumOf { it.games }
-            return CareerRecordView(scope, games, stats.sumOf { it.inningsOuts }, stats.sumOf { it.runsAllowed }, stats.sumOf { it.strikeouts }, rows, rows.size < games, details = listOf(stats.sumOf { it.hits }, stats.sumOf { it.walks }, stats.sumOf { it.wins }, stats.sumOf { it.losses }, stats.sumOf { it.saves }, stats.sumOf { it.starts }, stats.sumOf { it.homeRuns }, stats.sumOf { it.pitches }))
+            return CareerRecordView(scope, games, stats.sumOf { it.inningsOuts }, stats.sumOf { it.runsAllowed }, stats.sumOf { it.strikeouts }, rows, rows.size < games, details = listOf(stats.sumOf { it.hits }, stats.sumOf { it.walks }, stats.sumOf { it.wins }, stats.sumOf { it.losses }, stats.sumOf { it.saves }, stats.sumOf { it.starts }, stats.sumOf { it.homeRuns }, stats.sumOf { it.pitches }) + if (stats.all { it.earnedRuns != null }) listOf(stats.sumOf { it.earnedRuns ?: 0 }) else emptyList())
         }
         val hs = state.highSchool ?: return null
         val id = scope.id.removePrefix("hs:")
