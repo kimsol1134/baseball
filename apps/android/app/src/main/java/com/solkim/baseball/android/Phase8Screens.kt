@@ -1,5 +1,8 @@
 package com.solkim.baseball.android
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.width
+
 import android.content.Intent
 import com.solkim.baseball.application.SetupRepertoire
 import com.solkim.baseball.application.AbilityDisplayScale
@@ -1149,7 +1152,7 @@ private fun ColumnScope.Phase8SetupFields(
                         primaryPitch = SetupRepertoire.primary(preset.id).wire
                         learningPitch = SetupRepertoire.learning(preset.id).wire
                     },
-                    modifier = Modifier
+                    modifier = Modifier.fillMaxWidth()
                         .heightIn(min = 48.dp)
                         .testTag("setup.preset.${preset.id}")
                         .gameDescription(gameCopy.resolve("android.setup.preset-description",
@@ -1160,11 +1163,14 @@ private fun ColumnScope.Phase8SetupFields(
                             com.solkim.baseball.application.GameCopyArgument.Whole(preset.baseStamina.toLong())) +
                             if (selected) " · " + gameCopy.legacy("선택됨") else ""),
                 ) {
-                    Column(Modifier.fillMaxWidth()) {
-                        Text(presetTitle(preset.id), fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
-                        Text("구위 ${preset.baseStuff} · 제구 ${preset.baseCommand} · 무브먼트 ${preset.baseMovement} · 체력 ${preset.baseStamina}", style = MaterialTheme.typography.bodySmall)
-                    }
+                    Text(presetTitle(preset.id), fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
                 }
+            }
+            val chosenPreset = HighSchoolDisplayRules.presets.single { it.id == presetId }
+            Text("선택한 유형의 기본 능력", style = MaterialTheme.typography.labelMedium)
+            Column(Modifier.testTag("setup.preset.stats")) {
+                CareerStatTiles(listOf("구위" to chosenPreset.baseStuff.toString(), "제구" to chosenPreset.baseCommand.toString(),
+                    "무브먼트" to chosenPreset.baseMovement.toString(), "체력" to chosenPreset.baseStamina.toString()))
             }
         }
         2 -> {
@@ -1174,16 +1180,19 @@ private fun ColumnScope.Phase8SetupFields(
             if (primaryReset) Text("배우는 구종과 겹쳐서 주 구종을 포심으로 되돌렸다.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.warning)
             Text("배우는 구종", style = MaterialTheme.typography.titleSmall)
             Text("3년 동안 익혀서 완성하는 공. 처음엔 제구가 흔들린다.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
-            SetupPitch.entries.filter { it != SetupPitch.FOUR_SEAM }.forEach { pitch ->
-                OutlinedButton(onClick = { learningPitch = pitch.wire; primaryReset = primaryPitch == learningPitch; if (primaryPitch == learningPitch) primaryPitch = "four_seam" }, modifier = Modifier.fillMaxWidth()) {
-                    Text("${setupPitchLabel(pitch)}${if (learningPitch == pitch.wire) " · 선택됨" else ""}")
+            AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
+                SetupPitch.entries.filter { it != SetupPitch.FOUR_SEAM }.forEach { pitch ->
+                    SetupSelectionButton(selected = learningPitch == pitch.wire,
+                        onClick = { learningPitch = pitch.wire; primaryReset = primaryPitch == learningPitch; if (primaryPitch == learningPitch) primaryPitch = "four_seam" },
+                        modifier = Modifier.testTag("setup.learning.${pitch.wire}")) { Text(setupPitchLabel(pitch)) }
                 }
             }
             Text("주 구종", style = MaterialTheme.typography.titleSmall)
             Text("포수가 가장 먼저 내는 사인. 첫 공부터 믿고 던질 수 있다.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
-            SetupPitch.entries.filter { it.wire != learningPitch }.forEach { pitch ->
-                OutlinedButton(onClick = { primaryPitch = pitch.wire }, modifier = Modifier.fillMaxWidth()) {
-                    Text("${setupPitchLabel(pitch)}${if (primaryPitch == pitch.wire) " · 선택됨" else ""}")
+            AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
+                SetupPitch.entries.filter { it.wire != learningPitch }.forEach { pitch ->
+                    SetupSelectionButton(selected = primaryPitch == pitch.wire, onClick = { primaryPitch = pitch.wire },
+                        modifier = Modifier.testTag("setup.primary.${pitch.wire}")) { Text(setupPitchLabel(pitch)) }
                 }
             }
         }
@@ -1284,6 +1293,7 @@ private fun SetupSelectionButton(
 ) {
     OutlinedButton(
         onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         modifier = modifier.heightIn(min = 48.dp).semantics { this.selected = selected },
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
@@ -1292,10 +1302,10 @@ private fun SetupSelectionButton(
         border = BorderStroke(if (selected) 2.dp else 1.dp,
             if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
     ) {
-        if (selected) {
-            Text("✓", verbatim = true, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.size(8.dp))
+        Box(Modifier.width(16.dp), contentAlignment = Alignment.Center) {
+            if (selected) Text("✓", verbatim = true, fontWeight = FontWeight.Bold)
         }
+        Spacer(Modifier.width(4.dp))
         content()
     }
 }
