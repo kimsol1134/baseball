@@ -393,10 +393,15 @@ private fun Phase8FirstPitchIntroduction(
                 Text("길게 눌러 와인드업, 초록에서 손을 뗀다. 구종과 코스는 포수가 골라 뒀다.", style = MaterialTheme.typography.bodyLarge)
             }
         }
-        // One primary action: the mound. The separate "start tutorial" step stays in the projection for
-        // controllers and tests, but a player never has to press it.
+        // The first tap opens the instruction page only. Reserving/launching the mound in
+        // that same action used to flash P-004 while the player was still trying to read it.
         val visible = model.actions.filter { it.enabled }.let { actions ->
-            if (actions.any { it.id == "openTutorialPitch" }) actions.filterNot { it.id == "beginTutorial" } else actions
+            val introduction = actions.firstOrNull { it.id == "beginTutorial" }
+            if (isLetter && introduction != null) listOf(introduction.copy(label = "첫 공 던지기"))
+            else actions.filterNot { it.id == "beginTutorial" }.map { action ->
+                if (!isLetter && action.id == "openTutorialPitch" && state.highSchool?.lastPresentation == null)
+                    action.copy(label = "투구 시작") else action
+            }
         }
         visible.forEach { action ->
             Phase8ActionButton(model.id, action.copy(enabled = !busy && acceptsFreshTap), onAction, showDescription = false)
