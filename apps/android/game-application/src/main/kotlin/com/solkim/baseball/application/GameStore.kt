@@ -680,12 +680,14 @@ public class KotlinGameStore private constructor(
     override val busy: StateFlow<Boolean> = _busy.asStateFlow()
     public val current: GameAggregateState get() = state.value
 
-    public val supportsCareerBackup: Boolean get() = repository is CSharpLegacyGameStoreRepository
+    public val supportsCareerBackup: Boolean get() = repository is CSharpLegacyGameStoreRepository || repository is ShadowFixtureGameStoreRepository && allowShadowFixtureWrites
 
     public suspend fun exportCareerBackup(): ByteArray = mutex.withLock {
         check(!closed.get()) { "game.store.closed" }
         require(CareerBackup.isAvailable(current)) { "backup.challenge_active" }
-        requireNotNull(repository as? CSharpLegacyGameStoreRepository).exportCareer()
+        (repository as? CSharpLegacyGameStoreRepository)?.exportCareer() ?: run {
+            require(supportsCareerBackup) { "backup.unsupported_store" }; CareerBackup.encodeShadow(current)
+        }
     }
 
     public suspend fun importCareerBackup(bytes: ByteArray, expectedRevision: ULong): Unit = mutex.withLock {
@@ -695,7 +697,17 @@ public class KotlinGameStore private constructor(
         _busy.value = true
         try {
             withContext(kotlinx.coroutines.NonCancellable) {
-                val restored = requireNotNull(repository as? CSharpLegacyGameStoreRepository).importCareer(bytes, expectedRevision)
+                val restored = (repository as? CSharpLegacyGameStoreRepository)?.importCareer(bytes, expectedRevision) ?: run {
+                    require(supportsCareerBackup) { "backup.unsupported_store" }
+                    val source = requireNotNull(CareerBackup.shadow(bytes)) { "backup.store_format" }
+                    val revision = current.revision + 1UL
+                    require(revision > current.revision) { "backup.revision_overflow" }
+                    val hash = com.solkim.baseball.model.Hashing.sha256Hex(bytes.toString(Charsets.UTF_8))
+                    val receipt = GameCommandReceipt("backup:${java.util.UUID.randomUUID()}", "backup", current.revision, revision, hash, hash, "backup.imported")
+                    val next = source.copy(installId = current.installId, revision = revision,
+                        commandReceipts = current.commandReceipts + receipt, analytics = current.analytics).committed()
+                    requireNotNull(repository).save(next, next.revision).envelope.payload
+                }
                 _state.value = restored
                 analyticsProjection?.establishBaseline(restored)
             }

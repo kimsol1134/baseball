@@ -3,7 +3,9 @@ package com.solkim.baseball.application
 /** Stable selectors include the career: a new life never inherits the previous player's filter. */
 public data class RecordScope(val id: String, val title: String, val player: String)
 public data class CareerGameView(val id: String, val label: String, val outs: Int, val strikeouts: Int, val runs: Int,
-    val walks: Int, val hits: Int, val perfect: Int, val team: Int, val opponent: Int, val manual: Boolean)
+    val walks: Int, val hits: Int, val perfect: Int, val team: Int, val opponent: Int, val manual: Boolean, val decision: String = "", val started: Boolean = false) {
+    public val chronologicalKey: String get() = id.split(':').takeLast(if (id.startsWith("pro:")) 3 else 1).joinToString(":") { it.padStart(8, '0') }
+}
 public data class CareerRecordView(val scope: RecordScope, val games: Int, val outs: Int, val runs: Int, val strikeouts: Int,
     val rows: List<CareerGameView>, val incomplete: Boolean, val inningsKnown: Boolean = true) {
     public val innings: String get() = if (inningsKnown) "${outs / 3}.${outs % 3}" else "—"
@@ -31,10 +33,10 @@ public object CareerRecordPresentation {
             val liveRows = pro.currentGameLines.filter { season == null || it.season == season }
                 .distinctBy { "${it.season}:${it.week}:${it.outingNumber}" }.asReversed().map {
                     CareerGameView("pro:${pro.careerId}:${it.season}:${it.week}:${it.outingNumber}", "${it.season}시즌 · ${it.week}주차 · ${if (it.played) "직접" else "자동"}",
-                        it.outs, it.strikeouts, it.runsAllowed, it.walks, it.hits, it.perfectReleases, it.teamRuns, it.opponentRuns, it.played)
+                        it.outs, it.strikeouts, it.runsAllowed, it.walks, it.hits, it.perfectReleases, it.teamRuns, it.opponentRuns, it.played, it.decision.wire, it.started)
                 }
             val archived = state.meta.album.filter { it.scope.id.startsWith("pro:${pro.careerId}:") && (season == null || it.scope.id.substringAfterLast(':').toIntOrNull() == season) }.flatMap { it.rows }
-            val rows = (archived + liveRows).associateBy { it.id }.values.toList().sortedByDescending { it.id }
+            val rows = (archived + liveRows).associateBy { it.id }.values.toList().sortedByDescending { it.chronologicalKey }
             val games = stats.sumOf { it.games }
             return CareerRecordView(scope, games, stats.sumOf { it.inningsOuts }, stats.sumOf { it.runsAllowed }, stats.sumOf { it.strikeouts }, rows, rows.size < games)
         }
@@ -46,7 +48,7 @@ public object CareerRecordPresentation {
             val first = parts.firstOrNull { it.played } ?: parts.first()
             val mode = if (parts.any { it.played } && parts.any { !it.played }) "직접+자동" else if (first.played) "직접" else "자동"
             CareerGameView("${scope.id}:${first.gameNumber}", "${first.chapter}장 · $mode", parts.sumOf { it.outs }, parts.sumOf { it.strikeouts },
-                parts.sumOf { it.runsAllowed }, parts.sumOf { it.walks }, parts.sumOf { it.hits }, parts.sumOf { it.perfectReleases }, first.teamRuns, first.opponentRuns, parts.any { it.played })
+                parts.sumOf { it.runsAllowed }, parts.sumOf { it.walks }, parts.sumOf { it.hits }, parts.sumOf { it.perfectReleases }, first.teamRuns, first.opponentRuns, parts.any { it.played }, first.decision.wire)
         }
         val run = hs.run.takeIf { it.careerId == id }
         val historical = hs.archive.firstOrNull { it.careerId == id }

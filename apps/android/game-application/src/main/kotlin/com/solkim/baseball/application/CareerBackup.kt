@@ -31,7 +31,25 @@ public object CareerBackup {
         require(isAvailable(state)) { "backup.challenge_snapshot" }
         return payload
     }
+    internal fun encodeShadow(state: GameAggregateState): ByteArray {
+        require(isAvailable(state))
+        val payload = GameAggregateCodec.encodePayload(state)
+        val bytes = StrictJson.canonical(JsonValue.Obj(linkedMapOf("format" to JsonValue.Str("baseball-shadow-backup-v1"),
+            "checksum" to JsonValue.Str(payload.canonicalSha256()), "payload" to payload))).toByteArray(Charsets.UTF_8)
+        require(bytes.size <= MAX_BYTES)
+        return bytes
+    }
+    internal fun shadow(bytes: ByteArray): GameAggregateState? {
+        require(bytes.isNotEmpty() && bytes.size <= MAX_BYTES)
+        val root = StrictJson.parseUtf8(bytes) as? JsonValue.Obj ?: error("backup.format")
+        if ((root["format"] as? JsonValue.Str)?.value != "baseball-shadow-backup-v1") return null
+        require(root.entries.keys == setOf("format", "checksum", "payload"))
+        val payload = root["payload"] as? JsonValue.Obj ?: error("backup.payload")
+        require(payload.canonicalSha256() == (root["checksum"] as? JsonValue.Str)?.value)
+        return GameAggregateCodec.decodePayload(payload).also { require(isAvailable(it)) }
+    }
     public fun preview(bytes: ByteArray): GameAggregateState {
+        shadow(bytes)?.let { return it }
         val payload = decode(bytes)
         return CSharpLegacyAggregateBridge.project(payload, 0UL, payload.canonicalSha256())
     }

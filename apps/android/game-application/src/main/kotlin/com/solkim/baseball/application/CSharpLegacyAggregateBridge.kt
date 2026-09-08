@@ -64,6 +64,7 @@ public object CSharpLegacyAggregateBridge {
                 seedChallenge = SeedChallengeCodec.decode(payload.objectOrNull("meta")?.get("seedChallenge")),
                 playerGrowth = PlayerGrowthReceipt.decode(payload.objectOrNull("meta")?.get("playerGrowth")),
                 companion = PitcherCompanionCodec.decode(payload.objectOrNull("meta")?.get("companion")),
+                album = PlayerAlbumCodec.decode(payload.objectOrNull("meta")?.get("album")),
             ),
             pitch = pitch,
             settings = payload.objectOrNull("settings")?.toSettings() ?: GameSettingsState(),

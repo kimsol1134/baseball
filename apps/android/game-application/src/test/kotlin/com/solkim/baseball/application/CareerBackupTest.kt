@@ -5,6 +5,23 @@ import java.nio.file.Files
 import kotlin.test.*
 
 class CareerBackupTest {
+    @Test fun shadowAlbumBackupRestoresWithAnIntactReceiptChain() = runBlocking {
+        val source = KotlinGameStore.open("shadow-source", InMemoryShadowFixtureGameStoreRepository(GameAggregateState.initial("shadow-source")), NativeAuthorityMode.NATIVE_SHADOW_READ_ONLY)
+        val destination = KotlinGameStore.open("shadow-destination", InMemoryShadowFixtureGameStoreRepository(GameAggregateState.initial("shadow-destination")), NativeAuthorityMode.NATIVE_SHADOW_READ_ONLY)
+        try {
+            val controller = Phase8Controller(source)
+            controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
+            controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
+            val bytes = source.exportCareerBackup()
+            assertTrue(source.current.meta.album.isNotEmpty())
+            destination.importCareerBackup(bytes, 0UL)
+            destination.current.validate()
+            assertEquals(source.current.meta.album, destination.current.meta.album)
+            assertEquals("shadow-destination", destination.current.installId)
+            Phase8Controller(destination).execute(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
+            destination.current.validate()
+        } finally { source.close(); destination.close() }
+    }
     @Test fun backupCannotReplaceOrTransferAChallengeAndTheNormalCareerSurvives(): Unit = runBlocking {
         val root = Files.createTempDirectory("baseball-backup-challenge-")
         val repository = CSharpLegacyGameStoreRepository(root, "challenge-backup")
@@ -46,12 +63,15 @@ class CareerBackupTest {
             controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
             controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
             val original = source.current
+            assertTrue(original.meta.album.isNotEmpty())
             val bytes = source.exportCareerBackup()
+            assertEquals(original.meta.album, CareerBackup.preview(bytes).meta.album)
             assertEquals(original.highSchool, CareerBackup.preview(bytes).highSchool)
             destination.importCareerBackup(bytes, 0UL)
             assertEquals("new-install", destination.current.installId)
             assertEquals(original.highSchool, destination.current.highSchool)
             assertEquals(original.settings, destination.current.settings)
+            assertEquals(original.meta.album, destination.current.meta.album)
             val restored = destination.current
             assertFails { destination.importCareerBackup(bytes, 0UL) }
             val corrupt = bytes.copyOf().also { it[it.size / 2] = (it[it.size / 2].toInt() xor 1).toByte() }

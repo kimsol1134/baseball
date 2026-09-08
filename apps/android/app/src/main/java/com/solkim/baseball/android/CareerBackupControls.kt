@@ -25,6 +25,8 @@ internal fun CareerBackupControls(state: GameAggregateState, busy: Boolean = fal
     val store = (context.applicationContext as BaseballApplication).gameStore
     if (!store.supportsCareerBackup || !CareerBackup.isAvailable(state)) return
     val copy = rememberGameCopy()
+    val backupPreferences = remember { context.getSharedPreferences("career-backup", android.content.Context.MODE_PRIVATE) }
+    var lastBackup by remember { mutableLongStateOf(backupPreferences.getLong("last-success", 0L)) }
     val scope = rememberCoroutineScope()
     var working by remember { mutableStateOf(false) }
     var restored by remember { mutableStateOf(false) }
@@ -37,7 +39,12 @@ internal fun CareerBackupControls(state: GameAggregateState, busy: Boolean = fal
             working = true
             try {
                 val bytes = store.exportCareerBackup()
-                withContext(Dispatchers.IO) { requireNotNull(context.contentResolver.openOutputStream(uri, "wt")).use { it.write(bytes) } }
+                withContext(Dispatchers.IO) {
+                    requireNotNull(context.contentResolver.openOutputStream(uri, "wt")).use { it.write(bytes) }
+                    requireNotNull(context.contentResolver.openInputStream(uri)).use { require(it.readBytes().contentEquals(bytes)) { "backup.readback" } }
+                }
+                lastBackup = System.currentTimeMillis()
+                backupPreferences.edit().putLong("last-success", lastBackup).apply()
                 message = "기록을 파일로 보관했어요. 다른 기기에서도 이 파일을 불러올 수 있어요."
             } catch (error: Exception) {
                 if (error is kotlinx.coroutines.CancellationException) throw error
@@ -71,6 +78,10 @@ internal fun CareerBackupControls(state: GameAggregateState, busy: Boolean = fal
                 message = "읽을 수 없는 백업 파일이에요. 현재 기록은 그대로 유지돼요."
             } finally { working = false }
         }
+    }
+    if (lastBackup > 0) {
+        Text("마지막 백업", style = MaterialTheme.typography.labelMedium)
+        Text(java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(lastBackup)), verbatim = true)
     }
     Text("기기를 바꾸거나 앱을 지우기 전에 기록을 파일로 보관해 주세요.")
     OutlinedButton(onClick = { save.launch("baseball-career.json") }, enabled = !working && !busy && (state.highSchool != null || state.pro != null),

@@ -20,6 +20,20 @@ class PlayerAlbumTest {
         assertEquals(valid, GameAggregateCodec.decodePayload(GameAggregateCodec.encodePayload(valid)))
         assertEquals(pages, PlayerAlbum.capture(archived, archived))
     }
+    @Test fun recordedTrajectorySurvivesPresentationCleanupWithoutDuplicates() {
+        val p = ProKernel().startDirect(ProStartDirectRequest("918220", "power_prospect", "투수")).state
+        val before = GameAggregateState.initial("replay").copy(stage = GameStage.PRO, pro = p)
+        val trajectory = (0..24).flatMap { listOf(it, it*3, 18000-it*700, 1500-it*20) }
+        val snapshot = com.solkim.baseball.core.pitch.TrajectoryPresentationSnapshot(com.solkim.baseball.core.pitch.PitchKind.FOUR_SEAM, "12345", 400, 70, 1000, 1480, trajectory)
+        val after = before.copy(pro = p.copy(lastPresentation = snapshot))
+        val pages = PlayerAlbum.capture(before, after)
+        assertEquals(trajectory, pages.single().pitches.single().trajectory)
+        val saved = after.copy(meta = after.meta.copy(album = pages))
+        val cleared = saved.copy(pro = p)
+        assertEquals(pages, PlayerAlbum.capture(saved, cleared))
+        assertEquals(pages, PlayerAlbumCodec.decode(PlayerAlbumCodec.encode(pages)))
+        assertEquals(snapshot, after.pro!!.lastPresentation)
+    }
     @Test fun oldSaveEncodingIsUnchangedAndAlbumTamperingIsRejected() {
         val old = GameAggregateState.initial("album")
         assertEquals(old, GameAggregateCodec.decodePayload(GameAggregateCodec.encodePayload(old)))
