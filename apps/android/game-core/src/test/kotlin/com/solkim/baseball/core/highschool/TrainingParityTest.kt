@@ -48,4 +48,37 @@ class TrainingParityTest {
         assertTrue(regular.trainingEvidence.size in 1..3)
         assertTrue(regular.trainingEvidence.size == 3 || regular.run.phase != HighSchoolPhase.TRAINING || regular.run.lastTraining!!.bloomed)
     }
+    @Test fun firstTrainingGuaranteeAndHigherIntensityOddsMatchActualRolls() {
+        val begun = kernel.start(HighSchoolPhase4StartRequest("918220", "power_prospect", "first-training-odds", "2026-W36", "2026-09-05")).state
+        val ready = kernel.completePrologue("918220", kernel.beginTutorial(begun).state).state
+        val base = kernel.chooseSchool("918220", ready, HighSchoolSchoolId.CHEONGAM_DEVELOPMENT).state.run
+        val run = core.resignShadowState(base.copy(fatigue = 0, trainingOpportunity = null,
+            schedule = base.schedule.copy(trainingsByChapter = List(8) { 2 })))
+        val previews = HighSchoolTrainingIntensity.entries.map { core.trainingPreview(run, HighSchoolTrainingFocus.VELOCITY, it) }
+        assertEquals(listOf(22, 37, 52), previews.map { it.jackpotChancePercent })
+        assertTrue(previews.all { it.firstTrainingGuaranteed && it.minimumGrowth >= 1 && it.minimumGrowth == it.maximumGrowth })
+        val successes = IntArray(3)
+        for (seed in 1000..1255) {
+            var previous = -1
+            HighSchoolTrainingIntensity.entries.forEachIndexed { i, intensity ->
+                val preview = previews[i]
+                val after = core.commitTraining(HighSchoolKernel.TrainingRequest(seed.toString(), run, HighSchoolTrainingFocus.VELOCITY, intensity)).snapshot
+                val growth = after.lastTraining!!.growth
+                assertTrue(growth == preview.minimumGrowth || growth == preview.jackpotMinimumGrowth)
+                assertTrue(growth >= 1)
+                assertTrue(growth >= previous, "Stronger intensity lost growth for seed $seed")
+                previous = growth
+                if (growth == preview.jackpotMinimumGrowth) successes[i]++
+            }
+        }
+        assertTrue(successes[0] < successes[1] && successes[1] < successes[2])
+        for (intensity in HighSchoolTrainingIntensity.entries) {
+            assertEquals(0, core.trainingPreview(run, HighSchoolTrainingFocus.RECOVERY, intensity).jackpotChancePercent)
+            val rehab = core.resignShadowState(run.copy(injuryRecovery = 2))
+            assertEquals(0, core.trainingPreview(rehab, HighSchoolTrainingFocus.VELOCITY, intensity).jackpotMaximumGrowth)
+            val later = core.resignShadowState(run.copy(totalTrainingsCompleted = 1))
+            assertFalse(core.trainingPreview(later, HighSchoolTrainingFocus.VELOCITY, intensity).firstTrainingGuaranteed)
+        }
+    }
+
 }

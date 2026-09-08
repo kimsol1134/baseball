@@ -33,23 +33,23 @@ public object CareerChoicePresentation {
     /** What the awakening does to the ball in the player's hand. Mirrors HighSchoolKernel.applyAwakening. */
     public fun awakeningFeel(id: HighSchoolAwakening): String = when (id) {
         HighSchoolAwakening.EXPLOSIVE_FASTBALL -> "포심 +1.5km/h · 헛스윙 ↑ · 팔은 조금 더 무겁다"
-        HighSchoolAwakening.RISING_FOUR_SEAM -> "포심 끝이 떠오른다 · 헛스윙 ↑ · 빗맞은 타구 ↑"
+        HighSchoolAwakening.RISING_FOUR_SEAM -> "포심 변화량 ↑ · 헛스윙 ↑ · 빗맞은 타구 ↑"
         HighSchoolAwakening.PINPOINT_EDGE -> "존 구석이 손에 붙는다 · 초록 구간 ↑"
         HighSchoolAwakening.BATTERY_SYNC -> "포수 사인이 더 잘 맞는다 · 빗맞은 타구 ↑"
         HighSchoolAwakening.REPEATABLE_RELEASE -> "릴리스가 매번 같아진다 · 초록 구간 ↑"
         HighSchoolAwakening.FIRST_PITCH_STRIKE -> "초구 스트라이크가 늘어난다"
         HighSchoolAwakening.DISAPPEARING_BREAKER -> "변화구 끝이 사라진다 · 헛스윙 ↑"
-        HighSchoolAwakening.SINKER_TUNNEL -> "포심과 체인지업이 같은 터널로 온다 · 땅볼 ↑"
+        HighSchoolAwakening.SINKER_TUNNEL -> "포심·체인지업 변화량 ↑ · 빗맞은 타구 ↑"
         HighSchoolAwakening.FROZEN_CHANGEUP -> "체인지업 앞에서 타자가 멈춘다 · 헛스윙 ↑↑"
         HighSchoolAwakening.SWEEPING_SLIDER -> "슬라이더가 한 뼘 더 휜다 · 헛스윙 ↑"
         HighSchoolAwakening.CURVEBALL_CLOCK -> "커브가 더 크게 떨어진다 · 헛스윙 ↑"
         HighSchoolAwakening.IRON_ARM -> "피로가 덜 쌓인다 · 후반에도 같은 공"
         HighSchoolAwakening.LATE_INNING_RESERVE -> "후반 포심이 살아 있다 · 피로 ↓"
         HighSchoolAwakening.CALM_UNDER_PRESSURE -> "위기에서 미터가 덜 흔들린다"
-        HighSchoolAwakening.PICKOFF_RHYTHM -> "주자를 묶는다 · 빗맞은 타구 ↑"
+        HighSchoolAwakening.PICKOFF_RHYTHM -> "일정한 투구 리듬 · 제구·체력 ↑"
         HighSchoolAwakening.TWO_STRIKE_PLAN -> "2스트라이크 변화구 헛스윙 ↑"
-        HighSchoolAwakening.TRAFFIC_CONTROLLER -> "주자 있을 때 땅볼 ↑ · 긴 이닝"
-        HighSchoolAwakening.SCOUT_COMPOSURE -> "스카우트 앞에서 공이 더 좋아진다"
+        HighSchoolAwakening.TRAFFIC_CONTROLLER -> "위기에서 미터 흔들림 ↓ · 빗맞은 타구 ↑"
+        HighSchoolAwakening.SCOUT_COMPOSURE -> "압박 속 미터 흔들림 ↓ · 구위·제구 ↑"
     }
 
     /** One line in the catcher's voice for the confirmation moment. */
@@ -61,17 +61,17 @@ public object CareerChoicePresentation {
         HighSchoolAwakening.REPEATABLE_RELEASE -> "포수: 열 개 던지면 열 개가 같은 팔이야."
         HighSchoolAwakening.FIRST_PITCH_STRIKE -> "포수: 초구부터 카운트 잡고 가자. 그게 제일 편해."
         HighSchoolAwakening.DISAPPEARING_BREAKER -> "포수: 마지막에 공이 없어져. 나도 잡기 힘들 정도로."
-        HighSchoolAwakening.SINKER_TUNNEL -> "포수: 포심인지 체인지업인지 타자가 못 고른다."
+        HighSchoolAwakening.SINKER_TUNNEL -> "포수: 포심과 체인지업이 함께 좋아졌어. 두 공으로 타이밍을 바꾸자."
         HighSchoolAwakening.FROZEN_CHANGEUP -> "포수: 타자가 얼었어. 그 체인지업, 결정구다."
         HighSchoolAwakening.SWEEPING_SLIDER -> "포수: 슬라이더가 내 미트 밖까지 휜다. 앉는 자리를 바꿔야겠어."
         HighSchoolAwakening.CURVEBALL_CLOCK -> "포수: 커브 떨어지는 타이밍이 시계 같아."
         HighSchoolAwakening.IRON_ARM -> "코치: 7회에 던진 공이 1회 공이랑 똑같다. 어깨가 다르네."
         HighSchoolAwakening.LATE_INNING_RESERVE -> "코치: 후반에 힘이 남는 투수는 감독이 제일 좋아한다."
         HighSchoolAwakening.CALM_UNDER_PRESSURE -> "포수: 만루에서 네 눈이 안 흔들리더라."
-        HighSchoolAwakening.PICKOFF_RHYTHM -> "포수: 주자가 리드를 못 잡아. 네 리듬 때문이야."
+        HighSchoolAwakening.PICKOFF_RHYTHM -> "포수: 공마다 리듬이 일정해졌어. 받기도 한결 편하다."
         HighSchoolAwakening.TWO_STRIKE_PLAN -> "포수: 2스트라이크면 이제 내가 뭘 낼지 너도 알지."
         HighSchoolAwakening.TRAFFIC_CONTROLLER -> "코치: 주자 있을 때 더 침착하다. 그게 에이스야."
-        HighSchoolAwakening.SCOUT_COMPOSURE -> "코치: 스탠드에 스카우트 있으면 공이 더 좋아지더라. 나쁘지 않아."
+        HighSchoolAwakening.SCOUT_COMPOSURE -> "코치: 압박이 커져도 투구가 흔들리지 않더라. 그 침착함을 기억해."
     }
 
     public fun conclusion(run: HighSchoolState): List<Phase8Section> {

@@ -610,15 +610,14 @@ public object Phase8ScreenProjection {
             }
             Phase8ScreenId.P010_CHAPTER -> {
                 val chapter = run?.chapter
-                addSection(Phase8Section("chapter", "장 결산", listOf(
-                    Phase8Row("장", chapter?.number?.toString() ?: "—", chapter?.title ?: "다음 장을 준비합니다."),
-                    Phase8Row("주제", chapter?.theme ?: "—", "이번 장의 주제"),
-                    Phase8Row("자동 경기", "${run?.automaticGames ?: 0}경기 · ${run?.automaticOuts ?: 0}아웃", "내가 안 던진 경기는 저절로 흘러갔다."),
-                ) + chapterGameRows(state)))
-                addAction("advanceChapter", "다음 장으로", "다음 장을 연다.", run?.phase == HighSchoolPhase.CHAPTER_REVIEW, listOf(hs(HighSchoolPhase4Command.AdvanceChapter(context.seed(state, "chapter")))))
+                addSection(Phase8Section("chapter", "이번에 쌓은 것", buildList {
+                    if ((run?.chapterTrainingCount ?: 0) > 0) add(Phase8Row("훈련", "${run?.chapterTrainingCount}회", "완료한 훈련"))
+                    addAll(chapterGameRows(state))
+                }))
+                addAction("advanceChapter", "다음 훈련 준비", "다음 훈련으로 이어갑니다.", run?.phase == HighSchoolPhase.CHAPTER_REVIEW, listOf(hs(HighSchoolPhase4Command.AdvanceChapter(context.seed(state, "chapter")))))
                 val canClaim = run?.phase == HighSchoolPhase.CHAPTER_REVIEW && (chapter?.number ?: 8) < HighSchoolContentCatalog.chapters.size && run.chapterGameClaimed.not() && highSchool?.activePitch == null
                 if (canClaim) {
-                    addAction("claimChapterGame", "이 경기는 내가 던진다", "이 장의 정규 경기 하나를 직접 던진다. 승부처처럼 기록에 남는다.", true, listOf(hs(HighSchoolPhase4Command.ClaimChapterGame(context.seed(state, "chapter-game")))))
+                    addAction("claimChapterGame", "한 경기 더 던지기", "원하면 정규 경기에 직접 등판할 수 있어요.", true, listOf(hs(HighSchoolPhase4Command.ClaimChapterGame(context.seed(state, "chapter-game")))))
                 } else if (run?.chapterGameClaimed == true) {
                     addAction("claimChapterGame", "이번 장은 던졌다", "정규 경기는 장마다 한 번.", false, emptyList())
                 }
@@ -2005,7 +2004,7 @@ internal fun chapterGameRows(state: GameAggregateState): List<Phase8Row> {
         ))
     }
     if (run.chapter.number >= HighSchoolContentCatalog.chapters.size) return emptyList()
-    return listOf(Phase8Row("정규 경기", "아직 안 던졌다", "이 장의 정규 경기 하나를 직접 던질 수 있다. 장마다 한 번."))
+    return emptyList()
 }
 
 /** 아웃 수를 이닝 표기로. 18아웃이면 6.0이닝. */

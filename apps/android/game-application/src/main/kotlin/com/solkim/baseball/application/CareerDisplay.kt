@@ -54,16 +54,16 @@ public object HighSchoolDisplayRules {
         com.solkim.baseball.core.highschool.HighSchoolAwakening.REPEATABLE_RELEASE -> "흔들리지 않는 릴리스"
         com.solkim.baseball.core.highschool.HighSchoolAwakening.FIRST_PITCH_STRIKE -> "첫 공 스트라이크"
         com.solkim.baseball.core.highschool.HighSchoolAwakening.CALM_UNDER_PRESSURE -> "위기 속 평정"
-        com.solkim.baseball.core.highschool.HighSchoolAwakening.SCOUT_COMPOSURE -> "스카우트 앞의 침착함"
+        com.solkim.baseball.core.highschool.HighSchoolAwakening.SCOUT_COMPOSURE -> "압박 속 침착함"
         com.solkim.baseball.core.highschool.HighSchoolAwakening.DISAPPEARING_BREAKER -> "사라지는 변화구"
         com.solkim.baseball.core.highschool.HighSchoolAwakening.SWEEPING_SLIDER -> "넓게 휘는 슬라이더"
         com.solkim.baseball.core.highschool.HighSchoolAwakening.CURVEBALL_CLOCK -> "커브의 시계"
         com.solkim.baseball.core.highschool.HighSchoolAwakening.FROZEN_CHANGEUP -> "멈춘 체인지업"
-        com.solkim.baseball.core.highschool.HighSchoolAwakening.SINKER_TUNNEL -> "싱커 터널"
+        com.solkim.baseball.core.highschool.HighSchoolAwakening.SINKER_TUNNEL -> "포심·체인지업 연계"
         com.solkim.baseball.core.highschool.HighSchoolAwakening.BATTERY_SYNC -> "배터리 호흡"
         com.solkim.baseball.core.highschool.HighSchoolAwakening.TWO_STRIKE_PLAN -> "투 스트라이크 설계"
-        com.solkim.baseball.core.highschool.HighSchoolAwakening.PICKOFF_RHYTHM -> "견제 리듬"
-        com.solkim.baseball.core.highschool.HighSchoolAwakening.TRAFFIC_CONTROLLER -> "주자 흐름 읽기"
+        com.solkim.baseball.core.highschool.HighSchoolAwakening.PICKOFF_RHYTHM -> "일정한 투구 리듬"
+        com.solkim.baseball.core.highschool.HighSchoolAwakening.TRAFFIC_CONTROLLER -> "위기 관리"
     }
     }
 

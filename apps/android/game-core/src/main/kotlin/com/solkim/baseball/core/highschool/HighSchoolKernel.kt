@@ -99,6 +99,9 @@ public data class HighSchoolTrainingPreview(
     val fatigueChange: Int, val armRiskChange: Int,
     val atTalentWall: Boolean, val rehabilitation: Boolean,
     val schoolBonus: Boolean, val opportunityBonus: Boolean,
+    val jackpotChancePercent: Int = 0,
+    val jackpotMinimumGrowth: Int = 0, val jackpotMaximumGrowth: Int = 0,
+    val firstTrainingGuaranteed: Boolean = false,
 )
 
 public data class HighSchoolTrainingResult(
@@ -459,16 +462,33 @@ public class HighSchoolKernel {
         val wall = focus != HighSchoolTrainingFocus.RECOVERY && before >= min(80, state.talent.grade(focus).ceiling)
         val signal = trainingSignalBase(state, requestedFocus, intensity)
         val wind = windFor(state.careerId)
-        fun gain(signal: Int): Int {
+        val first = state.totalTrainingsCompleted == 0 && state.lifeNumber == 1
+        fun gain(signal: Int, jackpot: Boolean = false): Int {
             if (rehab || focus == HighSchoolTrainingFocus.RECOVERY || wall) return 0
-            val base = trainingGrowth(max(60, signal))
-            val first = state.totalTrainingsCompleted == 0 && state.lifeNumber == 1
-            return max(if (first) 1 else 0, base) + wind.trainingGrowthBonus(focus)
+            val base = max(if (first) 1 else 0, trainingGrowth(max(60, signal)))
+            val raw = base * (if (jackpot) 2 else 1) + wind.trainingGrowthBonus(focus)
+            return min(raw, max(0, min(80, state.talent.grade(focus).ceiling) - before))
         }
         val riskAfter = if (rehab) max(0, state.armRisk - 10) else clamp(state.armRisk + trainingArmRisk(focus, intensity), 0, 100)
         return HighSchoolTrainingPreview(gain(signal - trainingVariance(focus)), gain(signal + trainingVariance(focus)),
             trainingFatigueAfter(state, requestedFocus, intensity) - state.fatigue, riskAfter - state.armRisk,
-            wall, rehab, state.school?.strength == focus, !rehab && state.trainingOpportunity?.focus == focus)
+            wall, rehab, state.school?.strength == focus, !rehab && state.trainingOpportunity?.focus == focus,
+            jackpotChancePercent = if (wall) 0 else trainingJackpotChance(state, focus, intensity),
+            jackpotMinimumGrowth = gain(signal - trainingVariance(focus), jackpot = true),
+            jackpotMaximumGrowth = gain(signal + trainingVariance(focus), jackpot = true),
+            firstTrainingGuaranteed = first && !rehab && focus != HighSchoolTrainingFocus.RECOVERY && !wall)
+    }
+
+    /** Preview and resolution share this probability; no extra random draw is introduced. */
+    private fun trainingJackpotChance(state: HighSchoolState, focus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): Int {
+        if (state.injuryRecovery > 0 || focus == HighSchoolTrainingFocus.RECOVERY) return 0
+        val intensityBonus = when (intensity) {
+            HighSchoolTrainingIntensity.LIGHT -> 0
+            HighSchoolTrainingIntensity.STANDARD -> 15
+            HighSchoolTrainingIntensity.INTENSIVE -> 30
+        }
+        return clamp((if (HighSchoolSoulBoost.TRAINING_RHYTHM in state.soulBoosts) 26 else 16) +
+            (if (HighSchoolContentCatalog.BALANCE_VERSION >= 4) jackpotModifier(focus) else 0) + intensityBonus, 0, 70)
     }
 
     private fun trainingSignalBase(state: HighSchoolState, focus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): Int {
@@ -502,16 +522,10 @@ public class HighSchoolKernel {
         // ASCII salt for "CAREER" and is part of the deterministic contract.
         val generator = SplitMix64(seed xor number.toULong() xor 0x434152454552UL)
         val opportunityHit = !rehab && state.trainingOpportunity?.focus == request.focus
-        val differentiated = HighSchoolContentCatalog.BALANCE_VERSION >= 4
         val variance = trainingVariance(focus)
         val signalBase = trainingSignalBase(state, request.focus, request.intensity)
         val signal = max(60, signalBase + generator.nextInt(variance * 2 + 1) - variance)
-        val jackpotChance = clamp(
-            (if (HighSchoolSoulBoost.TRAINING_RHYTHM in state.soulBoosts) 26 else 16) +
-                if (differentiated) jackpotModifier(focus) else 0,
-            0,
-            40,
-        )
+        val jackpotChance = trainingJackpotChance(state, focus, request.intensity)
         val jackpot = !rehab && focus != HighSchoolTrainingFocus.RECOVERY &&
             generator.nextInt(100) < jackpotChance
         var rawGrowth = if (rehab || focus == HighSchoolTrainingFocus.RECOVERY) 0 else trainingGrowth(signal)
@@ -1483,28 +1497,28 @@ public class HighSchoolKernel {
     public fun previewAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher = applyAwakening(pitcher, awakening)
 
     private fun applyAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher {
-        // Source: HighSchoolCareer.applyAwakening (current Swift). Keep the profile-level
-        // deltas together with the scalar trade-offs; the automatic PitchKernel path consumes
-        // these profiles in the next chapter.
+        // Android awakening semantics: keep costs tied to the action being strengthened.
+        // Power and large-break techniques trade accuracy/effort; mastery and composure do
+        // not arbitrarily weaken unrelated abilities. Preview and purchase use this same table.
         return when (awakening) {
             HighSchoolAwakening.EXPLOSIVE_FASTBALL -> tune(pitcher, stuff = 4, command = -2, pitch = PitchKind.FOUR_SEAM, velocity = 15, whiff = 5, fatigueCost = 1)
-            HighSchoolAwakening.RISING_FOUR_SEAM -> tune(pitcher, stuff = 3, movement = -1, pitch = PitchKind.FOUR_SEAM, profileMovement = 4, whiff = 6, weakContact = 2)
-            HighSchoolAwakening.PINPOINT_EDGE -> tune(pitcher, stuff = -1, command = 4, control = 2, profileCommand = 3)
+            HighSchoolAwakening.RISING_FOUR_SEAM -> tune(pitcher, stuff = 3, pitch = PitchKind.FOUR_SEAM, profileMovement = 4, whiff = 6, weakContact = 2)
+            HighSchoolAwakening.PINPOINT_EDGE -> tune(pitcher, command = 4, control = 2, profileCommand = 3)
             HighSchoolAwakening.BATTERY_SYNC -> tune(pitcher, command = 2, movement = 1, control = 2, profileCommand = 2, weakContact = 3)
-            HighSchoolAwakening.REPEATABLE_RELEASE -> tune(pitcher, stuff = -1, command = 4, control = 3, profileCommand = 2)
-            HighSchoolAwakening.FIRST_PITCH_STRIKE -> tune(pitcher, command = 3, stamina = -1, control = 3)
+            HighSchoolAwakening.REPEATABLE_RELEASE -> tune(pitcher, command = 4, control = 3, profileCommand = 2)
+            HighSchoolAwakening.FIRST_PITCH_STRIKE -> tune(pitcher, command = 3, control = 3)
             HighSchoolAwakening.DISAPPEARING_BREAKER -> tune(pitcher, command = -1, movement = 4, nonFastball = true, profileMovement = 4, whiff = 5)
             HighSchoolAwakening.SINKER_TUNNEL -> tune(pitcher, movement = 3, pitchSet = setOf(PitchKind.FOUR_SEAM, PitchKind.CHANGEUP), profileMovement = 3, weakContact = 5)
-            HighSchoolAwakening.FROZEN_CHANGEUP -> tune(pitcher, movement = 3, stamina = -1, pitch = PitchKind.CHANGEUP, profileMovement = 6, whiff = 7)
+            HighSchoolAwakening.FROZEN_CHANGEUP -> tune(pitcher, movement = 3, pitch = PitchKind.CHANGEUP, profileMovement = 6, whiff = 7)
             HighSchoolAwakening.SWEEPING_SLIDER -> tune(pitcher, command = -1, movement = 4, pitch = PitchKind.SLIDER, profileMovement = 7, whiff = 6)
-            HighSchoolAwakening.CURVEBALL_CLOCK -> tune(pitcher, movement = 4, stamina = -1, pitch = PitchKind.CURVEBALL, profileMovement = 7, whiff = 5)
-            HighSchoolAwakening.IRON_ARM -> tune(pitcher, movement = -1, stamina = 5, fatigueCost = -2)
+            HighSchoolAwakening.CURVEBALL_CLOCK -> tune(pitcher, movement = 4, pitch = PitchKind.CURVEBALL, profileMovement = 7, whiff = 5)
+            HighSchoolAwakening.IRON_ARM -> tune(pitcher, stamina = 5, fatigueCost = -2)
             HighSchoolAwakening.LATE_INNING_RESERVE -> tune(pitcher, stamina = 4, pitch = PitchKind.FOUR_SEAM, whiff = 2, fatigueCost = -2)
             HighSchoolAwakening.CALM_UNDER_PRESSURE -> tune(pitcher, command = 2, stamina = 1, control = 2, profileCommand = 2)
             HighSchoolAwakening.PICKOFF_RHYTHM -> tune(pitcher, command = 1, stamina = 2, control = 1, weakContact = 1)
-            HighSchoolAwakening.TWO_STRIKE_PLAN -> tune(pitcher, command = 2, movement = 2, stamina = -1, nonFastball = true, whiff = 3)
-            HighSchoolAwakening.TRAFFIC_CONTROLLER -> tune(pitcher, stuff = -1, command = 2, stamina = 2, weakContact = 3)
-            HighSchoolAwakening.SCOUT_COMPOSURE -> tune(pitcher, stuff = 2, command = 2, stamina = -1, control = 1)
+            HighSchoolAwakening.TWO_STRIKE_PLAN -> tune(pitcher, command = 2, movement = 2, nonFastball = true, whiff = 3)
+            HighSchoolAwakening.TRAFFIC_CONTROLLER -> tune(pitcher, command = 2, stamina = 2, weakContact = 3)
+            HighSchoolAwakening.SCOUT_COMPOSURE -> tune(pitcher, stuff = 2, command = 2, control = 1)
         }
     }
 
