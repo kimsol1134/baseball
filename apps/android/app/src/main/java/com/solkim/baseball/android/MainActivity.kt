@@ -82,6 +82,7 @@ public class MainActivity : ComponentActivity() {
     private var showResetConfirmation by mutableStateOf(false)
     private var restoringProgress by mutableStateOf(false)
     private var actionInFlight by mutableStateOf(false)
+    private var openingMound by mutableStateOf(false)
     private var previousActionScreen: Phase8ScreenId? = null
     private var navigationTapBlockUntil = 0L
     private var selectedScreen by mutableStateOf<Phase8ScreenId?>(null)
@@ -138,7 +139,7 @@ public class MainActivity : ComponentActivity() {
                 BackHandler(enabled = selectedScreen != null) {
                     selectedScreen = null
                 }
-                Phase8Shell(
+                if (openingMound) MoundLoadingView() else Phase8Shell(
                     state = state,
                     busy = busy || restoringProgress || actionInFlight,
                     actionError = actionError,
@@ -230,6 +231,7 @@ public class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        openingMound = false
         if (::platform.isInitialized) {
             restoringProgress = true
             activityScope.launch {
@@ -322,6 +324,8 @@ public class MainActivity : ComponentActivity() {
         if (actionInFlight || (application as BaseballApplication).gameStore.busy.value) return
         if (action.screenId != previousActionScreen && android.os.SystemClock.elapsedRealtime() < navigationTapBlockUntil) return
         actionInFlight = true
+        openingMound = action.actionId in setOf("startHighSchool", "openTutorialPitch", "resumePitch")
+        var launchedMound = false
         actionError = null
         val completedGamesBefore = (application as BaseballApplication).gameStore.current.meta.completedGameCount
         activityScope.launch {
@@ -342,6 +346,8 @@ public class MainActivity : ComponentActivity() {
                     if (action.screenId != Phase8ScreenId.P027_SETTINGS || action.actionId == "resetProgress") selectedScreen = null
                     if (action.actionId == "resetProgress") showResetConfirmation = false
                     execution.launch?.let { launch ->
+                        launchedMound = true
+                        openingMound = true
                         startActivity(PitchActivity.intent(this@MainActivity, launch.sessionId, launch.expectedRevision.toString()))
                     }
                     failingActionId = null
@@ -385,7 +391,12 @@ public class MainActivity : ComponentActivity() {
                         else -> "저장하지 못했어요. 같은 버튼을 한 번 더 눌러 주세요."
                     }
                 }
-            } finally { actionInFlight = false }
+            } finally {
+                withContext(kotlinx.coroutines.NonCancellable + Dispatchers.Main) {
+                    actionInFlight = false
+                    if (!launchedMound) openingMound = false
+                }
+            }
         }
     }
 

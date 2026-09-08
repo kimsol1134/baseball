@@ -1,5 +1,7 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.GameAggregateState
+
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -143,6 +145,7 @@ public class PitchActivity : ComponentActivity() {
     private var request by mutableStateOf<PitchPresentationRequest?>(null)
     private var lastDelivery by mutableStateOf<PitchDelivery?>(null)
     private var perfectStreak by mutableStateOf(0)
+    private var practiceIntroductionAccepted by mutableStateOf(false)
     private var lastPitchLine by mutableStateOf<String?>(null)
     private var resultReady by mutableStateOf(false)
     private var isDelivering by mutableStateOf(false)
@@ -156,6 +159,7 @@ public class PitchActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(PERFECT_STREAK_KEY, perfectStreak)
+        outState.putBoolean("practice.introduction.accepted", practiceIntroductionAccepted)
     }
 
     private data class GrowthFeedback(val command: Int?, val velocities: Map<PitchKind, Int>)
@@ -191,6 +195,7 @@ public class PitchActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         perfectStreak = savedInstanceState?.getInt(PERFECT_STREAK_KEY) ?: 0
+        practiceIntroductionAccepted = savedInstanceState?.getBoolean("practice.introduction.accepted") ?: false
         if (BuildConfig.DEBUG && packageName.endsWith(".compose.qa")) {
             window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             val requestedRate = getSharedPreferences("launch-qa", MODE_PRIVATE).getInt("refresh-rate", 0)
@@ -217,6 +222,10 @@ public class PitchActivity : ComponentActivity() {
             val gameState by store.state.collectAsState()
             BaseballMigrationTheme(highContrast = gameState.settings.highContrastEnabled) {
                 val settings = gameState.settings
+                val awaitingPractice = needsPracticeIntroduction(gameState)
+                if (awaitingPractice && pitchError == null) FirstPracticeIntroduction(autoRelease = settings.autoReleaseEnabled) {
+                    practiceIntroductionAccepted = true
+                }
                 val dramaProgress = remember { Animatable(if (resultReady) 1f else 0f) }
                 val composeScope = rememberCoroutineScope()
                 val showStrikeout by remember { derivedStateOf { dramaProgress.value >= 0.7f } }
@@ -503,7 +512,7 @@ public class PitchActivity : ComponentActivity() {
                                     currentPitchLine = hud?.currentPitchLine ?: "",
                                     primaryExplanation = hud?.primaryExplanation ?: "",
                                     holdToReleasePrompt = hud?.holdToReleasePrompt ?: stringResource(R.string.pitch_hold_to_release),
-                                    ready = repertoire.isNotEmpty(),
+                                    ready = repertoire.isNotEmpty() && !awaitingPractice,
                                     velocityTenthsKph = selectedPitchVelocity(),
                                     commandRating = runCatching { PitchHudProjection.pitcher(store.current).command }.getOrDefault(35) + tutorialCommandAssist(gameState),
                                     previousCommand = previousCommand,
@@ -736,8 +745,12 @@ public class PitchActivity : ComponentActivity() {
         }
     }
 
+    private fun needsPracticeIntroduction(state: GameAggregateState): Boolean =
+        !practiceIntroductionAccepted && state.pitch?.careerKind == PitchCareerKind.TUTORIAL &&
+            state.highSchool?.run?.lifeNumber == 1 && state.highSchool?.lastPresentation == null && request == null
+
     private fun submitSelectedPitch(delivery: PitchDelivery) {
-        if (isDelivering || resultReady) return
+        if (isDelivering || resultReady || needsPracticeIntroduction(store.current)) return
         val deliveredSelection = selectedSign
         lastTargetZone = runCatching { PitchHudProjection.resolveCall(store.current, deliveredSelection).zone }.getOrNull()
         val manualRelease = !store.current.settings.autoReleaseEnabled
@@ -1950,14 +1963,14 @@ internal fun PitchEffortControl(
                             onChange(intensity)
                         },
                 ) {
-                    Column(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp), contentAlignment = Alignment.Center) {
                         Text(when (intensity) {
                             PitchIntensity.CONTROLLED -> "제구 우선"
                             PitchIntensity.NORMAL -> "균형"
                             PitchIntensity.MAX_EFFORT -> "전력"
                         }, color = if (isSelected) BaseballColors.actionInk else BaseballColors.textPrimary,
-                            style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-
+                            style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.testTag("pitch.effort.label.${intensity.wire}"))
                     }
                 }
             }

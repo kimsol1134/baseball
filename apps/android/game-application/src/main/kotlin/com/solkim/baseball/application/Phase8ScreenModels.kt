@@ -528,9 +528,10 @@ public object Phase8ScreenProjection {
                 )))
                 val reusable = state.pitch == null || state.pitch?.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)
                 val hasPendingResult = state.pitch?.boundary in setOf(PitchBoundary.COMMITTED, PitchBoundary.CONSUMED, PitchBoundary.TERMINAL)
+                val inProgress = state.pitch?.careerKind == PitchCareerKind.TUTORIAL && state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING)
                 val session = tutorialSession(state)
-                val tutorialReady = (highSchool?.tutorial?.let { it.started && !it.completed } == true && reusable) || hasPendingResult
-                val commands = if (hasPendingResult) emptyList() else tutorialCommands(state, context)
+                val tutorialReady = (highSchool?.tutorial?.let { it.started && !it.completed } == true && reusable) || hasPendingResult || inProgress
+                val commands = if (hasPendingResult || inProgress) emptyList() else tutorialCommands(state, context)
                 addAction("openTutorialPitch", if (hasPendingResult) "투구 결과 확인하기" else "첫 공 던지기", if (hasPendingResult) "던진 공의 결과를 본다." else "포수 사인대로 한 구. 기록에는 안 남는다.", tutorialReady, commands)
                 addAction("resumePitch", "투구 이어 하기", "던지던 공으로 돌아간다.", state.pitch?.boundary == PitchBoundary.SUSPENDED, listOfNotNull(state.pitch?.let { GameCommand.ResumePitch(it.sessionId) }))
                 addAction("abandonPitch", "이번 투구 포기", "이 공은 없던 걸로 하고 돌아간다.", state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
@@ -1968,9 +1969,16 @@ public class Phase8Controller(
 
     public fun preferredScreen(): Phase8ScreenId = Phase8ScreenProjection.preferredScreen(store.state.value)
 
-    /** The introduction stays visible until the player explicitly opens the practice pitch. */
-    public suspend fun executePlayerAction(screenId: Phase8ScreenId, actionId: String, capturedPayloads: List<Phase8CommandPayload>? = null): Phase8Execution =
-        execute(screenId, actionId, capturedPayloads)
+    /** New players go straight from their chosen setup to the mound; guidance belongs on the mound. */
+    public suspend fun executePlayerAction(screenId: Phase8ScreenId, actionId: String, capturedPayloads: List<Phase8CommandPayload>? = null): Phase8Execution {
+        val execution = execute(screenId, actionId, capturedPayloads)
+        val state = store.state.value
+        if (screenId == Phase8ScreenId.P002_SETUP && actionId == "startHighSchool" &&
+            state.highSchool?.run?.phase == HighSchoolPhase.PROLOGUE && RebirthContinuity.resolve(state) == null && state.pitch == null) {
+            return execute(Phase8ScreenId.P003_PROLOGUE, "openTutorialPitch")
+        }
+        return execution
+    }
 
     /** Complete the saved practice pitch before either opening another or choosing a school. */
     public suspend fun finishPractice(sessionId: String, repeat: Boolean): Phase8Execution {

@@ -69,7 +69,11 @@ class PitchEffortUiTest {
             } }
         }
         PitchIntensity.entries.forEach { intensity ->
-            compose.onNodeWithTag("pitch.effort.${intensity.wire}").assertIsDisplayed().performClick().assertIsSelected()
+            val button = compose.onNodeWithTag("pitch.effort.${intensity.wire}").assertIsDisplayed().performClick().assertIsSelected()
+            val outer = button.fetchSemanticsNode().boundsInRoot
+            val label = compose.onNodeWithTag("pitch.effort.label.${intensity.wire}", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            org.junit.Assert.assertEquals(outer.center.x, label.center.x, 1f)
+            org.junit.Assert.assertEquals(outer.center.y, label.center.y, 1f)
             compose.onNodeWithTag("pitch.slider").assertIsDisplayed()
         }
         compose.onNodeWithTag("pitch.effort.controlled").assertIsNotSelected()

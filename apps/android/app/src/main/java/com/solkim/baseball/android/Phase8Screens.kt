@@ -156,6 +156,12 @@ public fun Phase8Shell(
     } ?: preferred
     val gameCopy = rememberGameCopy()
     val model = Phase8ScreenProjection.project(state, visibleScreen, commandContext).localized(gameCopy, state)
+    if (visibleScreen == Phase8ScreenId.P004_PITCH_TUTORIAL ||
+        (visibleScreen == Phase8ScreenId.P003_PROLOGUE && RebirthContinuity.resolve(state) == null)) {
+        PracticeEntryRecovery(state, model, busy, actionError, onAction,
+            onExitChallenge = if (state.meta.seedChallenge != null) onExitSeedChallenge else null)
+        return
+    }
     val bridgesReview = visibleScreen == Phase8ScreenId.P010_CHAPTER &&
         (state.highSchool?.run?.chapter?.number ?: 8) < com.solkim.baseball.core.highschool.HighSchoolContentCatalog.chapters.size
     var previewAttempt by remember { mutableStateOf(0) }
@@ -294,7 +300,7 @@ public fun Phase8Shell(
         } else if (visibleScreen == Phase8ScreenId.P010_CHAPTER) {
             ChapterProgressScreen(state, model, busy, actionError, insets, onAction, onNavigate)
         } else if (visibleScreen in setOf(Phase8ScreenId.P003_PROLOGUE, Phase8ScreenId.P004_PITCH_TUTORIAL)) {
-            Phase8FirstPitchIntroduction(state, model, busy, actionError, insets, onAction)
+            RebirthReadyIntroduction(state, model, busy, actionError, insets, onAction)
         } else Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -326,7 +332,7 @@ public fun Phase8Shell(
 }
 
 @Composable
-private fun Phase8FirstPitchIntroduction(
+private fun RebirthReadyIntroduction(
     state: GameAggregateState,
     model: Phase8ScreenModel,
     busy: Boolean,
@@ -340,78 +346,39 @@ private fun Phase8FirstPitchIntroduction(
         kotlinx.coroutines.delay(500)
         acceptsFreshTap = true
     }
-    val isLetter = model.id == Phase8ScreenId.P003_PROLOGUE
-    val continuity = RebirthContinuity.resolve(state)
-    if (isLetter && continuity != null) {
-        val copy = rememberGameCopy()
-        var memories by rememberSaveable(state.highSchool?.run?.careerId) { mutableStateOf(false) }
-        Column(Modifier.fillMaxSize().padding(insets).padding(horizontal = 24.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (actionError != null) Phase8ErrorCard(actionError)
-            CorePlayerHeader(state, compact = true)
-            Text(copy.resolve(if (continuity.samePlayer) "loop.reborn.same" else "loop.reborn.different"), verbatim = true,
-                style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("rebirth.ready"))
-            Text(copy.resolve("loop.reborn.next"), verbatim = true, style = MaterialTheme.typography.bodyMedium)
-            model.actions.firstOrNull { it.id == "completeTutorial" }?.let { action -> Phase8ActionButton(model.id, action.copy(enabled = action.enabled && !busy && acceptsFreshTap), onAction, showDescription = false) }
-            model.actions.firstOrNull { it.id == "resumePitch" && it.enabled }?.let { action -> Phase8ActionButton(model.id, action.copy(enabled = !busy && acceptsFreshTap), onAction, showDescription = false) }
-                ?: model.actions.firstOrNull { it.id == "openTutorialPitch" }?.let { action ->
-                    OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) }, enabled = action.enabled && !busy,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("action.openTutorialPitch")) { Text(if (state.pitch?.boundary in setOf(PitchBoundary.COMMITTED, PitchBoundary.CONSUMED, PitchBoundary.TERMINAL)) "결과 확인" else "연습 투구") }
+    val continuity = RebirthContinuity.resolve(state) ?: return
+    val copy = rememberGameCopy()
+    var memories by rememberSaveable(state.highSchool?.run?.careerId) { mutableStateOf(false) }
+    Column(Modifier.fillMaxSize().padding(insets).padding(horizontal = 24.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (actionError != null) Phase8ErrorCard(actionError)
+        CorePlayerHeader(state, compact = true)
+        Text(copy.resolve(if (continuity.samePlayer) "loop.reborn.same" else "loop.reborn.different"), verbatim = true,
+            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("rebirth.ready"))
+        Text(copy.resolve("loop.reborn.next"), verbatim = true, style = MaterialTheme.typography.bodyMedium)
+        model.actions.firstOrNull { it.id == "completeTutorial" }?.let { action -> Phase8ActionButton(model.id, action.copy(enabled = action.enabled && !busy && acceptsFreshTap), onAction, showDescription = false) }
+        model.actions.firstOrNull { it.id == "resumePitch" && it.enabled }?.let { action -> Phase8ActionButton(model.id, action.copy(enabled = !busy && acceptsFreshTap), onAction, showDescription = false) }
+            ?: model.actions.firstOrNull { it.id == "openTutorialPitch" }?.let { action ->
+                OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) }, enabled = action.enabled && !busy,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("action.openTutorialPitch")) { Text(if (state.pitch?.boundary in setOf(PitchBoundary.COMMITTED, PitchBoundary.CONSUMED, PitchBoundary.TERMINAL)) "결과 확인" else "연습 투구") }
+            }
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            continuity.legacyTitle?.let { Text(copy.resolve("loop.reborn.inherited", GameCopyArgument.UserText(copy.legacy(it))), verbatim = true, color = BaseballColors.milestone) }
+            val handicaps = state.highSchool?.run?.karmas?.size ?: 0
+            if (handicaps > 0) Text(copy.resolve("loop.reborn.handicaps", GameCopyArgument.Whole(handicaps.toLong())), verbatim = true, color = BaseballColors.warning)
+            val previousName = continuity.previousName
+            if (previousName != null) {
+                TextButton(onClick = { memories = !memories }, modifier = Modifier.testTag("rebirth.memories")) {
+                    Text(copy.resolve(if (continuity.samePlayer) "loop.reborn.memories" else "loop.reborn.other-record"), verbatim = true)
                 }
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                continuity.legacyTitle?.let { Text(copy.resolve("loop.reborn.inherited", GameCopyArgument.UserText(copy.legacy(it))), verbatim = true, color = BaseballColors.milestone) }
-                val handicaps = state.highSchool?.run?.karmas?.size ?: 0
-                if (handicaps > 0) Text(copy.resolve("loop.reborn.handicaps", GameCopyArgument.Whole(handicaps.toLong())), verbatim = true, color = BaseballColors.warning)
-                val previousName = continuity.previousName
-                if (previousName != null) {
-                    TextButton(onClick = { memories = !memories }, modifier = Modifier.testTag("rebirth.memories")) {
-                        Text(copy.resolve(if (continuity.samePlayer) "loop.reborn.memories" else "loop.reborn.other-record"), verbatim = true)
-                    }
-                    if (memories) {
-                        Text(if (continuity.samePlayer) copy.resolve("loop.letter.self-title") else previousName,
-                            verbatim = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("rebirth.previousSelf"))
-                        val body = if (continuity.samePlayer) continuity.legacyTitle?.let { copy.resolve("loop.letter.self-body", GameCopyArgument.UserText(copy.legacy(it))) }
-                            ?: copy.resolve("loop.letter.self-basic") else copy.resolve("loop.reborn.other-history", GameCopyArgument.UserText(previousName))
-                        Text(body, verbatim = true)
-                        Text(copy.resolve("loop.reborn.record-line", GameCopyArgument.Whole(continuity.games.toLong()), GameCopyArgument.Whole(continuity.strikeouts.toLong())), verbatim = true)
-                    }
+                if (memories) {
+                    Text(if (continuity.samePlayer) copy.resolve("loop.letter.self-title") else previousName,
+                        verbatim = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("rebirth.previousSelf"))
+                    val body = if (continuity.samePlayer) continuity.legacyTitle?.let { copy.resolve("loop.letter.self-body", GameCopyArgument.UserText(copy.legacy(it))) }
+                        ?: copy.resolve("loop.letter.self-basic") else copy.resolve("loop.reborn.other-history", GameCopyArgument.UserText(previousName))
+                    Text(body, verbatim = true)
+                    Text(copy.resolve("loop.reborn.record-line", GameCopyArgument.Whole(continuity.games.toLong()), GameCopyArgument.Whole(continuity.strikeouts.toLong())), verbatim = true)
                 }
             }
-        }
-        return
-    }
-    Column(Modifier.fillMaxSize().padding(insets).padding(horizontal = 24.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            if (actionError != null) Phase8ErrorCard(actionError)
-            if (isLetter) {
-                state.highSchool?.run?.identity?.name?.let { name ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        PlayerPortrait(seed = playerPortraitSeed(state) ?: name, stage = PlayerStage.FRESHMAN, width = 56.dp)
-                        Text(name, verbatim = true, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-                }
-                val copy = rememberGameCopy()
-                Text(copy.resolve("android.onboarding.first-pitch"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text(copy.resolve(if (state.highSchool?.lastPresentation != null) "android.onboarding.after-practice" else "android.onboarding.catcher-invite"),
-                    style = MaterialTheme.typography.bodyLarge)
-            } else {
-                Text("첫 공", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("길게 눌러 와인드업, 초록에서 손을 뗀다. 구종과 코스는 포수가 골라 뒀다.", style = MaterialTheme.typography.bodyLarge)
-            }
-        }
-        // The first tap opens the instruction page only. Reserving/launching the mound in
-        // that same action used to flash P-004 while the player was still trying to read it.
-        val visible = model.actions.filter { it.enabled }.let { actions ->
-            val introduction = actions.firstOrNull { it.id == "beginTutorial" }
-            if (isLetter && introduction != null) listOf(introduction.copy(label = "첫 공 던지기"))
-            else actions.filterNot { it.id == "beginTutorial" }.map { action ->
-                if (!isLetter && action.id == "openTutorialPitch" && state.highSchool?.lastPresentation == null)
-                    action.copy(label = "투구 시작") else action
-            }
-        }
-        visible.forEach { action ->
-            Phase8ActionButton(model.id, action.copy(enabled = !busy && acceptsFreshTap), onAction, showDescription = false)
         }
     }
 }
