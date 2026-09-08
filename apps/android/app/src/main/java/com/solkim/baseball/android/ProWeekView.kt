@@ -41,10 +41,13 @@ internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel,
     Button(enabled = action.enabled && !busy, onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("week.commit")) { Text("이번 주 진행") }
     if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag("week.busy"))
-    model.actions.firstOrNull { it.id == "proAdvanceSegment" && it.enabled }?.let { batch ->
+    ProWeekPresentation.batchAction(state, model, action.id)?.let { batch ->
         CareerDisclosure("여러 주 진행", "week.batch") {
+            val copy = rememberGameCopy()
+            Text(copy.resolve("week.batch.plan", GameCopyArgument.UserText(copy.legacy(ProWeekPresentation.title(action.id)))),
+                verbatim = true, modifier = Modifier.testTag("week.batch.plan"))
             Text("대화나 중요한 경기가 나오면 멈춰요.")
-            OutlinedButton(enabled = !busy, onClick = { onAction(Phase8UiAction(model.id, batch.id, batch.payloads)) }) { Text("감독에게 맡기기") }
+            OutlinedButton(enabled = !busy, onClick = { onAction(Phase8UiAction(model.id, batch.id, batch.payloads)) }, modifier = Modifier.testTag("week.batch.commit")) { Text(batch.label) }
         }
     }
 }

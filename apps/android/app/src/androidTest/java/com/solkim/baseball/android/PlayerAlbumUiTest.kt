@@ -46,6 +46,19 @@ class PlayerAlbumUiTest {
         compose.waitUntil(5000) { compose.onAllNodesWithText("헛스윙").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(original, state.recomputeCommitment())
     }
+    @Test fun sharingStaysAboveExpandedDetailedStats() {
+        compose.setContent { BaseballMigrationTheme {
+            Surface(color = BaseballColors.canvas, contentColor = BaseballColors.textPrimary) {
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) { PlayerAlbumView(state()) }
+            }
+        } }
+        compose.onNodeWithTag("album.pitching.stats").performScrollTo().performClick()
+        val share = compose.onNodeWithTag("album.card").fetchSemanticsNode().boundsInRoot
+        val details = compose.onNodeWithTag("album.pitching.stats").fetchSemanticsNode().boundsInRoot
+        assertTrue("Share entry must remain above the details", share.bottom <= details.top)
+        compose.onNodeWithTag("album.card").performScrollTo().performClick()
+        compose.onNodeWithText("카드 미리보기").assertIsDisplayed()
+    }
     @Test fun exportContainsACompleteBaseballStatLine() {
         val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
         val stats = AlbumPitchingStats(28, 486, 184, 43, 122, 36, 25, 15, 4, 0, 12, 2480)

@@ -355,7 +355,7 @@ public fun Phase8Shell(
                 onViewportExposure = onViewportExposure,
             )
             if (visibleScreen in setOf(Phase8ScreenId.P013_DRAFT, Phase8ScreenId.P014_RUN_RECAP, Phase8ScreenId.P021_PRO_RETIREMENT) && state.meta.album.isNotEmpty()) {
-                TextButton(onClick = { onNavigate(Phase8ScreenId.P028_LIFECARD) }, modifier = Modifier.testTag("career.album")) { Text("카드 보기") }
+                TextButton(onClick = { onNavigate(Phase8ScreenId.P028_LIFECARD) }, modifier = Modifier.testTag("career.album")) { Text("선수 앨범") }
             }
             Spacer(Modifier.height(8.dp))
         }
@@ -429,7 +429,7 @@ private fun RecordsSegments(state: GameAggregateState, current: Phase8ScreenId, 
                         Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> "경기 기록"
                         Phase8ScreenId.P026_ACHIEVEMENTS -> "업적"
                         Phase8ScreenId.P024_WEEKLY -> "주간 노트"
-                        Phase8ScreenId.P028_LIFECARD -> "라이프 카드"
+                        Phase8ScreenId.P028_LIFECARD -> "선수 앨범"
                         else -> "돌아올 자리"
                     }
                     val label = when (screen) {
@@ -561,7 +561,7 @@ private fun Phase8ScreenContent(
             } else {
                 when (model.id) {
                     Phase8ScreenId.P014_RUN_RECAP, Phase8ScreenId.P015_REBIRTH -> CoreRebirthChoices(state, model, onAction, onViewportExposure)
-                    Phase8ScreenId.P028_LIFECARD -> PlayerAlbumView(state)
+                    Phase8ScreenId.P028_LIFECARD -> PlayerAlbumView(state, showTitle = false)
                     Phase8ScreenId.P027_SETTINGS -> { CareerBackupControls(state); Phase8Sections(model.sections); Phase8Actions(model, onAction) }
                     Phase8ScreenId.P009_AWAKENING -> AwakeningTreeView(state, model, onAction)
                     Phase8ScreenId.P005_SCHOOL_SELECTION -> Phase8SchoolChoices(state, model, onAction)

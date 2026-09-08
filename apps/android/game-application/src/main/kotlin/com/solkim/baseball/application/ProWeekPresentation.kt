@@ -21,6 +21,14 @@ public object ProWeekPresentation {
             "예정된 자동 등판 ${forecast.outings}경기",
             "예상 피로 ${forecast.fatigueMinimum}~${forecast.fatigueMaximum} · 현재 ${pro.fatigue}")
     }
+    /** Captures the selected single-week plan into the same authorized batch action. */
+    public fun batchAction(state: GameAggregateState, model: Phase8ScreenModel, selectedId: String): Phase8ActionModel? {
+        val batch = model.actions.firstOrNull { it.id == "proAdvanceSegment" && it.enabled } ?: return null
+        val selected = model.actions.firstOrNull { it.id == selectedId && it.enabled } ?: return null
+        val command = (selected.payloads.singleOrNull()?.envelope?.command as? GameCommand.Pro)?.command as? ProCommand.PlanWeek ?: return null
+        return batch.copy(label = "이 계획으로 진행", payloads = Phase8Payloads.batch(state, model.id, batch.id,
+            listOf(GameCommand.Pro(ProCommand.AdvanceSegment(command.seed, command.plan, command.targetPitch)))))
+    }
     public fun result(before: GameAggregateState, after: GameAggregateState): ProWeekResult? {
         val old = before.pro ?: return null
         val next = after.pro ?: return null

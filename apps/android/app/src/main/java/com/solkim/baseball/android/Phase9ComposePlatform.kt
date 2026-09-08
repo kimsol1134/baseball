@@ -120,7 +120,7 @@ private fun Phase9ShareSurface(
     val shareAllowed = sharePayload != null && state.highSchool?.challenge?.active != true
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("라이프 카드 공유", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("카드 공유", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text("한 생을 카드 한 장으로. 이미지와 글이 함께 나간다.", style = MaterialTheme.typography.bodyLarge)
             selectedId?.let { LifeCardVisual(state, it) }
             state.highSchool?.archive.orEmpty().asReversed().forEach { record ->
@@ -135,8 +135,8 @@ private fun Phase9ShareSurface(
             Button(
                 onClick = { sharePayload?.let { onAction(capturePlatformAction(state, model.id, PlatformAction.SHARE_LIFE_CARD, sharePayload = it)) } },
                 enabled = shareAllowed,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).gameDescription(if (shareAllowed) "라이프 카드 공유" else "아직 마친 생이 없어 공유할 수 없다"),
-            ) { Text("라이프 카드 공유") }
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).gameDescription(if (shareAllowed) "카드 공유" else "아직 마친 생이 없어 공유할 수 없다"),
+            ) { Text("카드 공유") }
         }
     }
 }

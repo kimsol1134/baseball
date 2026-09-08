@@ -14,6 +14,22 @@ import org.junit.Test
 
 class ProWeekUiTest {
     @get:Rule val compose = createComposeRule()
+    @Test fun batchUsesTheVisibleRecoveryChoice() {
+        val pro = ProKernel().startDirect(ProStartDirectRequest("918220", "power_prospect", "회복투수")).state
+        val state = GameAggregateState.initial("batch-ui").copy(stage = GameStage.PRO, pro = pro)
+        var captured: Phase8UiAction? = null
+        compose.setContent { BaseballMigrationTheme {
+            Phase8Shell(state, false, null, Phase8ScreenId.P017_PRO_WEEK, Phase8CommandContext(), onNavigate = {}, onAction = { captured = it })
+        } }
+        compose.onNodeWithTag("week.select.proPlan:recover").performScrollTo().performClick()
+        compose.onNodeWithTag("week.batch").performScrollTo().performClick()
+        compose.onNodeWithText("진행 계획 · 회복").assertExists()
+        assertNull(captured)
+        compose.onNodeWithTag("week.batch.commit").performScrollTo().performClick()
+        val command = (captured!!.capturedPayloads.single().envelope.command as GameCommand.Pro).command as FixtureProAdvanceSegment
+        assertEquals(ProWeekPlan.RECOVER, command.plan)
+        assertEquals("proAdvanceSegment", captured!!.actionId)
+    }
     @Test fun selectionWaitsForCommitAndUnacknowledgedResultsSurviveRemount() {
         val k = ProKernel()
         val pro = k.startDirect(ProStartDirectRequest("918220", "power_prospect", "주간투수")).state

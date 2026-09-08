@@ -17,13 +17,13 @@ import kotlinx.coroutines.delay
 import com.solkim.baseball.android.LocalizedGameText as Text
 
 @Composable
-internal fun PlayerAlbumView(state: GameAggregateState) {
+internal fun PlayerAlbumView(state: GameAggregateState, showTitle: Boolean = true) {
     val pages = remember(state) { PlayerAlbum.pages(state) }
     var selection by remember { mutableStateOf<String?>(null) }
     val activeScope = if (state.stage in setOf(GameStage.PRO, GameStage.RETIREMENT, GameStage.LEGACY) ) state.pro?.let { "pro:${it.careerId}:${it.season}" } else state.highSchool?.run?.let { "hs:${it.careerId}" }
     val page = pages.firstOrNull { it.scope.id == selection } ?: pages.firstOrNull { it.scope.id == activeScope } ?: pages.lastOrNull()
     val copy = rememberGameCopy()
-    Text("선수 앨범", style = MaterialTheme.typography.headlineSmall)
+    if (showTitle) Text("선수 앨범", style = MaterialTheme.typography.headlineSmall)
     if (page == null) { Text("첫 등판부터 나만의 야구 인생이 여기에 쌓여요."); return }
     CareerDisclosure("선수와 시즌 선택", "album.scopes") {
         pages.asReversed().forEach { option ->
@@ -42,15 +42,6 @@ internal fun PlayerAlbumView(state: GameAggregateState) {
     val pitching = AlbumPitchingStats.from(page)
     val stats = listOf("WHIP" to pitching.whip, "이닝" to innings, "탈삼진" to page.strikeouts.toString())
     CareerStatTiles(stats)
-    CareerDisclosure("상세 투구 기록", "album.pitching.stats") {
-        AlbumStatGrid(pitching.line)
-        AlbumStatGrid(pitching.rates)
-        CareerDisclosure("기록 용어", "album.pitching.glossary") {
-            listOf("G 경기 · GS 선발 · W 승 · L 패 · SV 세이브", "IP 이닝 · H 피안타 · HR 피홈런 · BB 볼넷", "SO 탈삼진 · R 실점 · NP 투구 수", "WHIP · 이닝당 허용한 피안타와 볼넷", "K/9 · 9이닝당 탈삼진", "BB/9 · 9이닝당 볼넷", "H/9 · 9이닝당 피안타", "K/BB · 볼넷당 탈삼진", "RA/9 · 9이닝당 실점, 자책점 기준 ERA와 달라요.", "— · 계산에 필요한 기록이 없거나 분모가 0이에요.").forEach {
-                Text(it, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
     var card by remember(page.scope.id) { mutableStateOf<AlbumShareCard?>(null) }
     var replay by remember(page.scope.id) { mutableStateOf(false) }
     fun shareCard(title: String, values: List<Pair<String, String>>, caption: String, game: CareerGameView? = null): AlbumShareCard {
@@ -61,6 +52,15 @@ internal fun PlayerAlbumView(state: GameAggregateState) {
             copy.legacy(caption, pages.map { it.scope.player }.toSet())).joinToString("\n"), copy.resolve("android.app.name"), line = detail.line, rates = detail.rates)
     }
     TextButton(onClick = { card = shareCard("내 투수", stats, "나의 야구 인생") }, modifier = Modifier.testTag("album.card")) { Text("카드 보기") }
+    CareerDisclosure("상세 투구 기록", "album.pitching.stats") {
+        AlbumStatGrid(pitching.line)
+        AlbumStatGrid(pitching.rates)
+        CareerDisclosure("기록 용어", "album.pitching.glossary") {
+            listOf("G 경기 · GS 선발 · W 승 · L 패 · SV 세이브", "IP 이닝 · H 피안타 · HR 피홈런 · BB 볼넷", "SO 탈삼진 · R 실점 · NP 투구 수", "WHIP · 이닝당 허용한 피안타와 볼넷", "K/9 · 9이닝당 탈삼진", "BB/9 · 9이닝당 볼넷", "H/9 · 9이닝당 피안타", "K/BB · 볼넷당 탈삼진", "RA/9 · 9이닝당 실점, 자책점 기준 ERA와 달라요.", "— · 계산에 필요한 기록이 없거나 분모가 0이에요.").forEach {
+                Text(it, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
     val best = page.rows.maxByOrNull { it.outs * 4 + it.strikeouts * 3 - it.runs * 8 }
     if (best != null) {
         Text("기억할 경기", style = MaterialTheme.typography.titleMedium)

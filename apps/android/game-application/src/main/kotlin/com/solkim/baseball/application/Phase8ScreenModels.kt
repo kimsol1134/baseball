@@ -1,5 +1,7 @@
 package com.solkim.baseball.application
 
+import com.solkim.baseball.core.highschool.HighSchoolTournamentRules
+
 import com.solkim.baseball.core.highschool.HighSchoolContentCatalog
 import com.solkim.baseball.core.highschool.HighSchoolDifficulty
 import com.solkim.baseball.core.highschool.HighSchoolPledgeRules
@@ -88,7 +90,7 @@ public enum class Phase8ScreenId(
     P025_RECORDS_LEAGUE("P-025", "기록과 순위", Phase8Group.RECORDS_META),
     P026_ACHIEVEMENTS("P-026", "업적", Phase8Group.RECORDS_META),
     P027_SETTINGS("P-027", "설정", Phase8Group.SETTINGS_PLATFORM),
-    P028_LIFECARD("P-028", "라이프 카드", Phase8Group.SETTINGS_PLATFORM),
+    P028_LIFECARD("P-028", "선수 앨범", Phase8Group.SETTINGS_PLATFORM),
     P029_RETURN_PLAN("P-029", "복귀 계획", Phase8Group.RETURN_REVIEW),
     P030_REVIEW("P-030", "리뷰", Phase8Group.RETURN_REVIEW),
     ;
@@ -651,7 +653,7 @@ public object Phase8ScreenProjection {
                 }
             }
             Phase8ScreenId.P012_TOURNAMENT_LEAGUE -> {
-                val rows = highSchool?.tournaments.orEmpty().map { tournament ->
+                val rows = highSchool?.tournaments.orEmpty().filter { highSchool?.archive.isNullOrEmpty() || HighSchoolTournamentRules.belongsTo(it, run!!.careerId) }.map { tournament ->
                     Phase8Row(tournament.name, tournament.playerRound, if (tournament.completed) "완료" else "진행 중")
                 } + highSchool?.prospectBoard.orEmpty().take(8).map { prospect ->
                     Phase8Row("${prospect.rank}위 ${prospect.name}", prospect.schoolName, "평가 ${prospect.score} · ${prospect.tag}")
@@ -1221,7 +1223,7 @@ public object Phase8ScreenProjection {
             }
             Phase8ScreenId.P028_LIFECARD -> {
                 val card = Phase9LifeCardProjection.selected(state)
-                addSection(Phase8Section("life-card", "라이프 카드", if (card == null) listOf(
+                addSection(Phase8Section("life-card", "선수 앨범", if (card == null) listOf(
                     Phase8Row("보관된 생", "아직 없음", "한 생을 마치면 카드가 생긴다."),
                 ) else card.lines.map { line -> Phase8Row(line.substringBefore(": ", "기록"), line.substringAfter(": ", line)) }))
             }
@@ -1275,7 +1277,7 @@ public object Phase8ScreenProjection {
         Phase8ScreenId.P025_RECORDS_LEAGUE -> "고교와 프로, 모든 숫자"
         Phase8ScreenId.P026_ACHIEVEMENTS -> "쌓아 온 업적"
         Phase8ScreenId.P027_SETTINGS -> "내게 편한 방식으로"
-        Phase8ScreenId.P028_LIFECARD -> "한 생을 한 장으로"
+        Phase8ScreenId.P028_LIFECARD -> "내 투수의 기록과 기억"
         Phase8ScreenId.P029_RETURN_PLAN -> "돌아올 자리"
         Phase8ScreenId.P030_REVIEW -> "한 줄 리뷰"
     }

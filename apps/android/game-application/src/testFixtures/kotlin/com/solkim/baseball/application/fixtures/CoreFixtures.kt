@@ -34,3 +34,4 @@ public typealias FixtureRelationshipRequest = com.solkim.baseball.core.highschoo
 public typealias FixtureAdvanceChapter = com.solkim.baseball.core.highschool.HighSchoolPhase4Command.AdvanceChapter
 public typealias FixtureTrainingBlock = com.solkim.baseball.core.highschool.HighSchoolPhase4Command.TrainingBlock
 public typealias FixtureTrainingCommand = com.solkim.baseball.core.highschool.HighSchoolPhase4Command.Training
+public typealias FixtureProAdvanceSegment = com.solkim.baseball.core.pro.ProCommand.AdvanceSegment
