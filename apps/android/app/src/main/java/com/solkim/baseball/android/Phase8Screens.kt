@@ -354,6 +354,9 @@ public fun Phase8Shell(
                 onPlatformAction = onPlatformAction,
                 onViewportExposure = onViewportExposure,
             )
+            if (visibleScreen in setOf(Phase8ScreenId.P013_DRAFT, Phase8ScreenId.P014_RUN_RECAP, Phase8ScreenId.P021_PRO_RETIREMENT) && state.meta.album.isNotEmpty()) {
+                TextButton(onClick = { onNavigate(Phase8ScreenId.P028_LIFECARD) }, modifier = Modifier.testTag("career.album")) { Text("카드 보기") }
+            }
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -558,6 +561,7 @@ private fun Phase8ScreenContent(
             } else {
                 when (model.id) {
                     Phase8ScreenId.P014_RUN_RECAP, Phase8ScreenId.P015_REBIRTH -> CoreRebirthChoices(state, model, onAction, onViewportExposure)
+                    Phase8ScreenId.P028_LIFECARD -> PlayerAlbumView(state)
                     Phase8ScreenId.P027_SETTINGS -> { CareerBackupControls(state); Phase8Sections(model.sections); Phase8Actions(model, onAction) }
                     Phase8ScreenId.P009_AWAKENING -> AwakeningTreeView(state, model, onAction)
                     Phase8ScreenId.P005_SCHOOL_SELECTION -> Phase8SchoolChoices(state, model, onAction)
@@ -575,7 +579,7 @@ private fun Phase8ScreenContent(
                         Phase8Actions(model, onAction)
                     }
                 }
-                if (model.id !in setOf(Phase8ScreenId.P007_RELATIONSHIP, Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P017_PRO_WEEK, Phase8ScreenId.P018_PRO_IMPORTANT_GAME)) {
+                if (model.id !in setOf(Phase8ScreenId.P028_LIFECARD, Phase8ScreenId.P007_RELATIONSHIP, Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P017_PRO_WEEK, Phase8ScreenId.P018_PRO_IMPORTANT_GAME)) {
                 var showsDetails by remember(model.id) { mutableStateOf(false) }
                 TextButton(onClick = { showsDetails = !showsDetails }, modifier = Modifier.testTag("career.storyDetails")) {
                     Text(rememberGameCopy().resolve("mobile.core.career-details"), verbatim = true)

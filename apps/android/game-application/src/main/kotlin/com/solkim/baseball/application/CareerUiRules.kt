@@ -7,6 +7,7 @@ import com.solkim.baseball.core.pitch.PitchAbilityRules
 public data class LineageView(val legacyId: String, val rank: Int, val contributions: Int, val nextThreshold: Int?, val family: String)
 /** Rendering receives facts and commands from the application boundary, not a second rules implementation. */
 public object CareerUiRules {
+    public fun legacyTitle(id: String): String = HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == id }?.title.orEmpty()
     public val chapterCount: Int get() = HighSchoolContentCatalog.chapters.size
     public fun isDrafted(state: GameAggregateState): Boolean = state.highSchool?.run?.draftResult?.outcome == HighSchoolDraftOutcome.DRAFTED
     public fun legacyFamily(id: String): String? = HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == id }?.family
