@@ -10,25 +10,35 @@ class SchoolChoicePresentationTest {
         val school = kernel.completePrologue("918220", kernel.beginTutorial(start).state).state
         return GameAggregateState.initial("school-compare").copy(highSchool = school)
     }
-    @Test fun forecastsMatchActualPostEnrollmentTrainingAndLeaveCareerUntouched() {
-        val state = fixture()
-        val before = HighSchoolPhase4StateCodec.encode(state.highSchool!!)
-        val kernel = HighSchoolKernel()
-        for (specialty in SchoolChoicePresentation.schools(state)) {
-            val rows = SchoolChoicePresentation.compare(state, specialty.strength)
-            assertEquals(4, rows.size)
-            for (row in rows) {
-                val enrolled = kernel.chooseSchool(HighSchoolKernel.ChooseSchoolRequest("918220", state.highSchool!!.run, row.school.id)).snapshot
-                val expected = kernel.trainingPreview(enrolled, specialty.strength, TrainingIntensity.STANDARD)
-                val projected = state.copy(highSchool = state.highSchool!!.copy(run = enrolled))
-                assertEquals(TrainingPresentation.displayGrowth(projected, specialty.strength, expected.minimumGrowth), row.minimum)
-                assertEquals(TrainingPresentation.displayGrowth(projected, specialty.strength, expected.maximumGrowth), row.maximum)
-                assertEquals(expected.jackpotChancePercent, row.breakthroughChance)
-                assertEquals(expected.atTalentWall, row.atLimit)
-            }
-        }
-        assertContentEquals(before, HighSchoolPhase4StateCodec.encode(state.highSchool!!))
+    @Test fun goalsRecommendDifferentSpecialtiesWithoutChangingThePlayer() {
+        val base = fixture()
+        val hs = base.highSchool!!
+        val state = base.copy(highSchool = hs.copy(run = hs.run.copy(
+            pitcher = hs.run.pitcher.copy(stuff = 50, command = 36, movement = 42, stamina = 25))))
+        val before = state.highSchool
+        val strength = SchoolChoicePresentation.compare(state, SchoolDevelopmentGoal.STRENGTH)
+        val weakness = SchoolChoicePresentation.compare(state, SchoolDevelopmentGoal.WEAKNESS)
+        assertEquals(4, strength.map { it.school.strength }.distinct().size)
+        assertEquals(listOf(TrainingFocus.VELOCITY), strength.filter { it.recommended }.map { it.school.strength })
+        assertEquals(listOf(TrainingFocus.STAMINA), weakness.filter { it.recommended }.map { it.school.strength })
+        assertEquals(before, state.highSchool)
         assertNull(state.highSchool!!.run.school)
+    }
+    @Test fun tiesAndTalentLimitsNeverInventABestSchool() {
+        val base = fixture()
+        val hs = base.highSchool!!
+        val tied = base.copy(highSchool = hs.copy(run = hs.run.copy(
+            pitcher = hs.run.pitcher.copy(stuff = 30, command = 30, movement = 30, stamina = 30))))
+        for (goal in SchoolDevelopmentGoal.entries) assertTrue(SchoolChoicePresentation.compare(tied, goal).none { it.recommended })
+        val capped = base.copy(highSchool = hs.copy(run = hs.run.copy(
+            pitcher = hs.run.pitcher.copy(stuff = 80, command = 80, movement = 80, stamina = 80))))
+        for (goal in SchoolDevelopmentGoal.entries) {
+            assertTrue(SchoolChoicePresentation.compare(capped, goal).all { it.atLimit && !it.recommended })
+        }
+        val oneOpen = capped.copy(highSchool = capped.highSchool!!.copy(run = capped.highSchool!!.run.copy(
+            pitcher = capped.highSchool!!.run.pitcher.copy(stuff = 30))))
+        for (goal in SchoolDevelopmentGoal.entries) assertEquals(listOf(TrainingFocus.VELOCITY),
+            SchoolChoicePresentation.compare(oneOpen, goal).filter { it.recommended }.map { it.school.strength })
     }
     @Test fun selectionExplainsTrainingInsteadOfNamesAndUnsupportedPenalties() {
         val state = fixture()

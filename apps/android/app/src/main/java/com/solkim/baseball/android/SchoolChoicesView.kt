@@ -31,7 +31,7 @@ internal fun Phase8SchoolChoices(state: GameAggregateState, model: Phase8ScreenM
                 Text(SchoolChoicePresentation.strength(school), color = BaseballColors.action, style = MaterialTheme.typography.bodyMedium)
                 Text(SchoolChoicePresentation.fit(school), color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodySmall)
                 AdaptiveActionRow(Modifier.fillMaxWidth()) {
-                    TextButton(onClick = { comparing = school.id.wire }, modifier = Modifier.testTag("school.compare.${school.id.wire}")) { Text("성장 비교") }
+                    TextButton(onClick = { comparing = school.id.wire }, modifier = Modifier.testTag("school.compare.${school.id.wire}")) { Text("학교 비교") }
                     Button(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) }, enabled = action.enabled,
                         modifier = Modifier.testTag("action.${action.id}")) { Text("이 학교 선택") }
                 }
@@ -40,36 +40,42 @@ internal fun Phase8SchoolChoices(state: GameAggregateState, model: Phase8ScreenM
     }
     val selected = schools.firstOrNull { it.id.wire == comparing }
     if (selected != null) {
-        val comparisons = remember(state.highSchool?.run?.stateCommitment, selected.id) { SchoolChoicePresentation.compare(state, selected.strength) }
-        val chosen = comparisons.single { it.school.id == selected.id }
+        var goal by remember { mutableStateOf(SchoolDevelopmentGoal.STRENGTH) }
+        val comparisons = remember(state.highSchool?.run?.stateCommitment, goal) { SchoolChoicePresentation.compare(state, goal) }
         val action = model.actions.first { it.id == "chooseSchool:${selected.id.wire}" }
         AlertDialog(onDismissRequest = { comparing = null }, containerColor = BaseballColors.surfaceRaised, modifier = Modifier.testTag("school.comparison"),
-            title = { Text("성장 비교", style = MaterialTheme.typography.titleLarge) },
-            text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(selected.name, fontWeight = FontWeight.Bold)
-                Text("${copy.legacy(TrainingPresentation.title(selected.strength))} · ${copy.legacy("보통 강도")}", verbatim = true,
-                    color = BaseballColors.action, fontWeight = FontWeight.Bold)
-                Text("현재 능력 · 입학 후 첫 훈련 1회 기준", style = MaterialTheme.typography.bodySmall)
+            title = { Text("학교 비교", style = MaterialTheme.typography.titleLarge) },
+            text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                AdaptiveActionRow(Modifier.fillMaxWidth()) {
+                    FilterChip(selected = goal == SchoolDevelopmentGoal.STRENGTH, onClick = { goal = SchoolDevelopmentGoal.STRENGTH },
+                        label = { Text("강점 더 키우기") }, modifier = Modifier.testTag("school.goal.strength"))
+                    FilterChip(selected = goal == SchoolDevelopmentGoal.WEAKNESS, onClick = { goal = SchoolDevelopmentGoal.WEAKNESS },
+                        label = { Text("약점 보완하기") }, modifier = Modifier.testTag("school.goal.weakness"))
+                }
+                Text(if (goal == SchoolDevelopmentGoal.STRENGTH) "현재 높은 능력을 더 키우는 학교를 추천해요."
+                    else "현재 낮은 능력을 보완하는 학교를 추천해요.", style = MaterialTheme.typography.bodySmall)
                 comparisons.forEach { row ->
-                    Surface(color = if (row.school.id == selected.id) BaseballColors.actionSoft else BaseballColors.surfaceRaised,
-                        border = BorderStroke(1.dp, if (row.school.id == selected.id) BaseballColors.action else BaseballColors.border),
+                    val picked = row.school.id == selected.id
+                    Surface(selected = picked, onClick = { comparing = row.school.id.wire },
+                        color = if (picked) BaseballColors.actionSoft else BaseballColors.surfaceRaised,
+                        border = BorderStroke(if (picked) 2.dp else 1.dp, if (picked) BaseballColors.action else BaseballColors.border),
                         shape = MaterialTheme.shapes.small, modifier = Modifier.fillMaxWidth().testTag("school.forecast.${row.school.id.wire}")) {
-                        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(row.school.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                            Text("${copy.legacy(TrainingPresentation.metric(selected.strength))} ${SchoolChoicePresentation.range(row.minimum, row.maximum)}",
-                                verbatim = true, color = BaseballColors.action, fontWeight = FontWeight.Bold)
+                        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(row.school.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                                if (row.recommended) Text("추천", color = BaseballColors.action, style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.testTag("school.recommended.${row.school.id.wire}"))
+                                if (picked) Text("✓", color = BaseballColors.action)
+                            }
+                            Text(SchoolChoicePresentation.strength(row.school), color = BaseballColors.action, style = MaterialTheme.typography.bodyMedium)
+                            Text(copy.resolve("school.direction.current", GameCopyArgument.UserText(copy.legacy(TrainingPresentation.metric(row.school.strength))),
+                                GameCopyArgument.Whole(row.currentRating.toLong())), verbatim = true, style = MaterialTheme.typography.bodySmall)
+                            if (row.atLimit) Text("현재 재능 한계에 도달했어요.", color = BaseballColors.warning, style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
-                if (comparisons.map { it.minimum to it.maximum }.distinct().size == 1)
-                    Text("현재 조건에서는 기본 성장 예상이 같아요.", style = MaterialTheme.typography.bodySmall)
-                if (chosen.atLimit) Text("현재 재능 한계에 도달해 기본 성장이 제한돼요.", style = MaterialTheme.typography.bodySmall)
-                if (chosen.breakthroughChance > 0 && chosen.breakthroughMaximum > chosen.maximum)
-                    Text(copy.resolve("school.choice.breakthrough", GameCopyArgument.Whole(chosen.breakthroughChance.toLong()),
-                        GameCopyArgument.UserText(copy.legacy(TrainingPresentation.metric(selected.strength))),
-                        GameCopyArgument.UserText(SchoolChoicePresentation.range(chosen.breakthroughMinimum, chosen.breakthroughMaximum))),
-                        verbatim = true, style = MaterialTheme.typography.bodySmall)
-                Text("훈련 강도와 몸 상태가 바뀌면 성장 예상도 달라져요.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
+                if (comparisons.none { it.recommended }) Text("능력과 성장 여유가 비슷하면 원하는 투구 스타일로 골라 주세요.", style = MaterialTheme.typography.bodySmall)
+                Text("앞으로 자주 할 훈련을 기준으로 고르세요.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
             } },
             confirmButton = { TextButton(onClick = { comparing = null; onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
                 enabled = action.enabled, modifier = Modifier.testTag("school.comparison.choose")) { Text("이 학교 선택") } },

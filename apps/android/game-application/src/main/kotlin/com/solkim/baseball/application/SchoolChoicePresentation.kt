@@ -2,17 +2,16 @@ package com.solkim.baseball.application
 
 import com.solkim.baseball.core.highschool.*
 
-public data class SchoolGrowthComparison(
+public enum class SchoolDevelopmentGoal { STRENGTH, WEAKNESS }
+
+public data class SchoolFitComparison(
     val school: HighSchoolSchool,
-    val minimum: Int,
-    val maximum: Int,
-    val breakthroughMinimum: Int,
-    val breakthroughMaximum: Int,
-    val breakthroughChance: Int,
+    val currentRating: Int,
     val atLimit: Boolean,
+    val recommended: Boolean,
 )
 
-/** Read-only comparison of the actual first training after choosing each school. */
+/** Compares lasting training specialties against the player's present abilities. */
 public object SchoolChoicePresentation {
     public fun strength(school: HighSchoolSchool): String = "${TrainingPresentation.title(school.strength)}에 강점"
     public fun fit(school: HighSchoolSchool): String = when (school.strength) {
@@ -26,26 +25,21 @@ public object SchoolChoicePresentation {
         it.schoolOptions.ifEmpty { HighSchoolContentCatalog.schools(it.identity.region) }
     }.orEmpty()
 
-    public fun compare(state: GameAggregateState, focus: TrainingFocus): List<SchoolGrowthComparison> {
+    public fun compare(state: GameAggregateState, goal: SchoolDevelopmentGoal): List<SchoolFitComparison> {
         val run = requireNotNull(state.highSchool).run
-        require(run.phase == HighSchoolPhase.SCHOOL_SELECTION)
-        val kernel = HighSchoolKernel()
-        return schools(state).map { school ->
-            // chooseSchool is a pure kernel operation. No store dispatch, seed consumption,
-            // or saved-state write occurs, and the real first-training opportunity is included.
-            val candidate = kernel.chooseSchool(HighSchoolKernel.ChooseSchoolRequest("1", run, school.id)).snapshot
-            val preview = kernel.trainingPreview(candidate, focus, TrainingIntensity.STANDARD)
-            val before = when (focus) {
-                TrainingFocus.VELOCITY -> candidate.pitcher.stuff
-                TrainingFocus.COMMAND, TrainingFocus.GAME_PLANNING -> candidate.pitcher.command
-                TrainingFocus.BREAKING_BALL -> candidate.pitcher.movement
-                else -> candidate.pitcher.stamina
-            }
-            fun displayed(growth: Int) = AbilityDisplayScale.delta(before, before + growth)
-            SchoolGrowthComparison(school, displayed(preview.minimumGrowth), displayed(preview.maximumGrowth),
-                displayed(preview.jackpotMinimumGrowth), displayed(preview.jackpotMaximumGrowth),
-                preview.jackpotChancePercent, preview.atTalentWall)
+        val ratings = schools(state).associateWith { school -> when (school.strength) {
+            TrainingFocus.VELOCITY -> run.pitcher.stuff
+            TrainingFocus.COMMAND, TrainingFocus.GAME_PLANNING -> run.pitcher.command
+            TrainingFocus.BREAKING_BALL -> run.pitcher.movement
+            else -> run.pitcher.stamina
+        } }
+        val eligible = ratings.filter { (school, rating) -> rating < minOf(80, run.talent.grade(school.strength).ceiling) }
+        // A tie is kept as a tie; do not invent a single best school for an evenly built player.
+        val target = if (eligible.size > 1 && eligible.values.distinct().size == 1) null else when (goal) {
+            SchoolDevelopmentGoal.STRENGTH -> eligible.values.maxOrNull()
+            SchoolDevelopmentGoal.WEAKNESS -> eligible.values.minOrNull()
         }
+        return ratings.map { (school, rating) -> SchoolFitComparison(school, AbilityDisplayScale.rating(rating),
+            school !in eligible, target != null && rating == target && school in eligible) }
     }
-    public fun range(minimum: Int, maximum: Int): String = if (minimum == maximum) "+$minimum" else "+$minimum~$maximum"
 }

@@ -40,6 +40,8 @@ class SchoolChoicesUiTest {
             for (school in schools) {
                 compose.onNodeWithTag("school.compare.${school.id.wire}").performScrollTo().performClick()
                 compose.onNodeWithTag("school.comparison").assertIsDisplayed()
+                compose.onNodeWithTag("school.goal.weakness").performScrollTo().performClick().assertIsSelected()
+                compose.onNodeWithTag("school.goal.strength").performScrollTo().performClick().assertIsSelected()
                 for (row in schools) compose.onNodeWithTag("school.forecast.${row.id.wire}").performScrollTo().assertIsDisplayed()
                 compose.onAllNodesWithText(school.coachName, substring = true).assertCountEquals(0)
                 compose.onAllNodesWithText(school.catcherName, substring = true).assertCountEquals(0)
@@ -49,9 +51,11 @@ class SchoolChoicesUiTest {
         }
         val target = schools.last()
         compose.onNodeWithTag("school.compare.${target.id.wire}").performScrollTo().performClick()
+        val chosenSchool = schools.first()
+        compose.onNodeWithTag("school.forecast.${chosenSchool.id.wire}").performScrollTo().performClick().assertIsSelected()
         compose.onNodeWithTag("school.comparison.choose").assertIsDisplayed().performClick()
         compose.runOnIdle {
-            assertEquals("chooseSchool:${target.id.wire}", chosen!!.actionId)
+            assertEquals("chooseSchool:${chosenSchool.id.wire}", chosen!!.actionId)
             assertEquals(model.actions.single { it.id == chosen!!.actionId }.payloads, chosen!!.capturedPayloads)
         }
     }
