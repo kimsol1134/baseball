@@ -26,6 +26,7 @@
 - 훈련 216가지 조합, 고교 38개 전이와 3개 정책의 프로 20시즌 전이 총 2,278개를 같은 버전끼리 비교했다.
 - `HighSchoolPhase4FixtureTest`, `ProCareerFixtureTest`의 기존 체크섬과 수치 검사를 유지했다.
 - 기존 제외 2개(`ReleaseTrainingParityTest`, `ReleaseCareerParityTest`)가 기준 자료를 읽어 실제로 실행되고 통과했다.
+- 생성한 Swift 기준 자료는 `game-core/src/test/resources/fixtures/swift-release-parity-v4-v10.json`에 고정했다. 로컬 export 파일이 없어서 검사가 제외되는 조건을 제거했다. 기본 테스트도 이 자료의 체크섬과, Swift 소스가 있는 경우 원본 트리 해시를 확인한다. 원본 수치를 Android 실행값으로 갱신하지 않는다.
 - `RulesVersionMigrationTest`는 이전 저장의 원본 바이트 보존, 선수·일정 보존, 다음 명령의 버전 기록, 재저장 후 복원과 역방향 버전 거부를 검사한다.
 
 증거: `artifacts/android-compose/improvement-swift-reference.log`, `improvement-parity-versioned.log`, `improvement-core-full.log`, `improvement-final-build.log`.

@@ -7,7 +7,6 @@ import com.solkim.baseball.model.StrictJson
 import java.nio.file.Path
 import java.nio.file.Files
 import kotlin.test.*
-import org.junit.Assume.assumeTrue
 
 /** Replay Swift-authored commands; fixed game reports isolate career rules from mound rendering. */
 class ReleaseCareerParityTest {
@@ -65,9 +64,9 @@ class ReleaseCareerParityTest {
         return requireNotNull(state)
     }
     @Test fun currentSwiftTwentySeasonTranscriptMatchesEveryCareerTransition() {
-        val path = Path.of("../../../artifacts/android-compose/release-gate/swift-release-parity.json")
-        assumeTrue("Run tools/run-android-release-gate.py to generate current Swift evidence", Files.exists(path))
-        val root = StrictJson.parseUtf8(Files.readAllBytes(path)) as JsonValue.Obj
+        val root = com.solkim.baseball.core.SwiftReleaseReference.read()
+        val evidenceDirectory = Path.of("../../../artifacts/android-compose/release-gate")
+        Files.createDirectories(evidenceDirectory)
         assertEquals(10, (root["rulesVersion"] as JsonValue.Num).raw.toInt())
         assertEquals(HighSchoolContentCatalog.BALANCE_VERSION, (root["balanceVersion"] as JsonValue.Num).raw.toInt())
         val linkedSchool = replayHighSchool(root)
@@ -114,7 +113,7 @@ class ReleaseCareerParityTest {
             output += JsonValue.Obj(linkedMapOf("step" to JsonValue.Num(index.toString()), "action" to row.entries.getValue("action"),
                 "expected" to row.entries.getValue("values"), "actual" to JsonValue.Arr(actual.map(JsonValue::Str)),
                 "expectedSeed" to row.entries.getValue("nextSeed"), "actualSeed" to JsonValue.Str(result.nextSeed), "rawAndroidPhase" to JsonValue.Str(state.phase.wire)))
-            if (index % 50 == 0 || index == rows.lastIndex || expected != actual || text("nextSeed") != result.nextSeed) Files.writeString(path.resolveSibling("kotlin-release-parity-$scenario.json"), StrictJson.canonical(JsonValue.Arr(output)))
+            if (index % 50 == 0 || index == rows.lastIndex || expected != actual || text("nextSeed") != result.nextSeed) Files.writeString(evidenceDirectory.resolve("kotlin-release-parity-$scenario.json"), StrictJson.canonical(JsonValue.Arr(output)))
             assertEquals(expected, actual, "first divergence step=$index action=${text("action")} seed=$seed")
             assertEquals(text("nextSeed"), result.nextSeed, "seed divergence at $index ${text("action")}")
             state = ProStateCodec.decode(ProStateCodec.encode(state))
