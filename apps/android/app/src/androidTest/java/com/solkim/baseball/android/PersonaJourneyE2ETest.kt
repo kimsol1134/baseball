@@ -245,14 +245,23 @@ class PersonaJourneyE2ETest {
         assertTrue(album.games > 0); assertTrue(album.rows.isNotEmpty())
         launch()
         if (device.wait(Until.hasObject(By.res("career.otherPath")), 1500)) tap("career.otherPath")
-        capture("attached-before-rebirth"); tap("action.quickRebirth")
-        waitTag("rebirth.ready")
+        capture("attached-before-rebirth"); tap("rebirth.path.closer")
+        capture("attached-selected-closer"); tap("rebirth.path.start")
+        assertTrue(device.wait(Until.hasObject(By.text("어떤 강점을 키울까요?")), 20_000))
+        assertEquals(HighSchoolPhase.SCHOOL_SELECTION, store.current.highSchool!!.run.phase)
+        val deadline = android.os.SystemClock.elapsedRealtime() + 15_000
+        while ((store.current.meta.companion?.careerPath != "closer" || store.current.meta.companion?.representative != "slider") && android.os.SystemClock.elapsedRealtime() < deadline) android.os.SystemClock.sleep(50)
+        assertEquals("closer", store.current.meta.companion?.careerPath)
+        assertEquals("slider", store.current.meta.companion?.representative)
+        assertEquals("breaking_ball_artist", store.current.highSchool!!.run.presetId)
         assertEquals(prior.lifeNumber+1, store.current.highSchool!!.run.lifeNumber)
         assertEquals(prior.identity.name, store.current.highSchool!!.run.identity.name)
         val preserved = store.current.meta.album.single { it.scope.id == album.scope.id }
         assertEquals(album.rows, preserved.rows); assertEquals(album.pitches, preserved.pitches)
         assertEquals(album.portraitSeed, preserved.portraitSeed)
-        capture("attached-reborn"); device.pressHome(); launch(); waitTag("rebirth.ready")
+        capture("attached-reborn"); device.pressHome(); launch()
+        assertTrue(device.wait(Until.hasObject(By.text("어떤 강점을 키울까요?")), 20_000))
+        assertFalse(store.current.settings.autoReleaseEnabled)
         report("attached", JSONObject().put("previousGames", album.games).put("previousOuts", album.outs).put("previousLife", prior.lifeNumber).put("draftOutcome", prior.draftResult?.outcome?.wire))
     }
 }

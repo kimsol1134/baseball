@@ -710,6 +710,24 @@ public object Phase8ScreenProjection {
                     Phase8Row("다시 시작", "같은 이름, 같은 얼굴. 1학년부터.", ""),
                 )))
                 val canBeginRebirth = run?.phase == HighSchoolPhase.COMPLETED && highSchool?.archive?.any { it.careerId == run.careerId } == true
+                if (canBeginRebirth && highSchool != null && run != null) {
+                    val paths = listOf(
+                        Triple("endurance", "innings_eater", PitchKind.FOUR_SEAM),
+                        Triple("closer", "breaking_ball_artist", PitchKind.SLIDER),
+                        Triple("command", "precision_commander", PitchKind.CHANGEUP))
+                    addSection(Phase8Section("new-life-path", "이번 생에는 다른 야구", listOf(
+                        Phase8Row("이전 생은 남아요", "이름·얼굴·앨범·계승 유산 유지", "성장 유형과 구종을 바꾸고 학교 선택부터 시작합니다."))))
+                    paths.forEach { (path, preset, primary) ->
+                        val learning = if (primary == PitchKind.CHANGEUP) PitchKind.CURVEBALL else PitchKind.CHANGEUP
+                        val setup = com.solkim.baseball.core.highschool.HighSchoolRebirthSetup(preset, run.identity, run.difficulty,
+                            karmas = run.karmas, primaryPitch = primary, learningPitch = learning)
+                        addAction("rebirthPath:$path", AceCareerPresentation.pathTitle(path),
+                            when(path) { "endurance" -> "체력형 · 포심 중심 · 완투를 목표로"; "closer" -> "변화구형 · 슬라이더 중심 · 마무리에 지원"; else -> "제구형 · 체인지업 중심 · 효율적인 승부" }, true,
+                            listOf(hs(HighSchoolPhase4Command.ConfigureRebirth(context.seed(state, "path-$path"), context.dayKey(state), setup)),
+                                hs(HighSchoolPhase4Command.BeginTutorial), hs(HighSchoolPhase4Command.CompleteTutorial(context.seed(state, "path-school"))),
+                                GameCommand.UpdateCompanion("career_path", path), GameCommand.UpdateCompanion("pitch", primary.wire)))
+                    }
+                }
                 addAction(
                     "quickRebirth",
                     "이 힘으로 환생하기",

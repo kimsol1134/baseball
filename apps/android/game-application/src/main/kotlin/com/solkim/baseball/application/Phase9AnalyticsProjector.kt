@@ -725,7 +725,7 @@ public object Phase9AnalyticsProjector {
                     put("has_signature_candidates", Phase9AnalyticsValue.Flag(pro.legacyCandidates.isNotEmpty()))
                 },
             )
-            is ProCommand.FinishImportantGame -> if (before.pro?.activePitch != null && before.pitch?.challengeRun != true) {
+            is ProCommand.FinishImportantGame, is ProCommand.HandOffOuting -> if (before.pro?.activePitch != null && before.pitch?.challengeRun != true) {
                 val session = before.pro?.activePitch ?: return
                 add(
                     "game_finished",

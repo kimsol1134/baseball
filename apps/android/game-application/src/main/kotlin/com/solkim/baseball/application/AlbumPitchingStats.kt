@@ -10,6 +10,7 @@ public data class AlbumPitchingStats(
     val losses: Int? = null, val saves: Int? = null, val homeRuns: Int? = null, val pitches: Int? = null,
     val inningsKnown: Boolean = true,
     val earnedRuns: Int? = null,
+    val completeGames: Int? = null, val shutouts: Int? = null,
 ) {
     public val innings: String get() = if (inningsKnown) "${outs / 3}.${outs % 3}" else "—"
     private fun rate(count: Int?, factor: Int, denominator: Int = outs): String {
@@ -24,7 +25,7 @@ public data class AlbumPitchingStats(
     )
     public val line: List<Pair<String, String>> get() = listOf(
         "G" to games.toString(), "GS" to display(starts), "W" to display(wins), "L" to display(losses), "SV" to display(saves), "IP" to innings,
-        "H" to display(hits), "HR" to display(homeRuns), "BB" to display(walks), "SO" to strikeouts.toString(), "R" to runs.toString(), "ER" to display(earnedRuns), "NP" to display(pitches),
+        "H" to display(hits), "HR" to display(homeRuns), "BB" to display(walks), "SO" to strikeouts.toString(), "R" to runs.toString(), "ER" to display(earnedRuns), "NP" to display(pitches), "CG" to display(completeGames), "SHO" to display(shutouts),
     )
     private fun display(value: Int?): String = value?.toString() ?: "—"
     public companion object {
@@ -39,13 +40,15 @@ public data class AlbumPitchingStats(
                     saves = if (page.rows.all { it.decision.isNotBlank() }) page.rows.count { it.decision == "save" } else null,
                     homeRuns = if (page.rows.all { it.homeRuns != null }) page.rows.sumOf { it.homeRuns ?: 0 } else null,
                     pitches = if (page.rows.all { it.pitches != null }) page.rows.sumOf { it.pitches ?: 0 } else null,
-                    earnedRuns = if (page.rows.all { it.earnedRuns != null }) page.rows.sumOf { it.earnedRuns ?: 0 } else null)
+                    earnedRuns = if (page.rows.all { it.earnedRuns != null }) page.rows.sumOf { it.earnedRuns ?: 0 } else null,
+                    completeGames = if (page.rows.all { it.completeGame != null }) page.rows.count { it.completeGame == true } else null,
+                    shutouts = if (page.rows.all { it.completeGame != null }) page.rows.count { it.isShutout } else null)
             }
             return AlbumPitchingStats(page.games, page.outs, page.strikeouts, page.runs,
-                d.getOrNull(0), d.getOrNull(1), d.getOrNull(5), d.getOrNull(2), d.getOrNull(3), d.getOrNull(4), d.getOrNull(6), d.getOrNull(7), page.inningsKnown, d.getOrNull(8))
+                d.getOrNull(0), d.getOrNull(1), d.getOrNull(5), d.getOrNull(2), d.getOrNull(3), d.getOrNull(4), d.getOrNull(6), d.getOrNull(7), page.inningsKnown, d.getOrNull(8), d.getOrNull(9), d.getOrNull(10))
         }
         public fun from(game: CareerGameView): AlbumPitchingStats = AlbumPitchingStats(1, game.outs, game.strikeouts, game.runs,
             game.hits, game.walks, if (game.started) 1 else if (game.id.startsWith("hs:")) null else 0, if (game.decision.isBlank()) null else if (game.decision == "win") 1 else 0,
-            if (game.decision.isBlank()) null else if (game.decision == "loss") 1 else 0, if (game.decision.isBlank()) null else if (game.decision == "save") 1 else 0, game.homeRuns, game.pitches, earnedRuns = game.earnedRuns)
+            if (game.decision.isBlank()) null else if (game.decision == "loss") 1 else 0, if (game.decision.isBlank()) null else if (game.decision == "save") 1 else 0, game.homeRuns, game.pitches, earnedRuns = game.earnedRuns, completeGames = game.completeGame?.let { if (it) 1 else 0 }, shutouts = game.completeGame?.let { if (game.isShutout) 1 else 0 })
     }
 }

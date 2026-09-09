@@ -46,6 +46,8 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.RowScope
@@ -207,7 +209,7 @@ public fun Phase8Shell(
     val genericScreen = visibleScreen !in setOf(Phase8ScreenId.P001_OPENING, Phase8ScreenId.P002_SETUP, Phase8ScreenId.P003_PROLOGUE,
         Phase8ScreenId.P004_PITCH_TUTORIAL, Phase8ScreenId.P005_SCHOOL_SELECTION, Phase8ScreenId.P006_TRAINING, Phase8ScreenId.P007_RELATIONSHIP,
         Phase8ScreenId.P009_AWAKENING, Phase8ScreenId.P014_RUN_RECAP, Phase8ScreenId.P015_REBIRTH, Phase8ScreenId.P017_PRO_WEEK, Phase8ScreenId.P027_SETTINGS)
-    val pinnedAction = if (bridgesReview) null else if (visibleScreen == Phase8ScreenId.P015_REBIRTH) model.actions.firstOrNull { it.id == "startLinked" && it.enabled } ?: model.actions.firstOrNull { it.id == "quickRebirth" && it.enabled }
+    val pinnedAction = if (bridgesReview) null else if (visibleScreen == Phase8ScreenId.P015_REBIRTH) model.actions.firstOrNull { it.id == "startLinked" && it.enabled } ?: model.actions.firstOrNull { it.id == "quickRebirth" && it.enabled && model.actions.none { path -> path.id.startsWith("rebirthPath:") && path.enabled } }
         else if (visibleScreen in setOf(Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P010_CHAPTER, Phase8ScreenId.P013_DRAFT))
         model.actions.firstOrNull { it.enabled }
         else if (genericScreen && visibleScreen !in setOf(Phase8ScreenId.P022_PRO_LEGACY, Phase8ScreenId.P026_ACHIEVEMENTS)) model.actions.filter { it.enabled && !it.destructive }.singleOrNull() else null
@@ -618,7 +620,8 @@ private fun CoreRebirthChoices(state: GameAggregateState, model: Phase8ScreenMod
             var preview by remember(nextLife) { mutableStateOf<RebirthStartPreview?>(null) }
             LaunchedEffect(nextLife) { preview = withContext(Dispatchers.Default) { RebirthStartPreview.resolve(state, nextLife) } }
             preview?.let { CoreRebirthStartComparison(it) }
-            alternatives.forEach { Phase8ActionButton(model.id, it, onAction, showDescription = true) }
+            RebirthPathPicker(state, model, onAction)
+            alternatives.filter { it.id != "quickRebirth" || model.actions.none { path -> path.id.startsWith("rebirthPath:") && path.enabled } }.forEach { Phase8ActionButton(model.id, it, onAction, showDescription = true) }
         }
         return
     }
@@ -658,6 +661,7 @@ private fun CoreRebirthChoices(state: GameAggregateState, model: Phase8ScreenMod
         action.enabled && action.id !in setOf("confirmRecap", "confirmDraftResult") &&
             (action.id != "prepareLegacy" || (state.highSchool?.selectedSignatureLegacyId == null && model.actions.none { it.enabled && it.id.startsWith("selectLegacy:") }))
     }
+    RebirthPathPicker(state, model, onAction)
     val primary = actions.firstOrNull { it.id == "quickRebirth" }
         ?: actions.firstOrNull { it.id == "finalizeArchive" }
         ?: actions.firstOrNull { it.id == "prepareLegacy" }
@@ -680,12 +684,43 @@ private fun CoreRebirthChoices(state: GameAggregateState, model: Phase8ScreenMod
     }
     preview?.let { CoreRebirthStartComparison(it) }
     primary?.takeIf { it.id != "quickRebirth" }?.let { Phase8ActionButton(model.id, it, onAction) }
-    actions.filter { it != primary && !it.id.startsWith("selectLegacy:") }.forEach { action ->
+    actions.filter { it != primary && !it.id.startsWith("selectLegacy:") && !it.id.startsWith("rebirthPath:") }.forEach { action ->
         OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("action.${action.id}")) {
             Text(action.label)
         }
         if (action.destructive) Text(action.description, color = MaterialTheme.colorScheme.error)
+    }
+}
+
+@Composable
+internal fun RebirthPathPicker(state: GameAggregateState, model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit) {
+    val actions = model.actions.filter { it.enabled }
+    val newPaths = actions.filter { it.id.startsWith("rebirthPath:") }
+    if (newPaths.isNotEmpty()) {
+        Text("이번 생에는 다른 야구", style = MaterialTheme.typography.titleMedium)
+        state.meta.retiredProCareers.lastOrNull()?.let { previous ->
+            val rows = previous.careerStats
+            if (rows.isNotEmpty() && rows.all { it.completeGames != null && it.shutouts != null }) Text("지난 생의 기록 · 완투 ${rows.sumOf { it.completeGames ?: 0 }}회 · 완봉승 ${rows.sumOf { it.shutouts ?: 0 }}회", style = MaterialTheme.typography.labelSmall)
+            else Text("지난 생의 기록은 앨범에 남아요.", style = MaterialTheme.typography.labelSmall)
+        }
+        var selectedPath by rememberSaveable(state.highSchool?.run?.careerId) { mutableStateOf(newPaths.first().id) }
+        val chosen = newPaths.firstOrNull { it.id == selectedPath } ?: newPaths.first()
+        AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
+            newPaths.forEach { path ->
+                FilterChip(selected = chosen.id == path.id, onClick = { selectedPath = path.id },
+                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BaseballColors.action, selectedLabelColor = BaseballColors.actionInk),
+                    label = { Text(when(path.id.substringAfter(':')) { "endurance" -> "선발"; "closer" -> "마무리"; else -> "제구형" }) },
+                    modifier = Modifier.testTag("rebirth.path.${path.id.substringAfter(':')}"))
+            }
+        }
+        Text(chosen.label, color = BaseballColors.milestone, style = MaterialTheme.typography.titleSmall)
+        Text(chosen.description, style = MaterialTheme.typography.bodySmall)
+        Text("기록과 유산을 이어받고 학교 선택부터", style = MaterialTheme.typography.labelSmall)
+        Button(onClick = { onAction(Phase8UiAction(model.id, chosen.id, chosen.payloads)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("rebirth.path.start")) { Text("이 길로 시작") }
+        actions.firstOrNull { it.id == "quickRebirth" }?.let { same ->
+            TextButton(onClick = { onAction(Phase8UiAction(model.id, same.id, same.payloads)) }, modifier = Modifier.testTag("action.quickRebirth")) { Text("이전 방식으로 이어가기") }
+        }
     }
 }
 

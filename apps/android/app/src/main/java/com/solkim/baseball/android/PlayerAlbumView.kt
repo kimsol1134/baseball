@@ -56,21 +56,21 @@ internal fun PlayerAlbumView(state: GameAggregateState, showTitle: Boolean = tru
         AlbumStatGrid(pitching.line)
         AlbumStatGrid(pitching.rates)
         CareerDisclosure("기록 용어", "album.pitching.glossary") {
-            listOf("G 경기 · GS 선발 · W 승 · L 패 · SV 세이브", "IP 이닝 · H 피안타 · HR 피홈런 · BB 볼넷", "SO 탈삼진 · R 실점 · ER 자책점 · NP 투구 수", "ERA · 9이닝당 자책점", "WHIP · 이닝당 허용한 피안타와 볼넷", "K/9 · 9이닝당 탈삼진", "BB/9 · 9이닝당 볼넷", "H/9 · 9이닝당 피안타", "K/BB · 볼넷당 탈삼진", "RA/9 · 9이닝당 실점, 자책점 기준 ERA와 달라요.", "— · 계산에 필요한 기록이 없거나 분모가 0이에요.").forEach {
+            listOf("G 경기 · GS 선발 · W 승 · L 패 · SV 세이브", "IP 이닝 · H 피안타 · HR 피홈런 · BB 볼넷", "SO 탈삼진 · R 실점 · ER 자책점 · NP 투구 수", "ERA · 9이닝당 자책점", "CG 완투 · SHO 완봉승", "WHIP · 이닝당 허용한 피안타와 볼넷", "K/9 · 9이닝당 탈삼진", "BB/9 · 9이닝당 볼넷", "H/9 · 9이닝당 피안타", "K/BB · 볼넷당 탈삼진", "RA/9 · 9이닝당 실점, 자책점 기준 ERA와 달라요.", "— · 계산에 필요한 기록이 없거나 분모가 0이에요.").forEach {
                 Text(it, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
     val best = page.rows.maxByOrNull { it.outs * 4 + it.strikeouts * 3 - it.runs * 8 }
     if (best != null) {
-        Text("기억할 경기", style = MaterialTheme.typography.titleMedium)
+        Text(best.achievementTitle ?: "기억할 경기", style = MaterialTheme.typography.titleMedium)
         CareerStatTiles(listOf("이닝" to "${best.outs/3}.${best.outs%3}", "탈삼진" to best.strikeouts.toString(), "실점" to best.runs.toString()))
         Text(best.label, style = MaterialTheme.typography.labelMedium)
-        TextButton(onClick = { card = shareCard("인생 경기", listOf("이닝" to "${best.outs/3}.${best.outs%3}", "탈삼진" to best.strikeouts.toString(), "실점" to best.runs.toString()), best.label, best) }) { Text("경기 카드") }
+        TextButton(onClick = { card = shareCard(best.achievementTitle ?: "인생 경기", listOf("이닝" to "${best.outs/3}.${best.outs%3}", "탈삼진" to best.strikeouts.toString(), "실점" to best.runs.toString()), best.label, best) }) { Text("경기 카드") }
     }
     CareerDisclosure("기념할 순간", "album.milestones") {
         val chronological = page.rows.sortedBy { it.chronologicalKey }
-        listOf("첫 승" to chronological.firstOrNull { it.decision == "win" }, "첫 세이브" to chronological.firstOrNull { it.decision == "save" },
+        listOf("첫 완봉승" to chronological.firstOrNull { it.isShutout }, "첫 완투" to chronological.firstOrNull { it.completeGame == true }, "첫 승" to chronological.firstOrNull { it.decision == "win" }, "첫 세이브" to chronological.firstOrNull { it.decision == "save" },
             "첫 선발" to chronological.firstOrNull { it.started }, "첫 무실점 등판" to chronological.firstOrNull { it.outs > 0 && it.runs == 0 }).forEach { (title, game) ->
             if (game != null) TextButton(onClick = { card = shareCard(title, listOf("이닝" to "${game.outs/3}.${game.outs%3}", "탈삼진" to game.strikeouts.toString(), "실점" to game.runs.toString()), game.label, game) }) { Text(title) }
         }

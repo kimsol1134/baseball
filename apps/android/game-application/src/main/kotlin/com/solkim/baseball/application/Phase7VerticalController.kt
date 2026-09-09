@@ -363,6 +363,7 @@ public class Phase7VerticalController(
                 it.context.outs == 0 && it.outs < 18 && it.pitches < 80 && it.context.inning < 9 && it.context.fatigue < 90
         }
         state.pro?.activePitch?.let {
+            if (state.pro.proRulesVersion >= 13) return com.solkim.baseball.core.pro.ProOutingUsageRules.canContinue(state.pro)
             return it.sessionId.endsWith(":outing-v2") && it.ended && state.pro.role in setOf(com.solkim.baseball.core.pro.ProRole.STARTER, com.solkim.baseball.core.pro.ProRole.LONG_RELIEF) &&
                 it.context.outs == 0 && it.outs < 18 && it.pitches < 80 && it.context.inning < 9 && it.context.fatigue < 90
         }
@@ -376,12 +377,12 @@ public class Phase7VerticalController(
         else dispatch(GameCommand.Pro(ProCommand.ContinueOuting))
     }
 
-    public suspend fun completePitchAndPostgame(sessionId: String) {
+    public suspend fun completePitchAndPostgame(sessionId: String, handOff: Boolean = false) {
         val state = store.state.value
         if (state.pitch?.boundary == PitchBoundary.COMPLETED) return
         require(state.pitch?.boundary == PitchBoundary.TERMINAL) { "phase7.postgame_boundary" }
         if (state.highSchool?.activePitch?.ended == true) dispatch(GameCommand.HighSchool(HighSchoolPhase4Command.FinishImportantGame))
-        if (state.pro?.activePitch?.ended == true) dispatch(GameCommand.Pro(ProCommand.FinishImportantGame))
+        if (state.pro?.activePitch?.ended == true) dispatch(GameCommand.Pro(if (handOff) ProCommand.HandOffOuting else ProCommand.FinishImportantGame))
         if (store.state.value.pitch?.boundary == PitchBoundary.TERMINAL) {
             dispatch(GameCommand.CompletePitch(sessionId))
         }

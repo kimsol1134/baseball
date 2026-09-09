@@ -235,7 +235,12 @@ class Phase8CareerCompletionStoreTest {
                     assertEquals(index + 1, before.highSchool!!.run.lifeNumber)
                     nativeAuditRow(audit, before, "life-${index+1}-finished")
                     if (index < 2) {
-                        session.executeFirst(Phase8ScreenId.P015_REBIRTH, "quickRebirth")
+                        val path = if (index == 0) "endurance" else "closer"
+                        session.executeFirst(Phase8ScreenId.P015_REBIRTH, "rebirthPath:$path")
+                        assertEquals(path, session.store.current.meta.companion?.careerPath)
+                        assertEquals(HighSchoolPhase.SCHOOL_SELECTION, session.store.current.highSchool?.run?.phase)
+                        assertEquals(before.highSchool!!.run.identity, session.store.current.highSchool?.run?.identity)
+                        assertEquals(if (index == 0) "innings_eater" else "breaking_ball_artist", session.store.current.highSchool?.run?.presetId)
                         for (page in before.meta.album) {
                             val kept = session.store.current.meta.album.single { it.scope.id == page.scope.id }
                             assertEquals(page.rows, kept.rows)
@@ -249,6 +254,10 @@ class Phase8CareerCompletionStoreTest {
                     }
                 }
                 assertEquals(3, session.store.current.highSchool!!.archive.size)
+                session.executeFirst(Phase8ScreenId.P015_REBIRTH, "rebirthPath:command")
+                assertEquals("command", session.store.current.meta.companion?.careerPath)
+                assertEquals("precision_commander", session.store.current.highSchool?.run?.presetId)
+                assertEquals(HighSchoolPhase.SCHOOL_SELECTION, session.store.current.highSchool?.run?.phase)
             } finally { session.store.close() }
         }
     }
@@ -331,7 +340,7 @@ class Phase8CareerCompletionStoreTest {
         }
 
         suspend fun finishAnotherHighSchoolLife() {
-            executeFirst(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
+            if (store.current.highSchool?.run?.phase == HighSchoolPhase.PROLOGUE) executeFirst(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
             executeFirst(Phase8ScreenId.P005_SCHOOL_SELECTION)
             advanceHighSchoolUntil(HighSchoolPhase.DRAFT)
             executeFirst(Phase8ScreenId.P013_DRAFT, "resolveDraft")

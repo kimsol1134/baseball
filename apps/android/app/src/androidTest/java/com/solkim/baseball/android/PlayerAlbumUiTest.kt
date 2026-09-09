@@ -61,7 +61,7 @@ class PlayerAlbumUiTest {
     }
     @Test fun exportContainsACompleteBaseballStatLine() {
         val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
-        val stats = AlbumPitchingStats(28, 486, 184, 43, 122, 36, 25, 15, 4, 0, 12, 2480, earnedRuns = 35)
+        val stats = AlbumPitchingStats(28, 486, 184, 43, 122, 36, 25, 15, 4, 0, 12, 2480, earnedRuns = 35, completeGames = 3, shutouts = 1)
         val card = com.solkim.baseball.platform.AlbumShareCard("시즌 결산", "민서준", "대구 포지 · 프로 3시즌", emptyList(), "1번째 생 · 대표 구종 포심", "야구 못하면 또 환생함", stats.line, stats.rates)
         val name = PlayerPortraitResolver.resolveDrawableName("민서준", AvatarRole.PLAYER, PlayerStage.PRO)
         val id = context.resources.getIdentifier(name, "drawable", context.packageName)

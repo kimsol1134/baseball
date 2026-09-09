@@ -15,15 +15,17 @@ public data class PitcherCompanion(
     val careerSignatureKs: Int = 0, val cleanOutings: Int = 0,
     val experience: List<SignatureExperience> = emptyList(), val memories: List<PitchMemory> = emptyList(),
     val previousStart: List<Int> = emptyList(), val nicknames: Map<String, String> = emptyMap(),
+    val careerPath: String = "",
 ) {
     public fun validate() {
+        require(careerPath in setOf("", "endurance", "closer", "command")) { "companion.career_path" }
         require(representative in PitchKind.entries.map { it.wire } && nickname.length <= 20 && nickname.none { it.isISOControl() } && jersey in 1..99) { "companion.identity" }
         require(nicknames.size <= 4 && nicknames.all { (pitch, name) -> pitch in PitchKind.entries.map { it.wire } && name.length <= 20 && name.none { it.isISOControl() } }) { "companion.nicknames" }
         require(goalPitch.isEmpty() || goalPitch in PitchKind.entries.map { it.wire }) { "companion.goal_pitch" }
         require(goal in setOf("", "signature", "clean", "best") && goalTarget >= 0 && goalBaseline >= 0) { "companion.goal" }
         require(listOf(careerStrikeouts, careerSignatureKs, cleanOutings).all { it >= 0 }) { "companion.count" }
         require(experience.size <= 4 && experience.map { it.pitch }.distinct().size == experience.size && experience.all { it.pitch in PitchKind.entries.map { p -> p.wire } && it.training >= 0 && it.uses >= 0 && it.strikeouts in 0..it.uses }) { "companion.experience" }
-        require(memories.map { it.id }.distinct().size == memories.size && memories.all { it.id.isNotBlank() && it.career.isNotBlank() && it.life > 0 && it.amount >= 0 && (it.pitch.isEmpty() || it.pitch in PitchKind.entries.map { p -> p.wire }) && it.kind in setOf("first_strikeout", "pitch_strikeout", "recovery", "clean_outing", "signature_rank_1", "signature_rank_2", "signature_rank_3", "goal_signature", "goal_clean", "goal_best", "goal_attempt", "starter_trial", "held_lead", "first_save", "best_outing") }) { "companion.memories" }
+        require(memories.map { it.id }.distinct().size == memories.size && memories.all { it.id.isNotBlank() && it.career.isNotBlank() && it.life > 0 && it.amount >= 0 && (it.pitch.isEmpty() || it.pitch in PitchKind.entries.map { p -> p.wire }) && it.kind in setOf("first_strikeout", "pitch_strikeout", "recovery", "clean_outing", "signature_rank_1", "signature_rank_2", "signature_rank_3", "goal_signature", "goal_clean", "goal_best", "goal_attempt", "starter_trial", "held_lead", "first_save", "best_outing", "first_complete_game", "first_shutout") }) { "companion.memories" }
         require(memories.all { it.outing.isEmpty() && it.sourceId.isEmpty() || (it.outing.size == 3 && it.outing.all { n -> n >= 0 } && it.sourceId.isNotBlank()) }) { "companion.outing" }
         require(previousStart.isEmpty() || previousStart.size == 4 && previousStart.all { it in 20..80 }) { "companion.start" }
         require(pinned.isEmpty() || memories.any { it.id == pinned }) { "companion.pin" }
@@ -58,6 +60,10 @@ public object PitcherCompanionRules {
                 c.copy(representative = value, nickname = if (value == c.representative) c.nickname else c.nicknames[value].orEmpty())
             }
             "nickname" -> { require(c.experience.any { it.pitch == c.representative && it.rank >= 2 }) { "companion.nickname_locked" }; c.copy(nickname = value.trim(), nicknames = c.nicknames + (c.representative to value.trim())) }
+            "career_path" -> {
+                require((state.highSchool?.run?.lifeNumber ?: 0) > 1 && state.highSchool?.run?.totalTrainingsCompleted == 0) { "companion.path_start" }
+                c.copy(careerPath = value)
+            }
             "jersey" -> c.copy(jersey = value.toIntOrNull() ?: error("companion.jersey"))
             "pin" -> c.copy(pinned = value)
             "goal" -> {
@@ -174,6 +180,10 @@ public object PitcherCompanionRules {
             if (old == null || (!old.played && it.played)) {
                 if (it.decision == com.solkim.baseball.core.pro.ProPitchingDecision.SAVE) rememberOuting("first_save", "pro:${c.career}:$id", it.outs, it.runsAllowed, it.strikeouts)
                 if (it.played) rememberOuting("best_outing", "pro:${c.career}:$id", it.outs, it.runsAllowed, it.strikeouts, true)
+                if (it.completeGame == true) {
+                    rememberOuting("first_complete_game", "pro:${c.career}:$id", it.outs, it.runsAllowed, it.strikeouts)
+                    if (it.runsAllowed == 0 && it.opponentRuns == 0 && it.teamRuns > 0) rememberOuting("first_shutout", "pro:${c.career}:$id", it.outs, it.runsAllowed, it.strikeouts)
+                }
             }
         }
         if (after.stage in setOf(GameStage.PRO, GameStage.RETIREMENT) && after.pro?.activePitch == null) c = c.copy(careerStrikeouts = currentKs(after))
@@ -198,7 +208,7 @@ public object PitcherCompanionCodec {
         "goalCompleted" to JsonValue.Bool(c.goalCompleted), "careerStrikeouts" to num(c.careerStrikeouts), "careerSignatureKs" to num(c.careerSignatureKs), "cleanOutings" to num(c.cleanOutings),
         "experience" to JsonValue.Arr(c.experience.map { JsonValue.Obj(linkedMapOf("pitch" to str(it.pitch), "training" to num(it.training), "uses" to num(it.uses), "strikeouts" to num(it.strikeouts))) }),
         "memories" to JsonValue.Arr(c.memories.map { JsonValue.Obj(linkedMapOf("id" to str(it.id), "career" to str(it.career), "life" to num(it.life), "kind" to str(it.kind), "pitch" to str(it.pitch), "amount" to num(it.amount)).apply { if (it.outing.isNotEmpty()) { put("outing", JsonValue.Arr(it.outing.map(::num))); put("source", str(it.sourceId)) } }) })
-    ))
+    ).apply { if (c.careerPath.isNotEmpty()) put("careerPath", str(c.careerPath)) })
     public fun decode(value: JsonValue?): PitcherCompanion? {
         if (value == null || value == JsonValue.Null) return null
         val v = value as? JsonValue.Obj ?: error("companion.shape")
@@ -209,6 +219,6 @@ public object PitcherCompanionCodec {
         return PitcherCompanion(v.s("career"), v.s("representative"), v.s("nickname"), v.n("jersey"), v.s("pinned"), v.s("goal"), v.s("goalPitch"), v.n("goalTarget"), v.n("goalBaseline"),
             (v.entries["goalCompleted"] as? JsonValue.Bool)?.value ?: error("companion.goalCompleted"), v.n("careerStrikeouts"), v.n("careerSignatureKs"), v.n("cleanOutings"),
             v.list("experience").map { require(it.entries.keys == setOf("pitch", "training", "uses", "strikeouts")) { "companion.experience_fields" }; SignatureExperience(it.s("pitch"), it.n("training"), it.n("uses"), it.n("strikeouts")) },
-            v.list("memories").map { require(it.entries.keys == setOf("id", "career", "life", "kind", "pitch", "amount") + setOf("outing", "source").filter { key -> key in it.entries }) { "companion.memory_fields" }; PitchMemory(it.s("id"), it.s("career"), it.n("life"), it.s("kind"), it.s("pitch"), it.n("amount"), (it.entries["outing"] as? JsonValue.Arr)?.values.orEmpty().map { n -> (n as JsonValue.Num).raw.toInt() }, (it.entries["source"] as? JsonValue.Str)?.value.orEmpty()) }, ((v.entries["previousStart"] as? JsonValue.Arr)?.values.orEmpty().map { (it as JsonValue.Num).raw.toInt() }), (v.entries["nicknames"] as? JsonValue.Obj)?.entries.orEmpty().mapValues { (it.value as JsonValue.Str).value }).also { it.validate(); require(encode(it).entries.keys == v.entries.keys) { "companion.fields" } }
+            v.list("memories").map { require(it.entries.keys == setOf("id", "career", "life", "kind", "pitch", "amount") + setOf("outing", "source").filter { key -> key in it.entries }) { "companion.memory_fields" }; PitchMemory(it.s("id"), it.s("career"), it.n("life"), it.s("kind"), it.s("pitch"), it.n("amount"), (it.entries["outing"] as? JsonValue.Arr)?.values.orEmpty().map { n -> (n as JsonValue.Num).raw.toInt() }, (it.entries["source"] as? JsonValue.Str)?.value.orEmpty()) }, ((v.entries["previousStart"] as? JsonValue.Arr)?.values.orEmpty().map { (it as JsonValue.Num).raw.toInt() }), (v.entries["nicknames"] as? JsonValue.Obj)?.entries.orEmpty().mapValues { (it.value as JsonValue.Str).value }, (v.entries["careerPath"] as? JsonValue.Str)?.value.orEmpty()).also { it.validate(); require(encode(it).entries.keys == v.entries.keys) { "companion.fields" } }
     }
 }

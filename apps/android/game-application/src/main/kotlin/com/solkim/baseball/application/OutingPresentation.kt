@@ -46,7 +46,17 @@ public object OutingPresentation {
         OutingGoal.HOLD_LEAD -> "리드를 지켜 이닝 마무리"
         OutingGoal.CLEAN_FRAME -> if (assignment.role == OutingRole.STARTER && assignment.entryInning == 1) "첫 이닝 무실점으로 출발" else "추가 실점 없이 이닝 마무리"
     }
+    public fun goal(state: GameAggregateState): String {
+        val pro = state.pro
+        val p = pro?.activePitch
+        if (p?.assignment?.role == OutingRole.STARTER && p.assignment?.entryInning == 1 && p.assignment?.entryOuts == 0 && p.context.inning >= 7) return if (p.runsAllowed == 0) "완봉 도전 · 마지막 아웃까지" else "완투 도전 · 끝까지 책임지기"
+        if (p?.assignment?.role == OutingRole.STARTER && p.assignment?.entryInning == 1 && p.assignment?.entryOuts == 0 && p.context.inning >= 2) return if (p.outs < 15) "승리의 발판 · 5이닝 이상" else "불펜을 아끼는 투구"
+        return assignment(state)?.let(::goal) ?: "이번 이닝에 집중해요."
+    }
     public fun progress(state: GameAggregateState): String? {
+        val proPitch = state.pro?.activePitch
+        if (proPitch?.assignment?.role == OutingRole.STARTER && proPitch.assignment?.entryInning == 1 && proPitch.assignment?.entryOuts == 0 && proPitch.context.inning >= 7) return "${(27 - proPitch.outs).coerceAtLeast(0)}아웃 남음 · ${proPitch.pitches}구"
+        if (proPitch?.assignment?.role == OutingRole.STARTER && proPitch.assignment?.entryInning == 1 && proPitch.assignment?.entryOuts == 0 && proPitch.context.inning >= 2) return "${proPitch.outs / 3}.${proPitch.outs % 3}이닝 · ${proPitch.pitches}구"
         val goal = assignment(state) ?: return null
         val outs = state.pro?.activePitch?.outs ?: state.highSchool?.activePitch?.outs ?: 0
         return when (goal.status) {

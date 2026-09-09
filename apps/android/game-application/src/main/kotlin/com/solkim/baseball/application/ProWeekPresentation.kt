@@ -18,7 +18,7 @@ public object ProWeekPresentation {
         return ProWeekPreview(if (pro.week == 0) "시즌 준비" else "${pro.week + 1}주차 준비",
             if (forecast.growthActive) "${title(actionId)} 성장 진도 ${forecast.progress}/${forecast.required} → 훈련 1회 누적"
             else if (plan == ProWeekPlan.RECOVER || pro.injuryWeeks > 0) "몸을 회복하는 한 주" else "감독의 신뢰를 쌓는 한 주",
-            "예정된 자동 등판 ${forecast.outings}경기",
+            if (forecast.outings == 0) "등판을 쉬는 주 · 회복을 준비하세요" else "예정된 자동 등판 ${forecast.outings}경기",
             "예상 피로 ${forecast.fatigueMinimum}~${forecast.fatigueMaximum} · 현재 ${pro.fatigue}")
     }
     /** Captures the selected single-week plan into the same authorized batch action. */
@@ -45,7 +45,9 @@ public object ProWeekPresentation {
             else if (y[i] != x[i]) "${labels[i]} 성장 진도 ${y[i]}/${proWeekForecast(next, plans[i]).required}" else null
         }
         val rows = next.currentGameLines.filter { it.season == next.season && it.week > old.week && it.week <= next.week }
-        return ProWeekResult(next.careerId, next.season, next.week, next.week - old.week, growth,
+        val pending = next.takeIf { it.phase == ProCareerPhase.IMPORTANT_GAME }?.currentGameLines?.lastOrNull { !it.played && it.week == next.week }
+        val historic = rows.filter { it != pending && it.completeGame == true }.map { if (it.runsAllowed == 0 && it.opponentRuns == 0 && it.teamRuns > 0) "완봉승 · 9이닝 무실점" else "완투 · 마지막 아웃까지 책임졌습니다" }.distinct()
+        return ProWeekResult(next.careerId, next.season, next.week, next.week - old.week, historic + growth,
             rows.size, rows.sumOf { it.outs }, rows.sumOf { it.strikeouts }, rows.sumOf { it.runsAllowed }, old.fatigue, next.fatigue, next.injuryWeeks,
             next.role.label, if (next.level == ProLevel.MAJOR) "1군" else "2군")
     }

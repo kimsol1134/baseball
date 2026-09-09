@@ -73,6 +73,7 @@ internal fun CompanionProfile(state: GameAggregateState, busy: Boolean, onChange
         PlayerPortrait(modifier = Modifier.graphicsLayer { rotationZ = if ((pro?.fatigue ?: run?.fatigue ?: 0) >= 70) -3f else 0f }, seed = playerPortraitSeed(state) ?: "pitcher", stage = if (pro != null) PlayerStage.PRO else if ((run?.chapter?.schoolYear ?: 1) >= 3) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 68.dp)
         Column {
             Text(pro?.identityName ?: run?.identity?.name.orEmpty(), verbatim = true, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            if (c.careerPath.isNotEmpty()) Text(AceCareerPresentation.pathTitle(c.careerPath), style = MaterialTheme.typography.labelMedium)
             Text("#${c.jersey}", verbatim = true, style = MaterialTheme.typography.titleLarge, color = BaseballColors.milestone)
             val fatigue = pro?.fatigue ?: run?.fatigue ?: 0
             Text(if (fatigue >= 70) "잠깐 쉬고 다시 던지고 싶어요." else if (fatigue <= 20) "몸이 가벼워요. 다음 공이 기대돼요." else "한 구씩 제 공을 만들어갈게요.", style = MaterialTheme.typography.bodySmall)

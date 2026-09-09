@@ -25,6 +25,15 @@ internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel,
     var selected by rememberSaveable(state.pro?.careerId) { mutableStateOf(plans.firstOrNull()?.id) }
     val action = plans.firstOrNull { it.id == selected } ?: plans.firstOrNull() ?: return
     val preview = ProWeekPresentation.preview(state, action.id) ?: return
+    AceCareerPresentation.leagueLine(state)?.let { Text(it, style = MaterialTheme.typography.labelMedium, modifier = Modifier.testTag("week.league")) }
+    AceCareerPresentation.goal(state)?.let { (title, progress) ->
+        Text(title, color = BaseballColors.milestone, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("week.aceGoal"))
+        Text(progress, style = MaterialTheme.typography.bodySmall)
+    }
+    val desiredRole = AceCareerPresentation.preferredRole(state)
+    model.actions.firstOrNull { it.id == "requestRole:$desiredRole" && it.enabled }?.let { role ->
+        OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, role.id, role.payloads)) }, enabled = !busy, modifier = Modifier.testTag("week.pathRole")) { Text(role.label) }
+    }
     Text(preview.title, style = MaterialTheme.typography.titleLarge)
     plans.chunked(3).forEach { row ->
         AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {

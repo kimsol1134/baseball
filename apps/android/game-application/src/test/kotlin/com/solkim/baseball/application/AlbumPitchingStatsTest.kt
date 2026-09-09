@@ -4,6 +4,18 @@ import com.solkim.baseball.core.pro.*
 import kotlin.test.*
 
 class AlbumPitchingStatsTest {
+    @Test fun completeGamesRequireEvidenceAndShutoutsUseRunsNotEarnedRuns() {
+        val old = CareerGameView("pro:p:1:1:1", "경기", 27, 9, 0, 1, 3, 1, 2, 0, true, started = true)
+        assertEquals("—", AlbumPitchingStats.from(old).line.toMap()["CG"])
+        val unearned = old.copy(runs = 1, opponent = 1, earnedRuns = 0, completeGame = true)
+        val shutout = old.copy(earnedRuns = 0, completeGame = true)
+        assertEquals("1", AlbumPitchingStats.from(unearned).line.toMap()["CG"])
+        assertEquals("0", AlbumPitchingStats.from(unearned).line.toMap()["SHO"])
+        assertEquals("1", AlbumPitchingStats.from(shutout).line.toMap()["SHO"])
+        val page = PlayerAlbumPage(RecordScope("pro:p:1", "시즌", "투수"), 1, 27, 0, 9, true, listOf(shutout))
+        assertEquals(page, PlayerAlbumCodec.decode(PlayerAlbumCodec.encode(listOf(page))).single())
+    }
+
     @Test fun earnedRunsRemainDistinctFromScoreboardAndSurviveAlbumEncoding() {
         val row = CareerGameView("pro:p:1:1:1", "경기", 18, 6, 3, 2, 4, 1, 4, 3, true, earnedRuns = 2)
         val page = PlayerAlbumPage(RecordScope("pro:p:1", "시즌", "선수"), 1, 18, 3, 6, true, listOf(row))

@@ -69,11 +69,11 @@ public class NativePlayerAlbumShareService(private val context: Context) {
             text(value, x-3, 678f, 306, 121, if (i==0) 107f else 94f, if (i==0) blue else navy, true, true)
         }
         rect(58f, 825f, 1022f, 827f, navy)
-        card.line.take(14).chunked(7).forEachIndexed { row, cells ->
+        card.line.take(15).chunked(5).forEachIndexed { row, cells ->
             cells.forEachIndexed { col, (label, value) ->
-                val x = 60f + col*140f; val y = 856f + row*108f
-                text(label, x, y, 130, 33, 25f, muted, true)
-                text(value, x, y+39, 130, 53, 36f, navy, true, true)
+                val x = 60f + col*196f; val y = 852f + row*76f
+                text(label, x, y, 180, 27, 22f, muted, true)
+                text(value, x, y+30, 180, 42, 32f, navy, true, true)
             }
         }
         rect(58f, 1082f, 1022f, 1084f, Color.rgb(199, 201, 200))

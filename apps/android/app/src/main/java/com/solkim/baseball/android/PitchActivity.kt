@@ -2,6 +2,7 @@ package com.solkim.baseball.android
 
 import com.solkim.baseball.application.GameAggregateState
 
+import com.solkim.baseball.application.AceCareerPresentation
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -344,7 +345,7 @@ public class PitchActivity : ComponentActivity() {
                         else PitchScoreboardBar(board, perfectStreak)
                         if (!practiceMode) com.solkim.baseball.application.OutingPresentation.assignment(visibleContext)?.let { assignment ->
                             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(com.solkim.baseball.application.OutingPresentation.goal(assignment), style = MaterialTheme.typography.labelLarge,
+                                Text(com.solkim.baseball.application.OutingPresentation.goal(visibleContext), style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.Bold, modifier = Modifier.testTag("pitch.objective"))
                                 Text(com.solkim.baseball.application.OutingPresentation.progress(visibleContext).orEmpty(),
                                     color = BaseballColors.action, style = MaterialTheme.typography.labelMedium, modifier = Modifier.testTag("pitch.objective.progress"))
@@ -474,6 +475,7 @@ public class PitchActivity : ComponentActivity() {
                                 val outingContinues = hud?.canContinueInSession == true
                                 PitchResultCard(
                                     starterTrial = com.solkim.baseball.application.OutingPresentation.isStarterTrial(gameState),
+                                    inningDecision = AceCareerPresentation.inningDecision(gameState),
                                     outcome = outcome,
                                     battedBall = battedBall,
                                     velocityTenthsKph = request?.velocityDeciKph ?: 0,
@@ -495,6 +497,7 @@ public class PitchActivity : ComponentActivity() {
                                     onContinueInning = if (controller.canContinueInning()) ({ continueInSession(true) }) else null,
                                     onNextPitch = if (outingContinues) ({ continueInSession() }) else null,
                                     onPostgame = ::completeAndReturn,
+                                    onHandOff = if (gameState.pro?.activePitch != null) ({ finishAndReturn(true) }) else null,
                                 )
                             }
                         } else if (!isDelivering) {
@@ -855,10 +858,12 @@ public class PitchActivity : ComponentActivity() {
         }
     }
 
-    private fun completeAndReturn() {
+    private fun completeAndReturn() = finishAndReturn(false)
+
+    private fun finishAndReturn(handOff: Boolean) {
         activityScope.launch {
             try {
-                controller.completePitchAndPostgame(sessionId)
+                controller.completePitchAndPostgame(sessionId, handOff)
                 withContext(Dispatchers.Main) {
                     returningToShell = true
                     startActivity(Intent(this@PitchActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
@@ -1425,6 +1430,8 @@ internal fun PitchResultCard(
     onNextPitch: (() -> Unit)?,
     onPostgame: () -> Unit,
     onContinueInning: (() -> Unit)? = null,
+    inningDecision: String? = null,
+    onHandOff: (() -> Unit)? = null,
 ) {
     val tone = outcomeTone(outcome)
     val verdictTitle = outcome?.let { localizedVerdict(it, battedBall) } ?: "투구 완료"
@@ -1455,6 +1462,7 @@ internal fun PitchResultCard(
                     }
                 }
             }
+            if (!practice && onContinueInning == null && inningDecision != null) inningDecision.lines().forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
             if (practice) {
                 val copy = rememberGameCopy()
                 Text(practiceFeedback(delivery),
@@ -1470,12 +1478,13 @@ internal fun PitchResultCard(
                     }
                 }
             } else if (onContinueInning != null) {
-                Text("이닝을 마쳤어요. 계속 던질까요?", style = MaterialTheme.typography.bodyMedium)
+                (inningDecision ?: "이닝을 마쳤어요. 계속 던질까요?").lines().forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
                 if (starterTrial) Text("자동 진행하면 직접 투구 테스트는 여기서 끝나요.", color = BaseballColors.warning, style = MaterialTheme.typography.bodySmall)
                 AdaptiveActionRow(Modifier.fillMaxWidth()) {
-                    Button(onClick = onContinueInning, modifier = Modifier.testTag("pitch.nextInning")) { Text(if (starterTrial) "테스트 이어 던지기" else "다음 이닝") }
-                    OutlinedButton(onClick = onPostgame, modifier = Modifier.testTag("pitch.simulateRemainder")) { Text("남은 경기 자동") }
+                    Button(onClick = onContinueInning, modifier = Modifier.testTag("pitch.nextInning")) { Text(if (starterTrial) "테스트 이어 던지기" else "마운드를 지킨다") }
+                    OutlinedButton(onClick = onHandOff ?: onPostgame, modifier = Modifier.testTag("pitch.simulateRemainder")) { Text(if (onHandOff != null) "불펜에 맡긴다" else "남은 경기 자동") }
                 }
+                if (onHandOff != null) TextButton(onClick = onPostgame, modifier = Modifier.testTag("pitch.autoOuting")) { Text("내 투수 자동 진행") }
             } else if (!automaticNext) Button(onClick = if (outingContinues) (onNextPitch ?: onPostgame) else onPostgame,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("pitch.continue")) { Text(nextLabel) }
             AdaptiveActionRow(Modifier.fillMaxWidth()) {
