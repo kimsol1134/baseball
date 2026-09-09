@@ -56,6 +56,8 @@ public struct PitchKernelEngine: Sendable {
     private let baserunnerEngine: BaserunnerEngine
     private let inningStateEngine: InningStateEngine
     private let gameAnalysisEngine: GameAnalysisEngine
+    /// Which balance pass the probability formulas run. `.legacy` is the frozen fixture path.
+    private let balance: PitchBalanceRules
 
     public init(
         recommendationEngine: CatcherRecommendationEngine = CatcherRecommendationEngine(),
@@ -63,7 +65,8 @@ public struct PitchKernelEngine: Sendable {
         ballInPlayEngine: BallInPlayEngine = BallInPlayEngine(),
         baserunnerEngine: BaserunnerEngine = BaserunnerEngine(),
         inningStateEngine: InningStateEngine = InningStateEngine(),
-        gameAnalysisEngine: GameAnalysisEngine = GameAnalysisEngine()
+        gameAnalysisEngine: GameAnalysisEngine = GameAnalysisEngine(),
+        balance: PitchBalanceRules = .legacy
     ) {
         self.recommendationEngine = recommendationEngine
         self.rivalMemoryEngine = rivalMemoryEngine
@@ -71,6 +74,7 @@ public struct PitchKernelEngine: Sendable {
         self.baserunnerEngine = baserunnerEngine
         self.inningStateEngine = inningStateEngine
         self.gameAnalysisEngine = gameAnalysisEngine
+        self.balance = balance
     }
 
     public func preparePitch(_ params: PreparePitchParams) throws -> PitchPreparation {
@@ -921,7 +925,12 @@ public struct PitchKernelEngine: Sendable {
             100,
             900
         )
-        let spread = clamp(520 - effectiveCommand / 2, 70, 470)
+        // 제구가 높다고 공이 노린 점에 붙어 버리면 존을 벗어나는 공이 사라진다. 재조정
+        // 경로는 흩어짐의 하한을 올리고 제구의 기울기를 낮춰, 좋은 제구가 "덜 벗어난다"는
+        // 뜻이 되게 한다.
+        let spread = balance.rebalanced
+            ? clamp(750 - effectiveCommand / 3, 450, 700)
+            : clamp(520 - effectiveCommand / 2, 70, 470)
         var offsetX = generator.nextInt(upperBound: spread * 2 + 1) - spread
         var offsetY = generator.nextInt(upperBound: spread * 2 + 1) - spread
         let wildChance = clamp(
@@ -1281,8 +1290,13 @@ public struct PitchKernelEngine: Sendable {
             batSide: params.batter.batSide,
             pitchType: params.call.pitchType
         )
+        // 상관된 능력치가 헛스윙을 곱하지 않도록 하나의 포화 곡선으로 합친다. 구위·무브먼트
+        // ·구종 헛스윙·구속이 각자 보너스를 더하던 합은 성장한 투수 앞에서 타자를 지워 버렸다.
+        let contactEdge = balance.rebalanced
+            ? 30 + ((pitchDifficulty - 30) * 145 / (145 + abs(pitchDifficulty - 30)))
+            : pitchDifficulty
         let contactChance = clamp(
-            790
+            (balance.rebalanced ? 865 : 790)
                 + (params.batter.contact - 50) * 6
                 + (pitchMatched ? 90 : -70)
                 + (zoneMatched ? 50 : -35)
@@ -1290,7 +1304,7 @@ public struct PitchKernelEngine: Sendable {
                 + plan.bias.contactShift
                 + platoonContact
                 + scoutingContact
-                - pitchDifficulty,
+                - contactEdge,
             120,
             940
         )
@@ -1299,7 +1313,8 @@ public struct PitchKernelEngine: Sendable {
         }
 
         let foulChance = clamp(
-            470 + ((profile?.movement ?? params.pitcher.movement) - params.batter.contact) * 3
+            (balance.rebalanced ? 350 : 470)
+                + ((profile?.movement ?? params.pitcher.movement) - params.batter.contact) * 3
                 + plan.bias.foulShift,
             260,
             620
@@ -1308,17 +1323,27 @@ public struct PitchKernelEngine: Sendable {
             return (.foul, nil)
         }
 
+        // 고교에서는 가운데로 몰린 공이 실제로 맞는다. 존 안에서 한가운데에 가까울수록
+        // 타구 품질이 올라가므로, 제구가 낮은 투수의 실투가 결과로 이어진다.
+        let centerMistake = balance.isSchool && wasInZone
+            ? max(0, 180 - max(abs(execution.actualX), abs(execution.actualY))) / 3
+            : 0
         let contactQuality = clamp(
-            429
+            centerMistake
+                + (balance.isSchool ? 475 : balance.isProfessional ? 450 : 429)
                 + (params.batter.power - 50) * 3
                 + (params.batter.contact - 50) * 2
                 + (pitchMatched ? 90 : -70)
                 + (zoneMatched ? 45 : -35)
                 + (pitchMatched ? cappedAdaptation / 8 : 0)
-                - ((effectiveWeakContact ?? 50) - 50) * 2
-                - (effectiveMovement - 50)
-                - ((effectiveProfileMovement ?? effectiveMovement) - 50)
-                - powerSpecialization / 2
+                - (balance.rebalanced
+                    ? ((effectiveWeakContact ?? 50) - 50) / 2
+                    : ((effectiveWeakContact ?? 50) - 50) * 2)
+                - (balance.rebalanced ? (effectiveMovement - 50) / 3 : effectiveMovement - 50)
+                - (balance.rebalanced
+                    ? ((effectiveProfileMovement ?? effectiveMovement) - 50) / 3
+                    : (effectiveProfileMovement ?? effectiveMovement) - 50)
+                - powerSpecialization / (balance.rebalanced ? 5 : 2)
                 - max(0, execution.executionQuality - 500) / 5
                 + scoutingQuality
                 // 빠른 공은 늦게 맞는다. 전력투구가 제구를 잃는 대신 얻는 것이 이것이다.
@@ -1353,10 +1378,12 @@ public struct PitchKernelEngine: Sendable {
             -150,
             520
         )
-        let battedQuality = Self.battedQuality(
-            exitVelocity: exitVelocity,
-            launchAngle: launchAngle
-        )
+        // 배럴 가산은 실제로 강하게 맞은 타구에만 준다. 재조정 경로에서는 문턱 아래의
+        // 타구가 홈런 밴드로 올라가지 않는다.
+        let battedQuality = balance.rebalanced
+            && exitVelocity < (balance.isSchool ? 1_510 : 1_545)
+            ? Self.battedBaseQuality(exitVelocity: exitVelocity, launchAngle: launchAngle)
+            : Self.battedQuality(exitVelocity: exitVelocity, launchAngle: launchAngle)
         let battedBall = BattedBall(
             exitVelocityTenthsKPH: exitVelocity,
             launchAngleTenthsDegrees: launchAngle,
@@ -1438,7 +1465,9 @@ public struct PitchKernelEngine: Sendable {
     /// 타구 결과 해석용 품질 스칼라. 결과의 원인은 (EV, LA)이며 이 값은 그 요약이다.
     /// 배럴(EV 154km/h 이상 & LA 17~34도)만 홈런 밴드에 도달할 수 있고,
     /// 담장 경계는 구장 팩터·수비 보정이 GameSituation에서 최종 결정한다.
-    static func battedQuality(exitVelocity: Int, launchAngle: Int) -> Int {
+    /// The (EV, LA) curve without the barrel bump. Callers that suppress the bump use this
+    /// directly; `battedQuality` builds on it, so both stay one formula.
+    static func battedBaseQuality(exitVelocity: Int, launchAngle: Int) -> Int {
         let laFit: Int
         if launchAngle < 90 {
             laFit = 30 + max(0, launchAngle + 150) / 5
@@ -1448,7 +1477,11 @@ public struct PitchKernelEngine: Sendable {
             laFit = max(0, lineFit - popPenalty)
         }
         let rawBase = exitVelocity * 7 / 10 + laFit - 600
-        let base = max(0, min(758, rawBase))
+        return max(0, min(758, rawBase))
+    }
+
+    static func battedQuality(exitVelocity: Int, launchAngle: Int) -> Int {
+        let base = battedBaseQuality(exitVelocity: exitVelocity, launchAngle: launchAngle)
         let isBarrel = exitVelocity >= 1_470 && (170...340).contains(launchAngle)
         guard isBarrel else { return base }
         let barrelQuality = 765 + (exitVelocity - 1_470) / 3 + (90 - abs(launchAngle - 250)) / 3

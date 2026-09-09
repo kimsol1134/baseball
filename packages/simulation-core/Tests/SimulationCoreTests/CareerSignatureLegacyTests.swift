@@ -539,10 +539,12 @@ final class CareerSignatureLegacyTests: XCTestCase {
 
         let engine = HighSchoolCareerEngine()
         let current = try engine.start(.init(seed: "918220", presetID: "power_prospect")).snapshot
-        // v4 문턱은 밸런스에 따라 움직인다(63 → 66: 중립 자동 진행 지명률 55%를 13%로).
-        // 이 줄은 "지금 값이 얼마인가"를 적어 두는 기록이고, 아래 v3 단언이 진짜 계약이다 —
+        // 문턱은 밸런스에 따라 움직인다. v4는 63 → 66으로 올렸고(중립 자동 진행 지명률
+        // 55%를 13%로), v7은 경기 자체가 어려워졌으므로 그 +5를 되돌려 61이다. 이 줄은
+        // "지금 값이 얼마인가"를 적어 두는 기록이고, 아래 v3 단언이 진짜 계약이다 —
         // 진행 중인 옛 저장의 당락선은 어떤 밸런스 변경에도 움직이면 안 된다.
-        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: current), 66)
+        XCTAssertEqual(current.balanceVersion, HighSchoolGameplayRules.current)
+        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: current), 61)
         XCTAssertEqual(
             (0..<5).map { HighSchoolCareerEngine.draftVariance(balanceVersion: 4, roll: $0) },
             [-1, 0, 0, 0, 1]
@@ -714,7 +716,9 @@ final class CareerSignatureLegacyTests: XCTestCase {
     }
 
     func testV4ExtremeAutoRecordsRemainMonotonicWithinTheTwoPointSeasonCap() throws {
-        let engine = HighSchoolCareerEngine()
+        // 이 테스트의 대상은 v4의 ±2 시즌 항이다. v5부터는 공식 기록 전체를 ±8로 보므로
+        // 엔진을 고정 참조 버전에 묶어 그 시절 계산을 계속 검사한다.
+        let engine = HighSchoolCareerEngine(gameplayRulesVersion: HighSchoolGameplayRules.reference)
         let prepared = try careerBeforeDraft(engine: engine, seed: "918223")
         let dominant = try rewritingState(prepared.snapshot) { object in
             var lines = try XCTUnwrap(object["seasonLog"] as? [[String: Any]])
@@ -1155,6 +1159,12 @@ final class CareerSignatureLegacyTests: XCTestCase {
             canonical.append(
                 "staff:\(state.managerTrust ?? state.relationshipTrust):\(state.catcherTrust ?? state.relationshipTrust)"
             )
+        }
+        if let progress = state.trainingProgress, !progress.isEmpty {
+            canonical.append("progress:\(progress.token)")
+        }
+        if let perfectReleases = state.performance.perfectReleases, perfectReleases > 0 {
+            canonical.append("perfect:\(perfectReleases)")
         }
         if let balanceVersion = state.balanceVersion {
             canonical.append("balance_version:\(balanceVersion)")

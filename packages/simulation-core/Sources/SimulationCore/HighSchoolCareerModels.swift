@@ -268,6 +268,37 @@ public struct CareerChapterSnapshot: Codable, Equatable, Sendable {
     }
 }
 
+/// 능력치가 오르지 않은 훈련이 남기는 진도.
+///
+/// 예전에는 성장이 0이면 그 훈련은 피로만 남기고 사라졌다. 육성 게임에서 "아무 일도
+/// 일어나지 않았습니다"가 반복되면 훈련 버튼은 도박이 된다. 진도는 그 사이를 메운다 —
+/// 가볍게 35, 보통 60, 강하게 80이 쌓이고 100마다 기존 성장 계산으로 넘어간다.
+///
+/// 네 칸은 구위 / 제구·경기 운영 / 변화구 / 체력이며, 각 칸은 0~99를 유지한다.
+public struct CareerTrainingProgressSnapshot: Codable, Equatable, Sendable {
+    public let experience: [Int]
+    /// 직전 훈련이 남긴 진도. 화면이 "이번에 얼마나 쌓였는지"를 말하기 위한 표시 값이다.
+    public let lastEarned: Int
+
+    public init(experience: [Int] = [0, 0, 0, 0], lastEarned: Int = 0) {
+        self.experience = experience.count == 4 ? experience.map { min(99, max(0, $0)) } : [0, 0, 0, 0]
+        self.lastEarned = max(0, lastEarned)
+    }
+
+    /// 훈련 focus가 쌓이는 칸.
+    public static func index(for focus: TrainingFocus) -> Int {
+        switch focus {
+        case .velocity: return 0
+        case .command, .gamePlanning: return 1
+        case .breakingBall: return 2
+        default: return 3
+        }
+    }
+
+    public var token: String { experience.map(String.init).joined(separator: ",") }
+    public var isEmpty: Bool { experience.allSatisfy { $0 == 0 } }
+}
+
 public struct CareerPerformanceSnapshot: Codable, Equatable, Sendable {
     public let importantGamesCompleted: Int
     public let pitches: Int
@@ -280,6 +311,8 @@ public struct CareerPerformanceSnapshot: Codable, Equatable, Sendable {
     /// 없으면 만들 수 없다. 이 필드가 없던 저장본은 nil이라 해당 지표만 접힌다.
     public let outs: Int?
     public let hits: Int?
+    /// 통산 퍼펙트 릴리스. 이 필드가 없던 저장본은 nil이며 커밋 문자열에도 나타나지 않는다.
+    public let perfectReleases: Int?
 
     public init(
         importantGamesCompleted: Int = 0,
@@ -290,7 +323,8 @@ public struct CareerPerformanceSnapshot: Codable, Equatable, Sendable {
         expectedDamage: Int = 0,
         actualDamage: Int = 0,
         outs: Int? = nil,
-        hits: Int? = nil
+        hits: Int? = nil,
+        perfectReleases: Int? = nil
     ) {
         self.importantGamesCompleted = importantGamesCompleted
         self.pitches = pitches
@@ -301,6 +335,7 @@ public struct CareerPerformanceSnapshot: Codable, Equatable, Sendable {
         self.actualDamage = actualDamage
         self.outs = outs
         self.hits = hits
+        self.perfectReleases = perfectReleases
     }
 
     func adding(_ report: ImportantInningReport) -> CareerPerformanceSnapshot {
@@ -313,7 +348,10 @@ public struct CareerPerformanceSnapshot: Codable, Equatable, Sendable {
             expectedDamage: expectedDamage + report.expectedDamage,
             actualDamage: actualDamage + report.actualDamage,
             outs: (outs ?? 0) + (report.outs ?? 0),
-            hits: (hits ?? 0) + (report.hits ?? 0)
+            hits: (hits ?? 0) + (report.hits ?? 0),
+            perfectReleases: perfectReleases == nil && report.perfectReleases == nil
+                ? nil
+                : (perfectReleases ?? 0) + (report.perfectReleases ?? 0)
         )
     }
 }
@@ -667,6 +705,8 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     /// nil인 구저장본은 기존 전체 환생 사건 풀을 유지한다.
     public let rebirthEcho: RebirthEchoSnapshot?
     public let lineageLoadout: CareerLineageLoadout?
+    /// 훈련 진도. 이 필드가 없던 저장본은 nil이며, 그 회차는 예전처럼 성장 아니면 무(無)다.
+    public let trainingProgress: CareerTrainingProgressSnapshot?
     public let stateCommitment: String
 
     public var effectiveWorldRulesVersion: CareerRulesVersion {
@@ -727,6 +767,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         awakeningSparks: Int? = nil,
         rebirthEcho: RebirthEchoSnapshot? = nil,
         lineageLoadout: CareerLineageLoadout? = nil,
+        trainingProgress: CareerTrainingProgressSnapshot? = nil,
         stateCommitment: String
     ) {
         self.careerID = careerID
@@ -778,6 +819,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.awakeningSparks = awakeningSparks
         self.rebirthEcho = rebirthEcho
         self.lineageLoadout = lineageLoadout
+        self.trainingProgress = trainingProgress
         self.stateCommitment = stateCommitment
     }
 
@@ -832,6 +874,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.awakeningSparks == rhs.awakeningSparks
             && lhs.rebirthEcho == rhs.rebirthEcho
             && lhs.lineageLoadout == rhs.lineageLoadout
+            && lhs.trainingProgress == rhs.trainingProgress
             && lhs.stateCommitment == rhs.stateCommitment
     }
 }
@@ -992,6 +1035,10 @@ public final class StartHighSchoolCareerParams: Codable, Equatable, Sendable {
     public let rebirthEcho: RebirthEchoSnapshot?
     public let lineageLoadout: CareerLineageLoadout?
     public let startingRepertoire: StartingRepertoireSelection?
+    /// 실제로 끝내고 보관한 이전 생의 수. 계승 성장의 기준이며 `lifeNumber`와 다르다 —
+    /// 중간에 그만두고 다시 시작한 회차는 여기에 들어가지 않는다. 옛 요청에는 없으므로
+    /// nil로 읽히고, 그때는 이전 생의 수를 넘지 않는 범위에서 `lifeNumber`로 대신한다.
+    public let completedLives: Int?
 
     public convenience init(
         seed: String,
@@ -1075,7 +1122,8 @@ public final class StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         inheritanceRulesVersion: Int?,
         rebirthEcho: RebirthEchoSnapshot? = nil,
         lineageLoadout: CareerLineageLoadout? = nil,
-        startingRepertoire: StartingRepertoireSelection? = nil
+        startingRepertoire: StartingRepertoireSelection? = nil,
+        completedLives: Int? = nil
     ) {
         self.seed = seed
         self.presetID = presetID
@@ -1094,6 +1142,7 @@ public final class StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         self.rebirthEcho = rebirthEcho
         self.lineageLoadout = lineageLoadout
         self.startingRepertoire = startingRepertoire
+        self.completedLives = completedLives
     }
 
     public static func == (lhs: StartHighSchoolCareerParams, rhs: StartHighSchoolCareerParams) -> Bool {
@@ -1114,6 +1163,7 @@ public final class StartHighSchoolCareerParams: Codable, Equatable, Sendable {
             && lhs.rebirthEcho == rhs.rebirthEcho
             && lhs.lineageLoadout == rhs.lineageLoadout
             && lhs.startingRepertoire == rhs.startingRepertoire
+            && lhs.completedLives == rhs.completedLives
     }
 }
 

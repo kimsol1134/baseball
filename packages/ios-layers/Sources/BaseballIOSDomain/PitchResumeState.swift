@@ -46,6 +46,9 @@ public struct PitchResumeState: Codable, Equatable {
     /// 수동 릴리스 숙련 기록 도입 전 복구본은 nil이다. 자동 릴리스의 중립값은 애초에
     /// 이 배열에 들어오지 않으므로, 복구 뒤에도 실제로 손으로 던진 공만 평균에 남는다.
     public var deliveryScores: [Int]? = nil
+    /// 이 등판에서 미터 정중앙을 맞힌 횟수. 이어 던지기로 돌아와도 손으로 해낸 것이 남는다.
+    /// 이 필드가 없던 저장은 nil이며 0으로 읽는다.
+    public var perfectReleases: Int? = nil
     public var pitchLearningUses: [PitchLearningUseReceipt]? = nil
     public var pitchLearningAwardedPlateAppearances: [String]? = nil
 
@@ -111,6 +114,7 @@ public struct PitchResumeState: Codable, Equatable {
         pitchLog: [LogLine]? = nil,
         sequenceMoments: [PitchSequenceMoment]? = nil,
         deliveryScores: [Int]? = nil,
+        perfectReleases: Int? = nil,
         pitchLearningUses: [PitchLearningUseReceipt]? = nil,
         pitchLearningAwardedPlateAppearances: [String]? = nil
     ) {
@@ -145,6 +149,7 @@ public struct PitchResumeState: Codable, Equatable {
         self.pitchLog = pitchLog
         self.sequenceMoments = sequenceMoments
         self.deliveryScores = deliveryScores
+        self.perfectReleases = perfectReleases
         self.pitchLearningUses = pitchLearningUses
         self.pitchLearningAwardedPlateAppearances = pitchLearningAwardedPlateAppearances
     }

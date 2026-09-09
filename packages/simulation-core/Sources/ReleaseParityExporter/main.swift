@@ -47,7 +47,7 @@ func hsValues(_ s: HighSchoolCareerSnapshot) -> [String] {
         "\(d?.outcome.rawValue ?? "none"):\(d?.evaluationScore ?? 0):\(d?.team?.id ?? "none"):\(d?.round ?? 0):\(d?.signingBonus ?? 0)", s.selectedAwakenings.map(\.rawValue).joined(separator: ",")]
 }
 @MainActor func runHighSchool() throws -> HighSchoolCareerResult {
-    let engine = HighSchoolCareerEngine()
+    let engine = HighSchoolCareerEngine(gameplayRulesVersion: HighSchoolGameplayRules.reference)
     var r = try engine.start(.init(seed: "918220", presetID: "power_prospect", signatureLegacyID: nil, inheritanceRulesVersion: nil,
         startingRepertoire: PitchLearningRules.recommendedSelection(presetID: "power_prospect")))
     highSchoolRows.append(["action": "start", "seed": "918220", "args": [], "nextSeed": r.nextSeed, "values": hsValues(r.snapshot)])
@@ -161,7 +161,7 @@ var trainingRows: [[String: Any]] = []
 for preset in ["power_prospect", "precision_commander", "breaking_ball_artist", "innings_eater"] {
     for learning in [PitchType.slider, .curveball, .changeup] {
         let selection = StartingRepertoireSelection(readyBreakingPitches: [PitchType.slider, .curveball, .changeup].filter { $0 != learning }, primaryPitch: .fourSeam, learningPitch: learning)
-        let engine = HighSchoolCareerEngine()
+        let engine = HighSchoolCareerEngine(gameplayRulesVersion: HighSchoolGameplayRules.reference)
         var initial = try engine.start(.init(seed: "918220", presetID: preset, signatureLegacyID: nil, inheritanceRulesVersion: nil, startingRepertoire: selection))
         initial = try engine.completePrologue(.init(seed: initial.nextSeed, state: initial.snapshot))
         initial = try engine.chooseSchool(.init(seed: initial.nextSeed, state: initial.snapshot, schoolID: .haedongPower))

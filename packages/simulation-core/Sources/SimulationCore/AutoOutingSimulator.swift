@@ -9,6 +9,10 @@ import Foundation
 /// 여기서 나오는 성적은 **근사가 아니다** — 매 타석을 `PitchKernelEngine`에 통과시킨다.
 /// 그래서 자동으로 흘러간 경기와 직접 던진 경기가 같은 규칙 위에 있다.
 public struct AutoOutingSimulator: Sendable {
+
+    /// Which balance pass the pitch kernel runs for these outings. `.legacy` keeps the frozen
+    /// fixture path; callers on newer career rules pass `.school` or `.professional`.
+    public let balance: PitchBalanceRules
     /// 등판 하나의 원시 집계.
     public struct Line: Equatable, Sendable {
         public var outs = 0
@@ -25,7 +29,9 @@ public struct AutoOutingSimulator: Sendable {
         public init() {}
     }
 
-    public init() {}
+    public init(balance: PitchBalanceRules = .legacy) {
+        self.balance = balance
+    }
 
     /// 값 범위를 자른다. 이 파일 안에서만 쓰는 지역 도우미다.
     private func clamp(_ value: Int, _ lower: Int, _ upper: Int) -> Int {
@@ -56,7 +62,7 @@ public struct AutoOutingSimulator: Sendable {
         baseSeed: UInt64,
         diverseScouting: Bool = false
     ) -> Line {
-        let engine = PitchKernelEngine()
+        let engine = PitchKernelEngine(balance: balance)
         var rng = SplitMix64(seed: baseSeed)
         var line = Line()
         let fielders = FielderPosition.allCases.map {

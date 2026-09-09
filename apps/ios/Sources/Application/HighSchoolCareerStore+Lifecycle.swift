@@ -502,7 +502,11 @@ extension HighSchoolCareerStore {
                     inheritanceRulesVersion: isChallenge ? nil : carried.inheritanceRulesVersion,
                     rebirthEcho: isChallenge ? nil : rebirthEcho,
                     lineageLoadout: lineageLoadout,
-                    startingRepertoire: startingRepertoire
+                    startingRepertoire: startingRepertoire,
+                    // 실제로 끝내고 보관한 생만 계승 성장의 근거가 된다. 도전 판은 맨몸이다.
+                    completedLives: isChallenge
+                        ? 0
+                        : archive.filter { $0.lifeNumber < (challengeLifeNumber ?? carried.lifeNumber) }.count
                 )
             )
             updatePersisted {

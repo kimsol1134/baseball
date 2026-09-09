@@ -243,6 +243,9 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
     public let homeRuns: Int?
     /// Aggregated process-quality uses for an active development pitch. Missing means pre-feature.
     public let pitchLearningUses: [PitchLearningUseReceipt]?
+    /// 이 등판에서 미터 정중앙을 맞힌 횟수. 손으로 한 일을 기록이 세지 않으면, 가장 어려운
+    /// 조작이 그 순간에만 살고 사라진다. 옛 리포트는 nil이며 합계에 0으로 더한다.
+    public let perfectReleases: Int?
 
     public init(
         scenarioNumber: Int,
@@ -262,7 +265,8 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         sequenceMasteryCount: Int? = nil,
         hits: Int? = nil,
         homeRuns: Int? = nil,
-        pitchLearningUses: [PitchLearningUseReceipt]? = nil
+        pitchLearningUses: [PitchLearningUseReceipt]? = nil,
+        perfectReleases: Int? = nil
     ) {
         self.scenarioNumber = scenarioNumber
         self.pitches = pitches
@@ -282,6 +286,7 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         self.hits = hits
         self.homeRuns = homeRuns
         self.pitchLearningUses = pitchLearningUses
+        self.perfectReleases = perfectReleases
     }
 }
 

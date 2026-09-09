@@ -53,6 +53,8 @@ final class PitchSession {
     /// 이번 등판에서 **직접 던진** 공들의 릴리스 점수. 자동 릴리스(중립)는 세지 않는다 —
     /// 실력을 재는 자리에 실력이 개입하지 않은 공을 섞으면 평균이 거짓말을 한다.
     private(set) var deliveryScores: [Int] = []
+    /// 미터 정중앙을 맞힌 횟수. 등판 기록·시즌·통산으로 이어지고, 셋마다 각성 전조가 된다.
+    private(set) var perfectReleases = 0
     /// Aggregated locally, then committed by the career engine with the inning report. Outcome is
     /// deliberately irrelevant: only using the development pitch and executing it well count.
     private(set) var pitchLearningPitches: [PitchType: Int] = [:]
@@ -220,6 +222,7 @@ final class PitchSession {
             },
             sequenceMoments: sequenceMoments,
             deliveryScores: deliveryScores,
+            perfectReleases: perfectReleases,
             pitchLearningUses: pitchLearningReceipts,
             pitchLearningAwardedPlateAppearances: Array(pitchLearningAwardedPlateAppearances).sorted()
         )
@@ -268,6 +271,7 @@ final class PitchSession {
         }
         sequenceMoments = resume.sequenceMoments ?? pitchLog.compactMap(\.sequenceMoment)
         deliveryScores = resume.deliveryScores ?? []
+        perfectReleases = resume.perfectReleases ?? 0
         let learningUses = resume.pitchLearningUses ?? []
         pitchLearningPitches = Dictionary(
             uniqueKeysWithValues: learningUses.map { ($0.pitchType, $0.pitchesThrown) }
@@ -401,6 +405,7 @@ final class PitchSession {
             if let delivery, let score = PitchDeliveryScoring.score(delivery) {
                 deliveryScores.append(score)
             }
+            if delivery?.isPerfectRelease == true { perfectReleases += 1 }
             if countsForPitchLearning {
                 recordPitchLearningUse(
                     call: call,
@@ -501,7 +506,8 @@ final class PitchSession {
             sequenceMasteryCount: sequenceMasteryCount,
             hits: hitsAllowed,
             homeRuns: homeRunsAllowed,
-            pitchLearningUses: pitchLearningReceipts.isEmpty ? nil : pitchLearningReceipts
+            pitchLearningUses: pitchLearningReceipts.isEmpty ? nil : pitchLearningReceipts,
+            perfectReleases: perfectReleases
         )
     }
 

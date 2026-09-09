@@ -278,7 +278,7 @@ final class ScopedPresentationParityTests: XCTestCase {
 
         let forecast = HighSchoolCareerEngine.draftForecast(state: started.snapshot)
         XCTAssertEqual(forecast.score, 52)
-        XCTAssertEqual(forecast.threshold, 66)
+        XCTAssertEqual(forecast.threshold, 61)
         XCTAssertEqual(forecast.band, "미지명권 — 아직 명단 밖")
         XCTAssertEqual(forecast.interestedTeam, "대구 포지")
         XCTAssertEqual(forecast.presentation?.bandID, .outside)

@@ -47,10 +47,12 @@ public enum DifficultyScale {
     /// - Parameters:
     ///   - chapter: 1~8.
     ///   - lifeNumber: 1부터.
-    public static func highSchool(chapter: Int, lifeNumber: Int) -> Int {
+    /// - Parameter scalesWithRebirths: false from school rules 7. 환생 횟수만으로 상대가
+    ///   세지면 다음 생이 보상이 아니라 벌이 된다. 그 자리는 완주한 생의 계승이 대신한다.
+    public static func highSchool(chapter: Int, lifeNumber: Int, scalesWithRebirths: Bool = true) -> Int {
         let byChapter = min(chapterCeiling, max(0, chapter - 1) * chapterCeiling / 7)
         // 회차는 천천히 오른다. 2회차에 갑자기 벽이 서면 환생이 벌처럼 느껴진다.
-        let byLife = min(rebirthCeiling, max(0, lifeNumber - 1) * 2)
+        let byLife = scalesWithRebirths ? min(rebirthCeiling, max(0, lifeNumber - 1) * 2) : 0
         return byChapter + byLife
     }
 
