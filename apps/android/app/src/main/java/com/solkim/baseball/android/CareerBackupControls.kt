@@ -83,9 +83,9 @@ internal fun CareerBackupControls(state: GameAggregateState, busy: Boolean = fal
         Text("마지막 백업", style = MaterialTheme.typography.labelMedium)
         Text(java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(lastBackup)), verbatim = true)
     }
-    Text("기기 백업이 켜져 있으면 기록이 자동 백업 대상에 포함됩니다. 최신 기록을 확실히 옮기려면 기기 변경이나 앱 삭제 전에 파일로도 보관해 주세요.")
+    Text("자동 백업은 기기의 백업 설정과 암호화 지원에 따라 달라집니다. 이 앱에서는 자동 백업 완료 여부를 확인할 수 없어요. 기기 변경이나 앱 삭제 전에는 백업 저장으로 최신 기록을 보관해 주세요.")
     OutlinedButton(onClick = { save.launch("baseball-career.json") }, enabled = !working && !busy && (state.highSchool != null || state.pro != null),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("backup.export")) { Text("백업 저장") }
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("backup.export")) { Text(copy.resolve("controls.backup.save"), verbatim = true) }
     OutlinedButton(onClick = { open.launch(arrayOf("application/json", "application/octet-stream")) }, enabled = !working && !busy,
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("backup.import")) { Text("백업 불러오기") }
     message?.let { Text(it, modifier = Modifier.testTag("backup.message").semantics { liveRegion = LiveRegionMode.Polite }) }

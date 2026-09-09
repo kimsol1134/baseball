@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Path
 public object PlateFigures {
     public const val BATTER_ASPECT: Float = 613.0f / 850.0f
     public const val CATCHER_ASPECT: Float = 694.0f / 850.0f
-    public const val ASSET_OPACITY: Float = 0.13f
+    public const val ASSET_OPACITY: Float = 0.5f
 
     /**
      * 단위 상자 안의 타자. 우타자 기본 자세 — 배트를 든 손이 뒤쪽(왼쪽 위)에 있고,

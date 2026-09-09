@@ -18,6 +18,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
@@ -69,6 +70,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color as ComposeColor
@@ -133,6 +136,8 @@ public class PitchActivity : ComponentActivity() {
     private lateinit var expectedRevision: String
     private var status by mutableStateOf("투구 준비 완료")
     private var pitchError by mutableStateOf<String?>(null)
+    private var recoveryRequest by mutableStateOf<PitchPresentationRequest?>(null)
+    private var recoveryRequired by mutableStateOf(false)
     private var feedbackActive by mutableStateOf(false)
     private var advancingPitch by mutableStateOf(false)
     private var inspectingPitch by mutableStateOf(false)
@@ -151,6 +156,7 @@ public class PitchActivity : ComponentActivity() {
     private var perfectStreak by mutableStateOf(0)
     private var practiceIntroductionAccepted by mutableStateOf(false)
     private var lastPitchLine by mutableStateOf<String?>(null)
+    private var consumingPitchId: String? = null
     private var resultReady by mutableStateOf(false)
     private var isDelivering by mutableStateOf(false)
     private var contextBeforeDelivery by mutableStateOf<GameAggregateState?>(null)
@@ -266,7 +272,7 @@ public class PitchActivity : ComponentActivity() {
                     if (request?.pitchId == saved.pitchId && fastResults && !inspectingPitch && pitchError == null && !advancingPitch) continueInSession()
                 }
                 // 투구 제출 시 드라마 애니메이션 실행
-                LaunchedEffect(request, isDelivering, replayGeneration) {
+                LaunchedEffect(request, isDelivering, replayGeneration, resultReady) {
                     val saved = request
                     if ((isDelivering || (resultReady && replayGeneration > 0)) && saved != null) {
                         dramaProgress.snapTo(0f)
@@ -279,14 +285,16 @@ public class PitchActivity : ComponentActivity() {
                         )
                         // Perfect release: the ball hangs in the hand for a beat before it jumps.
                         if (perfect && !settings.reducedMotionEnabled) delay(com.solkim.baseball.application.PitchFeedbackPlan.PERFECT_HOLD_MS)
-                        dramaProgress.animateTo(
-                            targetValue = 1f,
-                            animationSpec = tween(durationMillis = duration, easing = LinearEasing),
-                        )
+                        kotlinx.coroutines.withTimeoutOrNull(duration.toLong() + 1_500L) {
+                            dramaProgress.animateTo(targetValue = 1f, animationSpec = tween(durationMillis = duration, easing = LinearEasing))
+                        }
+                        dramaProgress.snapTo(1f)
 
                         if (isDelivering) {
                             consumeAfterAnimationComplete(saved)
                         }
+                    } else if (saved != null && resultReady) {
+                        dramaProgress.snapTo(1f)
                     } else if (saved == null) {
                         dramaProgress.snapTo(0f)
                     }
@@ -358,7 +366,7 @@ public class PitchActivity : ComponentActivity() {
                             }
                         }
 
-                        val watchingPitch = isDelivering || resultReady
+                        val watchingPitch = isDelivering || resultReady || request != null
                         val coachTip = hud?.coachTip
 
                         if (!practiceMode) Box(Modifier.padding(horizontal = 16.dp, vertical = 2.dp)) {
@@ -470,6 +478,11 @@ public class PitchActivity : ComponentActivity() {
                             }
                         }
 
+                        if (isDelivering || (request != null && !resultReady)) {
+                            if (request != null) OutlinedButton(onClick = { request?.let(::consumeAfterAnimationComplete) },
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).heightIn(min = 48.dp).testTag("pitch.showResult")) { Text("결과 보기") }
+                            else Text("투구 결과를 저장하고 있어요.", modifier = Modifier.padding(16.dp).testTag("pitch.saving"))
+                        }
                         if (!isDelivering && resultReady) {
                             Column(
                                 modifier = Modifier
@@ -505,7 +518,7 @@ public class PitchActivity : ComponentActivity() {
                                     onHandOff = if (gameState.pro?.activePitch != null) ({ finishAndReturn(true) }) else null,
                                 )
                             }
-                        } else if (!isDelivering) {
+                        } else if (!isDelivering && request == null) {
                             Column(
                                 modifier = Modifier
                                     .weight(1f).fillMaxWidth()
@@ -532,7 +545,7 @@ public class PitchActivity : ComponentActivity() {
                                     currentPitchLine = hud?.currentPitchLine ?: "",
                                     primaryExplanation = hud?.primaryExplanation ?: "",
                                     holdToReleasePrompt = hud?.holdToReleasePrompt ?: stringResource(R.string.pitch_hold_to_release),
-                                    ready = repertoire.isNotEmpty() && !awaitingPractice,
+                                    ready = repertoire.isNotEmpty() && !awaitingPractice && !recoveryRequired,
                                     velocityTenthsKph = selectedPitchVelocity(),
                                     commandRating = runCatching { PitchHudProjection.pitcher(store.current).command }.getOrDefault(35) + tutorialCommandAssist(gameState),
                                     previousCommand = previousCommand,
@@ -552,7 +565,7 @@ public class PitchActivity : ComponentActivity() {
                                     scoutingTitle = hud?.scoutingTitle ?: "상대 분석",
                                     scoutingBody = hud?.scoutingBody ?: "",
                                     scoutingAvoid = hud?.scoutingAvoid ?: "",
-                                    canFastForward = hud?.canFastForward == true,
+                                    canFastForward = PitchHudProjection.canFastForward(gameState),
                                     onSelect = { sign ->
                                         selectedSign = sign
                                         when (sign) {
@@ -608,11 +621,16 @@ public class PitchActivity : ComponentActivity() {
                 pitchError?.let { message ->
                     val copy = rememberGameCopy()
                     AlertDialog(modifier = Modifier.semantics { testTagsAsResourceId = true },
-                        onDismissRequest = { pitchError = null },
+                        onDismissRequest = { pitchError = null; if (recoveryRequired) handleBack() },
                         title = { Text(copy.resolve("settings2.error-title"), verbatim = true) },
                         text = { Text(message, modifier = Modifier.testTag("pitch.error")) },
-                        confirmButton = { TextButton(onClick = { pitchError = null }, modifier = Modifier.testTag("pitch.error.close")) {
-                            Text(copy.resolve("settings2.close"), verbatim = true)
+                        confirmButton = { TextButton(onClick = {
+                            pitchError = null
+                            val pending = recoveryRequest
+                            recoveryRequest = null
+                            if (pending != null) consumeAfterAnimationComplete(pending) else if (recoveryRequired) handleBack()
+                        }, modifier = Modifier.testTag("pitch.error.close")) {
+                            if (recoveryRequest != null) Text(copy.resolve("controls.result"), verbatim = true) else if (recoveryRequired) Text("돌아가기") else Text(copy.resolve("settings2.close"), verbatim = true)
                         } })
                 }
                 if (confirmAbort) {
@@ -680,7 +698,47 @@ public class PitchActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    private fun showPitchError(message: String) { status = message; pitchError = message }
+    private fun showPitchError(message: String) {
+        if (isFinishing || isDestroyed) return
+        Log.w(TAG, "pitch.error_dialog session=${if (::sessionId.isInitialized) sessionId else "missing"} revision=${if (::store.isInitialized) store.current.revision else "missing"} boundary=${if (::store.isInitialized) store.current.pitch?.boundary else null}")
+        status = message; pitchError = message
+    }
+
+    private suspend fun reportPitchFailure(stage: String, error: Exception, attemptSession: String = sessionId, attemptPitchId: String? = null) {
+        val correlation = java.util.UUID.randomUUID().toString()
+        val command = com.solkim.baseball.application.GameCommandFailureContext.from(error)
+        Log.e(TAG, "pitch.failure correlation=$correlation stage=$stage session=$attemptSession pitch=$attemptPitchId command=${command?.commandId} expected=${command?.expectedRevision ?: expectedRevision} actual=${store.current.revision} boundary=${store.current.pitch?.boundary} lifecycle=${lifecycle.currentState} version=${BuildConfig.VERSION_NAME}/${BuildConfig.VERSION_CODE}", error)
+        val verified = try { store.reconcilePersistedRevision() }
+        catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (failure: Exception) {
+            Log.e(TAG, "pitch.reconcile_failed correlation=$correlation", failure)
+            null
+        }
+        val targetId = attemptPitchId ?: command?.pitchId
+        val confirmed = verified?.durableStateVerified == true &&
+            com.solkim.baseball.application.PitchFailureRecovery.hasSavedResult(verified.state, attemptSession, targetId)
+        val restored = if (confirmed) try {
+            controller.preparePresentation(attemptSession, selectedPitchIndex).takeIf { it.pitchId == targetId }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (failure: Exception) { Log.e(TAG, "pitch.rebuild_failed correlation=$correlation", failure); null } else null
+        Log.i(TAG, "pitch.recovery correlation=$correlation verified=${verified?.durableStateVerified == true} savedResult=${restored != null} persistedRevision=${verified?.persistedRevision} boundary=${verified?.state?.pitch?.boundary}")
+        withContext(Dispatchers.Main) {
+            if (isFinishing || isDestroyed) return@withContext
+            isDelivering = false
+            consumingPitchId = null
+            advancingPitch = false
+            recoveryRequest = restored
+            recoveryRequired = restored == null
+            if (restored != null) {
+                request = restored
+                inspectingPitch = true
+                resultReady = false
+                showPitchError("투구 결과는 저장됐어요. 결과 확인을 눌러 이어서 진행해 주세요.")
+            } else {
+                showPitchError("진행 상태를 확인하지 못했어요. 돌아간 뒤 멈춰 둔 투구를 다시 열어 주세요.")
+            }
+        }
+    }
 
     private fun persistPitchSettings(transform: (com.solkim.baseball.application.GameSettingsState) -> com.solkim.baseball.application.GameSettingsState) {
         activityScope.launch {
@@ -735,6 +793,7 @@ public class PitchActivity : ComponentActivity() {
                         withContext(Dispatchers.Main) {
                             request = saved
                             resultReady = pitch.boundary != PitchBoundary.COMMITTED
+                            isDelivering = !resultReady
                             status = if (resultReady) "투구 결과를 확인해 보세요." else "투구 준비 완료"
                         }
                     }
@@ -744,6 +803,7 @@ public class PitchActivity : ComponentActivity() {
                             withContext(Dispatchers.Main) {
                                 request = rebuilt
                                 resultReady = false
+                                isDelivering = true
                                 status = "저장된 결과를 다시 재생할 준비가 되었습니다"
                             }
                         } else {
@@ -759,9 +819,8 @@ public class PitchActivity : ComponentActivity() {
                         status = "이번 투구를 마쳤습니다."
                     }
                 }
-            } catch (error: Throwable) {
-                withContext(Dispatchers.Main) { showPitchError("투구를 불러오지 못했습니다. 다시 시도해 주세요.") }
-            }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (error: Exception) { reportPitchFailure("load", error) }
         }
     }
 
@@ -770,7 +829,7 @@ public class PitchActivity : ComponentActivity() {
             state.highSchool?.run?.lifeNumber == 1 && state.highSchool?.lastPresentation == null && request == null
 
     private fun submitSelectedPitch(delivery: PitchDelivery) {
-        if (isDelivering || resultReady || needsPracticeIntroduction(store.current)) return
+        if (isDelivering || resultReady || recoveryRequired || needsPracticeIntroduction(store.current)) return
         contextBeforeDelivery = store.current
         val deliveredSelection = selectedSign
         lastTargetZone = runCatching { PitchHudProjection.resolveCall(store.current, deliveredSelection).zone }.getOrNull()
@@ -799,7 +858,7 @@ public class PitchActivity : ComponentActivity() {
                     // Telemetry failure must never turn an already saved pitch into a retry.
                     runCatching {
                         store.dispatch(com.solkim.baseball.application.GameCommandEnvelope(
-                            "manual-release:${saved.pitchId}", "native-pitch", store.current.revision,
+                            com.solkim.baseball.application.CommandReceiptRetention.id(store.current.revision, "manual-release:${saved.pitchId}"), "native-pitch", store.current.revision,
                             com.solkim.baseball.application.GameCommand.RecordAnalytics(
                                 "manual-release:${saved.pitchId}", "manual_pitch_released_v2",
                                 listOf("release_accuracy" to delivery.releaseAccuracy.toString(), "aim_accuracy" to delivery.aimAccuracy.toString())
@@ -812,31 +871,31 @@ public class PitchActivity : ComponentActivity() {
                     request = saved
                     plateEnded = plateAppearanceEnds(currentOutcome(), preBalls, preStrikes)
                 }
-            } catch (error: Throwable) {
-                Log.e(TAG, "submitPitch error: ${error.javaClass.name}: ${error.message}", error)
-                withContext(Dispatchers.Main) {
-                    isDelivering = false
-                    showPitchError("투구를 저장하지 못했습니다. 다시 시도해 주세요.")
-                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (error: Exception) { reportPitchFailure("submit", error)
             }
         }
     }
 
     private fun consumeAfterAnimationComplete(saved: PitchPresentationRequest) {
+        if (consumingPitchId == saved.pitchId || pitchError != null) return
+        if (request?.pitchId != saved.pitchId) {
+            Log.w(TAG, "pitch.stale_animation requested=${saved.pitchId} current=${request?.pitchId}")
+            return
+        }
+        val attemptSession = sessionId
+        consumingPitchId = saved.pitchId
         activityScope.launch {
             try {
-                controller.consumePresentation(sessionId, saved)
+                controller.consumePresentation(attemptSession, saved)
                 withContext(Dispatchers.Main) {
                     isDelivering = false
                     contextBeforeDelivery = null
                     resultReady = true
                     status = "투구 결과를 확인해 보세요."
                 }
-            } catch (error: Throwable) {
-                withContext(Dispatchers.Main) {
-                    isDelivering = false
-                    showPitchError("투구를 저장하지 못했습니다. 다시 시도해 주세요.")
-                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (error: Exception) { reportPitchFailure("consume", error, attemptSession, saved.pitchId)
             }
         }
     }
@@ -854,11 +913,8 @@ public class PitchActivity : ComponentActivity() {
                     else startActivity(Intent(this@PitchActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
                     finish()
                 }
-            } catch (error: Throwable) {
-                withContext(Dispatchers.Main) {
-                    advancingPitch = false
-                    showPitchError("경기 결과를 저장하지 못했습니다. 다시 시도해 주세요.")
-                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (error: Exception) { reportPitchFailure("finishPractice", error)
             }
         }
     }
@@ -874,8 +930,8 @@ public class PitchActivity : ComponentActivity() {
                     startActivity(Intent(this@PitchActivity, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
                     finish()
                 }
-            } catch (error: Throwable) {
-                withContext(Dispatchers.Main) { showPitchError("경기 결과를 저장하지 못했습니다. 다시 시도해 주세요.") }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (error: Exception) { reportPitchFailure("finish", error)
             }
         }
     }
@@ -915,29 +971,28 @@ public class PitchActivity : ComponentActivity() {
                         status = "다음 타석 · 포수 사인을 보고 던지세요"
                     }
                 }
-            } catch (error: Throwable) {
-                withContext(Dispatchers.Main) { showPitchError("다음 타석을 준비하지 못했습니다. 다시 시도해 주세요.") }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (error: Exception) { reportPitchFailure("next", error)
             } finally { withContext(Dispatchers.Main) { advancingPitch = false } }
         }
     }
 
     private fun fastForwardCurrentBatter() {
-        if (isDelivering) return
+        if (isDelivering || advancingPitch || resultReady || recoveryRequired) return
+        isDelivering = true
+        lastDelivery = null
         activityScope.launch {
             try {
                 withContext(Dispatchers.Main) { isDelivering = true }
-                val saved = controller.fastForwardCurrentBatter()
+                val saved = controller.fastForwardCurrentBatter(finishOuting = PitchHudProjection.fatigue(store.current) >= 80)
                 withContext(Dispatchers.Main) {
                     request = saved
                     isDelivering = false
                     resultReady = saved != null
                     status = "타석을 빠르게 진행했습니다"
                 }
-            } catch (error: Throwable) {
-                withContext(Dispatchers.Main) {
-                    isDelivering = false
-                    showPitchError("진행을 마치지 못했습니다. 다시 시도해 주세요.")
-                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (error: Exception) { reportPitchFailure("fastForward", error)
             }
         }
     }
@@ -1438,7 +1493,7 @@ internal fun PitchResultCard(
     inningDecision: String? = null,
     onHandOff: (() -> Unit)? = null,
 ) {
-    val tone = outcomeTone(outcome)
+    val tone = if (outcome == null) BaseballColors.textSecondary else outcomeTone(outcome)
     val verdictTitle = outcome?.let { localizedVerdict(it, battedBall) } ?: "투구 완료"
     val nextLabel = when { !outingContinues -> "등판 마치기"; plateEnded -> "다음 타자"; else -> "다음 공" }
     var details by remember { mutableStateOf(false) }
@@ -1472,9 +1527,9 @@ internal fun PitchResultCard(
                 val copy = rememberGameCopy()
                 Text(practiceFeedback(delivery),
                     style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag("pitch.practiceReaction"))
-                AdaptiveActionRow(Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     onPracticeAgain?.let { again ->
-                        Button(onClick = again, enabled = !practiceBusy, modifier = Modifier.heightIn(min = 52.dp).testTag("pitch.practiceAgain")) {
+                        Button(onClick = again, enabled = !practiceBusy, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("pitch.practiceAgain")) {
                             Text(copy.resolve("android.onboarding.again"))
                         }
                     }
@@ -1665,7 +1720,7 @@ internal fun PitchControlsCard(
         modifier = Modifier.fillMaxSize(),
     ) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
-        val choicesHeight = (maxHeight - 90.dp).coerceIn(100.dp, 400.dp)
+        val choicesHeight = (maxHeight - 286.dp - if (canFastForward && fatigue >= 80) 48.dp else 0.dp).coerceIn(48.dp, 400.dp)
         Column(Modifier.fillMaxSize().padding(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // The core choices come first. Scrolling is a fallback for accessibility text sizes.
             Column(Modifier.fillMaxWidth().heightIn(max = choicesHeight).verticalScroll(rememberScrollState()).testTag("pitch.choices"), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1682,20 +1737,35 @@ internal fun PitchControlsCard(
                         modifier = Modifier.widthIn(min = 48.dp).testTag("pitch.alternative")) { choose(PitchHudSelection.Alternative) }
                     TextButton(onClick = { settingsOpen = true }, contentPadding = PaddingValues(horizontal = 4.dp), modifier = Modifier.testTag("pitch.settings")) { Text("설정", style = MaterialTheme.typography.labelMedium) }
                 }
-                PitchZoneGrid(selected = selectedZone, recommended = primary?.call?.zone, enabled = ready && !aimingLocked, showsLabels = false) { zone ->
-                    choose(PitchHudSelection.Manual(selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM, zone, selectedIntent, selectedIntensity))
-                }
                 PitchEffortControl(selectedIntensity, primary?.call?.intensity, ready && !aimingLocked,
                     expectedVelocity = velocityTenthsKph, compact = true, onChange = { intensity ->
                         if (hapticsEnabled) controlsView.pitchTouchFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK, hapticsEnabled)
                         choose(PitchHudSelection.Manual(selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM, selectedZone, selectedIntent, intensity))
                     })
             }
-            Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp)).testTag("pitch.aimingField")) {
-                PitchDramaView(request = null, outcome = null, batSide = batSide, reduceMotion = true, aimingZone = selectedZone)
-                Text(PitchHudProjection.zoneLabel(selectedZone, batSide), modifier = Modifier.align(Alignment.TopCenter),
-                    color = BaseballColors.action, style = MaterialTheme.typography.labelMedium)
+            Box(Modifier.weight(1f).fillMaxWidth().testTag("pitch.aimingField")) {
+                BoxWithConstraints(Modifier.fillMaxWidth().heightIn(min = 180.dp).fillMaxHeight().clip(RoundedCornerShape(12.dp)).background(BaseballColors.fieldNight)) {
+                    val catcherHeight = (maxHeight - 24.dp).coerceIn(172.dp, 300.dp)
+                    val catcherWidth = catcherHeight * (154f / 172f)
+                    val zoneWidth = (catcherWidth * 0.98f).coerceIn(156.dp, 240.dp)
+                    val batterHeight = catcherHeight * (164f / 172f)
+                    androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.catcher_stance), contentDescription = null,
+                        modifier = Modifier.align(Alignment.Center).size(width = catcherWidth, height = catcherHeight).alpha(PlateFigures.ASSET_OPACITY))
+                    androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(R.drawable.batter_stance), contentDescription = null,
+                        modifier = Modifier.align(if (batSide == BatSide.LEFT) Alignment.CenterEnd else Alignment.CenterStart).size(width = batterHeight * (84f / 164f), height = batterHeight)
+                            .graphicsLayer { scaleX = if (batSide == BatSide.LEFT) -1f else 1f }.alpha(PlateFigures.ASSET_OPACITY))
+                    Box(Modifier.align(Alignment.Center).width(zoneWidth)) {
+                        PitchZoneGrid(selected = selectedZone, recommended = primary?.call?.zone, enabled = ready && !aimingLocked, showsLabels = false, cellHeight = (zoneWidth - 8.dp) / 3) { zone ->
+                            choose(PitchHudSelection.Manual(selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM, zone, selectedIntent, selectedIntensity))
+                        }
+                    }
+                    androidx.compose.foundation.Canvas(Modifier.align(Alignment.BottomCenter).size(30.dp, 14.dp).testTag("pitch.aimingPlate")) {
+                        val plate = androidx.compose.ui.graphics.Path().apply { moveTo(0f,0f); lineTo(size.width,0f); lineTo(size.width,size.height*0.5f); lineTo(size.width*0.5f,size.height); lineTo(0f,size.height*0.5f); close() }
+                        drawPath(plate, BaseballColors.fieldChalk)
+                    }
+                }
             }
+            if (canFastForward && fatigue >= 80) TextButton(onClick = onFastForward, enabled = ready && !aimingLocked, modifier = Modifier.fillMaxWidth().testTag("pitch.exhaustionExit")) { Text("남은 등판 자동 진행") }
             PitchDeliveryControl(
                 autoRelease = autoRelease,
                 enabled = ready,
@@ -1741,7 +1811,8 @@ internal fun PitchControlsCard(
                     PitchManualPlan(selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM, selectedZone, selectedIntent, selectedIntensity, ready && !aimingLocked) { type, zone, intent, intensity ->
                         choose(PitchHudSelection.Manual(type, zone, intent, intensity))
                     }
-                    if (canFastForward) TextButton(onClick = { settingsOpen = false; onFastForward() }, enabled = ready && !aimingLocked, modifier = Modifier.testTag("pitch.fastForward")) { Text("이 타석 넘기기") }
+                    if (canFastForward && fatigue >= 80) Text("피로가 높아요. 남은 등판을 자동으로 진행할 수 있어요. 결과는 기록에 반영됩니다.")
+                    if (canFastForward) TextButton(onClick = { settingsOpen = false; onFastForward() }, enabled = ready && !aimingLocked, modifier = Modifier.testTag("pitch.fastForward")) { Text(if (fatigue >= 80) "남은 등판 자동 진행" else "이 타석 자동 진행") }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("빠른 진행")
@@ -1852,6 +1923,7 @@ private fun PitchZoneGrid(
     selected: PitchZone,
     enabled: Boolean,
     showsLabels: Boolean = true,
+    cellHeight: androidx.compose.ui.unit.Dp = 48.dp,
     recommended: PitchZone? = null,
     onSelect: (PitchZone) -> Unit,
 ) {
@@ -1864,11 +1936,11 @@ private fun PitchZoneGrid(
                     val zoneName = listOf("높게", "가운데", "낮게")[row] + "\n" + listOf("왼쪽", "중앙", "오른쪽")[col]
                     Box(
                         modifier = Modifier
-                            .weight(1f).heightIn(min = 48.dp).testTag("pitch.zone.$row.$col")
+                            .weight(1f).heightIn(min = cellHeight.coerceAtLeast(48.dp)).testTag("pitch.zone.$row.$col")
                             .semantics { this.selected = isSelected; role = Role.RadioButton }.gameDescription(zoneName)
                             .clip(RoundedCornerShape(6.dp))
-                            .background(if (isSelected) BaseballColors.action.copy(alpha = 0.28f) else BaseballColors.surfaceSoft)
-                            .border(if (isSelected) 1.5.dp else 1.dp, if (isSelected) BaseballColors.action else BaseballColors.border.copy(alpha = 0.45f), RoundedCornerShape(6.dp))
+                            .background(if (isSelected) BaseballColors.action.copy(alpha = 0.28f) else BaseballColors.fieldNight.copy(alpha = 0.65f))
+                            .border(if (isSelected) 1.5.dp else 1.dp, if (isSelected) BaseballColors.action else BaseballColors.fieldChalk.copy(alpha = 0.8f), RoundedCornerShape(6.dp))
                             .clickable(enabled = enabled) { onSelect(zone) },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -1888,7 +1960,7 @@ private fun CatcherMetaChip(text: String, modifier: Modifier = Modifier) {
     Surface(
         color = BaseballColors.surfaceSoft,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, BaseballColors.border.copy(alpha = 0.45f)),
+        border = BorderStroke(1.dp, BaseballColors.fieldChalk.copy(alpha = 0.8f)),
         modifier = modifier,
     ) {
         Text(

@@ -11,7 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
@@ -48,9 +48,19 @@ internal fun SettingsScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var expandedTerm by rememberSaveable { mutableStateOf<String?>(null) }
     var linkError by remember { mutableStateOf<String?>(null) }
-    val uri = LocalUriHandler.current
+    val context = LocalContext.current
+    var linkNotice by remember { mutableStateOf<String?>(null) }
+    fun openLink(url: String) {
+        linkError = null; linkNotice = null
+        try { context.startActivity(PolicyDocumentActivity.intent(context,url)) }
+        catch (_:android.content.ActivityNotFoundException) { linkError=label("link-error") }
+    }
+    fun copyLink(url: String) {
+        context.getSystemService(android.content.ClipboardManager::class.java).setPrimaryClip(android.content.ClipData.newPlainText("URL", url))
+        linkNotice = copy.legacy("주소를 복사했어요.")
+    }
     fun back() {
-        linkError = null
+        linkError = null; linkNotice = null
         if (page == SettingsPage.GLOSSARY && expandedTerm != null) expandedTerm = null
         else if (page == SettingsPage.ROOT) onExit() else page = page.parent
     }
@@ -79,6 +89,8 @@ internal fun SettingsScreen(
                 Text(message, modifier = Modifier.fillMaxWidth().padding(20.dp).testTag("settings.error").semantics { liveRegion = LiveRegionMode.Polite },
                     color = BaseballColors.warning, style = MaterialTheme.typography.bodyMedium)
             }
+            linkNotice?.let { Text(it, verbatim = true, color = BaseballColors.textSecondary,
+                modifier = Modifier.padding(horizontal = 20.dp).semantics { liveRegion = LiveRegionMode.Polite }) }
             key(page) {
                 Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -145,12 +157,14 @@ internal fun SettingsScreen(
                             SettingsLink(label("glossary"), "settings.open.glossary") { page = SettingsPage.GLOSSARY }
                             HorizontalDivider()
                             SettingsLink(label("support"), "settings.support") {
-                                runCatching { uri.openUri("https://baseball-reincarnation.vercel.app/support") }.onFailure { linkError = label("link-error") }
+                                openLink(PolicyLinks.SUPPORT)
                             }
+                            TextButton(onClick = { copyLink(PolicyLinks.SUPPORT) }, modifier = Modifier.testTag("settings.support.copy")) { Text("문의 주소 복사") }
                             HorizontalDivider()
                             SettingsLink(label("privacy"), "settings.privacy") {
-                                runCatching { uri.openUri("https://baseball-reincarnation.vercel.app/privacy") }.onFailure { linkError = label("link-error") }
+                                openLink(PolicyLinks.PRIVACY)
                             }
+                            TextButton(onClick = { copyLink(PolicyLinks.PRIVACY) }, modifier = Modifier.testTag("settings.privacy.copy")) { Text("개인정보처리방침 주소 복사") }
                         }
                         SettingsPage.PITCH_HELP -> {
                             for (index in 1..3) Text(label("pitch-step-$index"), verbatim = true, style = MaterialTheme.typography.bodyLarge)

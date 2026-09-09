@@ -204,6 +204,7 @@ public class Phase7VerticalController(
 
     public suspend fun resumePitch(sessionId: String): PitchLaunch {
         dispatch(GameCommand.ResumePitch(sessionId))
+        if (store.state.value.pitch?.boundary == PitchBoundary.RESERVED) dispatch(GameCommand.StartPitch(sessionId))
         return PitchLaunch(sessionId, store.state.value.revision)
     }
 
@@ -343,6 +344,7 @@ public class Phase7VerticalController(
 
     public suspend fun consumePresentation(sessionId: String, request: PitchPresentationRequest) {
         val state = store.state.value
+        require(PitchFailureRecovery.hasSavedResult(state, sessionId, request.pitchId)) { "phase7.consume_identity" }
         when (state.pitch?.boundary) {
             PitchBoundary.COMMITTED -> dispatch(GameCommand.ConsumePitch(sessionId, request.pitchId))
             PitchBoundary.CONSUMED,
@@ -350,6 +352,7 @@ public class Phase7VerticalController(
             PitchBoundary.COMPLETED -> Unit
             else -> error("phase7.consume_boundary")
         }
+        require(PitchFailureRecovery.hasSavedResult(store.state.value, sessionId, request.pitchId)) { "phase7.consume_identity" }
         if (store.state.value.pitch?.boundary == PitchBoundary.CONSUMED) {
             dispatch(GameCommand.MarkPitchTerminal(sessionId, request.pitchId, request.requestSha256))
         }
@@ -452,13 +455,17 @@ public class Phase7VerticalController(
         return pitch.careerKind == PitchCareerKind.PRO && pro != null && !pro.ended
     }
 
-    public suspend fun fastForwardCurrentBatter(): PitchPresentationRequest? {
+    public suspend fun fastForwardCurrentBatter(finishOuting: Boolean = false): PitchPresentationRequest? {
+        val initial = store.state.value
+        val initialBatter = if (initial.pitch?.careerKind == PitchCareerKind.PRO) initial.pro?.activePitch?.context?.plateAppearanceId else initial.highSchool?.activePitch?.context?.plateAppearanceId
         var last: PitchPresentationRequest? = null
         var guard = 0
-        while (guard++ < 40) {
+        while (guard++ < 256) {
             val state = store.state.value
             val pitch = state.pitch ?: return last
             if (pitch.careerKind == PitchCareerKind.TUTORIAL) return last
+            val currentBatter = if (pitch.careerKind == PitchCareerKind.PRO) state.pro?.activePitch?.context?.plateAppearanceId else state.highSchool?.activePitch?.context?.plateAppearanceId
+            if (!finishOuting && currentBatter != initialBatter && pitch.boundary == PitchBoundary.COMPLETED) return last
             val plateEnded = when (pitch.careerKind) {
                 PitchCareerKind.HIGH_SCHOOL -> state.highSchool?.activePitch?.ended == true
                 PitchCareerKind.PRO -> state.pro?.activePitch?.ended == true
@@ -470,10 +477,14 @@ public class Phase7VerticalController(
                     consumePresentation(pitch.sessionId, last)
                 }
                 PitchBoundary.TERMINAL -> {
+                    if (plateEnded) return last ?: preparePresentation(pitch.sessionId, 0)
                     completePitchAndPostgame(pitch.sessionId)
                     val after = store.state.value
-                    val done = after.highSchool?.activePitch?.ended == true || after.pro?.activePitch?.ended == true
-                    if (done) return last
+                    val done = when (pitch.careerKind) {
+                        PitchCareerKind.PRO -> after.pro?.activePitch == null || after.pro?.activePitch?.ended == true
+                        else -> after.highSchool?.activePitch == null || after.highSchool?.activePitch?.ended == true
+                    }
+                    if (done || (!finishOuting && currentBatter != initialBatter)) return last
                     continueOfficialPitch() ?: return last
                 }
                 PitchBoundary.COMPLETED -> {
@@ -483,7 +494,7 @@ public class Phase7VerticalController(
                 else -> return last
             }
         }
-        return last
+        error("pitch.automatic_progress_limit")
     }
 
     private suspend fun reserveCurrentProPitch(): PitchLaunch {
@@ -525,7 +536,7 @@ public class Phase7VerticalController(
     private suspend fun dispatch(command: GameCommand, sessionId: String = commandSession(command)) {
         val sequence = commandSequence.incrementAndGet()
         val envelope = GameCommandEnvelope(
-            commandId = "phase7-${Hashing.fnv1a64Hex("${store.state.value.installId}|${store.state.value.revision}|$sequence")}",
+            commandId = CommandReceiptRetention.id(store.state.value.revision, "phase7|${store.state.value.installId}|$sequence"),
             sessionId = sessionId,
             expectedRevision = store.state.value.revision,
             command = command,

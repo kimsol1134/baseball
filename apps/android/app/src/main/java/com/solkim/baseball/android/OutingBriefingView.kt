@@ -22,6 +22,13 @@ internal fun OutingBriefingView(state: GameAggregateState, model: Phase8ScreenMo
             Text(briefing.title, verbatim = true, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("outing.role"))
         }
         VisualOutingSituation(briefing)
+        if (state.pitch != null && (state.pro?.activePitch != null || state.highSchool?.activePitch != null)) {
+            val batter = PitchHudProjection.batter(state)
+            Text(batter.name, modifier = Modifier.testTag("outing.opponent"))
+            val outs = if (state.pitch?.careerKind == PitchCareerKind.PRO) state.pro?.activePitch?.outs ?: 0 else state.highSchool?.activePitch?.outs ?: 0
+            Text("지금까지 ${PitchHudProjection.sessionPitches(state)}구 · ${outs}아웃", modifier = Modifier.testTag("outing.progress"))
+            Text("피로 ${PitchHudProjection.fatigue(state)}")
+        }
         HorizontalDivider()
         Text("이번 목표", style = MaterialTheme.typography.labelLarge)
         Text(briefing.goal, verbatim = true, style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag("outing.goal"))

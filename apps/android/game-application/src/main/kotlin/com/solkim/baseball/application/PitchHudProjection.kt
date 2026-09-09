@@ -256,7 +256,11 @@ public object PitchHudProjection {
     }
 
     public fun canFastForward(state: GameAggregateState): Boolean {
-        if (state.pitch?.careerKind == PitchCareerKind.TUTORIAL) return false
+        val pitch = state.pitch ?: return false
+        if (pitch.careerKind == PitchCareerKind.TUTORIAL || pitch.boundary != PitchBoundary.PLAYING) return false
+        val ended = if (pitch.careerKind == PitchCareerKind.PRO) state.pro?.activePitch?.ended else state.highSchool?.activePitch?.ended
+        if (ended != false) return false
+        if (fatigue(state) >= 80) return true
         val pitches = sessionPitches(state)
         val leverage: Int
         val balls: Int

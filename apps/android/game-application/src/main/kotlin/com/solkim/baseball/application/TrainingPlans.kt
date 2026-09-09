@@ -15,7 +15,7 @@ public object TrainingPlans {
 
     public fun label(focus: TrainingFocus): String = when (focus) {
         TrainingFocus.RECOVERY -> "회복"
-        TrainingFocus.GAME_PLANNING -> "수싸움"
+        TrainingFocus.GAME_PLANNING -> "경기 운영"
         TrainingFocus.BREAKING_BALL -> "변화구"
         else -> TrainingPresentation.metric(focus)
     }

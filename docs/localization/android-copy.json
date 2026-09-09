@@ -1,8 +1,8 @@
 {
   "android.setup.preset-description": {
-    "ko": "%1$s. 구위 %2$d, 제구 %3$d, 무브먼트 %4$d, 체력 %5$d",
-    "en": "%1$s. Stuff %2$d, command %3$d, movement %4$d, stamina %5$d",
-    "ja": "%1$s。球威 %2$d、制球 %3$d、変化量 %4$d、体力 %5$d"
+    "ko": "%1$s. 구위 %2$d, 제구 %3$d, 무브먼트 %4$d, 체력 %5$d. 능력치는 100점 만점입니다.",
+    "en": "%1$s. Stuff %2$d, command %3$d, movement %4$d, stamina %5$d. All abilities are out of 100.",
+    "ja": "%1$s。球威 %2$d、制球 %3$d、変化量 %4$d、体力 %5$d。能力値はすべて100点満点です。"
   },
   "android.pitch.inning": {
     "ko": "이닝 %1$d",
@@ -340,24 +340,24 @@
     "ja": "今回の投手タイプ"
   },
   "android.challenge.preset.power_prospect": {
-    "ko": "강속구형",
-    "en": "Power pitcher",
-    "ja": "速球型"
+    "ko": "힘으로 승부하는 투수",
+    "en": "A power pitcher",
+    "ja": "力で勝負する投手"
   },
   "android.challenge.preset.precision_commander": {
-    "ko": "정밀 제구형",
+    "ko": "제구로 승부하는 투수",
     "en": "Control pitcher",
-    "ja": "精密制球型"
+    "ja": "制球で勝負する投手"
   },
   "android.challenge.preset.breaking_ball_artist": {
-    "ko": "변화구형",
-    "en": "Breaking-ball artist",
-    "ja": "変化球型"
+    "ko": "변화구가 뛰어난 투수",
+    "en": "Breaking-ball specialist",
+    "ja": "変化球が得意な投手"
   },
   "android.challenge.preset.innings_eater": {
-    "ko": "이닝 소화형",
-    "en": "Innings eater",
-    "ja": "長いイニングを投げる型"
+    "ko": "체력이 좋은 투수",
+    "en": "Durable pitcher",
+    "ja": "スタミナがある投手"
   },
   "android.challenge.wait": {
     "ko": "진행 중인 투구나 설정을 마친 뒤 도전을 시작할 수 있습니다.",
@@ -515,9 +515,9 @@
     "ja": "最初からやり直しますか？"
   },
   "android.settings.reset-body": {
-    "ko": "현재 선수, 지난 생의 기록과 계승이 모두 사라진다. 되돌릴 수 없다. 남기고 싶다면 먼저 '기록을 파일로 보관'을 누르자.",
-    "en": "The current player, every past life and everything inherited will be erased. This cannot be undone. To keep them, tap 'Back up to a file' first.",
-    "ja": "現在の選手、過去の生の記録と継承がすべて消える。取り消せない。残したいなら先に「記録をファイルに保存」を押そう。"
+    "ko": "현재 선수, 지난 생의 기록과 계승이 모두 사라진다. 되돌릴 수 없다. 남기고 싶다면 먼저 '%1$@'을 누르자.",
+    "en": "The current player, every past life and everything inherited will be erased. This cannot be undone. To keep them, tap '%1$@' first.",
+    "ja": "現在の選手、過去の生の記録と継承がすべて消えます。取り消せません。残したい場合は、先に「%1$@」を押してください。"
   },
   "android.settings.reset-working": {
     "ko": "진행을 삭제하고 있어요…",
@@ -755,9 +755,9 @@
     "ja": "会話"
   },
   "conversation.history": {
-    "ko": "지난 대화",
-    "en": "Earlier conversation",
-    "ja": "前の会話"
+    "ko": "떠오르는 기억",
+    "en": "A memory to reflect on",
+    "ja": "思い浮かぶ記憶"
   },
   "conversation.scene": {
     "ko": "이야기 더 보기",
@@ -4278,5 +4278,565 @@
     "ko": "기기 백업이 켜져 있으면 기록이 자동 백업 대상에 포함됩니다. 최신 기록을 확실히 옮기려면 기기 변경이나 앱 삭제 전에 파일로도 보관해 주세요.",
     "en": "When device backup is enabled, your career is eligible for automatic backup. Export a file before changing devices or uninstalling to keep your latest progress.",
     "ja": "端末のバックアップが有効なら、記録は自動バックアップの対象になります。最新の進行を確実に移すには、機種変更やアプリ削除の前にファイルにも保存してください。"
+  },
+  "content.personality-trait.tactician.title": {
+    "ko": "경기 운영형",
+    "en": "Tactician",
+    "ja": "配球型"
+  },
+  "content.training-intensity.light.label": {
+    "ko": "가볍게",
+    "en": "Light",
+    "ja": "軽め"
+  },
+  "android.qa.round2.0": {
+    "ko": "비우면 민서준으로 불린다",
+    "en": "Leave blank to use Min Seo-jun.",
+    "ja": "空欄の場合はミン・ソジュンになります。"
+  },
+  "android.qa.round2.1": {
+    "ko": "투구를 멈추고 나가기",
+    "en": "Pause pitching and leave",
+    "ja": "投球を中断して戻る"
+  },
+  "android.qa.round2.2": {
+    "ko": "현재 타자와 기록을 유지하고 나갑니다.",
+    "en": "Keep the current batter and records, and leave.",
+    "ja": "現在の打者と記録を保持して戻ります。"
+  },
+  "android.qa.round2.3": {
+    "ko": "이어서 던지기",
+    "en": "Resume pitching",
+    "ja": "投球を再開"
+  },
+  "android.qa.round2.4": {
+    "ko": "현재 경기 상태에서 투구를 이어갑니다.",
+    "en": "Resume pitching from the current game state.",
+    "ja": "現在の試合状況から投球を再開します。"
+  },
+  "android.qa.round2.5": {
+    "ko": "경기 운영을 가져간다.",
+    "en": "Take control of the game.",
+    "ja": "配球で主導権を握る。"
+  },
+  "android.qa.round2.6": {
+    "ko": "자동 백업은 기기의 백업 설정과 암호화 지원에 따라 달라집니다. 이 앱에서는 자동 백업 완료 여부를 확인할 수 없어요. 기기 변경이나 앱 삭제 전에는 백업 저장으로 최신 기록을 보관해 주세요.",
+    "en": "Automatic backup depends on your device backup settings and encryption support. This app cannot confirm that automatic backup has completed. Use Save backup to keep your latest progress before changing devices or deleting the app.",
+    "ja": "自動バックアップは端末のバックアップ設定と暗号化対応によって異なります。このアプリでは自動バックアップの完了を確認できません。機種変更やアプリ削除の前に「バックアップ保存」で最新の記録を保存してください。"
+  },
+  "android.qa.round2.7": {
+    "ko": "피로가 높아요. 남은 등판을 자동으로 진행할 수 있어요. 결과는 기록에 반영됩니다.",
+    "en": "Fatigue is high. You can simulate the rest of this outing. Results will count toward your records.",
+    "ja": "疲労が高まっています。残りの登板を自動で進められます。結果は記録に反映されます。"
+  },
+  "android.qa.round2.8": {
+    "ko": "남은 등판 자동 진행",
+    "en": "Simulate remaining outing",
+    "ja": "残りの登板を自動進行"
+  },
+  "android.qa.round2.9": {
+    "ko": "이 타석 자동 진행",
+    "en": "Simulate this at-bat",
+    "ja": "この打席を自動進行"
+  },
+  "android.r3.copy.0": {
+    "ko": "%1$s경기 · %2$s.%3$s이닝 · ERA %4$s\n%5$s승 %6$s패 · %7$s탈삼진 · %8$s세이브",
+    "en": "%1$s G · %2$s.%3$s IP · ERA %4$s\n%5$s W %6$s L · %7$s K · %8$s SV",
+    "ja": "%1$s試合 · %2$s.%3$s回 · 防御率 %4$s\n%5$s勝 %6$s敗 · %7$s奪三振 · %8$sセーブ"
+  },
+  "android.r3.copy.1": {
+    "ko": "%1$s년 · 연봉 %2$s · %3$s",
+    "en": "%1$s years · Annual salary %2$s · %3$s",
+    "ja": "%1$s年 · 年俸 %2$s · %3$s"
+  },
+  "android.r3.copy.2": {
+    "ko": "%1$s번의 훈련 · %2$s번의 대화",
+    "en": "%1$s training sessions · %2$s conversations",
+    "ja": "練習%1$s回 · 会話%2$s回"
+  },
+  "android.r3.copy.3": {
+    "ko": "%1$s승 %2$s패 %3$s무",
+    "en": "%1$s W %2$s L %3$s D",
+    "ja": "%1$s勝 %2$s敗 %3$s分"
+  },
+  "android.r3.copy.4": {
+    "ko": "3년의 결과",
+    "en": "Three years on the mound",
+    "ja": "マウンドで重ねた3年間"
+  },
+  "android.r3.copy.5": {
+    "ko": "계약하면 구단과 목표가 확정됩니다.",
+    "en": "Signing confirms your team and career goal.",
+    "ja": "契約すると球団と目標が確定します。"
+  },
+  "android.r3.copy.6": {
+    "ko": "네가 쌓은 3년을 믿는다. 다음 마운드에서도 네 공을 던져라.",
+    "en": "I believe in the three years you put in. Take your pitching to the next mound.",
+    "ja": "積み重ねた3年間を信じている。次のマウンドでも自分の球を投げろ。"
+  },
+  "android.r3.copy.7": {
+    "ko": "다음 단계",
+    "en": "Next step",
+    "ja": "次のステップ"
+  },
+  "android.r3.copy.8": {
+    "ko": "다음 마운드",
+    "en": "The next mound",
+    "ja": "次のマウンド"
+  },
+  "android.r3.copy.9": {
+    "ko": "류찬울",
+    "en": "Ryu Chan-ul",
+    "ja": "リュ・チャヌル"
+  },
+  "android.r3.copy.10": {
+    "ko": "멈춰 둔 경기",
+    "en": "Your paused game",
+    "ja": "中断中の試合"
+  },
+  "android.r3.copy.11": {
+    "ko": "문해솔",
+    "en": "Moon Hae-sol",
+    "ja": "ムン・ヘソル"
+  },
+  "android.r3.copy.12": {
+    "ko": "배시온",
+    "en": "Bae Si-on",
+    "ja": "ペ・シオン"
+  },
+  "android.r3.copy.13": {
+    "ko": "서재온",
+    "en": "Seo Jae-on",
+    "ja": "ソ・ジェオン"
+  },
+  "android.r3.copy.14": {
+    "ko": "선수와 성장",
+    "en": "Player and growth",
+    "ja": "選手と成長"
+  },
+  "android.r3.copy.15": {
+    "ko": "아직 기록이 없습니다.",
+    "en": "No records yet.",
+    "ja": "まだ記録がありません。"
+  },
+  "android.r3.copy.16": {
+    "ko": "알림 예약 취소",
+    "en": "Cancel reminder",
+    "ja": "通知予約を取り消す"
+  },
+  "android.r3.copy.17": {
+    "ko": "여기서 끝은 아니다. 다음 마운드에서 네 공을 보여 줘라.",
+    "en": "This is not the end of your story. Show your pitching on the next mound.",
+    "ja": "ここで終わりではない。次のマウンドで自分の球を見せてくれ。"
+  },
+  "android.r3.copy.18": {
+    "ko": "예약한 복귀 알림을 취소합니다.",
+    "en": "Cancel the scheduled return reminder.",
+    "ja": "予約した復帰通知を取り消します。"
+  },
+  "android.r3.copy.19": {
+    "ko": "오태린",
+    "en": "Oh Tae-rin",
+    "ja": "オ・テリン"
+  },
+  "android.r3.copy.20": {
+    "ko": "이 선택으로 진행하기",
+    "en": "Confirm this choice",
+    "ja": "この選択で進める"
+  },
+  "android.r3.copy.21": {
+    "ko": "이 조건으로 계약하기",
+    "en": "Sign on these terms",
+    "ja": "この条件で契約する"
+  },
+  "android.r3.copy.22": {
+    "ko": "진행 중인 대화",
+    "en": "Your pending conversation",
+    "ja": "進行中の会話"
+  },
+  "android.r3.copy.23": {
+    "ko": "차윤재",
+    "en": "Cha Yun-jae",
+    "ja": "チャ・ユンジェ"
+  },
+  "android.r3.copy.24": {
+    "ko": "차이든",
+    "en": "Cha I-deun",
+    "ja": "チャ・イドゥン"
+  },
+  "android.r3.copy.25": {
+    "ko": "처음의 나 → 지금의 나",
+    "en": "Where you started → Where you are",
+    "ja": "最初の自分 → 今の自分"
+  },
+  "android.r3.copy.26": {
+    "ko": "프로 시즌의 선택",
+    "en": "Your pro season decision",
+    "ja": "プロシーズンの選択"
+  },
+  "android.r3.copy.27": {
+    "ko": "현재 선수의 이야기를 이어갑니다.",
+    "en": "Continue your current player’s story.",
+    "ja": "現在の選手の物語を続けます。"
+  },
+  "android.r3.copy.28": {
+    "ko": "현재 프로 선수의 다음 일정으로 이어집니다.",
+    "en": "Continue with your current pro player’s next event.",
+    "ja": "現在のプロ選手の次の予定へ進みます。"
+  },
+  "android.r3.reminder.title": {
+    "ko": "다음 마운드에서 만나요",
+    "en": "See you on the mound",
+    "ja": "次のマウンドで会いましょう"
+  },
+  "android.r3.reminder.settings": {
+    "ko": "알림 설정 열기",
+    "en": "Open notification settings",
+    "ja": "通知設定を開く"
+  },
+  "android.r3.reminder.scheduled": {
+    "ko": "내일 오전 9시(한국 시간) 알림을 예약했어요.",
+    "en": "Reminder scheduled for tomorrow at 9 a.m. Korea time.",
+    "ja": "明日の午前9時（韓国時間）に通知を予約しました。"
+  },
+  "android.r3.reminder.blocked": {
+    "ko": "알림이 허용되지 않아 예약하지 못했어요. 알림 설정에서 허용해 주세요.",
+    "en": "Notifications are not allowed, so no reminder was scheduled. Allow them in notification settings.",
+    "ja": "通知が許可されていないため予約できませんでした。通知設定で許可してください。"
+  },
+  "android.r3.reminder.failed": {
+    "ko": "알림 예약에 실패했어요. 기존 예약이 있다면 유지됩니다. 다시 시도해 주세요.",
+    "en": "Could not schedule the reminder. Any existing reminder is unchanged. Please try again.",
+    "ja": "通知を予約できませんでした。以前の予約があれば維持されます。もう一度お試しください。"
+  },
+  "android.r3.reminder.cancelled": {
+    "ko": "예약한 알림을 취소했어요.",
+    "en": "The scheduled reminder was cancelled.",
+    "ja": "予約した通知を取り消しました。"
+  },
+  "android.r3.reminder.expired": {
+    "ko": "예약 시간이 지났어요. 새 알림을 예약해 주세요.",
+    "en": "That reminder time has passed. Please schedule a new reminder.",
+    "ja": "予約時刻を過ぎています。新しい通知を予約してください。"
+  },
+  "content.awakening-branch.game.title": {
+    "ko": "경기 운영",
+    "en": "Game management",
+    "ja": "試合運び"
+  },
+  "pitch.trait.tactician.title": {
+    "ko": "경기 운영형",
+    "en": "Tactician",
+    "ja": "配球型"
+  },
+  "android.r3.opponent": {
+    "ko": "상대 %1$s",
+    "en": "Opponent: %1$s",
+    "ja": "対戦相手：%1$s"
+  },
+  "android.r3.progress": {
+    "ko": "지금까지 %1$s구 · %2$s아웃",
+    "en": "So far: %1$s pitches · %2$s outs",
+    "ja": "ここまで%1$s球 · %2$sアウト"
+  },
+  "conversation.role.staff": {
+    "ko": "구단 스태프",
+    "en": "Team staff",
+    "ja": "球団スタッフ"
+  },
+  "android.r3.draft.title": {
+    "ko": "드래프트 결과",
+    "en": "Draft result",
+    "ja": "ドラフト結果"
+  },
+  "android.r3.draft.position": {
+    "ko": "%1$s라운드 · 전체 %2$s순위",
+    "en": "Round %1$s · Pick %2$s overall",
+    "ja": "%1$s巡目 · 全体%2$s位"
+  },
+  "android.pro.personality.coach.0": {
+    "ko": "기본기를 먼저 보는 감독",
+    "en": "A manager who puts fundamentals first",
+    "ja": "基本を大切にする監督"
+  },
+  "android.pro.personality.coach.1": {
+    "ko": "도전을 밀어주는 감독",
+    "en": "A manager who encourages a challenge",
+    "ja": "挑戦を後押しする監督"
+  },
+  "android.pro.personality.catcher.0": {
+    "ko": "차분하게 사인을 맞추는 포수",
+    "en": "A catcher who calmly works through the signs",
+    "ja": "落ち着いてサインを合わせる捕手"
+  },
+  "android.pro.personality.catcher.1": {
+    "ko": "타자의 반응을 먼저 읽는 포수",
+    "en": "A catcher who watches how batters react",
+    "ja": "打者の反応を読む捕手"
+  },
+  "android.pro.personality.staff.0": {
+    "ko": "몸 상태와 일정을 함께 챙기는 스태프",
+    "en": "A staff member who balances health and schedule",
+    "ja": "体調と予定の両方を気にかけるスタッフ"
+  },
+  "android.pro.personality.staff.1": {
+    "ko": "선수의 이야기를 먼저 듣는 스태프",
+    "en": "A staff member who listens to the player first",
+    "ja": "選手の話に耳を傾けるスタッフ"
+  },
+  "android.r4.0": {
+    "ko": "%1$s · 마지막 아웃까지 던질 체력을 준비해요.",
+    "en": "%1$s · Build the stamina to record the final out.",
+    "ja": "%1$s · 最後のアウトまで投げる体力を整えましょう。"
+  },
+  "android.r4.1": {
+    "ko": "%1$s.%2$s / %3$s이닝 · %4$s",
+    "en": "%1$s.%2$s / %3$s IP · %4$s",
+    "ja": "%1$s.%2$s / %3$s回 · %4$s"
+  },
+  "android.r4.2": {
+    "ko": "%1$s시즌 %2$s주 · 최근 등판 %3$s.%4$s이닝",
+    "en": "Season %1$s, week %2$s · Last outing: %3$s.%4$s IP",
+    "ja": "%1$sシーズン %2$s週 · 前回の登板 %3$s.%4$s回"
+  },
+  "android.r4.3": {
+    "ko": "%1$s학년 · %2$s · %3$s %4$s",
+    "en": "Year %1$s · %2$s · %3$s %4$s",
+    "ja": "%1$s年生 · %2$s · %3$s %4$s"
+  },
+  "android.r4.4": {
+    "ko": "1군 마운드에 도전",
+    "en": "Work toward a first-team call-up",
+    "ja": "一軍のマウンドを目指す"
+  },
+  "android.r4.5": {
+    "ko": "1군 승격 조건",
+    "en": "First-team call-up requirements",
+    "ja": "一軍昇格の条件"
+  },
+  "android.r4.6": {
+    "ko": "감독 신뢰 %1$s / %2$s",
+    "en": "Manager trust %1$s / %2$s",
+    "ja": "監督の信頼 %1$s / %2$s"
+  },
+  "android.r4.7": {
+    "ko": "경기 진행",
+    "en": "Game progression",
+    "ja": "試合の進行"
+  },
+  "android.r4.8": {
+    "ko": "경험 조건: 2시즌 진입 또는 %1$s경기 또는 %2$s탈삼진",
+    "en": "Experience: reach season 2, or %1$s games, or %2$s strikeouts",
+    "ja": "経験条件：2シーズン目、または%1$s試合、または%2$s奪三振"
+  },
+  "android.r4.9": {
+    "ko": "기록된 진행 구간의 변화입니다. 개별 선택의 세부 원인은 남아 있지 않을 수 있어요.",
+    "en": "These changes were recorded during the shown progression. Details of each individual choice may not have been saved.",
+    "ja": "表示された進行区間で記録された変化です。個々の選択の詳しい原因は残っていない場合があります。"
+  },
+  "android.r4.10": {
+    "ko": "능력 감소 기록",
+    "en": "Recorded ability decreases",
+    "ja": "能力低下の記録"
+  },
+  "android.r4.11": {
+    "ko": "부족한 조건을 채워 보세요. 승격은 주간 진행에서 판정합니다.",
+    "en": "Work on the unmet requirements. Call-ups are evaluated when advancing the week.",
+    "ja": "足りない条件を満たしましょう。昇格は週を進めた時に判定されます。"
+  },
+  "android.r4.12": {
+    "ko": "이번 시즌 %1$s이닝을 향해",
+    "en": "Aim for %1$s innings this season",
+    "ja": "今シーズン%1$s回を目指す"
+  },
+  "android.r4.13": {
+    "ko": "이번 시즌 첫 등판을 준비해요.",
+    "en": "Prepare for your first outing this season.",
+    "ja": "今シーズン初めての登板に備えましょう。"
+  },
+  "android.r4.14": {
+    "ko": "이전의 세부 변경 기록이 없어 정확한 감소 원인은 확인할 수 없어요.",
+    "en": "Older detailed changes were not recorded, so the exact cause of this decrease is unavailable.",
+    "ja": "過去の詳しい変更記録がないため、低下した正確な原因は確認できません。"
+  },
+  "android.r4.15": {
+    "ko": "종합 평가 %1$s / %2$s",
+    "en": "Overall rating %1$s / %2$s",
+    "ja": "総合評価 %1$s / %2$s"
+  },
+  "android.r4.16": {
+    "ko": "중단 처리를 마치지 못했어요. 아래에서 투구를 이어 하거나 저장된 결과를 확인해 주세요.",
+    "en": "Could not finish leaving the outing. Resume pitching or view the saved result below.",
+    "ja": "中断処理を完了できませんでした。下から投球を再開するか、保存された結果を確認してください。"
+  },
+  "android.r4.17": {
+    "ko": "커리어 진행",
+    "en": "Career progression",
+    "ja": "キャリアの進行"
+  },
+  "android.r4.18": {
+    "ko": "투구 결과를 저장하고 있어요.",
+    "en": "Saving the pitch result.",
+    "ja": "投球結果を保存しています。"
+  },
+  "android.r4.19": {
+    "ko": "투구 상태를 확인해야 해요. 저장된 경기로 돌아가 이어서 진행해 주세요.",
+    "en": "The pitch state needs checking. Return to the saved game to continue.",
+    "ja": "投球状態の確認が必要です。保存された試合に戻って続けてください。"
+  },
+  "android.r4.20": {
+    "ko": "표시된 변화는 훈련뿐 아니라 경기와 선택의 영향까지 합친 값입니다.",
+    "en": "The displayed change combines training, games, and choices.",
+    "ja": "表示された変化には練習だけでなく、試合や選択の影響も含まれます。"
+  },
+  "android.r4.21": {
+    "ko": "현재 %1$s시즌 · %2$s경기 · %3$s탈삼진",
+    "en": "Currently: season %1$s · %2$s games · %3$s strikeouts",
+    "ja": "現在 %1$sシーズン · %2$s試合 · %3$s奪三振"
+  },
+  "android.r4.22": {
+    "ko": "현재 기준으로 조건을 충족했어요. 다음 주간 진행에서 다시 판정합니다.",
+    "en": "You currently meet the requirements. They will be checked again when advancing the week.",
+    "ja": "現在の条件は満たしています。次に週を進めた時に改めて判定されます。"
+  },
+  "android.r4.23": {
+    "ko": "훈련 진행",
+    "en": "Training progression",
+    "ja": "練習の進行"
+  },
+  "android.r4.awakening-source": {
+    "ko": "각성 %1$s",
+    "en": "Awakening: %1$s",
+    "ja": "覚醒：%1$s"
+  },
+  "android.r4.more-content": {
+    "ko": "아래에 내용이 더 있어요 ↓",
+    "en": "More content below ↓",
+    "ja": "下に続きがあります ↓"
+  },
+  "android.r5.album.capacity": {
+    "ko": "투구 재생 보관 한도에 도달했어요. 경기 기록과 시즌 성적은 계속 저장돼요.",
+    "en": "Replay storage is full. Game records and season stats will still be saved.",
+    "ja": "投球リプレイの保存上限に達しました。試合記録とシーズン成績は引き続き保存されます。"
+  },
+  "android.r6.pitch.saved-result": {
+    "ko": "투구 결과는 저장됐어요. 결과 확인을 눌러 이어서 진행해 주세요.",
+    "en": "Your pitch result is saved. Select View result to continue.",
+    "ja": "投球結果は保存されています。「結果を見る」で続けてください。"
+  },
+  "android.r6.pitch.unknown-state": {
+    "ko": "진행 상태를 확인하지 못했어요. 돌아간 뒤 멈춰 둔 투구를 다시 열어 주세요.",
+    "en": "We could not verify your progress. Go back and reopen the paused pitch.",
+    "ja": "進行状況を確認できませんでした。戻って中断した投球を開き直してください。"
+  },
+  "android.r6.pitch.go-back": {
+    "ko": "돌아가기",
+    "en": "Go back",
+    "ja": "戻る"
+  },
+  "android.r7.requirement": {
+    "ko": "주간 과제 %1$d개 이상 완료하면 받을 수 있어요.",
+    "en": "Complete at least %1$d weekly tasks to claim the reward.",
+    "ja": "週間課題を%1$d個以上達成すると報酬を受け取れます。"
+  },
+  "android.r7.claimed": {
+    "ko": "이번 주 보상을 이미 받았어요.",
+    "en": "You have already claimed this week’s reward.",
+    "ja": "今週の報酬は受け取り済みです。"
+  },
+  "android.r7.challenge": {
+    "ko": "도전 모드에서는 주간 보상을 받을 수 없어요.",
+    "en": "Weekly rewards are unavailable in challenge mode.",
+    "ja": "チャレンジモードでは週間報酬を受け取れません。"
+  },
+  "android.r7.career": {
+    "ko": "주간 노트 보상은 고교 과정에서 받을 수 있어요.",
+    "en": "Weekly notebook rewards are available during your high school career.",
+    "ja": "週間ノートの報酬は高校時代に受け取れます。"
+  },
+  "android.r7.unavailable": {
+    "ko": "지금은 이 동작을 진행할 수 없어요. 현재 화면의 조건을 확인해 주세요.",
+    "en": "This action is not available yet. Check the requirements on this screen.",
+    "ja": "今はこの操作を行えません。画面の条件を確認してください。"
+  },
+  "android.r7.refreshed": {
+    "ko": "기록을 다시 불러왔어요. 현재 화면에서 진행할 항목을 선택해 주세요.",
+    "en": "Your progress has been reloaded. Choose an available action on this screen.",
+    "ja": "記録を読み直しました。現在の画面で進める項目を選んでください。"
+  },
+  "android.r7.stale": {
+    "ko": "진행 상태가 달라졌어요. 이전 화면으로 돌아가 현재 기록을 확인해 주세요.",
+    "en": "Your progress has changed. Go back and check the current record.",
+    "ja": "進行状況が変わりました。前の画面に戻って現在の記録を確認してください。"
+  },
+  "android.r7.space": {
+    "ko": "저장 공간이 부족해 기록을 저장하지 못했어요. 공간을 확보한 뒤 다시 확인해 주세요.",
+    "en": "There is not enough storage to save your progress. Free up space, then check again.",
+    "ja": "空き容量が足りず記録を保存できませんでした。容量を確保してから再確認してください。"
+  },
+  "android.r7.io-repeat": {
+    "ko": "기록 저장 중 문제가 반복됐어요. 설정의 저장과 기록에서 기록을 파일로 보관한 뒤 다시 확인해 주세요.",
+    "en": "Saving has failed repeatedly. Export your progress from Save & Records in Settings, then check again.",
+    "ja": "記録の保存に繰り返し失敗しました。設定の「保存と記録」からファイルに書き出し、再確認してください。"
+  },
+  "android.r7.io": {
+    "ko": "기록을 저장하지 못했어요. 저장된 진행을 다시 확인한 뒤 이어서 진행해 주세요.",
+    "en": "Your progress could not be saved. Check your saved progress before continuing.",
+    "ja": "記録を保存できませんでした。保存済みの進行状況を確認してから続けてください。"
+  },
+  "android.r7.version": {
+    "ko": "이 기록은 다른 버전에서 만들어졌어요. 앱 버전을 확인해 주세요.",
+    "en": "This save was created with a different version. Check your app version.",
+    "ja": "この記録は別のバージョンで作成されました。アプリのバージョンを確認してください。"
+  },
+  "android.r7.verify": {
+    "ko": "기록을 검증하지 못했어요. 원본을 보존하고 저장과 기록에서 확인해 주세요.",
+    "en": "Your save could not be verified. Keep the original and check Save & Records.",
+    "ja": "記録を検証できませんでした。元の記録を保管し、「保存と記録」で確認してください。"
+  },
+  "android.r7.disabled": {
+    "ko": "현재 실행 환경에서는 기록을 저장할 수 없어요. 앱 실행 환경을 확인해 주세요.",
+    "en": "Saving is unavailable in this environment. Check how the app is running.",
+    "ja": "現在の実行環境では保存できません。アプリの実行環境を確認してください。"
+  },
+  "android.r7.unknown": {
+    "ko": "진행을 마치지 못했어요. 이전 화면으로 돌아가 상태를 확인해 주세요.",
+    "en": "This action could not be completed. Go back and check your progress.",
+    "ja": "操作を完了できませんでした。前の画面に戻って進行状況を確認してください。"
+  },
+  "android.r7.copied": {
+    "ko": "주소를 복사했어요.",
+    "en": "Address copied.",
+    "ja": "アドレスをコピーしました。"
+  },
+  "android.r7.copy-support": {
+    "ko": "문의 주소 복사",
+    "en": "Copy support address",
+    "ja": "お問い合わせ先をコピー"
+  },
+  "android.r7.copy-privacy": {
+    "ko": "개인정보처리방침 주소 복사",
+    "en": "Copy privacy policy address",
+    "ja": "プライバシーポリシーのアドレスをコピー"
+  },
+  "android.r7.open-browser": {
+    "ko": "브라우저로 열기",
+    "en": "Open in browser",
+    "ja": "ブラウザで開く"
+  },
+  "android.r7.copy-url": {
+    "ko": "주소 복사",
+    "en": "Copy address",
+    "ja": "アドレスをコピー"
+  },
+  "android.r7.page-failed": {
+    "ko": "페이지를 열지 못했어요. 다시 시도하거나 브라우저로 열어 주세요.",
+    "en": "The page could not be opened. Try again or open it in your browser.",
+    "ja": "ページを開けませんでした。再試行するか、ブラウザで開いてください。"
+  },
+  "android.r7.retry": {
+    "ko": "다시 시도",
+    "en": "Try again",
+    "ja": "再試行"
   }
 }

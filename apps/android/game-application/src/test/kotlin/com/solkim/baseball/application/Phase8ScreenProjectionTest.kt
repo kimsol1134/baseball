@@ -195,7 +195,10 @@ class Phase8ScreenProjectionTest {
             )
             covered[id] = model
             model.actions.filter { it.enabled }.forEach { action ->
-                assertTrue(action.payloads.isNotEmpty(), "enabled action has no captured payload: ${id.wire}/${action.id}")
+                if (id == Phase8ScreenId.P029_RETURN_PLAN && action.id in setOf("prepareReturnPlan", "dismissReturnPlan")) {
+                    // Scheduling is a platform permission/alarm action; it must not mutate career state.
+                    assertTrue(action.payloads.isEmpty())
+                } else assertTrue(action.payloads.isNotEmpty(), "enabled action has no captured payload: ${id.wire}/${action.id}")
                 action.payloads.forEach { payload ->
                     assertEquals(payload.envelope, GameCommandCodec.decode(payload.encoded))
                 }

@@ -80,7 +80,7 @@ internal fun RelationshipConversationScreen(state: GameAggregateState, model: Ph
     val seed = RelationshipNarrative.speaker(run)
     val player = if (state.meta.seedChallenge != null) copy.resolve("android.challenge.player") else run.identity.name
     ConversationStage(copy.legacy(seed), RelationshipNarrative.speakerRole(run), seed,
-        model.sections.firstOrNull()?.title.orEmpty(), row?.value.orEmpty()) {
+        model.sections.firstOrNull()?.title.orEmpty(), copy.legacy(RelationshipNarrative.line(run)).replace("{player}", player)) {
         if (actionError != null) Text(actionError, verbatim = true, color = BaseballColors.warning,
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive })
         model.actions.forEach { action ->
@@ -94,7 +94,7 @@ internal fun RelationshipConversationScreen(state: GameAggregateState, model: Ph
         if (busy || submitted) Text(copy.resolve("conversation.saving"), verbatim = true, color = BaseballColors.textSecondary,
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         CareerDisclosure(copy.resolve("conversation.scene"), "conversation.scene.$eventKey") {
-            Text(copy.legacy(RelationshipNarrative.line(run)).replace("{player}", player), verbatim = true, style = MaterialTheme.typography.bodyMedium)
+            Text(row?.value.orEmpty(), verbatim = true, style = MaterialTheme.typography.bodyMedium)
         }
         CareerMemoryPresentation.conversationRecall(state, copy)?.let { recall ->
             CareerDisclosure(copy.resolve("conversation.history"), "conversation.history.$eventKey") { Text(recall, verbatim = true) }
@@ -108,17 +108,23 @@ internal fun ProConversationScreen(state: GameAggregateState, model: Phase8Scree
     val pro = state.pro ?: return
     val decision = pro.pendingDecision ?: return
     val role = ProConversationPresentation.role(decision.type) ?: return
+    var selectedChoice by rememberSaveable(decision.id) { mutableStateOf<String?>(null) }
     val copy = rememberGameCopy()
     var submitted by remember(state.revision, decision.id) { mutableStateOf(false) }
     LaunchedEffect(actionError, busy) { if (actionError != null && !busy) submitted = false }
-    ConversationStage(copy.resolve("conversation.role.$role"), role, "${pro.careerId}:$role",
-        copy.legacy(decision.title), copy.resolve("conversation.pro.${decision.type.wire}")) {
+    ConversationStage(copy.legacy(ProPeoplePresentation.name(pro.team.id, role)), role, ProPeoplePresentation.seed(pro.team.id, role),
+        copy.legacy(decision.title), if (copy.hasKey("conversation.pro.${decision.type.wire}")) copy.resolve("conversation.pro.${decision.type.wire}") else copy.legacy(decision.detail)) {
+        Text(copy.resolve(ProPeoplePresentation.styleKey(pro.team.id, role)), verbatim = true, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
         if (actionError != null) Text(actionError, verbatim = true, color = BaseballColors.warning)
         model.actions.filter { it.id.startsWith("seasonDecision:") }.forEach { action ->
             ConversationChoice(action, !busy && !submitted, decision.id) {
-                if (!submitted && !busy) { submitted = true; onAction(Phase8UiAction(model.id, action.id, action.payloads)) }
+                if (!submitted && !busy) selectedChoice = action.id
             }
         }
+        val chosen = model.actions.firstOrNull { it.id == selectedChoice }
+        if (chosen != null) Text(chosen.label, verbatim = true, color = BaseballColors.action, modifier = Modifier.testTag("conversation.selected"))
+        Button(onClick = { if (chosen != null && !submitted && !busy) { submitted = true; onAction(Phase8UiAction(model.id, chosen.id, chosen.payloads)) } },
+            enabled = chosen?.enabled == true && !submitted && !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("conversation.confirm")) { Text("이 선택으로 진행하기") }
         if (busy || submitted) Text(copy.resolve("conversation.saving"), verbatim = true, color = BaseballColors.textSecondary)
         CareerDisclosure(copy.resolve("conversation.scene"), "conversation.scene.${decision.id}") {
             Text(copy.legacy(decision.detail), verbatim = true)
@@ -139,7 +145,7 @@ internal fun ConversationChoice(action: Phase8ActionModel, enabled: Boolean, eve
     var details by rememberSaveable(eventKey, action.id) { mutableStateOf(false) }
     val highlighted = ChoiceEffect.highlighted(action.effects)
     val explanations = action.effects.mapNotNull { it.explanation(copy) }.distinct()
-    val expandable = action.effects.size > highlighted.size || explanations.isNotEmpty()
+    val expandable = action.effects.size > highlighted.size || explanations.isNotEmpty() || (action.effects.isNotEmpty() && action.description.isNotBlank())
     Card(onClick = onSelect, enabled = enabled && action.enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("action.${action.id}"),
         colors = CardDefaults.cardColors(containerColor = BaseballColors.surfaceRaised, disabledContainerColor = BaseballColors.surfaceRaised),
         border = BorderStroke(1.dp, BaseballColors.border)) {
@@ -161,6 +167,7 @@ internal fun ConversationChoice(action: Phase8ActionModel, enabled: Boolean, eve
     if (expandable) {
         // The child button consumes its click; expansion never dispatches a career command.
         if (details) {
+            if (action.effects.isNotEmpty() && action.description.isNotBlank()) Text(action.description, verbatim = true, style = MaterialTheme.typography.bodySmall)
             ConversationEffects(action.effects.filterNot { it in highlighted })
             explanations.forEach { Text(it, verbatim = true, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary) }
         }

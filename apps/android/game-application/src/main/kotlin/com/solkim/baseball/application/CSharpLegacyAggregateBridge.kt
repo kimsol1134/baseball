@@ -46,8 +46,13 @@ public object CSharpLegacyAggregateBridge {
         val activePitch = projectPitch(payload.objectOrNull("pitchResume"))
         require(activePitch == null || completedPitch == null) { "native.pitch_owner_conflict" }
         val pitch = activePitch ?: completedPitch
-        val stage = GameStage.entries.firstOrNull { it.wire == payload.string("stage") }
+        val savedStage = GameStage.entries.firstOrNull { it.wire == payload.string("stage") }
             ?: throw GameCommandException("game.store.stage_unknown")
+        // Older return-plan commands could demote a linked professional to the archived school stage.
+        val stage = if (savedStage == GameStage.HIGH_SCHOOL && highSchool?.run?.phase == HighSchoolPhase.COMPLETED &&
+            pro != null && pro.phase != ProCareerPhase.COMPLETED && pro.sourceHighSchoolCareerId == highSchool.run.careerId && highSchool.challenge.active == false) {
+            when (pro.phase) { ProCareerPhase.RETIREMENT_DECISION -> GameStage.RETIREMENT; ProCareerPhase.LEGACY_SELECTION -> GameStage.LEGACY; else -> GameStage.PRO }
+        } else savedStage
         return GameAggregateState(
             aggregateVersion = payload.intOrDefault("aggregateVersion", GameAggregateState.CURRENT_AGGREGATE_VERSION),
             revision = envelopeRevision,
@@ -167,6 +172,7 @@ public object CSharpLegacyAggregateBridge {
         envelope: GameCommandEnvelope,
         command: HighSchoolPhase4Command,
     ): Pair<JsonValue.Obj, String> {
+        if (command == HighSchoolPhase4Command.ClaimWeeklyReward) WeeklyNotePolicy.requireClaimable(projected)
         val base = ProRetirementLedger.settle(projected)
         val existing = if (command is HighSchoolPhase4Command.StartSeedChallenge) SeedChallengeRules.checkpoint(base, command) else base.highSchool
         val isStart = ProRetirementLedger.isHighSchoolStart(command)
@@ -202,6 +208,8 @@ public object CSharpLegacyAggregateBridge {
         )
         val readModel = overlayHighSchool(previousHighSchool, next, extras, coreJson)
         val stage = when {
+            base.pro != null && base.stage in setOf(GameStage.PRO, GameStage.RETIREMENT, GameStage.LEGACY) &&
+                (command is HighSchoolPhase4Command.PrepareReturnPlan || command is HighSchoolPhase4Command.SaveReturnPlan || command == HighSchoolPhase4Command.DismissReturnPlan) -> base.stage
             next.run.phase == HighSchoolPhase.COMPLETED && (base.pro == null || base.pro.phase == ProCareerPhase.COMPLETED) -> GameStage.BETWEEN_LIVES
             else -> GameStage.HIGH_SCHOOL
         }
@@ -462,22 +470,17 @@ public object CSharpLegacyAggregateBridge {
 
     private fun suspendPitch(state: GameAggregateState, command: GameCommand.SuspendPitch): GameAggregateState {
         val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.COMMITTED, PitchBoundary.CONSUMED)) { "pitch.suspend_boundary" }
-        require(command.checkpoint.isNotBlank()) { "pitch.suspend_checkpoint" }
-        return state.copy(pitch = pitch.copy(boundary = PitchBoundary.SUSPENDED, checkpoint = command.checkpoint, suspendedFrom = pitch.boundary))
+        return state.copy(pitch = PitchStateTransitions.suspend(pitch, command.checkpoint))
     }
 
     private fun resumePitch(state: GameAggregateState, command: GameCommand.ResumePitch): GameAggregateState {
         val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary == PitchBoundary.SUSPENDED && pitch.suspendedFrom != null) { "pitch.resume_boundary" }
-        return state.copy(pitch = pitch.copy(boundary = pitch.suspendedFrom, suspendedFrom = null))
+        return state.copy(pitch = PitchStateTransitions.resume(pitch))
     }
 
     private fun abandonPitch(state: GameAggregateState, command: GameCommand.AbandonPitch): GameAggregateState {
         val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED)) { "pitch.abandon_boundary" }
-        require(command.reason.isNotBlank()) { "pitch.abandon_reason" }
-        return state.copy(pitch = pitch.copy(boundary = PitchBoundary.ABANDONED, abandonedReason = command.reason))
+        return state.copy(pitch = PitchStateTransitions.abandon(pitch, command.reason))
     }
 
     private fun clearPresentation(
@@ -485,7 +488,15 @@ public object CSharpLegacyAggregateBridge {
         state: GameAggregateState,
         command: GameCommand.ClearPitchPresentation,
     ): JsonValue.Obj {
-        requirePitch(state, command.sessionId)
+        val pitch = requirePitch(state, command.sessionId)
+        require(pitch.boundary == PitchBoundary.COMPLETED || pitch.boundary == PitchBoundary.ABANDONED) { "pitch.clear_boundary" }
+        if (pitch.careerKind == PitchCareerKind.PRO) {
+            val pro = requireNotNull(state.pro) { "phase7.pro_missing" }
+            val cleared = pro.copy(lastPresentation = null, lastBattedBall = null, lastFielding = null, commitment = "")
+            val resigned = cleared.copy(commitment = com.solkim.baseball.core.pro.ProKernel().commitment(cleared))
+            val previous = payload.objectOrNull("pro")
+            return payload.withPro(CSharpLegacyProBridge.encodeReadModel(resigned, previous?.stringOrNull("nextSeed") ?: pro.seed, previous), state.stage)
+        }
         val highSchool = state.highSchool
         if (highSchool?.lastPresentation != null) {
             val resigned = HighSchoolPhase4Kernel().commitShadowState(highSchool.copy(lastPresentation = null))
@@ -718,7 +729,7 @@ public object CSharpLegacyAggregateBridge {
         next["revision"] = JsonValue.Num(revision.toString())
         val receipts = stringArray("commandReceipts").toMutableSet()
         receipts += commandId
-        next["commandReceipts"] = JsonValue.Arr(receipts.toList().sorted().map(JsonValue::Str))
+        next["commandReceipts"] = JsonValue.Arr(CommandReceiptRetention.retain(receipts.toList()).map(JsonValue::Str))
         return JsonValue.Obj(next)
     }
 

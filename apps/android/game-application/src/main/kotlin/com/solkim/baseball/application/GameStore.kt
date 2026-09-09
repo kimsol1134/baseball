@@ -170,6 +170,7 @@ public data class ReconcileResult(
     public val previousRevision: ULong,
     public val persistedRevision: ULong,
     public val state: GameAggregateState,
+    public val durableStateVerified: Boolean = false,
 )
 
 /** The single asynchronous aggregate authority used by the Compose application scope. */
@@ -238,6 +239,7 @@ public object GameStateReducer {
     }
 
     private fun reduceHighSchool(state: GameAggregateState, envelope: GameCommandEnvelope, command: HighSchoolPhase4Command): Pair<GameAggregateState, String> {
+        if (command == HighSchoolPhase4Command.ClaimWeeklyReward) WeeklyNotePolicy.requireClaimable(state)
         val base = ProRetirementLedger.settle(state)
         val existing = if (command is HighSchoolPhase4Command.StartSeedChallenge) SeedChallengeRules.checkpoint(base, command) else base.highSchool
         val isStart = ProRetirementLedger.isHighSchoolStart(command)
@@ -259,6 +261,8 @@ public object GameStateReducer {
             lifeArchiveCareerIds = next.archive.map { it.careerId },
         )
         val nextStage = when {
+            base.pro != null && base.stage in setOf(GameStage.PRO, GameStage.RETIREMENT, GameStage.LEGACY) &&
+                (command is HighSchoolPhase4Command.PrepareReturnPlan || command is HighSchoolPhase4Command.SaveReturnPlan || command == HighSchoolPhase4Command.DismissReturnPlan) -> base.stage
             next.run.phase == com.solkim.baseball.core.highschool.HighSchoolPhase.COMPLETED && (base.pro == null || base.pro.phase == ProCareerPhase.COMPLETED) -> GameStage.BETWEEN_LIVES
             else -> GameStage.HIGH_SCHOOL
         }
@@ -373,22 +377,17 @@ public object GameStateReducer {
 
     private fun suspendPitch(state: GameAggregateState, command: GameCommand.SuspendPitch): Pair<GameAggregateState, String> {
         val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.COMMITTED, PitchBoundary.CONSUMED)) { "pitch.suspend_boundary" }
-        require(command.checkpoint.isNotBlank()) { "pitch.suspend_checkpoint" }
-        return state.copy(pitch = pitch.copy(boundary = PitchBoundary.SUSPENDED, checkpoint = command.checkpoint, suspendedFrom = pitch.boundary)) to "pitch.suspended"
+        return state.copy(pitch = PitchStateTransitions.suspend(pitch, command.checkpoint)) to "pitch.suspended"
     }
 
     private fun resumePitch(state: GameAggregateState, command: GameCommand.ResumePitch): Pair<GameAggregateState, String> {
         val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary == PitchBoundary.SUSPENDED && pitch.suspendedFrom != null) { "pitch.resume_boundary" }
-        return state.copy(pitch = pitch.copy(boundary = pitch.suspendedFrom, suspendedFrom = null)) to "pitch.resumed"
+        return state.copy(pitch = PitchStateTransitions.resume(pitch)) to "pitch.resumed"
     }
 
     private fun abandonPitch(state: GameAggregateState, command: GameCommand.AbandonPitch): Pair<GameAggregateState, String> {
         val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED)) { "pitch.abandon_boundary" }
-        require(command.reason.isNotBlank()) { "pitch.abandon_reason" }
-        return state.copy(pitch = pitch.copy(boundary = PitchBoundary.ABANDONED, abandonedReason = command.reason)) to "pitch.abandoned"
+        return state.copy(pitch = PitchStateTransitions.abandon(pitch, command.reason)) to "pitch.abandoned"
     }
 
     private fun clearPitchPresentation(state: GameAggregateState, command: GameCommand.ClearPitchPresentation): Pair<GameAggregateState, String> {
@@ -737,8 +736,8 @@ public class KotlinGameStore private constructor(
     private suspend fun dispatchLocked(envelope: GameCommandEnvelope): GameDispatchResult {
         ensureOpen()
         _busy.value = true
+        val before = state.value
         try {
-            val before = state.value
             check(pendingFreshProgressCommandId == null || envelope.command == GameCommand.ResetProgress) { "game.store.reset_pending" }
             val nativeLegacyRepository = repository as? NativeAuthoritativeGameStoreRepository
             val reduced = nativeLegacyRepository?.dispatchLegacy(before, envelope)
@@ -759,6 +758,11 @@ public class KotlinGameStore private constructor(
             pendingFreshProgressCommandId = null
             analyticsProjection?.publishAfterSave(before, reduced.state)
             return reduced
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            error.addSuppressed(GameCommandFailureContext.capture(envelope, before, state.value))
+            throw error
         } finally {
             _busy.value = false
         }
@@ -784,13 +788,14 @@ public class KotlinGameStore private constructor(
             require(candidate.revision >= before.revision || confirmedFreshProgress) { "game.store.reconcile_rollback" }
             if (candidate.revision == before.revision && !confirmedFreshProgress) {
                 pendingFreshProgressCommandId = null
-                return@withLock ReconcileResult(false, before.revision, candidate.revision, before)
+                require(candidate.commitment == before.commitment) { "game.store.reconcile_same_revision_conflict" }
+                return@withLock ReconcileResult(false, before.revision, candidate.revision, candidate, durableStateVerified = true)
             }
             if (repository !is NativeAuthoritativeGameStoreRepository) candidate.validate()
             _state.value = candidate
             pendingFreshProgressCommandId = null
             analyticsProjection?.publishAfterSave(before, candidate)
-            ReconcileResult(true, before.revision, candidate.revision, candidate)
+            ReconcileResult(true, before.revision, candidate.revision, candidate, durableStateVerified = true)
         } finally {
             _busy.value = false
         }

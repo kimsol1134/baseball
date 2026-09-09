@@ -125,7 +125,7 @@ public class ProKernel(
 
         public fun liveBatterOffset(state: ProState, week: Int? = null): Int {
             if (state.proRulesVersion >= 12) return if (state.level == ProLevel.MAJOR) 0 else -7
-            val skill = (state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina) / 4
+            val skill = ProCallUpRules.skill(state.pitcher)
             if (usesCareerArcRules(state)) {
                 val climate = liveClimate(state, week) ?: return DifficultyScale.pro(state.season)
                 return DifficultyScale.proArc(
@@ -326,7 +326,7 @@ public class ProKernel(
         val nextWeek = state.week + 1
         require(nextWeek <= ProCatalog.WEEKS_PER_SEASON) { "pro.week_limit" }
         val recovering = state.injuryWeeks > 0
-        val skill = (state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina) / 4
+        val skill = ProCallUpRules.skill(state.pitcher)
         val roles = weeklyOutingBudget(state.role, nextWeek, gameplayRulesVersion)
         var activeModifiers = state.activeDecisionModifiers.orEmpty().filter { it.expiresWeek >= nextWeek }
         var outings = roles.first
@@ -467,8 +467,7 @@ public class ProKernel(
             losses = state.currentStats.losses + lines.count { it.decision == ProPitchingDecision.LOSS },
             saves = state.currentStats.saves + lines.count { it.decision == ProPitchingDecision.SAVE },
         )
-        val earnedCallUp = managerTrust >= 60 && skill >= 46 &&
-            (state.season > 1 || currentStats.games >= 12 || currentStats.strikeouts >= 40)
+        val earnedCallUp = ProCallUpRules.qualifies(managerTrust, skill, state.season, currentStats)
         val demoted = state.level == ProLevel.MAJOR && managerTrust < ProCatalog.DEMOTION_TRUST && !recovering
         val level = if (demoted) ProLevel.MINOR else if (state.level == ProLevel.MAJOR || earnedCallUp) ProLevel.MAJOR else ProLevel.MINOR
         val assignedRole = if (level == ProLevel.MAJOR) {
@@ -2827,7 +2826,7 @@ public class ProKernel(
     }
 
     private fun seasonTensions(state: ProState): List<ProSeasonTension> {
-        val skill = (state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina) / 4
+        val skill = ProCallUpRules.skill(state.pitcher)
         val identity = when {
             state.pitcher.stuff >= maxOf(state.pitcher.command, state.pitcher.movement, state.pitcher.stamina) -> "power"
             state.pitcher.command >= maxOf(state.pitcher.movement, state.pitcher.stamina) -> "command"

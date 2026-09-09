@@ -370,6 +370,7 @@ public data class GameCommandEnvelope(
     public fun validate() {
         require(schema == GAME_COMMAND_SCHEMA && schemaVersion == 1) { "game.command.schema" }
         require(commandId.isNotBlank() && commandId.length <= 128) { "game.command.id" }
+        CommandReceiptRetention.validate(commandId, expectedRevision)
         require(sessionId.isNotBlank() && sessionId.length <= 128) { "game.command.session" }
         when (val value = command) {
             is GameCommand.ReservePitch -> require(value.sessionId == sessionId) { "game.command.session_mismatch" }

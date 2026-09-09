@@ -48,7 +48,7 @@ internal fun CompanionLauncher(state: GameAggregateState, showPortrait: Boolean 
                     val store = (context.applicationContext as BaseballApplication).gameStore
                     try {
                         val current = store.current
-                        store.dispatch(GameCommandEnvelope("companion:${current.revision}:$operation", "companion-ui", current.revision, GameCommand.UpdateCompanion(operation, value)))
+                        store.dispatch(GameCommandEnvelope(com.solkim.baseball.application.CommandReceiptRetention.id(current.revision, "companion:$operation"), "companion-ui", current.revision, GameCommand.UpdateCompanion(operation, value)))
                         error = null
                     } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
                     catch (failure: Exception) {

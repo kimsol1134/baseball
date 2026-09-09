@@ -45,6 +45,18 @@ class ContinuousPitchUiTest {
             context.startActivity(PitchActivity.intent(context, recovered.sessionId, app.gameStore.current.revision.toString()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
         val device = UiDevice.getInstance(inst)
+        fun tapStable(tag: String) {
+            val selector = By.res(tag).pkg(context.packageName).enabled(true)
+            repeat(6) {
+                val first = requireNotNull(device.wait(Until.findObject(selector), 3000)).visibleBounds
+                android.os.SystemClock.sleep(350)
+                val settled = device.findObject(selector)?.visibleBounds
+                if (settled != null && settled == first && settled.height() > 0) {
+                    device.swipe(settled.centerX(), settled.centerY(), settled.centerX() + 1, settled.centerY(), 8); return
+                }
+            }
+            error("Unstable pitch control: $tag")
+        }
         val before = requireNotNull(app.gameStore.current.highSchool?.activePitch).pitches
         // Normal mode explicitly acknowledges a restored result before the next manual pitch.
         val next = requireNotNull(device.wait(Until.findObject(By.res("pitch.continue")), 20_000))
@@ -60,12 +72,12 @@ class ContinuousPitchUiTest {
         device.takeScreenshot(java.io.File(context.getExternalFilesDir(null), "qa-aiming-field.png"))
         device.waitForIdle()
         val manual = if (recommended == PitchZone(0, 0)) PitchZone(2, 2) else PitchZone(0, 0)
-        requireNotNull(device.findObject(By.res("pitch.zone.${manual.row}.${manual.column}"))).click()
+        tapStable("pitch.zone.${manual.row}.${manual.column}")
         assertNotNull(device.wait(Until.findObject(By.res("pitch.selected-zone.${manual.row}.${manual.column}")), 3_000))
         val repertoire = PitchHudProjection.repertoire(app.gameStore.current)
-        requireNotNull(device.findObject(By.res("pitch.type.${repertoire.last().wire}"))).click()
+        tapStable("pitch.type.${repertoire.last().wire}")
         assertNotNull(device.findObject(By.res("pitch.selected-zone.${manual.row}.${manual.column}")))
-        requireNotNull(device.findObject(By.res("pitch.recommendation"))).click()
+        tapStable("pitch.recommendation")
         assertNotNull(device.wait(Until.findObject(By.res("pitch.selected-zone.${recommended.row}.${recommended.column}")), 3_000))
         assertNotNull(device.findObject(By.res("pitch.aimingField")))
         device.takeScreenshot(java.io.File(context.getExternalFilesDir(null), "qa-aiming-field.png"))

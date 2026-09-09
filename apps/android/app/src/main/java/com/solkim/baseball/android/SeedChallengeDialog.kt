@@ -71,7 +71,7 @@ internal fun SeedChallengeDialog(
                 Text(copy.resolve("android.challenge.style"))
                 HighSchoolDisplayRules.presets.forEach { choice ->
                     SetupSelectionButton(selected = preset == choice.id, onClick = { preset = choice.id }, modifier = Modifier.fillMaxWidth()) {
-                        Text(copy.resolve("android.challenge.preset.${choice.id}"))
+                        Text(HighSchoolDisplayRules.presetTitle(choice.id))
                     }
                 }
                 if (!canStart) Text(copy.resolve("android.challenge.wait"))

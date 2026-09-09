@@ -20,6 +20,9 @@ public object AceCareerPresentation {
     }
     public fun goal(state: GameAggregateState): Pair<String, String>? {
         val pro = state.pro ?: return null
+        if (pro.level == com.solkim.baseball.core.pro.ProLevel.MINOR) return "1군 마운드에 도전" to ProCallUpPresentation.lines(pro).take(2).joinToString(" · ")
+        val recent = pro.currentGameLines.lastOrNull()
+        val recentLine = if (recent == null) "이번 시즌 첫 등판을 준비해요." else "${pro.season}시즌 ${pro.week}주 · 최근 등판 ${recent.outs / 3}.${recent.outs % 3}이닝"
         val rows = (pro.careerStats.filter { it.season != pro.season } + pro.currentStats)
         val saves = rows.sumOf { it.saves }
         if (state.meta.companion?.careerPath == "command") {
@@ -36,7 +39,11 @@ public object AceCareerPresentation {
             val target = if (saves == 0) 1 else (saves / 30 + 1) * 30
             return (if (target == 1) "첫 세이브" else "통산 ${target}세이브") to "$saves / $target"
         }
-        if (rows.none { (it.completeGames ?: 0) > 0 }) return "첫 완투에 도전" to "투구 수와 체력을 아껴 마지막 아웃까지"
+        if (pro.role != ProRole.STARTER) {
+            val target = (pro.currentStats.inningsOuts / 90 + 1) * 30
+            return "이번 시즌 ${target}이닝을 향해" to "${pro.currentStats.inningsOuts / 3}.${pro.currentStats.inningsOuts % 3} / ${target}이닝 · $recentLine"
+        }
+        if (rows.none { (it.completeGames ?: 0) > 0 }) return "첫 완투에 도전" to "$recentLine · 마지막 아웃까지 던질 체력을 준비해요."
         if (rows.none { (it.shutouts ?: 0) > 0 }) return "첫 완봉승에 도전" to "첫 공부터 마지막 공까지 무실점"
         val prior = state.meta.album.filter { it.scope.id.startsWith("pro:${pro.careerId}:") }.flatMap { it.rows }.maxOfOrNull { it.strikeouts } ?: 0
         return "한 경기 ${prior + 1}탈삼진에 도전" to "완투 ${rows.sumOf { it.completeGames ?: 0 }}회 · 완봉승 ${rows.sumOf { it.shutouts ?: 0 }}회"

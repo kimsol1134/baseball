@@ -61,6 +61,7 @@ if (phase9ExternalSdkEnabled) {
 }
 
 android {
+    sourceSets.getByName("androidTest").assets.srcDir("../game-application/src/test/resources/regression")
     namespace = "com.solkim.baseball.android"
     compileSdk = 36
 
@@ -150,6 +151,7 @@ dependencies {
     implementation(project(":game-model"))
     implementation(project(":platform"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.browser)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.foundation)

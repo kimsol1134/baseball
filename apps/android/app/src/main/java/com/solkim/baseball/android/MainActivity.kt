@@ -15,6 +15,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.solkim.baseball.application.ReturnVisitPresentation
+import com.solkim.baseball.platform.ReminderScheduleResult
+import com.solkim.baseball.application.GameCopyArgument
 import com.solkim.baseball.application.GameAggregateState
 import com.solkim.baseball.application.AvatarRole
 import com.solkim.baseball.application.Phase8CommandContext
@@ -108,9 +111,13 @@ public class MainActivity : ComponentActivity() {
         val onCommitted: (() -> Unit)? = null,
     )
 
+    private var returnNoticeKey by mutableStateOf<String?>(null)
+    private val returnPreferences get() = getSharedPreferences("return-reminder", MODE_PRIVATE)
+
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) {
+        if (returnPreferences.getBoolean("pending", false)) scheduleCurrentReturnPlan(showResult = true)
         reconcileNotificationTruth("system")
         refreshPlatformUiState()
     }
@@ -167,12 +174,21 @@ public class MainActivity : ComponentActivity() {
                     if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) applyNativeSettings()
                 }
                 val copy = rememberGameCopy()
+                returnNoticeKey?.let { key -> AlertDialog(
+                    modifier = Modifier.semantics { testTagsAsResourceId = true }.testTag("return.notice"),
+                    onDismissRequest = { returnNoticeKey = null }, title = { Text(copy.resolve("android.r3.reminder.title")) },
+                    text = { Text(copy.resolve(key)) },
+                    confirmButton = { TextButton(onClick = { returnNoticeKey = null }) { Text(copy.legacy("확인")) } },
+                    dismissButton = { if (key == "android.r3.reminder.blocked") TextButton(onClick = {
+                        returnNoticeKey = null; returnPreferences.edit().putBoolean("pending", true).apply()
+                        notificationSettingsReturnPending = true; platform.notifications.openSettings()
+                    }) { Text(copy.resolve("android.r3.reminder.settings")) } }) }
                 if (showResetConfirmation) AlertDialog(
                     modifier = Modifier.semantics { testTagsAsResourceId = true },
                     onDismissRequest = { if (!busy) { showResetConfirmation = false; actionError = null } },
                     title = { Text(copy.resolve("android.settings.reset-title")) },
                     text = { Column {
-                        Text(copy.resolve(if (busy) "android.settings.reset-working" else "android.settings.reset-body"))
+                        Text(if (busy) copy.resolve("android.settings.reset-working") else copy.resolve("android.settings.reset-body", GameCopyArgument.UserText(copy.resolve("controls.backup.save"))))
                         actionError?.let { Text(it, modifier = Modifier.testTag("settings.reset.error"), color = MaterialTheme.colorScheme.error) }
                     } },
                     confirmButton = { TextButton(enabled = !busy, modifier = Modifier.testTag("settings.reset.confirm"), onClick = {
@@ -258,6 +274,7 @@ public class MainActivity : ComponentActivity() {
             } else {
                 "system"
             }
+            if (source == "settings" && returnPreferences.getBoolean("pending", false)) scheduleCurrentReturnPlan(showResult = true)
             reconcileNotificationTruth(source)
             recordReturnPlanOpenAnalytics("warm")
             retryPendingMatrixEvents()
@@ -303,7 +320,7 @@ public class MainActivity : ComponentActivity() {
             try {
                 val store = (application as BaseballApplication).gameStore
                 val current = store.current
-                store.dispatch(GameCommandEnvelope("seed-action-${current.revision}", "phase8-ui", current.revision, command))
+                store.dispatch(GameCommandEnvelope(com.solkim.baseball.application.CommandReceiptRetention.id(current.revision, "seed-action"), "phase8-ui", current.revision, command))
                 withContext(Dispatchers.Main) {
                     selectedScreen = null
                     onCommitted()
@@ -319,13 +336,20 @@ public class MainActivity : ComponentActivity() {
     }
 
     /** Same button, same failure, twice: telling the player to press again a third time is a dead end. */
-    private var failingActionId: String? = null
+    private val actionFailures = com.solkim.baseball.application.GameActionFailurePresentation.Repetition()
 
     private fun performPhase8(action: Phase8UiAction) {
+        if (action.actionId == "prepareReturnPlan") { requestReturnReminder(); return }
+        if (action.actionId == "dismissReturnPlan") {
+            platform.notifications.scheduler.cancelScheduled()
+            returnPreferences.edit().clear().putBoolean("dismissed", true).apply()
+            returnNoticeKey = "android.r3.reminder.cancelled"; return
+        }
+
         if (actionInFlight || (application as BaseballApplication).gameStore.busy.value) return
         if (action.screenId != previousActionScreen && android.os.SystemClock.elapsedRealtime() < navigationTapBlockUntil) return
         actionInFlight = true
-        openingMound = action.actionId in setOf("startHighSchool", "openTutorialPitch", "resumePitch")
+        openingMound = action.actionId in setOf("startHighSchool", "openTutorialPitch", "resumePitch", "openImportantGame", "openProImportantGame", "nextImportantPitch", "nextProPitch")
         var launchedMound = false
         actionError = null
         val completedGamesBefore = (application as BaseballApplication).gameStore.current.meta.completedGameCount
@@ -355,13 +379,13 @@ public class MainActivity : ComponentActivity() {
                     }
                     // Preferences keep their current page so multiple changes can be made in place.
                     if (action.screenId != Phase8ScreenId.P027_SETTINGS || action.actionId == "resetProgress") selectedScreen = null
-                    if (action.actionId == "resetProgress") showResetConfirmation = false
+                    if (action.actionId == "resetProgress") { showResetConfirmation = false; returnPreferences.edit().clear().putBoolean("dismissed", true).apply() }
                     execution.launch?.let { launch ->
                         launchedMound = true
                         openingMound = true
                         startActivity(PitchActivity.intent(this@MainActivity, launch.sessionId, launch.expectedRevision.toString()))
                     }
-                    failingActionId = null
+                    actionFailures.clear()
                     applyNativeSettings()
                     (application as BaseballApplication).updateCrashContext()
                     nativePresentationMarker(action.actionId)?.let { marker ->
@@ -380,10 +404,18 @@ public class MainActivity : ComponentActivity() {
             } catch (error: Throwable) {
                 android.util.Log.e("MainActivity", "performPhase8 failed", error)
                 // Refresh an uncertain earlier commit before allowing another choice.
-                val refreshed = runCatching { (application as BaseballApplication).gameStore.reconcilePersistedRevision() }.isSuccess
+                val failure = com.solkim.baseball.application.GameActionFailurePresentation.classify(error,
+                    com.solkim.baseball.application.GameActionFailurePresentation.causes(error).any {
+                        it is android.system.ErrnoException && it.errno == android.system.OsConstants.ENOSPC
+                    })
+                val reconciliation = if (failure.kind == com.solkim.baseball.application.GameActionFailurePresentation.Kind.RULE) null else try {
+                    (application as BaseballApplication).gameStore.reconcilePersistedRevision()
+                } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                catch (refreshError: Exception) { android.util.Log.w("MainActivity", "action reconciliation failed", refreshError); null }
+                val refreshed = reconciliation?.reconciled == true
                 withContext(Dispatchers.Main) {
                     val restoredState = (application as BaseballApplication).gameStore.current
-                    if (action.actionId == "resetProgress" && refreshed && restoredState.stage == com.solkim.baseball.application.GameStage.OPENING &&
+                    if (action.actionId == "resetProgress" && reconciliation?.durableStateVerified == true && restoredState.stage == com.solkim.baseball.application.GameStage.OPENING &&
                         restoredState.highSchool == null && restoredState.pro == null) {
                         showResetConfirmation = false
                         selectedScreen = null
@@ -392,15 +424,8 @@ public class MainActivity : ComponentActivity() {
                         refreshPlatformUiState()
                         return@withContext
                     }
-                    val repeated = failingActionId == action.actionId
-                    failingActionId = action.actionId
-                    actionError = when {
-                        error.message == "game.command.stale_revision" && refreshed ->
-                            "기록을 다시 불러왔어요. 방금 누른 버튼을 한 번 더 눌러 주세요."
-                        repeated ->
-                            "저장이 계속 실패하고 있어요. 설정의 저장과 기록에서 기록을 파일로 보관한 뒤, 기기의 남은 저장 공간을 확인해 주세요."
-                        else -> "저장하지 못했어요. 같은 버튼을 한 번 더 눌러 주세요."
-                    }
+                    val repeated = actionFailures.record(action.actionId, failure, restoredState.revision)
+                    actionError = com.solkim.baseball.application.GameActionFailurePresentation.message(failure, action.actionId, repeated, refreshed)
                 }
             } finally {
                 withContext(kotlinx.coroutines.NonCancellable + Dispatchers.Main) {
@@ -547,18 +572,16 @@ public class MainActivity : ComponentActivity() {
             plan?.let { add("saved_day_key" to (it.savedDayKey ?: it.createdDayKey)) }
             plan?.developmentRulesVersion?.let { add("development_rules_version" to it.toString()) }
         }
-        val requested = when (recovery.open.destination) {
-            NotificationDestination.HIGH_SCHOOL -> Phase8ScreenId.P011_HIGH_SCHOOL_CAREER
-            NotificationDestination.PRO -> Phase8ScreenId.P016_PRO_CONTRACT
-            NotificationDestination.RECORDS -> Phase8ScreenId.P025_RECORDS_LEAGUE
-        }
+        val requested = if (recovery.open.destination == NotificationDestination.RECORDS) Phase8ScreenId.P025_RECORDS_LEAGUE else ReturnVisitPresentation.screen(state)
         val route = requested.takeIf { Phase8ScreenProjection.isReachable(state, it) }
             ?: Phase8ScreenProjection.preferredScreen(state)
+        returnNoticeKey = null
+        // Opening the player's game must not wait for telemetry delivery or its retries.
+        selectedScreen = route
+        pendingNotificationToken = recovery.open.tokenHash
         val receiptId = Phase9AnalyticsProjector.receiptId(state.installId, "reminder_opened", "notification:${recovery.open.tokenHash}")
         if (state.analytics.receipts.any { it.receiptId == receiptId }) {
             platform.markNotificationAnalytics(recovery.open.tokenHash)
-            selectedScreen = route
-            pendingNotificationToken = recovery.open.tokenHash
         } else {
             recordMatrixEvent(
                 PendingMatrixEvent(
@@ -569,8 +592,6 @@ public class MainActivity : ComponentActivity() {
                     properties = properties,
                     onCommitted = {
                         platform.markNotificationAnalytics(recovery.open.tokenHash)
-                        selectedScreen = route
-                        pendingNotificationToken = recovery.open.tokenHash
                     },
                 ),
             )
@@ -705,8 +726,68 @@ public class MainActivity : ComponentActivity() {
         return NativePlaybackSettings(settings.soundEnabled, settings.musicEnabled, settings.hapticsEnabled, settings.reducedMotionEnabled)
     }
 
+    private fun requestReturnReminder() {
+        val state = (application as BaseballApplication).gameStore.current
+        val owner = ReturnVisitPresentation.owner(state)
+        if (owner.isBlank() || state.meta.seedChallenge != null) return
+        selectedScreen = Phase8ScreenId.P029_RETURN_PLAN
+        val day = commandContext.clock.today()
+        val trigger = day.plusDays(1).atTime(9, 0).atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli()
+        returnPreferences.edit().putString("owner", owner).putString("day", day.toString()).putLong("trigger", trigger)
+            .putBoolean("enabled", true).putBoolean("pending", true).putBoolean("dismissed", false).commit()
+        if (platform.notifications.permission.truth() == NotificationPermissionTruth.ALLOWED) scheduleCurrentReturnPlan(true)
+        else if (Build.VERSION.SDK_INT >= 33 && platform.notifications.permission.shouldRequest()) {
+            platform.notifications.permission.markRequestIssued()
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            returnPreferences.edit().putBoolean("pending", false).apply()
+            returnNoticeKey = "android.r3.reminder.blocked"
+        }
+    }
+
+    private fun scheduleCurrentReturnPlan(showResult: Boolean) {
+        val state = (application as BaseballApplication).gameStore.current
+        if (state.meta.seedChallenge != null) return
+        val prefs = returnPreferences
+        if (!prefs.getBoolean("enabled", false)) return
+        if (prefs.getString("owner", null) != ReturnVisitPresentation.owner(state)) {
+            prefs.getString("token", null)?.let { platform.notifications.scheduler.cancel(it) }
+            prefs.edit().putBoolean("enabled", false).putBoolean("pending", false).apply()
+            return
+        }
+        val trigger = prefs.getLong("trigger", 0)
+        if (trigger <= System.currentTimeMillis()) {
+            prefs.edit().putBoolean("enabled", false).putBoolean("pending", false).apply()
+            if (showResult) returnNoticeKey = "android.r3.reminder.expired"
+            return
+        }
+        val destination = if (ReturnVisitPresentation.isPro(state)) NotificationDestination.PRO else NotificationDestination.HIGH_SCHOOL
+        val receipt = "return:" + com.solkim.baseball.platform.StableNotificationToken.hash("${ReturnVisitPresentation.owner(state)}:${prefs.getString("day", "")}").take(40)
+        val token = "$receipt|${destination.wire}"
+        val copy = com.solkim.baseball.application.GameCopy(com.solkim.baseball.application.GameLanguage.fromTag(resources.configuration.locales[0].language))
+        val result = runCatching { platform.notifications.scheduler.scheduleReplacing(NativeReminderPlan(trigger, destination, "continue", receipt, token,
+            copy.resolve("android.r3.reminder.title"), copy.legacy(ReturnVisitPresentation.detail(state)))) }.getOrElse { ReminderScheduleResult.Rejected("alarm") }
+        prefs.edit().putBoolean("pending", false).apply()
+        when (result) {
+            is ReminderScheduleResult.Scheduled -> {
+                prefs.getString("token", null)?.takeIf { it != token }?.let { platform.notifications.scheduler.cancel(it) }
+                prefs.edit().putString("token", token).apply()
+                if (showResult) returnNoticeKey = "android.r3.reminder.scheduled"
+            }
+            is ReminderScheduleResult.Blocked -> if (showResult) returnNoticeKey = "android.r3.reminder.blocked"
+            is ReminderScheduleResult.Rejected -> if (showResult) returnNoticeKey = "android.r3.reminder.failed"
+        }
+    }
+
     private fun scheduleSavedReturnPlan() {
-        val plan = (application as BaseballApplication).gameStore.current.highSchool?.returnPlan ?: return
+        if (returnPreferences.getBoolean("dismissed", false)) return
+        if (returnPreferences.contains("owner")) {
+            scheduleCurrentReturnPlan(returnPreferences.getBoolean("pending", false)); return
+        }
+
+        val current = (application as BaseballApplication).gameStore.current
+        if (ReturnVisitPresentation.isPro(current)) return
+        val plan = current.highSchool?.returnPlan ?: return
         if (plan.dismissed || plan.destination == HighSchoolReturnDestination.DAILY_INNING) return
         val destination = when (plan.destination) {
             HighSchoolReturnDestination.HIGH_SCHOOL -> NotificationDestination.HIGH_SCHOOL

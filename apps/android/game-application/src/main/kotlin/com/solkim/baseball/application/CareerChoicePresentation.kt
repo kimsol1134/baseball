@@ -23,7 +23,7 @@ public object CareerChoicePresentation {
             }
             val feel = awakeningFeel(node.id)
             AwakeningChoiceView(node.id.wire, HighSchoolDisplayRules.awakeningTitle(node.id.wire),
-                when(node.branch) { "power" -> "힘"; "command" -> "제구"; "breaking" -> "변화"; else -> "수싸움" }, node.tier,
+                when(node.branch) { "power" -> "힘"; "command" -> "제구"; "breaking" -> "변화"; else -> "경기 운영" }, node.tier,
                 owned, open && run.phase == HighSchoolPhase.AWAKENING && node.id in run.awakeningOptions,
                 open && missing.isNotEmpty(), when {
                     !owned && run.selectedAwakenings.size >= 2 -> "이번 고교 생활의 각성을 모두 익혔어요"

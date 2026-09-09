@@ -242,14 +242,13 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
             val weekly = state.highSchool?.weekly
             val tasks = weekly?.tasks.orEmpty()
             CareerStatTiles(listOf("완료" to "${tasks.count { it.completed }}/${tasks.size}", "도장" to "${weekly?.stamps?.size ?: 0}"))
+            Text(WeeklyNotePolicy.explanation(state), style = MaterialTheme.typography.bodyMedium, color = BaseballColors.textSecondary, modifier = Modifier.testTag("weekly.requirement"))
             val rows = model.sections.firstOrNull { it.id == "weekly" }?.rows.orEmpty().drop(4).take(tasks.size)
             tasks.forEachIndexed { index, task ->
                 Text(rows.getOrNull(index)?.label.orEmpty(), style = MaterialTheme.typography.titleMedium)
                 LinearProgressIndicator(progress = { (task.progress.toFloat() / task.target.coerceAtLeast(1)).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
                 Text("${task.progress}/${task.target}", verbatim = true, style = MaterialTheme.typography.labelMedium)
             }
-            if (weekly?.rewardClaimed == true) Text("보상 수령 완료", color = BaseballColors.textSecondary)
-            else if (tasks.none { it.completed }) Text("과제를 하나 완료하면 보상을 받을 수 있어요.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
             CareerDisclosure("지난 도장과 보상 안내", "weekly.details") { model.sections.forEach { CareerSection(it, it.rows.size) } }
         }
         Phase8ScreenId.P026_ACHIEVEMENTS -> {

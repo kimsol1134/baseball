@@ -146,6 +146,14 @@ public object HighSchoolPledgeRules {
 public object HighSchoolWeeklyRules {
     public const val RULES_VERSION: Int = 1
     public const val REWARD_SOUL_POINTS: Int = 15
+    public const val MIN_COMPLETED_FOR_REWARD: Int = 2
+
+    public fun rewardRejection(state: HighSchoolWeeklyState, challengeActive: Boolean = false): String? = when {
+        challengeActive -> "weekly.challenge_locked"
+        state.rewardClaimed -> "weekly.already_claimed"
+        completeCount(state) < MIN_COMPLETED_FOR_REWARD -> "weekly.incomplete"
+        else -> null
+    }
 
     public data class Eligibility(
         val hasHighSchoolCareer: Boolean,
@@ -261,7 +269,7 @@ public object HighSchoolWeeklyRules {
     public fun completeCount(state: HighSchoolWeeklyState): Int = state.tasks.count { it.completed }
 
     public fun claim(state: HighSchoolWeeklyState, earnedAtUnixSeconds: Long): HighSchoolWeeklyState {
-        if (state.rewardClaimed || completeCount(state) < 2) return state
+        if (rewardRejection(state) != null) return state
         val stamp = HighSchoolWeeklyStamp(
             weekKey = state.weekKey,
             completedTaskCount = completeCount(state),

@@ -387,6 +387,7 @@ public object Phase8ScreenProjection {
             Phase8ScreenId.P018_PRO_IMPORTANT_GAME, Phase8ScreenId.P019_PRO_SEASON, Phase8ScreenId.P020_OFFSEASON,
             Phase8ScreenId.P021_PRO_RETIREMENT, Phase8ScreenId.P022_PRO_LEGACY, Phase8ScreenId.P024_WEEKLY,
             Phase8ScreenId.P026_ACHIEVEMENTS, Phase8ScreenId.P028_LIFECARD, Phase8ScreenId.P029_RETURN_PLAN, Phase8ScreenId.P030_REVIEW)) return false
+        if (id == Phase8ScreenId.P024_WEEKLY) return WeeklyNotePolicy.isAvailable(state)
         return when (id) {
         Phase8ScreenId.P001_OPENING -> state.stage == GameStage.OPENING
         Phase8ScreenId.P002_SETUP -> state.stage == GameStage.SETUP
@@ -559,16 +560,16 @@ public object Phase8ScreenProjection {
                 }
                 if (RebirthContinuity.resolve(state) != null) {
                     val reusable = state.pitch == null || state.pitch?.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)
-                    val pending = state.pitch?.boundary.hasPendingResult()
+                    val pending = PitchStateTransitions.hasResult(state.pitch)
                     val begin = if (highSchool?.tutorial?.started == true) emptyList() else listOf(hs(HighSchoolPhase4Command.BeginTutorial))
                     actions.removeAll { it.id == "completeTutorial" }
                     addAction("completeTutorial", "학교를 고르고 시작", "이번 생의 첫 등판을 준비합니다.", run?.phase == HighSchoolPhase.PROLOGUE && reusable && highSchool?.tutorial?.completed != true,
                         begin + hs(HighSchoolPhase4Command.CompleteTutorial(context.seed(state, "tutorial-complete"))))
                     addAction("openTutorialPitch", if (pending) "투구 결과 확인하기" else "지금 몸으로 한 구 던지기", "기록에 안 남는 연습 한 구.",
                         run?.phase == HighSchoolPhase.PROLOGUE && ((reusable && highSchool?.tutorial?.completed != true) || pending),
-                        if (pending) emptyList() else begin + tutorialCommands(state, context))
+                        if (pending) PitchStateTransitions.resumeCommands(state.pitch) else begin + tutorialCommands(state, context))
                     addAction("resumePitch", "투구 이어 하기", "던지던 공으로 돌아간다.", state.pitch?.boundary == PitchBoundary.SUSPENDED,
-                        listOfNotNull(state.pitch?.let { GameCommand.ResumePitch(it.sessionId) }))
+                        PitchStateTransitions.resumeCommands(state.pitch))
                 }
         }
 
@@ -578,14 +579,14 @@ public object Phase8ScreenProjection {
                     Phase8Row("던지는 법", "길게 눌러 와인드업", "초록에서 손을 뗀다. 금색 한가운데면 퍼펙트."),
                 )))
                 val reusable = state.pitch == null || state.pitch?.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)
-                val hasPendingResult = state.pitch?.boundary.hasPendingResult()
+                val hasPendingResult = PitchStateTransitions.hasResult(state.pitch)
                 val inProgress = state.pitch?.careerKind == PitchCareerKind.TUTORIAL && state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING)
                 val session = tutorialSession(state)
                 val tutorialReady = (highSchool?.tutorial?.let { it.started && !it.completed } == true && reusable) || hasPendingResult || inProgress
-                val commands = if (hasPendingResult || inProgress) emptyList() else tutorialCommands(state, context)
+                val commands = if (hasPendingResult || inProgress) PitchStateTransitions.resumeCommands(state.pitch) else tutorialCommands(state, context)
                 addAction("openTutorialPitch", if (hasPendingResult) "투구 결과 확인하기" else "첫 공 던지기", if (hasPendingResult) "던진 공의 결과를 본다." else "포수 사인대로 한 구. 기록에는 안 남는다.", tutorialReady, commands)
-                addAction("resumePitch", "투구 이어 하기", "던지던 공으로 돌아간다.", state.pitch?.boundary == PitchBoundary.SUSPENDED, listOfNotNull(state.pitch?.let { GameCommand.ResumePitch(it.sessionId) }))
-                addAction("abandonPitch", "이번 투구 포기", "이 공은 없던 걸로 하고 돌아간다.", state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
+                addAction("resumePitch", "투구 이어 하기", "던지던 공으로 돌아간다.", state.pitch?.boundary == PitchBoundary.SUSPENDED, PitchStateTransitions.resumeCommands(state.pitch))
+                addAction("abandonPitch", "투구를 멈추고 나가기", "현재 타자와 기록을 유지하고 나갑니다.", PitchStateTransitions.canAbandon(state.pitch), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
         }
 
         private fun buildP005_SCHOOL_SELECTION() {
@@ -662,11 +663,11 @@ public object Phase8ScreenProjection {
                 val canOpenImportantGame = run?.phase == HighSchoolPhase.IMPORTANT_GAME && reusable && highSchool?.activePitch == null
                 val canOpenNextPitch = run?.phase == HighSchoolPhase.IMPORTANT_GAME && state.pitch?.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED) && highSchool?.activePitch != null
                 addAction("openImportantGame", "승부처에 오르기", "중요 경기의 첫 타석을 엽니다.", canOpenImportantGame, if (canOpenImportantGame) importantGameCommands(state, context) else emptyList())
-                addAction("nextImportantPitch", "다음 타석 열기", "같은 경기의 다음 타석을 엽니다.", canOpenNextPitch, if (canOpenNextPitch) nextHighSchoolPitchCommands(state) else emptyList())
-                val pendingResult = state.pitch?.boundary.hasPendingResult()
+                addAction("nextImportantPitch", "이어서 던지기", "현재 경기 상태에서 투구를 이어갑니다.", canOpenNextPitch, if (canOpenNextPitch) nextHighSchoolPitchCommands(state) else emptyList())
+                val pendingResult = PitchStateTransitions.hasResult(state.pitch)
                 val canResumePitch = pendingResult || state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED)
-                addAction("resumePitch", if (pendingResult) "투구 결과 확인하기" else "투구 이어 하기", if (pendingResult) "던진 공의 결과를 본다." else "던지던 공으로 돌아간다.", canResumePitch, listOfNotNull(state.pitch?.takeIf { it.boundary == PitchBoundary.SUSPENDED }?.let { GameCommand.ResumePitch(it.sessionId) }))
-                addAction("abandonPitch", "이번 투구 포기", "이번 타석만 포기합니다.", state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
+                addAction("resumePitch", if (pendingResult) "투구 결과 확인하기" else "투구 이어 하기", if (pendingResult) "던진 공의 결과를 본다." else "던지던 공으로 돌아간다.", canResumePitch, PitchStateTransitions.resumeCommands(state.pitch))
+                addAction("abandonPitch", "투구를 멈추고 나가기", "현재 타자와 기록을 유지하고 나갑니다.", PitchStateTransitions.canAbandon(state.pitch), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
         }
 
         private fun buildP009_AWAKENING() {
@@ -838,7 +839,7 @@ public object Phase8ScreenProjection {
                                 val team = ProCatalog.teams.firstOrNull { it.id == offer.teamId }
                                 Phase8Row(
                                     team?.name ?: offer.teamId,
-                                    "${offer.years}년 · ${"%,d원".format(java.util.Locale.KOREA, offer.annualSalary)} · ${offer.rolePromise.label}",
+                                    "${offer.years}년 · 연봉 ${"%,d원".format(java.util.Locale.KOREA, offer.annualSalary)} · ${offer.rolePromise.label}",
                                     buildString {
                                         append(contractKindLabel(offer.contractKind))
                                         append(" · ")
@@ -970,12 +971,12 @@ public object Phase8ScreenProjection {
                 if (pro?.activePitch?.ended == true) proFinishCommands += pro(ProCommand.FinishImportantGame)
                 if (state.pitch?.boundary == PitchBoundary.TERMINAL) proFinishCommands += GameCommand.CompletePitch(requireNotNull(state.pitch).sessionId)
                 addAction("openProImportantGame", "마운드에 오르기", "내가 던진다.", canOpenProImportantGame, if (canOpenProImportantGame) proImportantGameCommands(state, context) else emptyList())
-                addAction("nextProPitch", "다음 타자 상대하기", "이어서 던진다.", canOpenNextPitch, if (canOpenNextPitch) nextProPitchCommands(state) else emptyList())
+                addAction("nextProPitch", "이어서 던지기", "현재 경기 상태에서 투구를 이어갑니다.", canOpenNextPitch, if (canOpenNextPitch) nextProPitchCommands(state) else emptyList())
                 addAction("finishProGame", "이 경기의 끝을 본다", "결과를 받아들이고 시즌으로 돌아간다.", canFinishGame, proFinishCommands)
-                val pendingResult = state.pitch?.boundary.hasPendingResult()
+                val pendingResult = PitchStateTransitions.hasResult(state.pitch)
                 val canResumePitch = pendingResult || state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED)
-                addAction("resumePitch", if (pendingResult) "투구 결과 확인하기" else "투구 이어 하기", if (pendingResult) "던진 공의 결과를 본다." else "던지던 공으로 돌아간다.", canResumePitch, listOfNotNull(state.pitch?.takeIf { it.boundary == PitchBoundary.SUSPENDED }?.let { GameCommand.ResumePitch(it.sessionId) }))
-                addAction("abandonPitch", "이번 투구 포기", "이 타석은 없던 걸로 한다.", state.pitch?.boundary in setOf(PitchBoundary.RESERVED, PitchBoundary.PLAYING, PitchBoundary.SUSPENDED), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
+                addAction("resumePitch", if (pendingResult) "투구 결과 확인하기" else "투구 이어 하기", if (pendingResult) "던진 공의 결과를 본다." else "던지던 공으로 돌아간다.", canResumePitch, PitchStateTransitions.resumeCommands(state.pitch))
+                addAction("abandonPitch", "투구를 멈추고 나가기", "현재 타자와 기록을 유지하고 나갑니다.", PitchStateTransitions.canAbandon(state.pitch), listOfNotNull(state.pitch?.let { GameCommand.AbandonPitch(it.sessionId, "사용자가 투구를 포기함") }), true)
         }
 
         private fun buildP019_PRO_SEASON() {
@@ -1105,15 +1106,15 @@ public object Phase8ScreenProjection {
                             pro?.milestones.orEmpty().takeLast(5).map { Phase8Row("이정표", it, "") })
                         addSection(Phase8Section("pro-season", "프로 시즌", listOf(
                             Phase8Row("시즌", pro?.season?.toString() ?: "—", ProCatalog.segmentLabel(pro?.seasonSegment ?: ProSeasonSegment.SPRING_CAMP)),
-                            Phase8Row("올해의 나", "${pro?.currentStats?.games ?: 0}경기 · ${pro?.currentStats?.strikeouts ?: 0}탈삼진" + proPerfectSuffix(pro?.currentStats?.perfectReleases ?: 0), "이번 시즌 성적"),
-                            Phase8Row("팀", "${pro?.standings?.firstOrNull { it.isPlayerTeam }?.wins ?: 0}승", "${pro?.standings?.firstOrNull { it.isPlayerTeam }?.rank ?: "—"}위"),
+                            Phase8Row("올해의 나", ProSeasonRecordPresentation.line(pro?.currentStats), "이번 시즌 성적"),
+                            Phase8Row("팀", pro?.standings?.firstOrNull { it.isPlayerTeam }?.let { "${it.wins}승 ${it.losses}패 ${it.draws}무" } ?: "—", "${pro?.standings?.firstOrNull { it.isPlayerTeam }?.rank ?: "—"}위"),
                             Phase8Row("다음 이야기", pro?.pendingDecision?.title ?: "다음 주간 계획", pro?.pendingDecision?.detail ?: "시즌은 계속된다."),
                         ) + honorRows))
                         pro?.pendingDecision?.let { decision ->
                             decision.choices.forEach { choice ->
                                 addAction("seasonDecision:${choice.id}", choice.title, choice.detail, pro.phase == ProCareerPhase.SEASON_DECISION,
                                     listOf(pro(ProCommand.ApplySeasonDecision(context.seed(state, "decision:${choice.id}"), decision.id, choice.id))),
-                                    effects = if (pro.phase == ProCareerPhase.SEASON_DECISION && ProConversationPresentation.role(decision.type) != null)
+                                    effects = if (pro.phase == ProCareerPhase.SEASON_DECISION)
                                         ProConversationPresentation.preview(pro, context.seed(state, "decision:${choice.id}"), choice.id) else emptyList())
                             }
                         }
@@ -1249,9 +1250,9 @@ public object Phase8ScreenProjection {
                     Phase8Row("이번 주", weekly?.weekKey?.let(::readableWeek) ?: "기록 없음", ""),
                     Phase8Row("과제", "${weekly?.tasks?.count { it.completed } ?: 0}/${weekly?.tasks?.size ?: 0}", ""),
                     Phase8Row("도장", weekly?.stamps?.size?.toString() ?: "0", "과제를 채운 주마다 하나. 셋 다 채우면 완벽 도장."),
-                    Phase8Row("보상", if (weekly?.rewardClaimed == true) "받았다" else "아직", if (weekly?.rewardClaimed == true) "" else "과제를 하나라도 채우면 받을 수 있다."),
+                    Phase8Row("보상", if (weekly?.rewardClaimed == true) "받았다" else "아직", if (weekly?.rewardClaimed == true) "" else WeeklyNotePolicy.explanation(state)),
                 ) + taskRows + stampRows))
-                addAction("claimWeeklyReward", "보상 받기", "이번 주 몫을 챙긴다.", weekly?.rewardClaimed == false && weekly.tasks.any { it.completed }, listOf(hs(HighSchoolPhase4Command.ClaimWeeklyReward)))
+                addAction("claimWeeklyReward", "보상 받기", WeeklyNotePolicy.explanation(state), WeeklyNotePolicy.canClaim(state), if (WeeklyNotePolicy.canClaim(state)) listOf(hs(HighSchoolPhase4Command.ClaimWeeklyReward)) else emptyList())
         }
 
         private fun buildP025_RECORDS_LEAGUE() {
@@ -1324,12 +1325,12 @@ public object Phase8ScreenProjection {
 
         private fun buildP029_RETURN_PLAN() {
                 addSection(Phase8Section("return-plan", "복귀 계획", listOf(
-                    Phase8Row("다음 목적지", highSchool?.returnPlan?.destination?.label ?: "아직 없음", "잠깐 쉬고 돌아올 위치"),
-                    Phase8Row("안내", highSchool?.returnPlan?.body?.takeIf { it.isNotBlank() && it != highSchool.returnPlan?.reason } ?: "돌아올 자리를 정해 두자.", ""),
+                    Phase8Row("다음 목적지", ReturnVisitPresentation.label(state), "잠깐 쉬고 돌아올 위치"),
+                    Phase8Row("안내", ReturnVisitPresentation.detail(state), ""),
                     Phase8Row("알림", "내일 아침 9시에 한 번", "알림을 허용했을 때만 온다."),
                 )))
-                addAction("prepareReturnPlan", "내일 아침에 알려 줘", "돌아올 자리는 여기. 내일 아침 9시에 한 번만 알린다.", highSchool != null, listOf(hs(HighSchoolPhase4Command.PrepareReturnPlan(context.dayKey(state), HighSchoolContentCatalog.WORLD_RULES_VERSION))))
-                addAction("dismissReturnPlan", "복귀 카드 닫기", "이 카드는 그만 본다.", highSchool?.returnPlan?.dismissed == false, listOf(hs(HighSchoolPhase4Command.DismissReturnPlan)))
+                addAction("prepareReturnPlan", "내일 아침에 알려 줘", "돌아올 자리는 여기. 내일 아침 9시에 한 번만 알린다.", highSchool != null || pro != null, emptyList())
+                addAction("dismissReturnPlan", "알림 예약 취소", "예약한 복귀 알림을 취소합니다.", highSchool != null || pro != null, emptyList())
         }
 
         private fun buildP030_REVIEW() {
@@ -1882,7 +1883,7 @@ public object Phase8ScreenProjection {
         "command" -> "제구를 가져간다."
         "breaking" -> "결정구를 가져간다."
         "endurance" -> "체력을 가져간다."
-        "gamecraft" -> "수싸움을 가져간다."
+        "gamecraft" -> "경기 운영을 가져간다."
         else -> "호흡을 가져간다."
     }
 
@@ -2055,7 +2056,10 @@ public object Phase8Payloads {
             is GameCommand.ClearPitchPresentation -> command.sessionId
             else -> "phase8-ui"
         }
-        val commandId = "phase8-${screenId.wire}-${actionId.replace(':', '-')}-${expectedRevision}-$offset".take(120)
+        val actionPart = actionId.replace(':', '-').let {
+            if (it.length <= 70) it else "${it.take(40)}-${com.solkim.baseball.model.Hashing.sha256Hex(it).take(24)}"
+        }
+        val commandId = "phase8-${screenId.wire}-$actionPart-${expectedRevision}-$offset"
         return Phase8CommandPayload(screenId, actionId, GameCommandEnvelope(commandId, session, expectedRevision, command))
     }
 }
@@ -2167,4 +2171,3 @@ internal fun proGameRow(line: ProGameLine): Phase8Row = Phase8Row(
 )
 
 /** Saved results must be acknowledged through the existing presentation flow, never replayed as a new pitch. */
-private fun PitchBoundary?.hasPendingResult(): Boolean = this in setOf(PitchBoundary.COMMITTED, PitchBoundary.CONSUMED, PitchBoundary.TERMINAL)

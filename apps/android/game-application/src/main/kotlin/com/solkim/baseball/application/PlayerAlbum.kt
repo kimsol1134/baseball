@@ -92,7 +92,7 @@ public object PlayerAlbum {
                     if (state.stage == GameStage.PRO) pro?.activePitch?.sessionId.orEmpty() else hs?.activePitch?.sessionId.orEmpty(),
                     if (state.stage == GameStage.PRO) pro?.activePitch?.log?.entries?.lastOrNull()?.outcome?.wire.orEmpty() else hs?.lastPresentation?.outcome.orEmpty(), context,
                     listOf(snapshot.flightDurationMilliseconds, snapshot.plateXMm, snapshot.plateYMm))
-                pages[page.scope.id] = page.copy(pitches = (page.pitches + pitch).distinctBy { it.id })
+                pages[page.scope.id] = page.copy(pitches = AlbumReplayRetention.append(pages.values.toList(), page, pitch))
             }
         }
         return pages.values.toList()

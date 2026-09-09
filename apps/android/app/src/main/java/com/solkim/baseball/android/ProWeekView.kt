@@ -19,16 +19,21 @@ import org.json.JSONObject
 import com.solkim.baseball.android.LocalizedGameText as Text
 
 @Composable
-internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel, busy: Boolean = false, onAction: (Phase8UiAction) -> Unit) {
+internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel, busy: Boolean = false, onAction: (Phase8UiAction) -> Unit, selectedPlan: String? = null, onPlanSelected: ((String) -> Unit)? = null) {
     val order = listOf("develop_stuff", "refine_command", "develop_movement", "build_stamina", "recover", "earn_trust")
     val plans = model.actions.filter { it.id.startsWith("proPlan:") }.sortedBy { order.indexOf(it.id.substringAfter(':')) }
     var selected by rememberSaveable(state.pro?.careerId) { mutableStateOf(plans.firstOrNull()?.id) }
-    val action = plans.firstOrNull { it.id == selected } ?: plans.firstOrNull() ?: return
+    val action = plans.firstOrNull { it.id == (selectedPlan ?: selected) } ?: plans.firstOrNull() ?: return
     val preview = ProWeekPresentation.preview(state, action.id) ?: return
     AceCareerPresentation.leagueLine(state)?.let { Text(it, style = MaterialTheme.typography.labelMedium, modifier = Modifier.testTag("week.league")) }
     AceCareerPresentation.goal(state)?.let { (title, progress) ->
         Text(title, color = BaseballColors.milestone, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("week.aceGoal"))
         Text(progress, style = MaterialTheme.typography.bodySmall)
+    }
+    state.pro?.takeIf { it.level == com.solkim.baseball.core.pro.ProLevel.MINOR }?.let { pro ->
+        CareerDisclosure("1군 승격 조건", "week.promotion") {
+            ProCallUpPresentation.lines(pro).forEachIndexed { index, line -> Text(line, modifier = Modifier.testTag("week.promotion.rule.$index")) }
+        }
     }
     val desiredRole = AceCareerPresentation.preferredRole(state)
     model.actions.firstOrNull { it.id == "requestRole:$desiredRole" && it.enabled }?.let { role ->
@@ -38,7 +43,7 @@ internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel,
     plans.chunked(3).forEach { row ->
         AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
             row.forEach { choice ->
-                FilterChip(selected = action.id == choice.id, enabled = choice.enabled && !busy, onClick = { selected = choice.id },
+                FilterChip(selected = action.id == choice.id, enabled = choice.enabled && !busy, onClick = { selected = choice.id; onPlanSelected?.invoke(choice.id) },
                     colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BaseballColors.action, selectedLabelColor = BaseballColors.actionInk),
                     label = { Text(ProWeekPresentation.title(choice.id)) }, modifier = Modifier.heightIn(min = 48.dp).testTag("week.select.${choice.id}"))
             }
@@ -47,7 +52,7 @@ internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel,
     Column(Modifier.fillMaxWidth().testTag("week.preview"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(preview.growth); Text(preview.schedule); Text(preview.condition, color = BaseballColors.textSecondary)
     }
-    Button(enabled = action.enabled && !busy, onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
+    if (onPlanSelected == null) Button(enabled = action.enabled && !busy, onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("week.commit")) { Text("이번 주 진행") }
     if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag("week.busy"))
     ProWeekPresentation.batchAction(state, model, action.id)?.let { batch ->

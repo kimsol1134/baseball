@@ -1068,9 +1068,9 @@ public class HighSchoolPhase4Kernel(
     }
 
     public fun claimWeeklyReward(state: HighSchoolPhase4State): HighSchoolPhase4Result {
-        require(!state.challenge.active) { "weekly.challenge_locked" }
-        require(!state.weekly.rewardClaimed) { "weekly.already_claimed" }
-        require(HighSchoolWeeklyRules.completeCount(state.weekly) >= 2) { "weekly.incomplete" }
+        HighSchoolWeeklyRules.rewardRejection(state.weekly, state.challenge.active)?.let { error ->
+            throw IllegalArgumentException(error)
+        }
         val nextInheritance = state.inheritance.copy(
             soulPoints = state.inheritance.soulPoints + HighSchoolWeeklyRules.REWARD_SOUL_POINTS,
             soulTotalEarned = state.inheritance.soulTotalEarned + HighSchoolWeeklyRules.REWARD_SOUL_POINTS,

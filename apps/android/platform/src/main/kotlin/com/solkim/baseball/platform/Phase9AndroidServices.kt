@@ -374,6 +374,24 @@ public class NativeReminderScheduler(
         }
     }
 
+    /** Register the replacement first; invalidate older delivery tokens before cancelling their alarms. */
+    public fun scheduleReplacing(plan: NativeReminderPlan): ReminderScheduleResult = synchronized(this) {
+        val previous = stateStore?.read()?.scheduledReminderTokenHashes.orEmpty()
+        val result = schedule(plan)
+        if (result !is ReminderScheduleResult.Scheduled) return@synchronized result
+        try {
+            stateStore?.update { it.copy(scheduledReminderTokenHashes = listOf(result.tokenHash)) }
+        } catch (_: Throwable) {
+            runCatching { cancel(plan.token) }
+            return@synchronized ReminderScheduleResult.Rejected("state")
+        }
+        val alarm = context.getSystemService(AlarmManager::class.java)
+        previous.filterNot { it == result.tokenHash }.forEach { hash ->
+            runCatching { pendingIntent(hash, PendingIntent.FLAG_NO_CREATE)?.let(alarm::cancel) }
+        }
+        result
+    }
+
     public fun cancel(token: String) {
         val tokenHash = StableNotificationToken.hash(token)
         pendingIntent(tokenHash, PendingIntent.FLAG_NO_CREATE)?.let { context.getSystemService(AlarmManager::class.java).cancel(it) }

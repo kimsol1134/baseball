@@ -50,7 +50,7 @@ public object GameCommandCodec {
     public fun resultHash(state: GameAggregateState, envelope: GameCommandEnvelope, eventName: String): String =
         Hashing.fnv1a64Hex("${state.commitment}|${envelope.commandId}|${envelope.sessionId}|$eventName")
 
-    private fun kind(command: GameCommand): String = when (command) {
+    internal fun kind(command: GameCommand): String = when (command) {
         GameCommand.EnterSetup -> "enterSetup"
         GameCommand.ResetProgress -> "resetProgress"
         is GameCommand.HighSchool -> "highSchool"

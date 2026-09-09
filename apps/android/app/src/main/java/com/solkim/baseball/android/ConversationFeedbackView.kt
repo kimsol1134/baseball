@@ -25,8 +25,8 @@ internal fun conversationFeedbackRecord(before: GameAggregateState, after: GameA
         val lines = ProConversationPresentation.effects(oldPro, nextPro).map { it.source }
         val role = ProConversationPresentation.role(oldPro.pendingDecision?.type)
         return JSONObject().put("kind", "pro").put("career", nextPro.careerId).put("number", nextPro.decisionHistory.size)
-            .put("speaker", role?.let { "conversation.role.$it" } ?: nextPro.decisionHistory.last().choiceTitle)
-            .put("portraitSeed", role?.let { "${oldPro.careerId}:$it" }.orEmpty())
+            .put("speaker", role?.let { ProPeoplePresentation.name(oldPro.team.id, it) } ?: nextPro.decisionHistory.last().choiceTitle)
+            .put("portraitSeed", role?.let { ProPeoplePresentation.seed(oldPro.team.id, it) }.orEmpty())
             .put("role", role.orEmpty()).put("scene", oldPro.pendingDecision?.title.orEmpty())
             .put("choice", nextPro.decisionHistory.last().choiceTitle)
             .put("reaction", when {
@@ -54,7 +54,7 @@ internal fun saveConversationFeedback(context: Context, before: GameAggregateSta
 }
 
 @Composable
-internal fun ConversationFeedbackGate(state: GameAggregateState): Boolean {
+internal fun ConversationFeedbackGate(state: GameAggregateState, onNavigate: (Phase8ScreenId) -> Unit = {}): Boolean {
     val context = LocalContext.current
     val copy = rememberGameCopy()
     val prefs = remember(context) { context.getSharedPreferences("conversation.feedback", Context.MODE_PRIVATE) }
@@ -73,7 +73,8 @@ internal fun ConversationFeedbackGate(state: GameAggregateState): Boolean {
     val effects = List(lines.length()) { ChoiceEffect.fromSource(lines.optString(it)) }
     val reaction = record.optString("reaction").takeIf(copy::hasKey) ?: "conversation.reaction.done"
     val seed = record.optString("speaker")
-    ConversationStage(copy.legacy(seed), record.optString("role").takeIf(String::isNotBlank), record.optString("portraitSeed").ifBlank { seed },
+    ConversationNavigation(state, onNavigate) {
+    ConversationStage(if (copy.hasKey(seed)) copy.resolve(seed) else copy.legacy(seed), record.optString("role").takeIf(String::isNotBlank), record.optString("portraitSeed").ifBlank { seed },
         copy.legacy(record.optString("scene")), copy.resolve(reaction), result = true) {
         Column(Modifier.fillMaxWidth().testTag("conversation.result"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             record.optString("choice").takeIf(String::isNotBlank)?.let {
@@ -90,6 +91,7 @@ internal fun ConversationFeedbackGate(state: GameAggregateState): Boolean {
                 effects.mapNotNull { it.explanation(copy) }.distinct().forEach { Text(it, verbatim = true, style = MaterialTheme.typography.bodySmall) }
             }
         }
+    }
     }
     return true
 }

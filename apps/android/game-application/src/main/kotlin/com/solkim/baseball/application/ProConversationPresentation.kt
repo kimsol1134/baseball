@@ -9,8 +9,9 @@ public object ProConversationPresentation {
         ProSeasonDecisionType.ROTATION_PUSH, ProSeasonDecisionType.NEW_PITCH_TRIAL,
         ProSeasonDecisionType.FARM_RESET, ProSeasonDecisionType.EXTRA_BULLPEN,
         ProSeasonDecisionType.ROLE_MEETING, ProSeasonDecisionType.RECORD_CHASE,
-        ProSeasonDecisionType.SEASON_FINALE -> "coach"
-        else -> null
+        ProSeasonDecisionType.SEASON_FINALE, ProSeasonDecisionType.FORM_CRISIS -> "coach"
+        null -> null
+        else -> "staff"
     }
 
     public fun effects(before: ProState, after: ProState): List<ChoiceEffect> = buildList {

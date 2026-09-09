@@ -235,16 +235,9 @@ private fun DrawScope.drawBatterAndCatcher(
     val ink = BaseballColors.fieldChalk.copy(alpha = 0.11f)
 
     // 타자 실루엣
-    val batterHeight = zoneHeight * 1.46f
-    val batterWidth = batterHeight * PlateFigures.BATTER_ASPECT
+    val geometry = PitchPlateGeometry.layout(Rect(zoneTopLeft, zoneBottomRight), batSide)
     val isLeftBatter = batSide == BatSide.LEFT
-    val batterLeft = if (isLeftBatter) {
-        zoneBottomRight.x + zoneWidth * 0.10f - batterWidth * 0.34f
-    } else {
-        zoneTopLeft.x - zoneWidth * 0.10f - batterWidth * 0.66f
-    }
-    val batterTop = zoneBottomRight.y + zoneHeight * 0.34f - batterHeight
-    val batterRect = Rect(batterLeft, batterTop, batterLeft + batterWidth, batterTop + batterHeight)
+    val batterRect = geometry.batter
 
     if (batterBitmap != null) {
         withTransform({
@@ -267,11 +260,7 @@ private fun DrawScope.drawBatterAndCatcher(
     }
 
     // 포수 실루엣
-    val catcherWidth = zoneWidth * 1.18f
-    val catcherHeight = catcherWidth / PlateFigures.CATCHER_ASPECT
-    val catcherLeft = (zoneTopLeft.x + zoneBottomRight.x) / 2f - catcherWidth / 2f
-    val catcherTop = zoneBottomRight.y + zoneHeight * 0.02f
-    val catcherRect = Rect(catcherLeft, catcherTop, catcherLeft + catcherWidth, catcherTop + catcherHeight)
+    val catcherRect = geometry.catcher
 
     if (catcherBitmap != null) {
         drawImage(
@@ -300,6 +289,9 @@ private fun DrawScope.drawStrikeZoneAndPlate(
     val flash = if (isStrike) calculateVerdictFlash(progress) else 0f
     val strokeAlpha = zoneStrokeAlpha(outcome, progress, flash)
     val gridAlpha = zoneGridAlpha(outcome, progress)
+
+    // A consistent backing keeps the grid legible over both the mitt and uniform.
+    drawRect(BaseballColors.fieldNight.copy(alpha = 0.55f), zoneRect.topLeft, zoneRect.size)
 
     // 스트라이크 시 존 플래시
     if (flash > 0f) {
@@ -330,8 +322,9 @@ private fun DrawScope.drawStrikeZoneAndPlate(
     }
 
     // 홈플레이트 5각형
-    val plateY = zoneRect.bottom + 30f * scale
-    val half = zoneRect.width * 0.46f
+    val plate = PitchPlateGeometry.layout(zoneRect, BatSide.RIGHT).plate
+    val plateY = plate.top
+    val half = plate.width / 2f
     val platePath = Path().apply {
         moveTo(zoneRect.center.x - half, plateY)
         lineTo(zoneRect.center.x + half, plateY)
@@ -774,18 +767,18 @@ private fun DrawScope.drawVerdict(
 
 // MARK: - 유틸리티 및 좌표 변환
 
-private const val PITCH_BOX_MIN_X = 46f
-private const val PITCH_BOX_MIN_Y = 62f
-private const val PITCH_BOX_WIDTH = 228f
-private const val PITCH_BOX_HEIGHT = 246f
+private val PITCH_BOX_MIN_X get() = PitchPlateGeometry.worldBounds.left
+private val PITCH_BOX_MIN_Y get() = PitchPlateGeometry.worldBounds.top
+private val PITCH_BOX_WIDTH get() = PitchPlateGeometry.worldBounds.width
+private val PITCH_BOX_HEIGHT get() = PitchPlateGeometry.worldBounds.height
 private const val PLATE_PLANE_Y = 205f
 private const val CONTACT_PROGRESS = PitchDramaCamera.CONTACT_PROGRESS
 private const val CUT_PROGRESS = PitchDramaCamera.CUT_PROGRESS
 
-internal const val LIVE_ZONE_STROKE_ALPHA = 0.50f
-internal const val LIVE_ZONE_GRID_ALPHA = 0.16f
+internal const val LIVE_ZONE_STROKE_ALPHA = 0.85f
+internal const val LIVE_ZONE_GRID_ALPHA = 0.80f
 internal const val RESULT_ZONE_STROKE_ALPHA = 0.85f
-internal const val RESULT_ZONE_GRID_ALPHA = 0.40f
+internal const val RESULT_ZONE_GRID_ALPHA = 0.80f
 internal const val RESULT_TRAIL_START_ALPHA = 0.08f
 internal const val RESULT_TRAIL_END_ALPHA = 0.90f
 internal const val RESULT_LANDING_DOT_RADIUS_DP = 5f
@@ -808,7 +801,7 @@ internal fun zoneStrokeAlpha(outcome: PitchOutcome?, progress: Float, flash: Flo
     if (isCatcherCutAfterContact(outcome, progress)) {
         RESULT_ZONE_STROKE_ALPHA
     } else {
-        LIVE_ZONE_STROKE_ALPHA + flash * 0.5f
+        (LIVE_ZONE_STROKE_ALPHA + flash * 0.5f).coerceAtMost(1f)
     }
 
 internal fun zoneGridAlpha(outcome: PitchOutcome?, progress: Float): Float =

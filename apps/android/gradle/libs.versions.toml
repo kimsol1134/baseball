@@ -1,4 +1,5 @@
 [versions]
+browser = "1.8.0"
 agp = "9.0.0"
 kotlin = "2.2.10"
 composeBom = "2026.06.01"
@@ -17,6 +18,7 @@ googleServices = "4.4.2"
 firebaseCrashlyticsGradle = "3.0.7"
 
 [libraries]
+androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }

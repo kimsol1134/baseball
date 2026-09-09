@@ -25,9 +25,10 @@ class ConversationLocaleUiTest {
         val state = GameAggregateState.initial("actor").copy(stage = GameStage.HIGH_SCHOOL, highSchool = k.commitShadowState(school.copy(run = run)))
         var language by mutableStateOf("ko")
         var actions = 0
+        var screen by mutableStateOf(Phase8ScreenId.P007_RELATIONSHIP)
         compose.setContent { val config = android.content.res.Configuration(LocalConfiguration.current).apply { setLocale(java.util.Locale.forLanguageTag(language)) }
             CompositionLocalProvider(LocalConfiguration provides config) { BaseballMigrationTheme {
-                Phase8Shell(state, false, null, Phase8ScreenId.P007_RELATIONSHIP, Phase8CommandContext(), onNavigate = {}, onAction = { actions++ })
+                Phase8Shell(state, false, null, screen, Phase8CommandContext(), onNavigate = { screen = it }, onAction = { actions++ })
             } }
         }
         val face = compose.onNodeWithTag("relationship.portrait").performScrollTo().captureToImage().asAndroidBitmap()
@@ -38,5 +39,14 @@ class ConversationLocaleUiTest {
             compose.onNodeWithTag("effect.details.relationship:challenge").performScrollTo().performClick()
             assertEquals(0, actions)
         }
+        compose.onNodeWithTag("navigation.records").performClick()
+        compose.onNodeWithTag("navigation.records").assertIsSelected()
+        compose.onNodeWithTag("navigation.career").performClick()
+        compose.onNodeWithTag("conversation.line").assertIsDisplayed()
+        val device = androidx.test.uiautomator.UiDevice.getInstance(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation())
+        device.pressBack()
+        compose.waitForIdle()
+        compose.onNodeWithTag("navigation.records").assertIsSelected()
+        assertEquals(0, actions)
     }
 }

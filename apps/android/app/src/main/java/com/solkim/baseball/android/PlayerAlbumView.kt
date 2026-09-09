@@ -109,6 +109,8 @@ internal fun PlayerAlbumView(state: GameAggregateState, showTitle: Boolean = tru
     }
     if (page.pitches.isNotEmpty()) TextButton(onClick = { replay = !replay }, modifier = Modifier.testTag("album.replay")) { Text("투구 궤적 다시 보기") }
     else Text("투구 재생은 저장된 직접 투구부터 제공해요.", style = MaterialTheme.typography.bodySmall)
+    if (com.solkim.baseball.application.AlbumReplayRetention.isFull(pages, page))
+        Text("투구 재생 보관 한도에 도달했어요. 경기 기록과 시즌 성적은 계속 저장돼요.", style = MaterialTheme.typography.bodySmall)
     if (replay) AlbumPitchReplay(page.pitches)
     Text("앨범은 게임 백업에 함께 보관돼요.", style = MaterialTheme.typography.bodySmall)
     card?.let { AlbumCardPreview(it, page.portraitSeed, page.scope.id.startsWith("pro:")) { card = null } }

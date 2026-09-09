@@ -18,7 +18,7 @@ public data class OutingBriefing(val title: String, val situation: String, val s
 
 public object OutingPresentation {
     public fun briefing(state: GameAggregateState, context: Phase8CommandContext = Phase8CommandContext()): OutingBriefing? {
-        val pro = state.pro?.takeIf { state.stage == GameStage.PRO && it.phase == ProCareerPhase.IMPORTANT_GAME }
+        val pro = state.pro?.takeIf { (state.stage == GameStage.PRO || state.pitch?.careerKind == PitchCareerKind.PRO) && (it.phase == ProCareerPhase.IMPORTANT_GAME || it.activePitch != null) }
         val hs = state.highSchool?.takeIf { it.run.phase == HighSchoolPhase.IMPORTANT_GAME }
         val preview = when {
             pro != null -> state.copy(pitch = null, pro = if (pro.activePitch == null) ProKernel().reserveImportantGame(pro, context.seed(state, "pro-important-game")).state else pro)
