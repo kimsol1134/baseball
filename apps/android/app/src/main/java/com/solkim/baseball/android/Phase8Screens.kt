@@ -619,7 +619,7 @@ private fun CoreRebirthChoices(state: GameAggregateState, model: Phase8ScreenMod
             val nextLife = alternatives.firstOrNull { it.id == "quickRebirth" }
             var preview by remember(nextLife) { mutableStateOf<RebirthStartPreview?>(null) }
             LaunchedEffect(nextLife) { preview = withContext(Dispatchers.Default) { RebirthStartPreview.resolve(state, nextLife) } }
-            preview?.let { CoreRebirthStartComparison(it) }
+            if (model.actions.none { it.id.startsWith("rebirthPath:") && it.enabled }) preview?.let { CoreRebirthStartComparison(it) }
             RebirthPathPicker(state, model, onAction)
             alternatives.filter { it.id != "quickRebirth" || model.actions.none { path -> path.id.startsWith("rebirthPath:") && path.enabled } }.forEach { Phase8ActionButton(model.id, it, onAction, showDescription = true) }
         }
@@ -682,7 +682,7 @@ private fun CoreRebirthChoices(state: GameAggregateState, model: Phase8ScreenMod
     LaunchedEffect(previewKey) {
         preview = withContext(Dispatchers.Default) { RebirthStartPreview.resolve(state, primary) }
     }
-    preview?.let { CoreRebirthStartComparison(it) }
+    if (model.actions.none { it.id.startsWith("rebirthPath:") && it.enabled }) preview?.let { CoreRebirthStartComparison(it) }
     primary?.takeIf { it.id != "quickRebirth" }?.let { Phase8ActionButton(model.id, it, onAction) }
     actions.filter { it != primary && !it.id.startsWith("selectLegacy:") && !it.id.startsWith("rebirthPath:") }.forEach { action ->
         OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
