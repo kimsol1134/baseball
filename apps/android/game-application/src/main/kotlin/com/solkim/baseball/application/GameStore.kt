@@ -478,7 +478,7 @@ public object GameStateReducer {
             else -> AnalyticsReceipt("command:${envelope.commandId}", eventName, nextRevision, previousState.commitment)
         }
         val base = reducedState.copy(
-            meta = reducedState.meta.copy(album = PlayerAlbum.capture(previousState, reducedState), playerGrowth = PlayerGrowthReceipt.transition(previousState, reducedState, envelope.commandId), companion = PitcherCompanionRules.transition(previousState, reducedState)),
+            meta = reducedState.meta.copy(abilityHistory = AbilityHistory.transition(previousState, reducedState, envelope.commandId), album = PlayerAlbum.capture(previousState, reducedState), playerGrowth = PlayerGrowthReceipt.transition(previousState, reducedState, envelope.commandId), companion = PitcherCompanionRules.transition(previousState, reducedState)),
             revision = nextRevision,
             commandReceipts = reducedState.commandReceipts + receipt,
             analytics = reducedState.analytics.copy(receipts = reducedState.analytics.receipts + analyticsReceipt),

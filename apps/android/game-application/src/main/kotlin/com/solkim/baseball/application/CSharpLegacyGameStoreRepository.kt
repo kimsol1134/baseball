@@ -179,6 +179,8 @@ public class CSharpLegacyGameStoreRepository(
         val growth = PlayerGrowthReceipt.transition(before, projected, envelope.commandId)
         val nextMeta = LinkedHashMap((applied.payload["meta"] as JsonValue.Obj).entries)
         if (growth == null) nextMeta.remove("playerGrowth") else nextMeta["playerGrowth"] = PlayerGrowthReceipt.encode(growth)
+        val abilityHistory = AbilityHistory.transition(before, projected, envelope.commandId)
+        if (abilityHistory.isNotEmpty()) nextMeta["abilityHistory"] = AbilityHistory.encode(abilityHistory)
         val companion = PitcherCompanionRules.transition(before, projected)
         if (companion == null) nextMeta.remove("companion") else nextMeta["companion"] = PitcherCompanionCodec.encode(companion)
         val album = PlayerAlbum.capture(before, projected)

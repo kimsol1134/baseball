@@ -171,10 +171,13 @@ public data class GameMetaState(
     val standaloneSoulBalance: Int = 0,
     val seedChallenge: SeedChallengeSession? = null,
     val playerGrowth: PlayerGrowthReceipt? = null,
+    val abilityHistory: List<AbilityHistoryPoint> = emptyList(),
     val companion: PitcherCompanion? = null,
     val album: List<PlayerAlbumPage> = emptyList(),
 ) {
     public fun validate() {
+        abilityHistory.forEach { it.validate() }
+        require(abilityHistory.map { it.id }.distinct().size == abilityHistory.size) { "history.duplicate" }
         playerGrowth?.validate()
         companion?.validate()
         PlayerAlbum.validate(album)
@@ -299,7 +302,7 @@ public data class GameAggregateState(
                 pitchValue, settings.toString(), analytics, receiptsValue, deleted,
             ).joinToString("|") + (if (meta.retiredProCareers.isNotEmpty() || meta.standaloneSoulBalance != 0) {
                 "|retired-pro:${meta.retiredProCareers.joinToString(",") { it.commitment }}|pro-wallet:${meta.standaloneSoulBalance}"
-            } else "") + (if (meta.album.isNotEmpty()) "|album:${PlayerAlbumCodec.encode(meta.album)}" else "") + (if (meta.seedChallenge != null) "|seed-challenge:${meta.seedChallenge}" else "")
+            } else "") + (if (meta.abilityHistory.isNotEmpty()) "|ability-history:${AbilityHistory.encode(meta.abilityHistory)}" else "") + (if (meta.album.isNotEmpty()) "|album:${PlayerAlbumCodec.encode(meta.album)}" else "") + (if (meta.seedChallenge != null) "|seed-challenge:${meta.seedChallenge}" else "")
         )
     }
 

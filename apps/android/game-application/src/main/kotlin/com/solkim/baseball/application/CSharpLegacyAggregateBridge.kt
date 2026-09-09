@@ -63,6 +63,7 @@ public object CSharpLegacyAggregateBridge {
                 standaloneSoulBalance = ProRetirementCodec.balance(payload.objectOrNull("meta")?.get("standaloneSoulBalance")),
                 seedChallenge = SeedChallengeCodec.decode(payload.objectOrNull("meta")?.get("seedChallenge")),
                 playerGrowth = PlayerGrowthReceipt.decode(payload.objectOrNull("meta")?.get("playerGrowth")),
+                abilityHistory = AbilityHistory.decode(payload.objectOrNull("meta")?.get("abilityHistory")),
                 companion = PitcherCompanionCodec.decode(payload.objectOrNull("meta")?.get("companion")),
                 album = PlayerAlbumCodec.decode(payload.objectOrNull("meta")?.get("album")),
             ),
