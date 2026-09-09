@@ -558,7 +558,8 @@ public struct ProCareerEngine: Sendable {
                     batterOffset: weekOffset,
                     callPolicy: weekCallPolicy,
                     baseSeed: rng.next() ^ UInt64(bitPattern: Int64(nextWeek &* 0x9E37)) &+ UInt64(outingIndex),
-                    diverseScouting: Self.usesWeeklyDecisionRules(state)
+                    diverseScouting: Self.usesWeeklyDecisionRules(state),
+                    proRulesVersion: state.proRulesVersion
                 )
                 weekLine.outs += outingLine.outs
                 weekLine.strikeouts += outingLine.strikeouts
@@ -2100,7 +2101,13 @@ public struct ProCareerEngine: Sendable {
     public static let maximumCareerSeasons = 20
     /// Live schedule/fatigue/agency rules. New careers start here. Offseason may raise an
     /// in-progress save to this value without rewriting already stored season records.
-    public static let currentRulesVersion = 10
+    /// 새 커리어와 다음 명령이 기록하는 규칙 버전. 값의 뜻은 `ProGameplayRules`에 적었다.
+    ///
+    /// 아직 고정 참조(10)다. 11~13의 밸런스는 안드로이드에서 타순·피로·자책점 원장·교체
+    /// 규칙이 **함께** 맞춰진 값이라, 일부만 켜면 삼진과 실점이 현실 밴드를 벗어난다
+    /// (실측: 확률식과 타순만 옮겼을 때 K/9 3, R/9 10). 나머지가 이식되면 이 상수를
+    /// `ProGameplayRules.current`로 올린다.
+    public static let currentRulesVersion = ProGameplayRules.reference
     /// First version that owns the agency weekly-plan and important-game contracts.
     /// Must stay below `currentRulesVersion` so a version bump cannot turn agency off.
     public static let agencyRulesVersion = 3
@@ -3169,9 +3176,13 @@ public struct ProCareerEngine: Sendable {
         batterOffset: Int = 0,
         callPolicy: AutoCallPolicy = .perfect,
         baseSeed: UInt64,
-        diverseScouting: Bool = false
+        diverseScouting: Bool = false,
+        proRulesVersion: Int? = nil
     ) -> WeeklyOutingLine {
-        let line = AutoOutingSimulator().simulate(
+        let balance: PitchBalanceRules = ProGameplayRules.usesProfessionalBalance(proRulesVersion)
+            ? .professional
+            : .legacy
+        let line = AutoOutingSimulator(balance: balance).simulate(
             pitcher: pitcher,
             startingFatigue: startingFatigue,
             outsTarget: outsTarget,
@@ -3881,7 +3892,8 @@ public struct ProCareerEngine: Sendable {
             batterOffset: opponent.batterOffset,
             callPolicy: .perfect,
             baseSeed: rng.next(),
-            diverseScouting: false
+            diverseScouting: false,
+            proRulesVersion: state.proRulesVersion
         )
         let support = LeagueBaseline.teamRuns(using: &rng)
         let othersOuts = max(0, 27 - outing.outs)

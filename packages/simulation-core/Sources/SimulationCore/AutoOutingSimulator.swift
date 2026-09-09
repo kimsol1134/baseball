@@ -84,13 +84,19 @@ public struct AutoOutingSimulator: Sendable {
         let effectivePitchCap = pitchCap + extensionOuts * 4
         while line.outs < effectiveOutsTarget && line.pitches < effectivePitchCap && paIndex < 60 {
             paIndex += 1
-            let batter = BatterSnapshot(
+            // 리그 평균 타자는 아홉 타석이 전부 같은 타석이었다. 프로 재조정 경로에서는
+            // 실제 타순을 세운다. 평균 타자의 난수는 그대로 뽑아 두어 두 경로의 난수 소비
+            // 순서가 어긋나지 않게 한다.
+            let averageBatter = BatterSnapshot(
                 id: "week-batter-\(paIndex)", name: "상대 타선",
                 contact: clamp(50 + batterOffset + rng.nextInt(upperBound: 9) - 4, 20, 80),
                 discipline: clamp(50 + batterOffset + rng.nextInt(upperBound: 7) - 3, 20, 80),
                 power: clamp(50 + batterOffset + rng.nextInt(upperBound: 9) - 4, 20, 80),
                 batSide: rng.nextInt(upperBound: 100) < 32 ? .left : .right
             )
+            let batter = balance.isProfessional
+                ? ProfessionalLineup.batter(teamKey: "lineup-\(baseSeed)", turn: paIndex, offset: batterOffset)
+                : averageBatter
             // 강점과 약점 코스는 서로 마주 보게 잡는다.
             //
             // 예전에는 둘을 각각 무작위로 뽑아서 **11%의 타자가 강점과 약점이 같은 칸**이었다.
