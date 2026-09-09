@@ -41,6 +41,10 @@ class TrainingPlansTest {
         assertEquals(listOf(TrainingFocus.RECOVERY to TrainingIntensity.LIGHT), (command.command as HighSchoolPhase4Command.TrainingBlock).requests)
         val lastSlot = state.copy(highSchool = school.copy(run = school.run.copy(chapterTrainingCount = school.run.schedule.trainingsByChapter.first() - 1)))
         assertEquals(1, TrainingPlans.availableSteps(lastSlot, TrainingPlans.options.first()))
+        assertEquals(1, TrainingPresentation.remaining(lastSlot))
+        val repeated = TrainingPresentation.payloads(lastSlot, Phase8CommandContext(), TrainingFocus.COMMAND, TrainingIntensity.LIGHT, null, true)
+            .single().envelope.command as GameCommand.HighSchool
+        assertEquals(1, (repeated.command as HighSchoolPhase4Command.TrainingBlock).requests.size)
     }
     @Test fun planPersistsThroughTheProductionWriter() = runBlocking {
         val directory = Files.createTempDirectory("training-plan-native-")

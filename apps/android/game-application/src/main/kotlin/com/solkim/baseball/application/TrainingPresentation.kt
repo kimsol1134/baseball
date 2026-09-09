@@ -10,6 +10,12 @@ public typealias TrainingPreview = HighSchoolTrainingPreview
 
 /** Training display and command creation share the authoritative rules; UI never rolls a result. */
 public object TrainingPresentation {
+    public fun remaining(state: GameAggregateState): Int {
+        val run = state.highSchool?.run ?: return 0
+        if (run.phase != HighSchoolPhase.TRAINING) return 0
+        return ((run.schedule.trainingsByChapter.getOrNull(run.chapter.number - 1) ?: 0) - run.chapterTrainingCount).coerceAtLeast(0)
+    }
+    public fun repeatCount(state: GameAggregateState): Int = remaining(state).coerceAtMost(3)
     public fun title(focus: TrainingFocus): String = when (focus) {
         TrainingFocus.VELOCITY -> "구위 훈련"
         TrainingFocus.COMMAND -> "제구 훈련"
@@ -114,7 +120,7 @@ public object TrainingPresentation {
         if (preview.jackpotChancePercent <= 0 || preview.atTalentWall || preview.rehabilitation || focus == TrainingFocus.RECOVERY) return null
         val minimum = displayGrowth(state, focus, preview.jackpotMinimumGrowth)
         val maximum = displayGrowth(state, focus, preview.jackpotMaximumGrowth)
-        if (maximum <= displayGrowth(state, focus, preview.minimumGrowth)) return null
+        if (maximum <= displayGrowth(state, focus, preview.maximumGrowth)) return null
         val chance = GameCopyArgument.Whole(preview.jackpotChancePercent.toLong())
         val ability = GameCopyArgument.UserText(copy.legacy(metric(focus)))
         return if (minimum == maximum) copy.resolve("training.intensity.jackpot-fixed", chance, ability, GameCopyArgument.Whole(maximum.toLong()))
@@ -129,7 +135,7 @@ public object TrainingPresentation {
         val pitch = target.takeIf { effective == TrainingFocus.BREAKING_BALL }
         require(effective != TrainingFocus.BREAKING_BALL || (pitch == null && targets(state).isEmpty()) || pitch in targets(state)) { "training.target" }
         val seed = context.seed(state, "training:${effective.wire}")
-        val command = if (repeat) HighSchoolPhase4Command.TrainingBlock(seed, List(3) { effective to intensity }, pitch, stopForSafety = true)
+        val command = if (repeat) HighSchoolPhase4Command.TrainingBlock(seed, List(repeatCount(state)) { effective to intensity }, pitch, stopForSafety = true)
             else HighSchoolPhase4Command.Training(seed, effective, intensity, pitch)
         return Phase8Payloads.batch(state, Phase8ScreenId.P006_TRAINING, "train:${effective.wire}", listOf(GameCommand.HighSchool(command)))
     }

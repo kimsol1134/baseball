@@ -23,7 +23,7 @@ public object TrainingPlans {
     private fun safeSteps(state: GameAggregateState, plan: TrainingPlan): List<Pair<TrainingFocus, TrainingIntensity>> {
         var run = requireNotNull(state.highSchool).run
         if (run.injuryRecovery > 0) return emptyList()
-        val remaining = (run.schedule.trainingsByChapter[run.chapter.number - 1] - run.chapterTrainingCount).coerceAtLeast(0)
+        val remaining = TrainingPresentation.remaining(state)
         val steps = mutableListOf<Pair<TrainingFocus, TrainingIntensity>>()
         for (step in plan.steps.take(remaining)) {
             if (step.first != TrainingFocus.RECOVERY && (run.fatigue >= 75 || run.armRisk >= 55)) break

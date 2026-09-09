@@ -41,7 +41,7 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
     val recommended = TrainingPresentation.recommended(state)
     val copy = rememberGameCopy()
     val preview = TrainingPresentation.preview(state, focus, intensity)
-    val remaining = (run.schedule.trainingsByChapter[run.chapter.number - 1] - run.chapterTrainingCount).coerceAtLeast(0)
+    val remaining = TrainingPresentation.remaining(state)
     val scroll = rememberScrollState()
     fun commit(repeat: Boolean) {
         onCommit(Phase8UiAction(Phase8ScreenId.P006_TRAINING, "train:${focus.wire}",
@@ -115,6 +115,7 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                         else -> TrainingPresentation.growthOutlook(state, focus, preview, copy)
                     }
                     StatChangeText(outlook, modifier = Modifier.testTag("training.outlook"), style = MaterialTheme.typography.bodyMedium)
+                    if (focus == TrainingFocus.GAME_PLANNING) Text(TrainingPresentation.detail(focus), style = MaterialTheme.typography.bodySmall)
                     TrainingPresentation.jackpotOutlook(state, focus, preview, copy)?.let { bonus ->
                         StatChangeText(bonus, modifier = Modifier.testTag("training.jackpot"), style = MaterialTheme.typography.bodySmall,
                             color = BaseballColors.milestone, verbatim = true)
@@ -177,8 +178,8 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                             verbatim = true, style = MaterialTheme.typography.bodySmall)
                         Text(copy.resolve("training.plan.intensities"), verbatim = true, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
                     }
-                    TextButton(onClick = { sheet = null; commit(true) }, enabled = !busy, modifier = Modifier.testTag("training.plan.repeat")) {
-                        Text(copy.resolve("training.plan.repeat-current"), verbatim = true)
+                    OutlinedButton(onClick = { sheet = null; commit(true) }, enabled = !busy && remaining > 1, modifier = Modifier.testTag("training.plan.repeat")) {
+                        Text(copy.resolve("training.plan.repeat-count", GameCopyArgument.Whole(TrainingPresentation.repeatCount(state).toLong())), verbatim = true)
                     }
                     Text(copy.resolve("training.compact.repeat-help"), verbatim = true, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
                 }

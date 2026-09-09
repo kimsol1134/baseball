@@ -20,7 +20,7 @@ public data class NextAppearanceCue(val trainings: Int, val choices: Int) {
             for (chapter in current until schedule.trainingsByChapter.size) {
                 val milestones = schedule.milestonesByChapter[chapter]
                 if (chapter > current) trainings += schedule.trainingsByChapter[chapter]
-                else if (run.phase == HighSchoolPhase.TRAINING) trainings += (schedule.trainingsByChapter[chapter] - run.chapterTrainingCount).coerceAtLeast(0)
+                else if (run.phase == HighSchoolPhase.TRAINING) trainings += TrainingPresentation.remaining(state)
                 val start = when {
                     chapter > current || run.phase == HighSchoolPhase.TRAINING -> 0
                     run.phase == HighSchoolPhase.CHAPTER_REVIEW -> milestones.size

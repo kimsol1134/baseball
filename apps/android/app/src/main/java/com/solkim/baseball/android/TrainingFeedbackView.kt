@@ -81,7 +81,7 @@ internal fun TrainingFeedbackPanel(record: JSONObject, reducedMotion: Boolean = 
             if (after.getInt(1) > before.getInt(1)) ControlWindowPreview(after.getInt(1), before.getInt(1), titleKey = "loop.growth.base-window")
             val velocities = record.optJSONArray("velocities")
             if (velocities != null && velocities.length() > 0) {
-                CareerDisclosure("현재 예상 구속", "training.feedback.velocity") {
+                CareerDisclosure(copy.legacy("현재 예상 구속") + " · " + String.format(java.util.Locale.US, "%.1f km/h", velocities.getJSONObject(0).getInt("after") / 10.0), "training.feedback.velocity") {
                     Text("현재 피로와 균형 힘 배분을 반영했어요.", style = MaterialTheme.typography.bodySmall)
                     for (index in 0 until velocities.length()) {
                         val value = velocities.getJSONObject(index)
