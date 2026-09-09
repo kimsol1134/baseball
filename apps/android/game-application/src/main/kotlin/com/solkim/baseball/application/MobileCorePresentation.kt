@@ -102,13 +102,16 @@ public data class RebirthStartPreview(
 ) {
     public companion object {
         public fun resolve(state: GameAggregateState, action: Phase8ActionModel?): RebirthStartPreview? {
-            if (action?.id != "quickRebirth" || !action.enabled) return null
+            if (action == null || !action.enabled || (action.id != "quickRebirth" && !action.id.startsWith("rebirthPath:"))) return null
             val before = state.highSchool ?: return null
-            val command = (action.payloads.singleOrNull()?.envelope?.command as? GameCommand.HighSchool)?.command
-                as? com.solkim.baseball.core.highschool.HighSchoolPhase4Command.BeginRebirth ?: return null
+            val command = (action.payloads.firstOrNull()?.envelope?.command as? GameCommand.HighSchool)?.command ?: return null
             if (before.run.phase != HighSchoolPhase.COMPLETED || before.archive.none { it.careerId == before.run.careerId }) return null
-            val next = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel()
-                .beginRebirth(before, command.seed, command.dayKey).state
+            val kernel = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel()
+            val next = when (command) {
+                is com.solkim.baseball.core.highschool.HighSchoolPhase4Command.BeginRebirth -> kernel.beginRebirth(before, command.seed, command.dayKey).state
+                is com.solkim.baseball.core.highschool.HighSchoolPhase4Command.ConfigureRebirth -> kernel.beginRebirth(before, command.seed, command.dayKey, command.setup).state
+                else -> return null
+            }
             fun ratings(p: com.solkim.baseball.core.highschool.HighSchoolPitcher) = listOf(p.stuff, p.command, p.movement, p.stamina)
             return RebirthStartPreview(ratings(before.startingPitcher), ratings(next.startingPitcher),
                 before.run.lifeNumber, next.run.lifeNumber, before.run.performance.strikeouts)

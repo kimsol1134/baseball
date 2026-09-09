@@ -27,6 +27,17 @@ class TrainingFeedbackFlowTest {
         val after = before.copy(highSchool = k.commitTraining("918220", school, focus, TrainingIntensity.STANDARD).state)
         return before to after
     }
+    @Test fun trainingResultIsVisibleEvenWhenTheNextScreenIsAConversation() {
+        val (before, after) = transitions()
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        saveTrainingFeedback(context, before, after)
+        compose.setContent { BaseballMigrationTheme {
+            Phase8Shell(after, false, null, Phase8ScreenProjection.preferredScreen(after), Phase8CommandContext(), onNavigate = {}, onAction = {})
+        } }
+        compose.onNodeWithText("훈련 완료").assertIsDisplayed()
+        compose.onNodeWithTag("training.growth.bar.1").assertExists()
+        context.getSharedPreferences("training.feedback", 0).edit().remove("pending").commit()
+    }
     @Test fun actualTrainingChangesAreShownUntilExplicitContinue() {
         val (before, after) = transitions()
         val record = requireNotNull(trainingFeedbackRecord(before, after))

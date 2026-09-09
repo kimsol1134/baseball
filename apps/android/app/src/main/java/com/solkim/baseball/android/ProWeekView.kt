@@ -63,7 +63,9 @@ internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel,
 
 internal fun saveProWeekFeedback(context: Context, before: GameAggregateState, after: GameAggregateState) {
     val r = ProWeekPresentation.result(before, after) ?: return
-    val record = JSONObject().put("career", r.careerId).put("season", r.season).put("week", r.week).put("weeks", r.weeks)
+    val record = JSONObject().put("beforeRatings", JSONArray(before.pro!!.pitcher.let { listOf(it.stuff, it.command, it.movement, it.stamina) }))
+        .put("afterRatings", JSONArray(after.pro!!.pitcher.let { listOf(it.stuff, it.command, it.movement, it.stamina) }))
+        .put("career", r.careerId).put("season", r.season).put("week", r.week).put("weeks", r.weeks)
         .put("growth", JSONArray(r.growth)).put("games", r.games).put("outs", r.outs).put("strikeouts", r.strikeouts).put("runs", r.runs)
         .put("fatigueBefore", r.fatigueBefore).put("fatigueAfter", r.fatigueAfter).put("injury", r.injuries).put("role", r.role).put("level", r.level)
     context.getSharedPreferences("pro.week.feedback", 0).edit().putString("pending", record.toString()).apply()
@@ -86,6 +88,9 @@ internal fun ProWeekFeedbackGate(state: GameAggregateState) {
         title = { Text("이번 주의 변화") }, text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("성장", style = MaterialTheme.typography.titleSmall)
+                val from = r.optJSONArray("beforeRatings")
+                val to = r.optJSONArray("afterRatings")
+                if (from?.length() == 4 && to?.length() == 4) AbilityChangeBars((0..3).map { from.getInt(it) }, (0..3).map { to.getInt(it) }, state.settings.reducedMotionEnabled, "week.growth.bar")
                 val growth = r.getJSONArray("growth")
                 if (growth.length() == 0) Text("몸 상태와 이번 주 경기를 확인해요.")
                 repeat(growth.length()) { StatChangeText(growth.getString(it), color = BaseballColors.action) }

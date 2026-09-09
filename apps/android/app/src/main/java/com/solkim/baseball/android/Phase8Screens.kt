@@ -158,6 +158,8 @@ public fun Phase8Shell(
     } ?: preferred
     val gameCopy = rememberGameCopy()
     val model = Phase8ScreenProjection.project(state, visibleScreen, commandContext).localized(gameCopy, state)
+    TrainingFeedbackGate(state)
+    ProWeekFeedbackGate(state)
     if (visibleScreen == Phase8ScreenId.P004_PITCH_TUTORIAL ||
         (visibleScreen == Phase8ScreenId.P003_PROLOGUE && RebirthContinuity.resolve(state) == null)) {
         PracticeEntryRecovery(state, model, busy, actionError, onAction,
@@ -176,9 +178,7 @@ public fun Phase8Shell(
     val bridgeResult = nextTrainingLoad?.takeIf { it.first == bridgeKey }?.second
     val nextTraining = bridgeResult?.getOrNull()
     val trainingSurface = visibleScreen == Phase8ScreenId.P006_TRAINING || bridgesReview
-    TrainingFeedbackGate(state)
     ConversationFeedbackGate(state)
-    ProWeekFeedbackGate(state)
     CareerMilestoneCelebration(state, showTrainingBloom = false)
     val currentTab = ProductTab.forScreen(visibleScreen)
     if (visibleScreen == Phase8ScreenId.P027_SETTINGS) {
@@ -301,7 +301,7 @@ public fun Phase8Shell(
                 actionError ?: if (bridgeResult?.isFailure == true) gameCopy.resolve("training.seamless.load-error") else null,
                 insets, trainingResultStart, dismissedTraining,
                 feedbackState = state,
-                playerContent = { CompanionLauncher(state, showPortrait = true); CompanionReaction(state) },
+                playerContent = { CompanionLauncher(state, showPortrait = true); AbilityCard(state); CompanionReaction(state) },
                 extraActions = {
                     if (bridgeResult?.isFailure == true) TextButton(onClick = { previewAttempt++ }) { Text(gameCopy.resolve("training.seamless.retry")) }
                     if (bridgesReview) model.actions.firstOrNull { it.id == "claimChapterGame" && it.enabled }?.let { action ->
@@ -716,6 +716,7 @@ internal fun RebirthPathPicker(state: GameAggregateState, model: Phase8ScreenMod
         }
         Text(chosen.label, color = BaseballColors.milestone, style = MaterialTheme.typography.titleSmall)
         Text(chosen.description, style = MaterialTheme.typography.bodySmall)
+        RebirthAbilityPreview(state, chosen)
         Text("기록과 유산을 이어받고 학교 선택부터", style = MaterialTheme.typography.labelSmall)
         Button(onClick = { onAction(Phase8UiAction(model.id, chosen.id, chosen.payloads)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("rebirth.path.start")) { Text("이 길로 시작") }
         actions.firstOrNull { it.id == "quickRebirth" }?.let { same ->

@@ -36,20 +36,11 @@ internal fun CorePlayerHeader(state: GameAggregateState, compact: Boolean = fals
                 Box(Modifier.weight(1f)) { CompanionLauncher(state, showPortrait = true) }
                 TextButton(onClick = { details = true }, modifier = Modifier.testTag("career.playerDetails")) { Text("능력") }
             }
+            AbilityCard(state, compact = true)
             CompanionReaction(state)
             NextAppearanceCue.resolve(state)?.let { CoreNextAppearance(it) }
         }
-        if (details) AlertDialog(onDismissRequest = { details = false },
-            modifier = Modifier.semantics { testTagsAsResourceId = true },
-            title = { Text(copy.resolve("mobile.core.stats"), verbatim = true) },
-            text = { Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                CorePlayerHeader(state, compact = false)
-                Text(copy.resolve("control.window.explanation"), verbatim = true, style = MaterialTheme.typography.bodyMedium)
-                val stuff = pro?.pitcher?.stuff ?: run?.pitcher?.stuff ?: 20
-                val movement = pro?.pitcher?.movement ?: run?.pitcher?.movement ?: 20
-                Text("${copy.legacy("구위")} ${AbilityDisplayScale.rating(stuff)} · ${copy.legacy("무브먼트")} ${AbilityDisplayScale.rating(movement)}", verbatim = true)
-            } },
-            confirmButton = { TextButton(onClick = { details = false }) { Text(copy.resolve("action.close"), verbatim = true) } })
+        if (details) AbilityDetails(state) { details = false }
         return
     }
     Column(Modifier.fillMaxWidth().testTag("career.player"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -63,23 +54,7 @@ internal fun CorePlayerHeader(state: GameAggregateState, compact: Boolean = fals
                     ?: run?.chapter?.title.orEmpty(), style = MaterialTheme.typography.bodySmall)
             }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            val velocity = pro?.pitcher?.profile(PitchKind.FOUR_SEAM)?.velocityTenthsKph
-                ?: run?.pitcher?.pitchProfiles?.firstOrNull { it.pitchType == PitchKind.FOUR_SEAM }?.velocityTenthsKph
-            CorePlayerStat(copy.resolve("mobile.core.velocity"), velocity?.let { "${it / 10}.${it % 10} km/h" } ?: "—", Modifier.weight(1f))
-            CorePlayerStat(copy.legacy("제구"), AbilityDisplayScale.rating(command).toString(), Modifier.weight(1f), commandRating = command)
-            CorePlayerStat(copy.legacy("체력"), AbilityDisplayScale.rating(stamina).toString(), Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun CorePlayerStat(label: String, value: String, modifier: Modifier, commandRating: Int? = null) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(label, verbatim = true, color = BaseballColors.textSecondary, style = MaterialTheme.typography.labelMedium)
-        if (commandRating != null) ControlWindowPreview(commandRating, compact = true)
-        Text(value.removeSuffix(" km/h"), verbatim = true, style = if (commandRating == null) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-        if (value.endsWith(" km/h")) Text("km/h", verbatim = true, color = BaseballColors.textSecondary, style = MaterialTheme.typography.labelSmall)
+        AbilityCard(state, compact = false)
     }
 }
 
@@ -137,20 +112,9 @@ internal fun CoreRebirthStartComparison(preview: RebirthStartPreview) {
         Text(copy.resolve("mobile.polish.life-transition", GameCopyArgument.Whole(preview.previousLife.toLong()), GameCopyArgument.Whole(preview.nextLife.toLong())),
             verbatim = true, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = BaseballColors.action)
         Text(copy.resolve("mobile.polish.start-comparison"), verbatim = true, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Spacer(Modifier.weight(1f))
-            Text(copy.resolve("mobile.polish.previous-start"), verbatim = true, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
-            Text(copy.resolve("mobile.polish.next-start"), verbatim = true, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
-        }
-        listOf("구위", "제구", "무브먼트", "체력").forEachIndexed { index, label ->
-            Row(Modifier.fillMaxWidth().testTag("rebirth.start.$index"), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(copy.legacy(label), verbatim = true, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                Text(AbilityDisplayScale.rating(preview.previous[index]).toString(), verbatim = true,
-                    modifier = Modifier.weight(1f), color = BaseballColors.textSecondary, style = MaterialTheme.typography.titleMedium)
-                Text(AbilityDisplayScale.rating(preview.next[index]).toString(), verbatim = true, modifier = Modifier.weight(1f),
-                    color = if (preview.next[index] >= preview.previous[index]) BaseballColors.action else BaseballColors.warning,
-                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
+        Text(copy.resolve("mobile.polish.previous-start") + " → " + copy.resolve("mobile.polish.next-start"), verbatim = true, style = MaterialTheme.typography.labelMedium)
+        (0..3).forEach { index ->
+            AbilityBar(index, preview.next[index], preview.previous[index], tag = "rebirth.start.$index", showPrevious = true)
         }
         ControlWindowPreview(preview.next[1], preview.previous[1])
     }

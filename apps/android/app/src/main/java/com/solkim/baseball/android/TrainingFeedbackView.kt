@@ -44,7 +44,7 @@ internal fun TrainingFeedbackGate(state: GameAggregateState) {
     if (record.optString("career") != run.careerId || record.optInt("number") > run.totalTrainingsCompleted) return
     Dialog(onDismissRequest = {}, properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false, usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxWidth().padding(16.dp).heightIn(max = 680.dp), shape = MaterialTheme.shapes.extraLarge, color = BaseballColors.surface) {
-            TrainingFeedbackPanel(record, onContinue = {
+            TrainingFeedbackPanel(record, reducedMotion = state.settings.reducedMotionEnabled, onContinue = {
                 // Do not clear a newer result if the displayed receipt was replaced.
                 if (prefs.getString("pending", null) == raw) prefs.edit().remove("pending").apply()
             })
@@ -53,7 +53,7 @@ internal fun TrainingFeedbackGate(state: GameAggregateState) {
 }
 
 @Composable
-internal fun TrainingFeedbackPanel(record: JSONObject, onContinue: () -> Unit) {
+internal fun TrainingFeedbackPanel(record: JSONObject, reducedMotion: Boolean = false, onContinue: () -> Unit) {
     val before = record.getJSONArray("before")
     val after = record.getJSONArray("after")
     val labels = listOf("구위", "제구", "무브먼트", "체력")
@@ -73,9 +73,9 @@ internal fun TrainingFeedbackPanel(record: JSONObject, onContinue: () -> Unit) {
             changed.forEach { index ->
                 val from = AbilityDisplayScale.rating(before.getInt(index))
                 val to = AbilityDisplayScale.rating(after.getInt(index))
-                Text(labels[index], style = MaterialTheme.typography.labelLarge, color = BaseballColors.textSecondary)
+                AbilityBar(index, after.getInt(index), before.getInt(index), animate = true, reducedMotion = reducedMotion, tag = "training.growth.bar.$index")
                 StatChangeText("$from → $to  (${if (to >= from) "+" else ""}${to - from})", modifier = Modifier.testTag("training.feedback.stat.$index"),
-                    style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, verbatim = true)
+                    style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, verbatim = true)
             }
             if (changed.isEmpty()) Text(if (record.getInt("fatigueAfter") < record.getInt("fatigueBefore")) "몸이 회복됐어요." else "능력치는 유지됐어요.", style = MaterialTheme.typography.titleLarge)
             if (after.getInt(1) > before.getInt(1)) ControlWindowPreview(after.getInt(1), before.getInt(1), titleKey = "loop.growth.base-window")
