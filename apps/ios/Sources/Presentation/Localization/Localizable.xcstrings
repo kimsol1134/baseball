@@ -16284,6 +16284,28 @@
         }
       }
     },
+    "pitch.feedback.outcome.reached-on-error": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A fielder booted a routine play and the batter reached."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "野手が平凡な打球をこぼし、打者が生きた。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "야수가 평범한 타구를 놓쳐 타자가 살았습니다."
+          }
+        }
+      }
+    },
     "pitch.feedback.outcome.home-run": {
       "localizations": {
         "en": {

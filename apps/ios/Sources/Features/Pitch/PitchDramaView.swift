@@ -568,7 +568,8 @@ struct PitchDramaView: View {
     private var tone: Color {
         switch outcome {
         case .swingingStrike, .calledStrike, .inPlayOut: BaseballTheme.action
-        case .ball, .foul, .hitByPitch: BaseballTheme.warning
+        // 실책 출루는 투수가 진 것이 아니다. 주자는 나갔지만 공은 제 몫을 했다.
+        case .ball, .foul, .hitByPitch, .reachedOnError: BaseballTheme.warning
         case .single, .double, .triple, .homeRun: BaseballTheme.negative
         }
     }

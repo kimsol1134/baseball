@@ -1146,7 +1146,7 @@ struct PitchView: View {
     private func tone(for outcome: PitchOutcome) -> BaseballCardTone {
         switch outcome {
         case .swingingStrike, .calledStrike, .inPlayOut: .positive
-        case .ball, .foul, .hitByPitch: .warning
+        case .ball, .foul, .hitByPitch, .reachedOnError: .warning
         case .single, .double, .triple, .homeRun: .negative
         }
     }

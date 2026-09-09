@@ -133,6 +133,10 @@ public struct ProGameLine: Codable, Equatable, Sendable, Identifiable {
     /// 그때는 "6.1이닝 7K 2BB 2실점"으로도 행이 성립한다.
     public let hits: Int?
     public let homeRuns: Int?
+    /// 이 등판의 자책점. 원장이 없는 경로(구저장본·직접 등판)는 nil — '모른다'이다.
+    public let earnedRuns: Int?
+    /// 완투. 아홉 이닝을 혼자 책임지고 경기가 결정된 날만 참이다. 규칙 13 이전은 nil.
+    public let completeGame: Bool?
 
     public var id: String { "\(season)-\(outingNumber)" }
 
@@ -151,7 +155,9 @@ public struct ProGameLine: Codable, Equatable, Sendable, Identifiable {
         decision: PitchingDecision,
         played: Bool,
         hits: Int? = nil,
-        homeRuns: Int? = nil
+        homeRuns: Int? = nil,
+        earnedRuns: Int? = nil,
+        completeGame: Bool? = nil
     ) {
         self.season = season
         self.week = week
@@ -168,6 +174,8 @@ public struct ProGameLine: Codable, Equatable, Sendable, Identifiable {
         self.played = played
         self.hits = hits
         self.homeRuns = homeRuns
+        self.earnedRuns = earnedRuns
+        self.completeGame = completeGame
     }
 
     /// 없는 키는 nil로 읽는다. 중간 빌드를 태운 내부 테스터의 저장을 보호한다.
@@ -188,6 +196,8 @@ public struct ProGameLine: Codable, Equatable, Sendable, Identifiable {
         played = try container.decodeIfPresent(Bool.self, forKey: .played) ?? false
         hits = try container.decodeIfPresent(Int.self, forKey: .hits)
         homeRuns = try container.decodeIfPresent(Int.self, forKey: .homeRuns)
+        earnedRuns = try container.decodeIfPresent(Int.self, forKey: .earnedRuns)
+        completeGame = try container.decodeIfPresent(Bool.self, forKey: .completeGame)
     }
 
     /// "6.1이닝" 형태. 야구에서 이닝은 3분의 1 단위로 센다.

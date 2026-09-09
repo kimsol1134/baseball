@@ -15775,6 +15775,28 @@
         }
       }
     },
+    "content.pitch-outcome.reached_on_error.label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reached on error"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失策出塁"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "실책 출루"
+          }
+        }
+      }
+    },
     "content.pitch-outcome.single.label": {
       "localizations": {
         "en": {

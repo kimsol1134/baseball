@@ -36,7 +36,9 @@ extension HighSchoolCareerStore {
             case .strikeout: ledger.strikeouts += 1
             case .walk: ledger.walks += 1
             case .hit: ledger.hits += 1
-            case .inPlayOut: break
+            // 실책 출루는 안타가 아니다. 라이벌과의 대결 원장은 야수의 실수를
+            // 타자의 공으로 세지 않는다 — 타석 수만 오른다.
+            case .inPlayOut, .reachedOnError: break
             }
         }
         return ledger

@@ -400,7 +400,7 @@ final class PresentationCopyTokenTests: XCTestCase {
             .pitchOutcome,
             rawValues: [
                 "ball", "called_strike", "swinging_strike", "foul", "in_play_out",
-                "single", "double", "triple", "home_run", "hit_by_pitch",
+                "single", "reached_on_error", "double", "triple", "home_run", "hit_by_pitch",
             ]
         )
         assertFamily(.zoneIntent, rawValues: ["strike", "edge", "chase"])

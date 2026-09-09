@@ -557,8 +557,15 @@ public struct ProSeasonStats: Codable, Equatable, Sendable {
     public let saves: Int
     /// 해당 시즌의 포스트시즌 경기 원장. 구저장본과 진출 실패 시즌은 nil이다.
     public let postseasonGames: [ProPostseasonGameLine]?
-    public init(season: Int, teamID: String, games: Int = 0, starts: Int = 0, inningsOuts: Int = 0, strikeouts: Int = 0, walks: Int = 0, runsAllowed: Int = 0, hits: Int = 0, homeRuns: Int = 0, pitches: Int = 0, wins: Int = 0, losses: Int = 0, saves: Int = 0, postseasonGames: [ProPostseasonGameLine]? = nil) {
-        self.season = season; self.teamID = teamID; self.games = games; self.starts = starts; self.inningsOuts = inningsOuts; self.strikeouts = strikeouts; self.walks = walks; self.runsAllowed = runsAllowed; self.hits = hits; self.homeRuns = homeRuns; self.pitches = pitches; self.wins = wins; self.losses = losses; self.saves = saves; self.postseasonGames = postseasonGames
+    /// 자책점. **nil은 0이 아니라 '모른다'이다.**
+    ///
+    /// 자책점은 실책과 승계 주자를 가려내는 원장이 있어야만 나오고, 그 원장은 프로 규칙 12
+    /// 이후의 등판만 남긴다. 원장 없이 흘러간 시즌의 자책점을 실점에서 되짚어 추정하면
+    /// 화면에 나오는 방어율이 그 시즌에 실제로 있었던 일과 무관해진다. 그래서 한 경기라도
+    /// 원장이 없는 시즌은 통째로 nil로 남고, 화면은 `—`를 보여 준다.
+    public let earnedRuns: Int?
+    public init(season: Int, teamID: String, games: Int = 0, starts: Int = 0, inningsOuts: Int = 0, strikeouts: Int = 0, walks: Int = 0, runsAllowed: Int = 0, hits: Int = 0, homeRuns: Int = 0, pitches: Int = 0, wins: Int = 0, losses: Int = 0, saves: Int = 0, postseasonGames: [ProPostseasonGameLine]? = nil, earnedRuns: Int? = nil) {
+        self.season = season; self.teamID = teamID; self.games = games; self.starts = starts; self.inningsOuts = inningsOuts; self.strikeouts = strikeouts; self.walks = walks; self.runsAllowed = runsAllowed; self.hits = hits; self.homeRuns = homeRuns; self.pitches = pitches; self.wins = wins; self.losses = losses; self.saves = saves; self.postseasonGames = postseasonGames; self.earnedRuns = earnedRuns
     }
 
     /// 없는 키는 0으로 읽는다.
@@ -583,6 +590,7 @@ public struct ProSeasonStats: Codable, Equatable, Sendable {
         losses = try container.decodeIfPresent(Int.self, forKey: .losses) ?? 0
         saves = try container.decodeIfPresent(Int.self, forKey: .saves) ?? 0
         postseasonGames = try container.decodeIfPresent([ProPostseasonGameLine].self, forKey: .postseasonGames)
+        earnedRuns = try container.decodeIfPresent(Int.self, forKey: .earnedRuns)
     }
 
     public func archivingPostseason(_ games: [ProPostseasonGameLine]?) -> ProSeasonStats {
@@ -601,7 +609,8 @@ public struct ProSeasonStats: Codable, Equatable, Sendable {
             wins: wins,
             losses: losses,
             saves: saves,
-            postseasonGames: games?.isEmpty == false ? games : nil
+            postseasonGames: games?.isEmpty == false ? games : nil,
+            earnedRuns: earnedRuns
         )
     }
 }

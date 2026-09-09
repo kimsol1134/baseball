@@ -453,7 +453,13 @@ public struct PostgameAnalysisSnapshot: Codable, Equatable, Sendable {
 }
 
 public struct BallInPlayEngine: Sendable {
-    public init() {}
+    /// Which balance pass this engine runs. Only `.professional` produces fielding errors, so the
+    /// frozen reference path draws exactly the random numbers it always drew.
+    public let balance: PitchBalanceRules
+
+    public init(balance: PitchBalanceRules = .legacy) {
+        self.balance = balance
+    }
 
     /// Chance (per 1,000) that a gap/corner double gets stretched into a triple. Tuned with the
     /// shape gate below so triples land near the real ~2% of hits; see `tools/check-balance.mjs`.
@@ -536,6 +542,19 @@ public struct BallInPlayEngine: Sendable {
             if generator.nextInt(upperBound: 1_000) < Self.tripleChance {
                 finalOutcome = .triple
             }
+        }
+        // A routine grounder mishandled with first base open. Restricting it to that situation is
+        // what keeps the earned-run reconstruction honest: existing runners hold, so the clean
+        // replay never has to guess where a runner *would* have ended up. Like the triple above it
+        // draws last, so every other batted ball resolves from the same numbers as before, and the
+        // draw only happens on the professional path.
+        if balance.isProfessional,
+           finalOutcome == .inPlayOut,
+           sector == .infield,
+           battedBall.launchAngleTenthsDegrees < 90,
+           !gameState.runners.firstOccupied,
+           generator.nextInt(upperBound: 1_000) < clamp(110 - defenseRating, 20, 90) {
+            finalOutcome = .reachedOnError
         }
         let impact = impactFrom(neutral: neutralOutcome, final: finalOutcome)
         let explanation: String
@@ -722,7 +741,7 @@ public struct BallInPlayEngine: Sendable {
     private func outcomeValue(_ outcome: PitchOutcome) -> Int {
         switch outcome {
         case .inPlayOut: return 0
-        case .single: return 1
+        case .single, .reachedOnError: return 1
         case .double: return 2
         case .triple: return 3
         case .homeRun: return 4
@@ -778,6 +797,15 @@ public struct BaserunnerEngine: Sendable {
                 after = runners
                 runs = 0
             }
+        case .reachedOnError:
+            // First base was open when the ball was booted, so no runner is forced anywhere.
+            after = BaserunnerStateSnapshot(
+                firstOccupied: true,
+                secondOccupied: runners.secondOccupied,
+                thirdOccupied: runners.thirdOccupied,
+                leadRunnerSpeed: runners.leadRunnerSpeed
+            )
+            runs = 0
         case .walk:
             let forcedRun = runners.firstOccupied && runners.secondOccupied && runners.thirdOccupied
             after = BaserunnerStateSnapshot(

@@ -105,6 +105,7 @@ enum PitchCopy {
         case .triple: "3루타"
         case .homeRun: "홈런"
         case .hitByPitch: "몸에 맞는 공"
+        case .reachedOnError: "실책 출루"
         }
     }
 
@@ -136,6 +137,7 @@ enum PitchCopy {
         case .walk: "볼넷"
         case .inPlayOut: "아웃"
         case .hit: "피안타"
+        case .reachedOnError: "실책 출루"
         }
     }
 
@@ -146,7 +148,7 @@ enum PitchCopy {
     static func hapticSuccess(_ outcome: PitchOutcome) -> Bool? {
         switch outcome {
         case .calledStrike, .swingingStrike, .inPlayOut: true
-        case .single, .double, .triple, .homeRun, .hitByPitch: false
+        case .single, .double, .triple, .homeRun, .hitByPitch, .reachedOnError: false
         case .ball, .foul: nil
         }
     }

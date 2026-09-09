@@ -26,13 +26,27 @@ public struct PitchBalanceRules: Equatable, Sendable {
 
     public var arena: Arena
 
-    public init(arena: Arena = .legacy) {
+    /// Pro rules 13: fatigue follows the pitch count.
+    ///
+    /// Fatigue used to be charged per pitch by pitch type, so the eightieth pitch of a game cost a
+    /// pitcher exactly what the first one did and a starter could be pulled by an arithmetic that
+    /// never knew how long they had been out there. Here the cost accrues against the running total
+    /// of pitches thrown in the game, which is what actually tires an arm — and what makes the
+    /// decision to send someone back out for the ninth mean something.
+    public var pitchCountFatigue: Bool
+
+    public init(arena: Arena = .legacy, pitchCountFatigue: Bool = false) {
         self.arena = arena
+        self.pitchCountFatigue = pitchCountFatigue
     }
 
     public static let legacy = PitchBalanceRules(arena: .legacy)
     public static let school = PitchBalanceRules(arena: .school)
     public static let professional = PitchBalanceRules(arena: .professional)
+    /// Pro rules 13 and later: the professional balance pass plus pitch-count fatigue.
+    public static let professionalWorkload = PitchBalanceRules(
+        arena: .professional, pitchCountFatigue: true
+    )
 
     /// True on either rebalanced arena. Guards everything the two levels share.
     public var rebalanced: Bool { arena != .legacy }

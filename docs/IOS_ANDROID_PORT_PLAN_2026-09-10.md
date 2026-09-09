@@ -10,7 +10,7 @@
 |---|---|---|
 | Phase 0 기준점 고정 | **완료** | 미커밋 2~7차 QA 수정 103파일을 `27c6d88b`·`954cbbcc`로 커밋 |
 | Phase 1 고교 규칙 4→7 | **1-A~1-F 완료 / 1-G 미착수** | `8c201225`. Swift 코어 614개 중 실패 2개는 사전 실패(같은 커밋의 깨끗한 워크트리에서 재현). iOS 앱 빌드 통과. 장별 직접 등판(1-G)은 앱 계층의 새 흐름이라 Phase 5·6과 함께 한다 |
-| Phase 2 프로 규칙 10→13 | **자리만 만듦** | `e62f2618`. 확률식과 타순만 켜고 측정하니 K/9 3, R/9 10으로 현실 밴드를 벗어나 되돌림. 아래 §2.1 참조 |
+| Phase 2 프로 규칙 10→13 | **v12·v13 커널 이식 완료 / 버전은 아직 10** | `e62f2618`(자리) + 이번 커밋. 자책점 원장·수비 실책·승계 주자 정산·투구 수 피로·교체 규칙까지 올렸고 등판 단위 밸런스는 안드로이드 근처에 들어왔다. 커리어 단위 밴드가 아직 안 맞아 `currentRulesVersion`은 10 그대로다. 아래 §2.1·§2.2 |
 | Phase 3 저장 마이그레이션 | **현재 범위 완료** | `f5263c21`. 새 필드가 전부 optional이라 스키마 번호를 올리지 않았고, 왕복·구버전 열기를 검사로 고정 |
 | Phase 4 투구 손맛 | **곡선·햅틱·흔들림·오디오 완료 / 연출 미착수** | `2fa19360`, `2d3219f9`. 잔상·실밥·판정 도장·퍼펙트 비행 단축은 미착수 |
 | Phase 5 앨범·카드·능력 시각화 | 미착수 | |
@@ -23,25 +23,104 @@
 프로 v12/v13은 **묶음으로만 성립한다.** 투구 확률식과 타순만 옮기고 측정했더니
 `testKernelDrivenWeeklyStatsLandInRealisticBands`가 K/9 3(밴드 4~13), R/9 10(밴드 1~9)으로
 떨어졌다. 안드로이드에서 이 확률식은 자책점 원장, 승계 주자 정산, 투구 수 기반 피로,
-교체 규칙과 같이 맞춰진 값이다. 그래서 새 커리어가 기록하는 버전은 10으로 되돌리고,
-`ProGameplayRules`·`ProfessionalLineup`·주간 등판의 밸런스 인자만 남겼다.
+교체 규칙과 같이 맞춰진 값이다.
 
-다음에 이 단계를 이어받을 때는 **v12 전체를 한 번에** 올린다: 자책점 원장
-(`PitchRunLedger`, Kotlin 62줄), 수비 실책(`PlateAppearanceResult`에 새 케이스), 승계 주자
-정산, 직접+자동 혼합 정산. 그 다음 v13(교체 규칙·완투·투구 수 피로)을 올리고, 마지막에
-`ProCareerEngine.currentRulesVersion`을 올린다. 각 단계 뒤 `testKernelDrivenWeeklyStats…`와
-20시즌 분포 검사로 밴드를 확인한다.
+그래서 이번에는 묶음째 올렸다.
+
+| 올린 것 | Swift 파일 | 규칙 |
+|---|---|---|
+| 자책점 원장 | `PitchRunLedger.swift` | v12 |
+| 수비 실책 | `PitchOutcome.reachedOnError`·`PlateAppearanceResult.reachedOnError`, `BallInPlayEngine`(1루 빈 평범한 땅볼), `BaserunnerEngine` | v12 |
+| 승계 주자 정산 | `ReliefRunSettlement.swift` | v12 |
+| 강도별 구속 폭 축소 | `PitchAbilityRules.nominalVelocity(balancedEffort:)` | v11 (프로 아레나만) |
+| 투구 수 기반 피로 | `PitchBalanceRules.pitchCountFatigue`, `PitchKernelEngine.fatigueGain` | v13 |
+| 교체 규칙·완투 | `ProOutingUsageRules.swift`, `AutoOutingSimulator.simulate(fullStart:)` | v13 |
+| 보직별 등판 수 | `ProCareerEngine` 주간 예산(선발 6주마다 2회, 뒷문 격주 2회) | v12 |
+| 자책점·완투 기록 | `ProGameLine.earnedRuns/completeGame`, `ProSeasonStats.earnedRuns`(전부 optional) | v12·v13 |
+
+`AutoOutingSimulator`를 직접 돌린 등급별 성적은 안드로이드 근처에 들어왔다
+(`ProfessionalBalanceTests` = 안드로이드 `ProfessionalBalanceTest`의 쌍, 등급당 120등판):
+
+| 등급 55 | K/9 | RA/9 | ERA | WHIP | BB/9 | HR/9 |
+|---|---|---|---|---|---|---|
+| 안드로이드 | 7.30 | 4.19 | 4.09 | 1.50 | 3.35 | 0.55 |
+| Swift | 6.75 | 5.06 | 4.88 | 1.65 | 3.60 | 0.76 |
+| KBO 3시즌 | 7.46 | 4.96 | 4.45 | 1.44 | 3.64 | — |
+
+실점과 볼넷은 KBO 실측에 오히려 더 가깝고(RA/9 5.06 대 4.96, BB/9 3.60 대 3.64),
+어긋난 축은 삼진(−0.7)과 WHIP(+0.21)이다.
+
+에이스는 완투까지 간다(`testAnAceCanFinishAGame`, 200등판 중 27아웃 등판 존재).
+
+게이트 결과:
+
+- `swift test`: 629개 중 실패 2개 — 둘 다 **사전 실패**다(같은 커밋의 깨끗한 워크트리에서
+  재현: `testStartingLearningPitchChoicesStayInsideEarlyRunPreventionGuardrail`,
+  `testWave0CurrentSwiftNextSeedsMatchTheV1GoldenFixture`).
+- `release-parity-exporter` 재생성 후 값 대조: 고교 38개·프로 2278개 전이가
+  `swift-release-parity-v4-v10.json`과 **완전히 동일**하다. v4/v10 경로는 한 줄도 움직이지
+  않았다.
+- `check:ios-localization` 통과. `check:copy`의 1건은 사전 실패(줄 번호만 이동).
+
+### 2.2 아직 버전을 올리지 못한 이유
+
+`ProCareerEngine.currentRulesVersion`은 여전히 `ProGameplayRules.reference`(10)다.
+커리어 단위로 돌리면 `testKernelDrivenWeeklyStatsLandInRealisticBands`가 세 시드 모두
+깨진다(시즌 이닝 168~202 아웃 < 210, R/9 10, K/9 3).
+
+원인은 커널이 아니라 **입구**다. 이 검사가 쓰는 `PitcherPresetCatalog.all[0]`은
+42/34/36/38짜리 생 프리셋이고, v12부터 상대는 평평한 50이 아니라 실제 타순
+(컨택 43~60 · 장타 40~69)이다. 피로 10에서도:
+
+```
+ROOKIEPROBE fatigue=10 outs/start=14.2 K9=4.27 RA9=8.48 P/start=72
+ROOKIEPROBE fatigue=50 outs/start= 7.2 K9=4.14 RA9=8.44 P/start=37
+```
+
+즉 등판당 4.7이닝에 RA/9 8.5다. 게다가 이 커리어는 시즌 1 내내 2군이지만
+`DifficultyScale.proArc`에 2군 감산이 없어 **2군에서 1군 타순을 상대한다**(안드로이드도
+같다). 교체 규칙이 맞은 투수를 내리니 시즌 이닝도 같이 무너진다.
+
+버전을 올리기 전에 이 셋 중 하나를 정해야 한다.
+
+1. 2군 타순을 실제로 약하게 만든다(`liveBatterOffset`에 레벨 감산). 가장 현실에 맞지만
+   안드로이드와 갈라진다.
+2. 프로 입구 능력 하한을 올린다(고교를 마치고 온 선수는 이보다 세다 — 생 프리셋으로
+   시작하는 것은 검사뿐이다).
+3. 2-E(보직·노화)를 먼저 올려 시즌 등판·이닝 구조를 맞춘 뒤 다시 측정한다.
+
+**측정 없이 밴드를 넓혀 통과시키지 않는다.**
+
+### 2.3 고교 쪽에 남은 같은 항목
+
+안드로이드는 강도별 구속 폭 축소(`±2.5km/h`)를 `:outing-v2` 문자열로 켜는데, 그 문자열은
+고교 자동 경기(`HighSchoolAutomaticOutingSimulator`)와 고교 직접 등판에도 붙는다. 즉
+**안드로이드 고교 5~7은 이 규칙을 쓰고 Swift 고교 7은 쓰지 않는다.**
+
+이번에는 켜지 않았다. Swift 고교 7은 이미 배포된 경로라 버전을 올리지 않고 계산을 바꾸면
+안 된다(§3-1). 고교 8을 여는 단계에서 함께 올린다.
+
+### 2.4 안드로이드와 남은 차이
+
+같은 등급·같은 타순·같은 스카우팅 표인데 두 커널의 숫자가 일관되게 어긋난다
+(Swift 기준 K/9 −0.55, RA/9 +0.87, WHIP +0.15). 어느 쪽이 '맞다'기보다 삼진이 덜 나오고
+주자가 더 쌓이는 방향으로 치우쳐 있다. 다음 항목은 두 커널이 **같음을 확인했다**:
+확률식 게이트 10곳, `BattedBallBands` 문턱, `battedBaseQuality`, `BatterScoutingProfileRules`
+표 전체, `ProfessionalLineup`, `BatterScoutingSnapshot.reliability` 기본값, 벤치 기억 초기값.
+남은 후보는 포수 추천 엔진(`CatcherRecommendationEngine`)과 `resolvePitch`의 스윙·존 판정
+앞단이다. 이 둘은 v10 경로도 공유하므로 손대면 픽스처가 깨진다 — §3-2의 역방향 패리티
+작업(`release-parity-exporter`를 v12/v13으로 확장)에서 함께 본다.
 
 ## 0. 현재 상태
 
 | 축 | iOS (Swift) | Android (Kotlin) |
 |---|---|---|
 | 고교 규칙 | 4 | 7 |
-| 프로 규칙 | 10 | 13 |
+| 프로 규칙 | 10 (v12·v13 코드는 이식됨, 게이트 뒤) | 13 |
 | 고교 저장 스키마 | 4 (`HighSchoolCareerPersistence.currentSchemaVersion`) | 코덱 11 / 외부 11 |
 | 프로 저장 스키마 | `nationalTeamSchemaVersion` 기준 | 6 |
-| 자책점(ER) | 없음 — `PitchingMetrics.swift`가 전부 실점(RA) 기준 | nullable ER + 주자 책임 원장 |
-| 자동 등판 | `AutoOutingSimulator`가 18아웃 + 체력 보너스로 상한 | 투구 수·체력·실점·상황 기반 교체, 완투 가능 |
+| 자책점(ER) | 커널·기록은 nullable ER + `PitchRunLedger`, 화면 지표(`PitchingMetrics.swift`)는 아직 전부 실점(RA) 기준 | nullable ER + 주자 책임 원장 |
+| 자동 등판 | `AutoOutingSimulator`가 `fullStart`에서 `ProOutingUsageRules`로 교체 판단(완투 가능), 그 외에는 18아웃 상한 | 투구 수·체력·실점·상황 기반 교체, 완투 가능 |
 | 퍼펙트 릴리스 | 판정·연출·업적만 있고 집계 없음 | 등판·시즌·통산 집계 + 고교 3개마다 각성 전조 |
 | 미터 바늘 | 선형 (`DeliveryControl.MeterDriver`) | `PitchReleaseMeter.phase()`의 릴리스 지점 감속 |
 | 선수 앨범·리플레이 | 없음 (계보 아카이브 `LifeArchiveView`는 별개) | 있음 |
@@ -71,6 +150,8 @@ Swift 코어는 Android 패리티 테스트의 **정답지**다. `apps/android/g
 게이트: `npm run test:swift` 통과, v4 픽스처 수치·체크섬 불변, v7 경로의 세이브 왕복.
 
 ### Phase 2 — Swift 프로 규칙 10 → 13
+
+진행: 2-A·2-B·2-C 완료(버전 게이트 뒤), 2-D·2-E·2-F 미착수. §2.1의 표를 참조.
 
 - 2-A **ER 원장.** nullable ER + 투구 중 주자 책임 원장. 과거 시즌은 추정하지 않고 `—`. 이닝당 지표는 정수 아웃 수 기준. 사구는 BB에 넣지 않는다.
 - 2-B **수비 실책과 승계 주자.** 1루가 빈 상황의 평범한 땅볼 실책(주자 정지, 타자만 1루), 가상의 3번째 아웃 이후 실점은 비자책. 승계 주자와 본인 출루 주자를 구분하고 후속 투수 기록을 분리.

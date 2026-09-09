@@ -214,6 +214,7 @@ enum PitchPresentation {
         case .triple: .feedbackTriple
         case .homeRun: .feedbackHomeRun
         case .hitByPitch: .feedbackHitByPitch
+        case .reachedOnError: .feedbackReachedOnError
         }
         return resolver.resolve(key)
     }

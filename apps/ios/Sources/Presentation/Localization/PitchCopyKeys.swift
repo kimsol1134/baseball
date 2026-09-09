@@ -79,6 +79,7 @@ enum PitchUICopyKey: String, CaseIterable, Sendable {
     case feedbackTriple = "pitch.feedback.outcome.triple"
     case feedbackHomeRun = "pitch.feedback.outcome.home-run"
     case feedbackHitByPitch = "pitch.feedback.outcome.hit-by-pitch"
+    case feedbackReachedOnError = "pitch.feedback.outcome.reached-on-error"
 
     case abilityPowerMoment = "pitch.ability.power.moment"
     case abilityCommandMoment = "pitch.ability.command.moment"

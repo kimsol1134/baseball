@@ -59,7 +59,8 @@ public enum PitchAbilityRules {
     public static func readout(
         pitcher: PitcherSnapshot,
         call: PitchCall,
-        context: PlateAppearanceContext
+        context: PlateAppearanceContext,
+        balance: PitchBalanceRules = .legacy
     ) -> PitchAbilityReadout {
         let profile = pitcher.profile(for: call.pitchType)
         let fatigue = effectiveFatigue(
@@ -83,7 +84,8 @@ public enum PitchAbilityRules {
                 pitchType: call.pitchType,
                 intensity: call.intensity,
                 fatigue: context.fatigue,
-                mastery: pitcher.effectiveMastery.stuff
+                mastery: pitcher.effectiveMastery.stuff,
+                balancedEffort: balance.isProfessional
             ),
             fatigueCost: fatigueCost(call.intensity, profile: profile),
             effectiveFatigue: fatigue,
@@ -209,7 +211,8 @@ public enum PitchAbilityRules {
         pitchType: PitchType,
         intensity: PitchIntensity,
         fatigue: Int,
-        mastery: Int = 0
+        mastery: Int = 0,
+        balancedEffort: Bool = false
     ) -> Int {
         let profile = pitcher.profile(for: pitchType)
         // 프로필 구속은 이미 구위 성장을 반영한 실제 기준값이다. 구위를 다시 더하면 같은
@@ -228,7 +231,23 @@ public enum PitchAbilityRules {
         let stuffContribution = MasteryEffectRules.bonusForContribution(
             max(0, pitcher.stuff - 20), level: mastery
         ) / 8
-        let rawVelocity = base + stuffContribution + intensityEffect(intensity).velocityBonusTenthsKPH - pressure
+        // 프로 재조정 경로에서는 강도가 구속을 크게 흔들지 않는다. ±13km/h는 전력 투구를
+        // 공짜 구속으로 만들어 "힘을 빼고 맞혀 잡는다"를 선택지에서 지웠다. 폭을 ±2.5km/h로
+        // 좁히면 강도는 제구와 피로로 값을 치르는 선택으로 남는다.
+        //
+        // 안드로이드는 고교 자동 경기에도 같은 폭을 쓴다(`:outing-v2`). Swift 고교 7은 이미
+        // 배포된 버전이라 여기서 조용히 바꾸지 않는다 — 고교 쪽은 버전을 올리며 따로 맞춘다.
+        let intensityVelocity: Int
+        if balancedEffort {
+            switch intensity {
+            case .controlled: intensityVelocity = -25
+            case .normal: intensityVelocity = 0
+            case .maxEffort: intensityVelocity = 25
+            }
+        } else {
+            intensityVelocity = intensityEffect(intensity).velocityBonusTenthsKPH
+        }
+        let rawVelocity = base + stuffContribution + intensityVelocity - pressure
         let profileCeiling = maximumProfileVelocityTenthsKPH(for: pitchType)
         let intensityCeiling: Int = switch intensity {
         case .controlled: profileCeiling - 20

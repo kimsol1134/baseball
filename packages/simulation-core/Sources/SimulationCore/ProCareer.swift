@@ -523,10 +523,20 @@ public struct ProCareerEngine: Sendable {
         var outings: Int
         let outsTargetPerOuting: Int
         let pitchCapPerOuting: Int
+        // 24주에 선발 28회, 셋업·마무리 60회. 실제 보직의 등판 수다 — 선발은 6주마다 한 번
+        // 더 나가고, 뒷문은 이틀 연투를 격주로 한다.
+        let professionalRoles = ProGameplayRules.usesProfessionalBalance(state.proRulesVersion)
         switch state.role {
-        case .starter: outings = 1; outsTargetPerOuting = 18; pitchCapPerOuting = 96
-        case .longRelief: outings = 2; outsTargetPerOuting = 6; pitchCapPerOuting = 42
-        case .setup, .closer: outings = 3; outsTargetPerOuting = 3; pitchCapPerOuting = 24
+        case .starter:
+            outings = professionalRoles && nextWeek % 6 == 0 ? 2 : 1
+            outsTargetPerOuting = 18
+            pitchCapPerOuting = 96
+        case .longRelief:
+            outings = 2; outsTargetPerOuting = 6; pitchCapPerOuting = 42
+        case .setup, .closer:
+            outings = professionalRoles && nextWeek % 2 == 0 ? 2 : 3
+            outsTargetPerOuting = 3
+            pitchCapPerOuting = 24
         }
         var weekLine = WeeklyOutingLine()
         var newGameLines: [ProGameLine] = []
@@ -559,8 +569,17 @@ public struct ProCareerEngine: Sendable {
                     callPolicy: weekCallPolicy,
                     baseSeed: rng.next() ^ UInt64(bitPattern: Int64(nextWeek &* 0x9E37)) &+ UInt64(outingIndex),
                     diverseScouting: Self.usesWeeklyDecisionRules(state),
-                    proRulesVersion: state.proRulesVersion
+                    proRulesVersion: state.proRulesVersion,
+                    // v13 선발은 목표 이닝이 아니라 감독의 교체 판단으로 끝난다. 잘 던지면
+                    // 9회까지 가고, 맞으면 5회에 내려온다.
+                    fullStart: ProGameplayRules.usesWorkload(state.proRulesVersion)
+                        && state.role == .starter
                 )
+                // 등판 전부터 던질 상태가 아니면 그날은 등판이 없다. 0투구를 한 경기로 세면
+                // 등판 수와 방어율 분모가 모두 거짓이 된다.
+                if ProGameplayRules.usesWorkload(state.proRulesVersion), outingLine.pitches == 0 {
+                    continue
+                }
                 weekLine.outs += outingLine.outs
                 weekLine.strikeouts += outingLine.strikeouts
                 weekLine.walks += outingLine.walks
@@ -602,13 +621,20 @@ public struct ProCareerEngine: Sendable {
                         ),
                         played: false,
                         hits: outingLine.hits,
-                        homeRuns: outingLine.homeRuns
+                        homeRuns: outingLine.homeRuns,
+                        earnedRuns: outingLine.earnedRuns,
+                        // 완투는 아홉 이닝을 혼자 책임지고 경기가 갈린 날이다. 무승부로
+                        // 끝난 경기는 아무도 완투로 기억하지 않는다.
+                        completeGame: ProGameplayRules.usesWorkload(state.proRulesVersion)
+                            ? started && outingLine.outs == 27 && support != opponentRuns
+                            : nil
                     )
                 )
             }
         }
-        let games = restingWeek ? 0 : outings
-        let starts = restingWeek ? 0 : (state.role == .starter ? outings : 0)
+        // 등판이 실제로 성립한 날만 경기다. v13에서는 감독이 아예 내보내지 않은 날이 있다.
+        let games = restingWeek ? 0 : newGameLines.count
+        let starts = restingWeek ? 0 : (state.role == .starter ? games : 0)
         let strikeouts = weekLine.strikeouts
         let walks = weekLine.walks
         let runs = weekLine.runsAllowed
@@ -705,7 +731,10 @@ public struct ProCareerEngine: Sendable {
             pitches: state.currentStats.pitches + weekLine.pitches,
             wins: state.currentStats.wins + newGameLines.count { $0.decision == .win },
             losses: state.currentStats.losses + newGameLines.count { $0.decision == .loss },
-            saves: state.currentStats.saves + newGameLines.count { $0.decision == .save }
+            saves: state.currentStats.saves + newGameLines.count { $0.decision == .save },
+            // 시즌 자책점은 그 시즌의 **모든** 등판에 원장이 있을 때만 성립한다. 한 경기라도
+            // 원장이 없으면 합계는 그 경기를 0으로 세는 거짓말이 되므로 통째로 '모른다'로 둔다.
+            earnedRuns: Self.seasonEarnedRuns(state: state, newGameLines: newGameLines)
         )
         let earnedCallUp = trust >= 60 && skill >= 46
             && (state.season > 1 || stats.games >= 12 || stats.strikeouts >= 40)
@@ -1447,6 +1476,8 @@ public struct ProCareerEngine: Sendable {
             wins: params.state.currentStats.wins - (oldDecision == .win ? 1 : 0) + (decision == .win ? 1 : 0),
             losses: params.state.currentStats.losses - (oldDecision == .loss ? 1 : 0) + (decision == .loss ? 1 : 0),
             saves: params.state.currentStats.saves - (oldDecision == .save ? 1 : 0) + (decision == .save ? 1 : 0)
+            // 자책점은 여기서 끊긴다. 직접 던진 경기는 아직 원장을 남기지 않으므로(2-D
+            // 직접+자동 혼합 정산 미착수) 그 시즌 자책점은 '모른다'가 된다. 추정하지 않는다.
         )
         // 직접 던진 경기는 기록에 그렇게 표시된다. 자동으로 지나간 경기와 섞이면
         // "내가 만든 성적"이라는 감각이 사라진다.
@@ -2241,6 +2272,23 @@ public struct ProCareerEngine: Sendable {
         case 65..<73: return 4
         default: return 6
         }
+    }
+
+    /// 이번 주를 더한 뒤의 시즌 자책점. 셋 중 하나라도 원장이 없으면 nil이다.
+    ///
+    /// - 이미 진행 중인 시즌이 원장 없이 쌓였다면(구저장본으로 시작한 시즌) 그대로 nil.
+    /// - 이번 주의 등판 중 하나라도 원장이 없으면 nil.
+    ///
+    /// 아직 한 경기도 없는 시즌은 원장을 시작할 수 있으므로 예외다.
+    static func seasonEarnedRuns(
+        state: ProCareerSnapshot,
+        newGameLines: [ProGameLine]
+    ) -> Int? {
+        guard ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) else { return nil }
+        guard state.currentStats.earnedRuns != nil || state.currentStats.games == 0 else { return nil }
+        guard newGameLines.allSatisfy({ $0.earnedRuns != nil }) else { return nil }
+        return (state.currentStats.earnedRuns ?? 0)
+            + newGameLines.reduce(0) { $0 + ($1.earnedRuns ?? 0) }
     }
 
     /// 화면과 시뮬레이션이 같은 성장 목표를 말하도록 주간 계획의 현재 목표를 공개한다.
@@ -3161,6 +3209,8 @@ public struct ProCareerEngine: Sendable {
         /// 피안타·피홈런. 삼진과 볼넷만 세면 "6이닝 2실점"이 어떻게 만들어졌는지 알 수 없다.
         var hits = 0
         var homeRuns = 0
+        /// 자책점. 원장을 돌리는 프로 경로에만 값이 있다.
+        var earnedRuns: Int?
     }
 
     /// 주간 자동 등판을 PitchKernelEngine 실제 타석 루프로 실행한다(투구 UI 없이 결과만 집계).
@@ -3177,11 +3227,17 @@ public struct ProCareerEngine: Sendable {
         callPolicy: AutoCallPolicy = .perfect,
         baseSeed: UInt64,
         diverseScouting: Bool = false,
-        proRulesVersion: Int? = nil
+        proRulesVersion: Int? = nil,
+        fullStart: Bool = false
     ) -> WeeklyOutingLine {
-        let balance: PitchBalanceRules = ProGameplayRules.usesProfessionalBalance(proRulesVersion)
-            ? .professional
-            : .legacy
+        let balance: PitchBalanceRules
+        if ProGameplayRules.usesWorkload(proRulesVersion) {
+            balance = .professionalWorkload
+        } else if ProGameplayRules.usesProfessionalBalance(proRulesVersion) {
+            balance = .professional
+        } else {
+            balance = .legacy
+        }
         let line = AutoOutingSimulator(balance: balance).simulate(
             pitcher: pitcher,
             startingFatigue: startingFatigue,
@@ -3190,7 +3246,8 @@ public struct ProCareerEngine: Sendable {
             batterOffset: batterOffset,
             callPolicy: callPolicy,
             baseSeed: baseSeed,
-            diverseScouting: diverseScouting
+            diverseScouting: diverseScouting,
+            fullStart: fullStart
         )
         var weekly = WeeklyOutingLine()
         weekly.outs = line.outs
@@ -3200,6 +3257,7 @@ public struct ProCareerEngine: Sendable {
         weekly.pitches = line.pitches
         weekly.hits = line.hits
         weekly.homeRuns = line.homeRuns
+        weekly.earnedRuns = line.earnedRuns
         return weekly
     }
     func signed(_ state: ProCareerSnapshot) -> ProCareerSnapshot { replacing(state, commitment: commitment(state)) }

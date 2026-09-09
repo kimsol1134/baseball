@@ -267,6 +267,7 @@ public struct SimulationEngine: Sendable {
         case .swingingStrike: summary = "타자의 타이밍을 빼앗아 헛스윙을 끌어냈습니다."
         case .foul: summary = "타자가 가까스로 걷어내 파울이 됐습니다."
         case .inPlayOut: summary = "약한 타구를 유도해 인플레이 아웃을 만들었습니다."
+        case .reachedOnError: summary = "야수가 타구를 놓쳐 타자가 1루에 살았습니다."
         case .single: summary = "타자가 빈틈을 찾아 단타를 만들었습니다."
         case .double: summary = "강한 타구가 외야를 갈라 2루타가 됐습니다."
         // The single-pitch preview engine never produces these two (they are decided by the

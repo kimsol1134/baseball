@@ -62,7 +62,7 @@ public struct PitchKernelEngine: Sendable {
     public init(
         recommendationEngine: CatcherRecommendationEngine = CatcherRecommendationEngine(),
         rivalMemoryEngine: RivalMemoryEngine = RivalMemoryEngine(),
-        ballInPlayEngine: BallInPlayEngine = BallInPlayEngine(),
+        ballInPlayEngine: BallInPlayEngine? = nil,
         baserunnerEngine: BaserunnerEngine = BaserunnerEngine(),
         inningStateEngine: InningStateEngine = InningStateEngine(),
         gameAnalysisEngine: GameAnalysisEngine = GameAnalysisEngine(),
@@ -70,7 +70,9 @@ public struct PitchKernelEngine: Sendable {
     ) {
         self.recommendationEngine = recommendationEngine
         self.rivalMemoryEngine = rivalMemoryEngine
-        self.ballInPlayEngine = ballInPlayEngine
+        // The fielding engine has to run the same balance pass as the probabilities, or the
+        // professional path would compute its outcomes with legacy fielding.
+        self.ballInPlayEngine = ballInPlayEngine ?? BallInPlayEngine(balance: balance)
         self.baserunnerEngine = baserunnerEngine
         self.inningStateEngine = inningStateEngine
         self.gameAnalysisEngine = gameAnalysisEngine
@@ -230,14 +232,7 @@ public struct PitchKernelEngine: Sendable {
         )
         let nextSeed = deriveNextSeed(seed)
         let revision = params.context.revision + 1
-        let fatigueAfterPitch = min(
-            100,
-            params.context.fatigue
-                + PitchAbilityRules.fatigueCost(
-                    params.call.intensity,
-                    profile: params.pitcher.profile(for: params.call.pitchType)
-                )
-        )
+        let fatigueAfterPitch = min(100, params.context.fatigue + fatigueGain(params))
         let updatedMemory = rivalMemoryEngine.record(
             params.rivalMemory,
             pitcher: params.pitcher,
@@ -1004,7 +999,8 @@ public struct PitchKernelEngine: Sendable {
             pitchType: params.call.pitchType,
             intensity: params.call.intensity,
             fatigue: params.context.fatigue,
-            mastery: params.pitcher.effectiveMastery.stuff
+            mastery: params.pitcher.effectiveMastery.stuff,
+            balancedEffort: balance.isProfessional
         )
             + generator.nextInt(upperBound: 21) - 10
             // ±1.0 km/h from the release. Small, but it is the number the player watches after a
@@ -1488,6 +1484,29 @@ public struct PitchKernelEngine: Sendable {
         return max(700, min(940, barrelQuality))
     }
 
+    /// 이 투구가 붙이는 피로.
+    ///
+    /// v13 전에는 구종별 소모량 하나뿐이라 1구와 100구가 같은 값이었다. 투구 수 경로에서는
+    /// 경기 누적 투구 수에 비례한 부하를 적분해 정수로 나눠 붙인다 — 같은 부하라도 뒤로 갈수록
+    /// 반올림이 쌓여 실제로 더 무거워진다. 체력이 좋을수록 부하가 낮고, 전력 투구는 비싸다.
+    private func fatigueGain(_ params: SubmitPitchParams) -> Int {
+        guard balance.pitchCountFatigue else {
+            return PitchAbilityRules.fatigueCost(
+                params.call.intensity,
+                profile: params.pitcher.profile(for: params.call.pitchType)
+            )
+        }
+        let ordinal = params.gameLog?.totalPitches ?? 0
+        let effort: Int
+        switch params.call.intensity {
+        case .controlled: effort = -150
+        case .normal: effort = 0
+        case .maxEffort: effort = 250
+        }
+        let load = min(1_250, max(450, 850 - (params.pitcher.stamina - 50) * 5 + effort))
+        return ((ordinal + 1) * load) / 1_000 - (ordinal * load) / 1_000
+    }
+
     private func advanceCount(
         context: PlateAppearanceContext,
         outcome: PitchOutcome
@@ -1503,6 +1522,8 @@ public struct PitchKernelEngine: Sendable {
             return (context.balls, min(2, context.strikes + 1), nil)
         case .inPlayOut:
             return (context.balls, context.strikes, .inPlayOut)
+        case .reachedOnError:
+            return (context.balls, context.strikes, .reachedOnError)
         case .single, .double, .triple, .homeRun:
             return (context.balls, context.strikes, .hit)
         case .hitByPitch:
@@ -1682,6 +1703,7 @@ public struct PitchKernelEngine: Sendable {
         case .swingingStrike: short = "타자의 배트를 끌어내 헛스윙을 만들었습니다."
         case .foul: short = "타자가 걷어내 파울이 됐습니다."
         case .inPlayOut: short = "약한 타구를 유도해 아웃을 만들었습니다."
+        case .reachedOnError: short = "잡을 수 있던 타구를 야수가 놓쳐 타자가 살았습니다."
         case .single: short = "타구가 수비 사이를 빠져나가 단타가 됐습니다."
         case .double: short = "강한 타구가 외야를 갈라 2루타가 됐습니다."
         case .triple: short = "타구가 외야 구석을 완전히 갈라 3루타가 됐습니다."
