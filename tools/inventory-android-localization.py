@@ -99,6 +99,8 @@ for module in ["app", "game-application", "game-core", "platform"]:
             continue
         text = path.read_text()
         for offset, value, arguments in scan(text):
+            if re.search(r"Regex\(\s*$", text[max(0, offset - 30):offset]):
+                continue  # Pattern syntax is not visible player copy.
             key = normalize(value)
             entry = inventory.setdefault(key, {"ko": value, "hasTranslation": key in known, "sources": []})
             entry["sources"].append({"path": str(path.relative_to(ROOT)), "line": text.count("\n", 0, offset) + 1})

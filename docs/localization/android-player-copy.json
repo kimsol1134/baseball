@@ -1105,9 +1105,9 @@
   ],
   [
     "경기 운영 훈련",
-    "경기 운영 훈련",
-    "Game planning",
-    "配球の練習"
+    "배합 연습",
+    "Pitch sequencing",
+    "配球練習"
   ],
   [
     "구위 훈련",
@@ -1420,5 +1420,2801 @@
     "마지막까지 이름이 불리지 않았습니다. 다음 생에 이어갈 감각을 고르세요.",
     "Your name wasn’t called. Choose the feel you’ll carry into your next life.",
     "最後まで名前は呼ばれませんでした。次の人生へつなぐ感覚を選びましょう。"
+  ],
+  [
+    "이름을 바꾸면 얼굴도 달라져요",
+    "이름을 바꾸면 얼굴도 달라져요",
+    "Changing the name changes the face too.",
+    "名前を変えると顔も変わります。"
+  ],
+  [
+    "어느 정도로 할까요?",
+    "어느 정도로 할까요?",
+    "How hard will you train?",
+    "どのくらい取り組む？"
+  ],
+  [
+    "구종 학습",
+    "구종 학습",
+    "Pitch learning",
+    "球種の習得"
+  ],
+  [
+    "결과 보기",
+    "결과 보기",
+    "View result",
+    "結果を見る"
+  ],
+  [
+    "3회 연속",
+    "3회 연속",
+    "Repeat ×3",
+    "3回連続"
+  ],
+  [
+    "3회 연속은 같은 선택으로 훈련합니다. 일정이 바뀌거나 몸이 지치면 멈춰요.",
+    "3회 연속은 같은 선택으로 훈련합니다. 일정이 바뀌거나 몸이 지치면 멈춰요.",
+    "Repeat ×3 keeps your choices. It stops if the schedule changes or your body needs rest.",
+    "3回連続では同じ選択で練習します。予定が変わったり、体が疲れたりすると止まります。"
+  ],
+  [
+    "이번에 쌓은 것",
+    "이번에 쌓은 것",
+    "What you built this time",
+    "今回積み重ねたこと"
+  ],
+  [
+    "마운드에서 남긴 기록",
+    "마운드에서 남긴 기록",
+    "Your time on the mound",
+    "マウンドで残した記録"
+  ],
+  [
+    "다음은 훈련이에요",
+    "다음은 훈련이에요",
+    "Next up: training",
+    "次はトレーニング"
+  ],
+  [
+    "마운드에 한 번 더 서고 싶다면",
+    "마운드에 한 번 더 서고 싶다면",
+    "Want another turn on the mound?",
+    "もう一度マウンドに立ちたいなら"
+  ],
+  [
+    "전체 기록 보기",
+    "전체 기록 보기",
+    "All records",
+    "すべての記録"
+  ],
+  [
+    "다음 훈련 준비",
+    "다음 훈련 준비",
+    "Prepare for training",
+    "次の練習へ"
+  ],
+  [
+    "다음 훈련으로 이어갑니다.",
+    "다음 훈련으로 이어갑니다.",
+    "Continue to your next training session.",
+    "次の練習に進みます。"
+  ],
+  [
+    "한 경기 더 던지기",
+    "한 경기 더 던지기",
+    "Pitch another game",
+    "もう1試合投げる"
+  ],
+  [
+    "원하면 정규 경기에 직접 등판할 수 있어요.",
+    "원하면 정규 경기에 직접 등판할 수 있어요.",
+    "You can choose to pitch a regular game yourself.",
+    "希望すれば通常の試合に自分で登板できます。"
+  ],
+  [
+    "완료한 훈련",
+    "완료한 훈련",
+    "Completed training",
+    "完了したトレーニング"
+  ],
+  [
+    "일정한 투구 리듬",
+    "일정한 투구 리듬",
+    "Steady pitching rhythm",
+    "安定した投球リズム"
+  ],
+  [
+    "위기 관리",
+    "위기 관리",
+    "Pressure management",
+    "ピンチへの対応"
+  ],
+  [
+    "포심·체인지업 연계",
+    "포심·체인지업 연계",
+    "Fastball–changeup pairing",
+    "直球とチェンジアップの連携"
+  ],
+  [
+    "포심 변화량 ↑ · 헛스윙 ↑ · 빗맞은 타구 ↑",
+    "포심 변화량 ↑ · 헛스윙 ↑ · 빗맞은 타구 ↑",
+    "Fastball movement ↑ · Whiffs ↑ · Weak contact ↑",
+    "直球の変化量 ↑ · 空振り ↑ · 打ち損じ ↑"
+  ],
+  [
+    "포심·체인지업 변화량 ↑ · 빗맞은 타구 ↑",
+    "포심·체인지업 변화량 ↑ · 빗맞은 타구 ↑",
+    "Fastball and changeup movement ↑ · Weak contact ↑",
+    "直球・チェンジアップの変化量 ↑ · 打ち損じ ↑"
+  ],
+  [
+    "일정한 투구 리듬 · 제구·체력 ↑",
+    "일정한 투구 리듬 · 제구·체력 ↑",
+    "Steadier pitching rhythm · Command and stamina ↑",
+    "安定した投球リズム · 制球・体力 ↑"
+  ],
+  [
+    "위기에서 미터 흔들림 ↓ · 빗맞은 타구 ↑",
+    "위기에서 미터 흔들림 ↓ · 빗맞은 타구 ↑",
+    "Less meter disturbance under pressure · Weak contact ↑",
+    "ピンチでメーターの揺れ ↓ · 打ち損じ ↑"
+  ],
+  [
+    "압박 속 미터 흔들림 ↓ · 구위·제구 ↑",
+    "압박 속 미터 흔들림 ↓ · 구위·제구 ↑",
+    "Less meter disturbance under pressure · Power and command ↑",
+    "重圧でメーターの揺れ ↓ · 球威・制球 ↑"
+  ],
+  [
+    "포수: 포심과 체인지업이 함께 좋아졌어. 두 공으로 타이밍을 바꾸자.",
+    "포수: 포심과 체인지업이 함께 좋아졌어. 두 공으로 타이밍을 바꾸자.",
+    "Catcher: Your fastball and changeup both improved. Change their timing with those two pitches.",
+    "捕手：直球もチェンジアップも良くなった。この2球種でタイミングを変えよう。"
+  ],
+  [
+    "포수: 공마다 리듬이 일정해졌어. 받기도 한결 편하다.",
+    "포수: 공마다 리듬이 일정해졌어. 받기도 한결 편하다.",
+    "Catcher: Your rhythm is steadier from pitch to pitch. It is easier to receive.",
+    "捕手：一球ごとのリズムが安定した。受けるのも楽になったよ。"
+  ],
+  [
+    "코치: 압박이 커져도 투구가 흔들리지 않더라. 그 침착함을 기억해.",
+    "코치: 압박이 커져도 투구가 흔들리지 않더라. 그 침착함을 기억해.",
+    "Coach: Your pitching stayed steady under pressure. Remember that composure.",
+    "コーチ：重圧が増しても投球がぶれなかった。その冷静さを覚えておこう。"
+  ],
+  [
+    "힘 배분",
+    "힘 배분",
+    "Pitch effort",
+    "投球の力加減"
+  ],
+  [
+    "제구 우선",
+    "제구 우선",
+    "Control",
+    "制球重視"
+  ],
+  [
+    "제구 ↑ · 구속 ↓ · 체력 절약",
+    "제구 ↑ · 구속 ↓ · 체력 절약",
+    "Control ↑ · Speed ↓ · Save stamina",
+    "制球 ↑ · 球速 ↓ · 体力温存"
+  ],
+  [
+    "구속과 제구의 균형",
+    "구속과 제구의 균형",
+    "Balanced speed and control",
+    "球速と制球のバランス"
+  ],
+  [
+    "구속 ↑ · 제구 ↓ · 체력 소모 ↑",
+    "구속 ↑ · 제구 ↓ · 체력 소모 ↑",
+    "Speed ↑ · Control ↓ · Stamina cost ↑",
+    "球速 ↑ · 制球 ↓ · 体力消費 ↑"
+  ],
+  [
+    "던지기 전에 힘을 골라보세요.",
+    "던지기 전에 힘을 골라보세요.",
+    "Choose your effort before pitching.",
+    "投げる前に力加減を選ぼう。"
+  ],
+  [
+    "노림 ▾",
+    "노림 ▾",
+    "Target ▾",
+    "狙い ▾"
+  ],
+  [
+    "노림 ▴",
+    "노림 ▴",
+    "Target ▴",
+    "狙い ▴"
+  ],
+  [
+    "볼이 많아. 존 안에서 승부하자.",
+    "볼이 많아. 존 안에서 승부하자.",
+    "Too many balls. Challenge in the zone.",
+    "ボールが多い。ゾーン内で勝負しよう。"
+  ],
+  [
+    "낮게 던져 땅볼을 노리자.",
+    "낮게 던져 땅볼을 노리자.",
+    "Keep it low and look for a grounder.",
+    "低めでゴロを狙おう。"
+  ],
+  [
+    "뜬공을 줄이게 낮게 가자.",
+    "뜬공을 줄이게 낮게 가자.",
+    "Keep it low to limit fly balls.",
+    "フライを抑えるために低めへ。"
+  ],
+  [
+    "방금 공에 적응했어. 다른 구종으로 가자.",
+    "방금 공에 적응했어. 다른 구종으로 가자.",
+    "They adjusted to that pitch. Change pitch type.",
+    "今の球に対応してきた。球種を変えよう。"
+  ],
+  [
+    "같은 곳은 읽혀. 이번엔 코스를 바꾸자.",
+    "같은 곳은 읽혀. 이번엔 코스를 바꾸자.",
+    "They can read repeats. Change location.",
+    "同じコースは読まれる。今度は変えよう。"
+  ],
+  [
+    "두 스트라이크야. 존 밖으로 헛스윙을 노리자.",
+    "두 스트라이크야. 존 밖으로 헛스윙을 노리자.",
+    "Two strikes. Try for a chase outside the zone.",
+    "２ストライク。ボール球で空振りを狙おう。"
+  ],
+  [
+    "아직 탐색 중이야. 존 경계로 반응을 보자.",
+    "아직 탐색 중이야. 존 경계로 반응을 보자.",
+    "Still scouting. Test the edge of the zone.",
+    "まだ探っている。ゾーンの端で反応を見よう。"
+  ],
+  [
+    "약점 코스로 먼저 승부하자.",
+    "약점 코스로 먼저 승부하자.",
+    "Start by attacking the weak spot.",
+    "まずは苦手なコースで勝負しよう。"
+  ],
+  [
+    "강한 코스를 피해 승부하자.",
+    "강한 코스를 피해 승부하자.",
+    "Challenge away from their hot zone.",
+    "得意なコースを避けて勝負しよう。"
+  ],
+  [
+    "다른 구종과 코스로 타이밍을 흔들자.",
+    "다른 구종과 코스로 타이밍을 흔들자.",
+    "Change pitch and location to disrupt timing.",
+    "球種とコースを変えてタイミングを崩そう。"
+  ],
+  [
+    "같은 구종으로 다른 코스를 찌르자.",
+    "같은 구종으로 다른 코스를 찌르자.",
+    "Same pitch, different location.",
+    "同じ球種で別のコースを突こう。"
+  ],
+  [
+    "예상 구속",
+    "예상 구속",
+    "Est. speed",
+    "予想球速"
+  ],
+  [
+    "고교 여정 완료",
+    "고교 여정 완료",
+    "High school journey complete",
+    "高校での歩みを終えた"
+  ],
+  [
+    "성적과 지명 평가",
+    "성적과 지명 평가",
+    "Stats and draft assessment",
+    "成績とドラフト評価"
+  ],
+  [
+    "이 능력을 남긴 기록",
+    "이 능력을 남긴 기록",
+    "Records behind this ability",
+    "この能力につながった記録"
+  ],
+  [
+    "이 능력 이어받기",
+    "이 능력 이어받기",
+    "Inherit ability",
+    "この能力を受け継ぐ"
+  ],
+  [
+    "팀 승리",
+    "팀 승리",
+    "Team win",
+    "チーム勝利"
+  ],
+  [
+    "팀 패배",
+    "팀 패배",
+    "Team loss",
+    "チーム敗戦"
+  ],
+  [
+    "팀 무승부",
+    "팀 무승부",
+    "Team draw",
+    "チーム引き分け"
+  ],
+  [
+    "투구 상세",
+    "투구 상세",
+    "Pitching details",
+    "投球の詳細"
+  ],
+  [
+    "지난 경기 더 보기",
+    "지난 경기 더 보기",
+    "More past games",
+    "過去の試合をもっと見る"
+  ],
+  [
+    "첫 등판을 마치면 기록이 쌓여요.",
+    "첫 등판을 마치면 기록이 쌓여요.",
+    "Records appear after your first outing.",
+    "初登板を終えると記録が残ります。"
+  ],
+  [
+    "보상 수령 완료",
+    "보상 수령 완료",
+    "Reward claimed",
+    "報酬受取済み"
+  ],
+  [
+    "지난 도장과 보상 안내",
+    "지난 도장과 보상 안내",
+    "Past stamps and reward rules",
+    "過去のスタンプと報酬案内"
+  ],
+  [
+    "과제를 하나 완료하면 보상을 받을 수 있어요.",
+    "과제를 하나 완료하면 보상을 받을 수 있어요.",
+    "Complete one task to claim the reward.",
+    "課題を一つ達成すると報酬を受け取れます。"
+  ],
+  [
+    "한 생을 마치면 카드가 남아요.",
+    "한 생을 마치면 카드가 남아요.",
+    "Complete a life to keep its card.",
+    "一つの人生を終えるとカードが残ります。"
+  ],
+  [
+    "시즌 성적과 정산",
+    "시즌 성적과 정산",
+    "Season stats and settlement",
+    "シーズン成績と精算"
+  ],
+  [
+    "시즌 등판 기록",
+    "시즌 등판 기록",
+    "Season appearances",
+    "シーズン登板記録"
+  ],
+  [
+    "통산 수입과 훈장",
+    "통산 수입과 훈장",
+    "Career earnings and honors",
+    "通算収入と栄誉"
+  ],
+  [
+    "지명 평가 보기",
+    "지명 평가 보기",
+    "View draft assessment",
+    "指名評価を見る"
+  ],
+  [
+    "전체 성적",
+    "전체 성적",
+    "Full stats",
+    "全成績"
+  ],
+  [
+    "다음 생에 가져갈 능력 고르기",
+    "다음 생에 가져갈 능력 고르기",
+    "Choose an ability for your next life",
+    "次の人生に持っていく能力を選ぶ"
+  ],
+  [
+    "%@이닝 · %lld탈삼진 · %lld실점",
+    "%@이닝 · %lld탈삼진 · %lld실점",
+    "%@ IP · %lld K · %lld R",
+    "%@回 · %lld奪三振 · %lld失点"
+  ],
+  [
+    "이어받을 능력",
+    "이어받을 능력",
+    "Carry one ability",
+    "受け継ぐ能力"
+  ],
+  [
+    "최근 수상",
+    "최근 수상",
+    "Recent honors",
+    "最近の受賞"
+  ],
+  [
+    "완료한 훈련 %lld회",
+    "완료한 훈련 %lld회",
+    "%lld training session(s) completed",
+    "トレーニング%lld回完了"
+  ],
+  [
+    "숙련 +%lld",
+    "숙련 +%lld",
+    "Mastery +%lld",
+    "熟練 +%lld"
+  ],
+  [
+    "연습 %lld/3 · 기록에는 남지 않아요",
+    "연습 %lld/3 · 기록에는 남지 않아요",
+    "Practice %lld/3 · No career stats",
+    "練習 %lld/3 · 成績には残りません"
+  ],
+  [
+    "첫 공은 타이밍부터. 누르고 있다가 초록 구간에서 놓아보세요.",
+    "첫 공은 타이밍부터. 누르고 있다가 초록 구간에서 놓아보세요.",
+    "First, try the timing. Hold and release in the green zone.",
+    "まずはタイミング。長押しして緑の範囲で離そう。"
+  ],
+  [
+    "이번엔 조준. 누른 채 손가락을 움직여 조준점을 가운데로 맞춰보세요.",
+    "이번엔 조준. 누른 채 손가락을 움직여 조준점을 가운데로 맞춰보세요.",
+    "Now aim. While holding, move your finger to center the aiming dot.",
+    "次は照準。押したまま指を動かして照準を中央へ。"
+  ],
+  [
+    "이번엔 힘 배분. 예상 구속을 비교하고 한 구 던져보세요.",
+    "이번엔 힘 배분. 예상 구속을 비교하고 한 구 던져보세요.",
+    "Now choose your effort. Compare the speed estimates and pitch.",
+    "今度は力加減。予想球速を比べて投げよう。"
+  ],
+  [
+    "나중에 이어하기",
+    "나중에 이어하기",
+    "Save and leave",
+    "保存して中断"
+  ],
+  [
+    "저장하고 나갈까요?",
+    "저장하고 나갈까요?",
+    "Save and leave the mound?",
+    "保存してマウンドを離れますか？"
+  ],
+  [
+    "포수 사인을 보고 한 구 더 던져 보세요.",
+    "포수 사인을 보고 한 구 더 던져 보세요.",
+    "Try another pitch with the catcher’s sign.",
+    "捕手のサインでもう一球投げてみよう。"
+  ],
+  [
+    "조준점을 가운데에 두고 초록 구간에서 놓아 보세요.",
+    "조준점을 가운데에 두고 초록 구간에서 놓아 보세요.",
+    "Center the aiming dot and release in the green zone.",
+    "照準を中央に合わせ、緑の範囲で離そう。"
+  ],
+  [
+    "타이밍은 좋아요. 누른 채 손가락을 움직여 조준점을 가운데로 맞춰 보세요.",
+    "타이밍은 좋아요. 누른 채 손가락을 움직여 조준점을 가운데로 맞춰 보세요.",
+    "Good timing. While holding, move your finger to center the aiming dot.",
+    "タイミングは良好。押したまま指を動かし、照準を中央へ。"
+  ],
+  [
+    "조준은 좋아요. 초록 구간에서 손을 놓아 보세요.",
+    "조준은 좋아요. 초록 구간에서 손을 놓아 보세요.",
+    "Good aim. Release your finger in the green zone.",
+    "照準は良好。緑の範囲で指を離そう。"
+  ],
+  [
+    "타이밍과 조준이 모두 좋았어요.",
+    "타이밍과 조준이 모두 좋았어요.",
+    "Good timing and aim.",
+    "タイミングも照準も良好です。"
+  ],
+  [
+    "훈련 완료",
+    "훈련 완료",
+    "Training complete",
+    "トレーニング完了"
+  ],
+  [
+    "몸이 회복됐어요.",
+    "몸이 회복됐어요.",
+    "Your body recovered.",
+    "体が回復しました。"
+  ],
+  [
+    "능력치는 유지됐어요.",
+    "능력치는 유지됐어요.",
+    "Ratings stayed the same.",
+    "能力値は変わりませんでした。"
+  ],
+  [
+    "훈련한 구종",
+    "훈련한 구종",
+    "Pitches trained",
+    "練習した球種"
+  ],
+  [
+    "다음에는 회복을 추천해요. 피로와 팔 부담을 낮출 수 있어요.",
+    "다음에는 회복을 추천해요. 피로와 팔 부담을 낮출 수 있어요.",
+    "Recovery is recommended next to reduce fatigue and arm load.",
+    "次は回復がおすすめ。疲労と腕の負担を減らせます。"
+  ],
+  [
+    "숙련이 쌓였어요. 능력치가 같아도 훈련의 효과는 남아요.",
+    "숙련이 쌓였어요. 능력치가 같아도 훈련의 효과는 남아요.",
+    "Mastery increased even though ratings stayed the same.",
+    "能力値は同じでも熟練は増えました。"
+  ],
+  [
+    "현재 몸 상태를 보고 다음 훈련을 골라보세요.",
+    "현재 몸 상태를 보고 다음 훈련을 골라보세요.",
+    "Choose your next training with your current condition in mind.",
+    "今の体調を見て次の練習を選ぼう。"
+  ],
+  [
+    "확인하고 계속하기",
+    "확인하고 계속하기",
+    "Continue",
+    "確認して続ける"
+  ],
+  [
+    "현재 예상 구속",
+    "현재 예상 구속",
+    "Current speed estimate",
+    "現在の予想球速"
+  ],
+  [
+    "현재 피로와 균형 힘 배분을 반영했어요.",
+    "현재 피로와 균형 힘 배분을 반영했어요.",
+    "Includes current fatigue and balanced effort.",
+    "現在の疲労とバランスの力加減を反映。"
+  ],
+  [
+    "현재 능력치의 성장 한계예요. 다른 능력 훈련을 골라보세요.",
+    "현재 능력치의 성장 한계예요. 다른 능력 훈련을 골라보세요.",
+    "This rating has reached its current growth limit. Try training another ability.",
+    "この能力は現在の成長限界です。別の能力を鍛えてみよう。"
+  ],
+  [
+    "예상 기본 범위를 넘는 성장이에요!",
+    "추가 성장!",
+    "Extra growth!",
+    "追加成長！"
+  ],
+  [
+    "공이 지나간 곳",
+    "공이 지나간 곳",
+    "Plate crossing",
+    "ボールの通過位置"
+  ],
+  [
+    "빠른 진행",
+    "빠른 진행",
+    "Quick progression",
+    "クイック進行"
+  ],
+  [
+    "일반 투구만 자동으로 넘겨요. 연습·퍼펙트·다음 타자는 직접 확인해요.",
+    "일반 투구만 자동으로 넘겨요. 연습·퍼펙트·다음 타자는 직접 확인해요.",
+    "Only ordinary pitches advance automatically. Practice, perfect releases and new batters wait for you.",
+    "通常の投球のみ自動進行。練習・パーフェクト・次の打者は手動で進めます。"
+  ],
+  [
+    "통산 기록",
+    "통산 기록",
+    "Career records",
+    "通算記録"
+  ],
+  [
+    "피로 %lld → %lld · 팔 부담 %lld → %lld",
+    "피로 %lld → %lld · 팔 부담 %lld → %lld",
+    "Fatigue %lld → %lld · Arm load %lld → %lld",
+    "疲労 %lld → %lld · 腕の負担 %lld → %lld"
+  ],
+  [
+    "추가 성장!",
+    "추가 성장!",
+    "Extra growth!",
+    "追加成長！"
+  ],
+  [
+    "손에 익히는 중",
+    "손에 익히는 중",
+    "Finding the feel",
+    "手になじませている"
+  ],
+  [
+    "실전 감각",
+    "실전 감각",
+    "Game-ready feel",
+    "実戦の感覚"
+  ],
+  [
+    "나의 결정구",
+    "나의 결정구",
+    "My finishing pitch",
+    "自分の決め球"
+  ],
+  [
+    "손끝에 새긴 공",
+    "손끝에 새긴 공",
+    "A pitch etched in memory",
+    "指先に刻んだ球"
+  ],
+  [
+    "선택한 결정구로 삼진 잡기",
+    "선택한 결정구로 삼진 잡기",
+    "Strike out a batter with the chosen pitch",
+    "選んだ決め球で三振を奪う"
+  ],
+  [
+    "볼넷·실점 없이 한 이닝 이상 던지기",
+    "볼넷·실점 없이 한 이닝 이상 던지기",
+    "Pitch at least an inning with no walks or runs",
+    "四球・失点なしで１回以上投げる"
+  ],
+  [
+    "탈삼진 최고 기록 넘기기",
+    "탈삼진 최고 기록 넘기기",
+    "Beat my strikeout best",
+    "奪三振の自己記録を更新する"
+  ],
+  [
+    "계보 숙련 %lld단계 · %lld번 이어받음",
+    "계보 숙련 %lld단계 · %lld번 이어받음",
+    "Lineage rank %lld · Inherited %lld times",
+    "系譜熟練 %lld段階 · 継承%lld回"
+  ],
+  [
+    "다음 단계까지 %lld번",
+    "다음 단계까지 %lld번",
+    "%lld more inheritances to the next rank",
+    "次の段階まで継承あと%lld回"
+  ],
+  [
+    "선택한 유산의 기본 효과가 이어져요.",
+    "선택한 유산의 기본 효과가 이어져요.",
+    "The chosen legacy’s base effect carries over.",
+    "選んだ遺産の基本効果を受け継ぎます。"
+  ],
+  [
+    "같은 계열의 재능 돌파에 가까워져요.",
+    "같은 계열의 재능 돌파에 가까워져요.",
+    "Start closer to a talent breakthrough in this family.",
+    "同系統の才能開花に近づいて始められます。"
+  ],
+  [
+    "관련 시작 능력치에도 추가 보너스가 생겨요.",
+    "관련 시작 능력치에도 추가 보너스가 생겨요.",
+    "Related starting ratings gain an additional bonus.",
+    "関連する初期能力値にも追加ボーナス。"
+  ],
+  [
+    "포수 호흡을 높여 시작해요. 숙련 3단계부터 제구·체력도 더해져요.",
+    "포수 호흡을 높여 시작해요. 숙련 3단계부터 제구·체력도 더해져요.",
+    "Start with better catcher chemistry. Rank 3 also improves starting command and stamina.",
+    "捕手との呼吸を高めて開始。３段階では初期制球・体力も向上。"
+  ],
+  [
+    "첫 공식 삼진",
+    "첫 공식 삼진",
+    "First official strikeout",
+    "公式戦での初奪三振"
+  ],
+  [
+    "이 공으로 잡은 삼진",
+    "이 공으로 잡은 삼진",
+    "A strikeout with this pitch",
+    "この球で奪った三振"
+  ],
+  [
+    "쉬어서 다시 힘이 난 날",
+    "쉬어서 다시 힘이 난 날",
+    "The day rest restored my strength",
+    "休んで力が戻った日"
+  ],
+  [
+    "차분하게 막아낸 등판",
+    "차분하게 막아낸 등판",
+    "A clean, composed outing",
+    "落ち着いて抑えた登板"
+  ],
+  [
+    "실전에 가까워진 공",
+    "실전에 가까워진 공",
+    "A pitch ready for the next step",
+    "実戦に近づいた球"
+  ],
+  [
+    "내 결정구가 된 순간",
+    "내 결정구가 된 순간",
+    "The moment it became my finishing pitch",
+    "自分の決め球になった瞬間"
+  ],
+  [
+    "손끝에 새긴 결정구",
+    "손끝에 새긴 결정구",
+    "A finishing pitch etched in memory",
+    "指先に刻んだ決め球"
+  ],
+  [
+    "결정구로 이룬 작은 꿈",
+    "결정구로 이룬 작은 꿈",
+    "A small dream fulfilled with my pitch",
+    "決め球で叶えた小さな夢"
+  ],
+  [
+    "흔들림 없이 이룬 작은 꿈",
+    "흔들림 없이 이룬 작은 꿈",
+    "A small dream fulfilled with composure",
+    "落ち着いて叶えた小さな夢"
+  ],
+  [
+    "내 기록을 넘어선 날",
+    "내 기록을 넘어선 날",
+    "The day I beat my own record",
+    "自己記録を超えた日"
+  ],
+  [
+    "방금 그 공, 다시 던질 수 있을 것 같아요.",
+    "방금 그 공, 다시 던질 수 있을 것 같아요.",
+    "I think I can throw that pitch again.",
+    "今の球、また投げられそうです。"
+  ],
+  [
+    "연습했던 공이 통했어요.",
+    "연습했던 공이 통했어요.",
+    "The pitch I practiced worked.",
+    "練習した球が通用しました。"
+  ],
+  [
+    "쉬고 나니 몸이 한결 가벼워요.",
+    "쉬고 나니 몸이 한결 가벼워요.",
+    "My body feels lighter after that rest.",
+    "休んだら体が軽くなりました。"
+  ],
+  [
+    "끝까지 침착하게 던졌어요.",
+    "끝까지 침착하게 던졌어요.",
+    "I stayed calm all the way through.",
+    "最後まで落ち着いて投げられました。"
+  ],
+  [
+    "해냈어요. 이 순간을 기억할게요.",
+    "해냈어요. 이 순간을 기억할게요.",
+    "I did it. I’ll remember this moment.",
+    "できました。この瞬間を覚えておきます。"
+  ],
+  [
+    "이제 이 공이 제 공 같아요.",
+    "이제 이 공이 제 공 같아요.",
+    "This pitch feels like mine now.",
+    "この球が自分のものになった気がします。"
+  ],
+  [
+    "잠깐 쉬고 다시 던지고 싶어요.",
+    "잠깐 쉬고 다시 던지고 싶어요.",
+    "I’d like to rest, then pitch again.",
+    "少し休んで、また投げたいです。"
+  ],
+  [
+    "몸이 가벼워요. 다음 공이 기대돼요.",
+    "몸이 가벼워요. 다음 공이 기대돼요.",
+    "I feel light. I’m looking forward to the next pitch.",
+    "体が軽いです。次の一球が楽しみ。"
+  ],
+  [
+    "한 구씩 제 공을 만들어갈게요.",
+    "한 구씩 제 공을 만들어갈게요.",
+    "I’ll make this pitch mine, one ball at a time.",
+    "一球ずつ自分の球を作っていきます。"
+  ],
+  [
+    "등번호 바꾸기",
+    "등번호 바꾸기",
+    "Change jersey number",
+    "背番号を変える"
+  ],
+  [
+    "등번호",
+    "등번호",
+    "Jersey number",
+    "背番号"
+  ],
+  [
+    "내 공의 별명",
+    "내 공의 별명",
+    "My pitch’s nickname",
+    "自分の球の愛称"
+  ],
+  [
+    "별명 붙이기",
+    "별명 붙이기",
+    "Name my pitch",
+    "愛称を付ける"
+  ],
+  [
+    "이 공으로 공식 경기 삼진을 잡으면 별명을 붙일 수 있어요.",
+    "이 공으로 공식 경기 삼진을 잡으면 별명을 붙일 수 있어요.",
+    "Earn an official strikeout with this pitch to name it.",
+    "この球で公式戦の三振を奪うと愛称を付けられます。"
+  ],
+  [
+    "이 공의 기록은 환생해도 남아요. 구위와 제구는 훈련으로 키워요.",
+    "이 공의 기록은 환생해도 남아요. 구위와 제구는 훈련으로 키워요.",
+    "This pitch’s records survive rebirth. Train to improve its stuff and command.",
+    "この球の記録は転生後も残ります。球威と制球は練習で伸ばそう。"
+  ],
+  [
+    "이번 생의 작은 꿈",
+    "이번 생의 작은 꿈",
+    "A small dream for this life",
+    "この人生の小さな夢"
+  ],
+  [
+    "함께한 기억",
+    "함께한 기억",
+    "Our shared memories",
+    "共に歩んだ記憶"
+  ],
+  [
+    "첫 공식 경기부터 우리만의 기억을 남겨요.",
+    "첫 공식 경기부터 우리만의 기억을 남겨요.",
+    "Let’s start collecting memories in official games.",
+    "公式戦で私たちだけの記憶を残そう。"
+  ],
+  [
+    "기억첩 펼치기",
+    "기억첩 펼치기",
+    "Open memory album",
+    "思い出帳を開く"
+  ],
+  [
+    "다음 생으로 이어지는 힘",
+    "다음 생으로 이어지는 힘",
+    "Strength for the next life",
+    "次の人生へ続く力"
+  ],
+  [
+    "계보의 힘은 환생할 때 적용돼요. 현재 경기의 능력치는 바뀌지 않아요.",
+    "계보의 힘은 환생할 때 적용돼요. 현재 경기의 능력치는 바뀌지 않아요.",
+    "Lineage strength applies at rebirth; current-game ratings stay intact.",
+    "系譜の力は転生時に適用。今の試合の能力値は変わりません。"
+  ],
+  [
+    "고정 해제",
+    "고정 해제",
+    "Unpin",
+    "固定を解除"
+  ],
+  [
+    "선수 화면에 고정",
+    "선수 화면에 고정",
+    "Pin to player profile",
+    "選手画面に固定"
+  ],
+  [
+    "대표 구종",
+    "대표 구종",
+    "Signature pitch",
+    "代表球種"
+  ],
+  [
+    "별명 바꾸기",
+    "별명 바꾸기",
+    "Rename pitch",
+    "愛称を変える"
+  ],
+  [
+    "기억 더 보기",
+    "기억 더 보기",
+    "More memories",
+    "記憶をもっと見る"
+  ],
+  [
+    "이 공으로 훈련이나 투구 %lld회 더",
+    "이 공으로 훈련이나 투구 %lld회 더",
+    "%lld more training sessions or pitches with this pitch",
+    "この球で練習または投球をあと%lld回"
+  ],
+  [
+    "이 공으로 삼진 %lld개 더",
+    "이 공으로 삼진 %lld개 더",
+    "%lld more strikeouts with this pitch",
+    "この球で奪三振あと%lld個"
+  ],
+  [
+    "누르고 초록에서 놓기",
+    "누르고 초록에서 놓기",
+    "Hold · release in green",
+    "長押しして緑で離す"
+  ],
+  [
+    "선택",
+    "선택",
+    "Choose",
+    "選択"
+  ],
+  [
+    "정보",
+    "정보",
+    "Info",
+    "情報"
+  ],
+  [
+    "학교 정보",
+    "학교 정보",
+    "School details",
+    "学校情報"
+  ],
+  [
+    "능력 고르기",
+    "능력 고르기",
+    "Choose ability",
+    "能力を選ぶ"
+  ],
+  [
+    "환생하기",
+    "환생하기",
+    "Rebirth",
+    "転生する"
+  ],
+  [
+    "이번 생 마무리",
+    "이번 생 마무리",
+    "Finish this life",
+    "この人生を終える"
+  ],
+  [
+    "강하게",
+    "강하게",
+    "Intense",
+    "強め"
+  ],
+  [
+    "선수 상세",
+    "선수 상세",
+    "Player details",
+    "選手詳細"
+  ],
+  [
+    "배합 성공하기",
+    "배합 성공하기",
+    "Execute a pitch sequence",
+    "配球を成功させる"
+  ],
+  [
+    "상대 %lld번 타자",
+    "상대 %lld번 타자",
+    "Opposing batter #%lld",
+    "相手の%lld番打者"
+  ],
+  [
+    "동점 주자 %lld루",
+    "동점 주자 %lld루",
+    "Tying run on base %lld",
+    "同点の走者が%lld塁"
+  ],
+  [
+    "역전 주자 %lld루",
+    "역전 주자 %lld루",
+    "Go-ahead run on base %lld",
+    "勝ち越しの走者が%lld塁"
+  ],
+  [
+    "이닝을 마쳤어요. 계속 던질까요?",
+    "이닝을 마쳤어요. 계속 던질까요?",
+    "Inning complete. Keep pitching?",
+    "イニング終了。続けて投げますか？"
+  ],
+  [
+    "다음 이닝 던지기",
+    "다음 이닝 던지기",
+    "Pitch next inning",
+    "次のイニングも投げる"
+  ],
+  [
+    "남은 경기 자동 진행",
+    "남은 경기 자동 진행",
+    "Simulate the rest",
+    "残りを自動進行"
+  ],
+  [
+    "직접 등판 %lld · 자동 등판 %lld",
+    "직접 등판 %lld · 자동 등판 %lld",
+    "Manual %lld · Simulated %lld",
+    "直接登板 %lld · 自動登板 %lld"
+  ],
+  [
+    "이전 자동 경기의 이닝·실점은 합산했어요. 개별 기록은 저장된 경기부터 보여드려요.",
+    "이전 자동 경기의 이닝·실점은 합산했어요. 개별 기록은 저장된 경기부터 보여드려요.",
+    "Older simulated innings and runs are included. Game details are shown where recorded.",
+    "以前の自動試合の投球回・失点も合算しています。個別記録は保存済みの試合から表示します。"
+  ],
+  [
+    "직접",
+    "직접",
+    "Manual",
+    "直接"
+  ],
+  [
+    "자동",
+    "자동",
+    "Simulated",
+    "自動"
+  ],
+  [
+    "직접+자동",
+    "직접+자동",
+    "Manual + simulated",
+    "直接＋自動"
+  ],
+  [
+    "직접·자동 경기 합산",
+    "직접·자동 경기 합산",
+    "Manual and simulated games",
+    "直接・自動試合の合計"
+  ],
+  [
+    "시즌 이닝",
+    "시즌 이닝",
+    "Season innings",
+    "シーズン投球回"
+  ],
+  [
+    "직접·자동 투구 합산",
+    "직접·자동 투구 합산",
+    "Manual and simulated pitching",
+    "直接・自動投球の合計"
+  ],
+  [
+    "이번 고교 생활의 각성을 모두 익혔어요",
+    "이번 고교 생활의 각성을 모두 익혔어요",
+    "All high-school awakenings learned",
+    "今回の高校生活で学べる覚醒を習得済み"
+  ],
+  [
+    "환생 후 도전하는 고급 각성",
+    "환생 후 도전하는 고급 각성",
+    "Advanced awakening after rebirth",
+    "転生後に挑戦する上級覚醒"
+  ],
+  [
+    "고교 후반 · 훈련 6회 · 시즌 12이닝 필요",
+    "고교 후반 · 훈련 6회 · 시즌 12이닝 필요",
+    "Late high school · 6 training sessions · 12 season innings",
+    "高校後半・練習6回・シーズン12回が必要"
+  ],
+  [
+    "정규 경기 선발 등판",
+    "정규 경기 선발 등판",
+    "Regular-season start",
+    "公式戦の先発登板"
+  ],
+  [
+    "1회부터 마운드를 맡았어요. 이닝이 끝날 때 계속 던질지 정할 수 있어요.",
+    "1회부터 마운드를 맡았어요. 이닝이 끝날 때 계속 던질지 정할 수 있어요.",
+    "Take the mound in the first inning. After each inning, choose whether to keep pitching.",
+    "初回からマウンドへ。各イニング終了時に投げ続けるか選べます。"
+  ],
+  [
+    "이번 생의 약속 정하기",
+    "이번 생의 약속 정하기",
+    "Choose a promise for this life",
+    "今回の人生の約束を決める"
+  ],
+  [
+    "투구 시작",
+    "투구 시작",
+    "Start pitching",
+    "投球を始める"
+  ],
+  [
+    "어떤 강점을 키울까요?",
+    "어떤 강점을 키울까요?",
+    "Which strength will you develop?",
+    "どんな強みを伸ばしますか？"
+  ],
+  [
+    "학교마다 잘 가르치는 훈련이 달라요. 다른 능력도 모두 훈련할 수 있어요.",
+    "다른 능력도 모두 훈련할 수 있어요.",
+    "You can train every other ability, too.",
+    "他の能力もすべて鍛えられます。"
+  ],
+  [
+    "성장 비교",
+    "성장 비교",
+    "Compare growth",
+    "成長を比較"
+  ],
+  [
+    "이 학교 선택",
+    "이 학교 선택",
+    "Choose this school",
+    "この学校を選ぶ"
+  ],
+  [
+    "보통 강도",
+    "보통 강도",
+    "Standard intensity",
+    "通常の強度"
+  ],
+  [
+    "지금 내 선수로 입학한 직후, 같은 훈련을 한 번 했을 때의 기본 성장 예상이에요.",
+    "현재 능력 · 입학 후 첫 훈련 1회 기준",
+    "Current abilities · first training session after enrollment",
+    "現在の能力・入学後最初の練習1回が基準"
+  ],
+  [
+    "현재 조건에서는 예상 범위가 같아요. 특화 보너스는 성장 계산에 반영돼요.",
+    "현재 조건에서는 기본 성장 예상이 같아요.",
+    "Base growth forecasts are equal under these conditions.",
+    "現在の条件では基本成長の予想は同じです。"
+  ],
+  [
+    "현재 재능 한계에 도달해 기본 성장이 제한돼요.",
+    "현재 재능 한계에 도달해 기본 성장이 제한돼요.",
+    "Base growth is restricted by your current talent limit.",
+    "現在の才能上限に達し、基本成長が制限されています。"
+  ],
+  [
+    "훈련 강도와 몸 상태가 바뀌면 성장 예상도 달라져요.",
+    "훈련 강도와 몸 상태가 바뀌면 성장 예상도 달라져요.",
+    "The forecast changes with training intensity and physical condition.",
+    "練習強度や体の状態で成長予想も変わります。"
+  ],
+  [
+    "추가 성장 %lld%% · %s %s까지 가능",
+    "추가 성장 %lld%% · %s %s까지 가능",
+    "Breakthrough chance %lld%% · %s may reach %s",
+    "追加成長の確率 %lld%% · %sは%sまで可能"
+  ],
+  [
+    "긴 이닝을 책임지는 투수로",
+    "긴 이닝을 책임지는 투수로",
+    "For a pitcher who goes deep into games",
+    "長いイニングを任される投手へ"
+  ],
+  [
+    "타자를 읽고 배합으로 승부하는 투수로",
+    "타자를 읽고 배합으로 승부하는 투수로",
+    "For a pitcher who wins through smart pitch sequences",
+    "打者を読み配球で勝負する投手へ"
+  ],
+  [
+    "빠른 직구를 주무기로 쓰는 투수로",
+    "빠른 직구를 주무기로 쓰는 투수로",
+    "For a pitcher built around a fast fastball",
+    "速い直球を武器にする投手へ"
+  ],
+  [
+    "결정구로 헛스윙을 끌어내는 투수로",
+    "결정구로 헛스윙을 끌어내는 투수로",
+    "For a pitcher with a swing-and-miss finishing pitch",
+    "決め球で空振りを奪う投手へ"
+  ],
+  [
+    "원하는 코스로 승부하는 투수로",
+    "원하는 코스로 승부하는 투수로",
+    "For a pitcher who commands the zone",
+    "狙ったコースで勝負する投手へ"
+  ],
+  [
+    "체력 훈련에 강점",
+    "체력 훈련에 강점",
+    "Specialty: stamina training",
+    "体力練習が得意"
+  ],
+  [
+    "경기 운영 훈련에 강점",
+    "경기 운영 훈련에 강점",
+    "Specialty: game-planning training",
+    "試合運びの練習が得意"
+  ],
+  [
+    "구위 훈련에 강점",
+    "구위 훈련에 강점",
+    "Specialty: pitch-power training",
+    "球威練習が得意"
+  ],
+  [
+    "변화구 훈련에 강점",
+    "변화구 훈련에 강점",
+    "Specialty: breaking-pitch training",
+    "変化球練習が得意"
+  ],
+  [
+    "제구 훈련에 강점",
+    "제구 훈련에 강점",
+    "Specialty: command training",
+    "制球練習が得意"
+  ],
+  [
+    "다른 능력도 모두 훈련할 수 있어요.",
+    "다른 능력도 모두 훈련할 수 있어요.",
+    "You can train every other ability, too.",
+    "他の能力もすべて鍛えられます。"
+  ],
+  [
+    "현재 능력 · 입학 후 첫 훈련 1회 기준",
+    "현재 능력 · 입학 후 첫 훈련 1회 기준",
+    "Current abilities · first training session after enrollment",
+    "現在の能力・入学後最初の練習1回が基準"
+  ],
+  [
+    "현재 조건에서는 기본 성장 예상이 같아요.",
+    "현재 조건에서는 기본 성장 예상이 같아요.",
+    "Base growth forecasts are equal under these conditions.",
+    "現在の条件では基本成長の予想は同じです。"
+  ],
+  [
+    "학교 비교",
+    "학교 비교",
+    "Compare schools",
+    "学校を比較"
+  ],
+  [
+    "강점 더 키우기",
+    "강점 더 키우기",
+    "Build on strengths",
+    "強みを伸ばす"
+  ],
+  [
+    "약점 보완하기",
+    "약점 보완하기",
+    "Improve weaknesses",
+    "弱みを補う"
+  ],
+  [
+    "현재 높은 능력을 더 키우는 학교를 추천해요.",
+    "현재 높은 능력을 더 키우는 학교를 추천해요.",
+    "Recommendations focus on developing your higher abilities.",
+    "現在高い能力をさらに伸ばせる学校をおすすめします。"
+  ],
+  [
+    "현재 낮은 능력을 보완하는 학교를 추천해요.",
+    "현재 낮은 능력을 보완하는 학교를 추천해요.",
+    "Recommendations focus on improving your lower abilities.",
+    "現在低い能力を補える学校をおすすめします。"
+  ],
+  [
+    "현재 내 %s %lld",
+    "현재 내 %s %lld",
+    "My current %s: %lld",
+    "現在の%s：%lld"
+  ],
+  [
+    "능력과 성장 여유가 비슷하면 원하는 투구 스타일로 골라 주세요.",
+    "능력과 성장 여유가 비슷하면 원하는 투구 스타일로 골라 주세요.",
+    "When abilities and room to grow are similar, choose the pitching style you want.",
+    "能力や成長の余地が同程度なら、目指す投球スタイルで選んでください。"
+  ],
+  [
+    "현재 재능 한계에 도달했어요.",
+    "현재 재능 한계에 도달했어요.",
+    "At the current talent limit.",
+    "現在の才能上限に達しています。"
+  ],
+  [
+    "앞으로 자주 할 훈련을 기준으로 고르세요.",
+    "앞으로 자주 할 훈련을 기준으로 고르세요.",
+    "Choose for the training you plan to do regularly.",
+    "これからよく取り組む練習を基準に選びましょう。"
+  ],
+  [
+    "선택한 유형의 기본 능력",
+    "선택한 유형의 기본 능력",
+    "Base abilities of the selected type",
+    "選択したタイプの基本能力"
+  ],
+  [
+    "훈련 선택",
+    "훈련 선택",
+    "Training",
+    "練習選択"
+  ],
+  [
+    "몸 풀기",
+    "몸 풀기",
+    "Warm up",
+    "体をほぐす"
+  ],
+  [
+    "투구 병행",
+    "투구 병행",
+    "Light throws",
+    "軽く投げる"
+  ],
+  [
+    "주간",
+    "주간",
+    "Weekly",
+    "週間"
+  ],
+  [
+    "카드",
+    "선수 앨범",
+    "Player album",
+    "選手アルバム"
+  ],
+  [
+    "복귀",
+    "복귀",
+    "Return",
+    "復帰"
+  ],
+  [
+    "새 소식",
+    "새 소식",
+    "New update",
+    "新着"
+  ],
+  [
+    "백업 저장",
+    "백업 저장",
+    "Save backup",
+    "バックアップ保存"
+  ],
+  [
+    "백업 불러오기",
+    "백업 불러오기",
+    "Load backup",
+    "バックアップ読込"
+  ],
+  [
+    "불러오기",
+    "불러오기",
+    "Load",
+    "読み込む"
+  ],
+  [
+    "연습 투구",
+    "연습 투구",
+    "Practice pitch",
+    "練習投球"
+  ],
+  [
+    "다음 이닝",
+    "다음 이닝",
+    "Next inning",
+    "次のイニング"
+  ],
+  [
+    "남은 경기 자동",
+    "남은 경기 자동",
+    "Simulate rest",
+    "残りを自動進行"
+  ],
+  [
+    "포수가 구종과 코스를 골라뒀어요.",
+    "포수가 구종과 코스를 골라뒀어요.",
+    "The catcher has picked a pitch and target.",
+    "捕手が球種とコースを選んでいます。"
+  ],
+  [
+    "버튼을 누르고, 초록 구간에서 놓아보세요.",
+    "버튼을 누르고, 초록 구간에서 놓아보세요.",
+    "Hold the button and release in the green zone.",
+    "ボタンを押し続け、緑の範囲で離してみましょう。"
+  ],
+  [
+    "투구 버튼을 누르면 공을 던져요.",
+    "투구 버튼을 누르면 공을 던져요.",
+    "Tap the pitch button to throw.",
+    "投球ボタンを押すと投げられます。"
+  ],
+  [
+    "연습 이어가기",
+    "연습 이어가기",
+    "Resume practice",
+    "練習を再開"
+  ],
+  [
+    "숙련을 다듬는 훈련",
+    "숙련을 다듬는 훈련",
+    "Training toward mastery",
+    "熟練を磨く練習"
+  ],
+  [
+    "돌파 준비 · %lld/%lld",
+    "돌파 준비 · %lld/%lld",
+    "Breakthrough progress · %lld/%lld",
+    "突破準備 · %lld/%lld"
+  ],
+  [
+    "성장 준비 · %s %lld → %lld/100",
+    "성장 준비 · %s %lld → %lld/100",
+    "Growth progress · %s %lld → %lld/100",
+    "成長準備 · %s %lld → %lld/100"
+  ],
+  [
+    "현재 신분",
+    "현재 신분",
+    "Current status",
+    "現在の立場"
+  ],
+  [
+    "현재 진로",
+    "현재 진로",
+    "Career status",
+    "現在の進路"
+  ],
+  [
+    "지명 완료 · 입단 계약 전",
+    "지명 완료 · 입단 계약 전",
+    "Drafted · contract pending",
+    "指名済み · 入団契約前"
+  ],
+  [
+    "고교에서 키운 능력과 구종으로 이어갑니다.",
+    "고교에서 키운 능력과 구종으로 이어갑니다.",
+    "Continue with the abilities and pitches you developed in high school.",
+    "高校で育てた能力と球種を引き継ぎます。"
+  ],
+  [
+    "지명 구단",
+    "지명 구단",
+    "Drafting club",
+    "指名球団"
+  ],
+  [
+    "이번 드래프트 미지명",
+    "이번 드래프트 미지명",
+    "Not selected in this draft",
+    "今回のドラフトは指名なし"
+  ],
+  [
+    "이번 생의 기록과 이어받을 힘을 남겨요.",
+    "이번 생의 기록과 이어받을 힘을 남겨요.",
+    "Keep this life’s records and choose what carries forward.",
+    "今世の記録と引き継ぐ力を残しましょう。"
+  ],
+  [
+    "드래프트 발표 전",
+    "드래프트 발표 전",
+    "Awaiting draft results",
+    "ドラフト発表前"
+  ],
+  [
+    "프로 입단 완료",
+    "프로 입단 완료",
+    "Professional contract signed",
+    "プロ入団契約済み"
+  ],
+  [
+    "프로 커리어 완료",
+    "프로 커리어 완료",
+    "Professional career complete",
+    "プロキャリア終了"
+  ],
+  [
+    "프로 선수 · 계약 검토 중",
+    "프로 선수 · 계약 검토 중",
+    "Pro player · reviewing contract",
+    "プロ選手 · 契約検討中"
+  ],
+  [
+    "계약 조건을 확인해 주세요.",
+    "계약 조건을 확인해 주세요.",
+    "Review the contract terms.",
+    "契約条件を確認してください。"
+  ],
+  [
+    "2군 · 1군 진입에 도전합니다.",
+    "2군 · 1군 진입에 도전합니다.",
+    "Minors · working toward a major-team call-up.",
+    "二軍 · 一軍昇格を目指します。"
+  ],
+  [
+    "프로부터 새로 시작",
+    "프로부터 새로 시작",
+    "Start a new pro career",
+    "プロから新しく始める"
+  ],
+  [
+    "고교 과정을 건너뛰고 별도 프로 선수로 시작합니다.",
+    "고교 과정을 건너뛰고 별도 프로 선수로 시작합니다.",
+    "Skip high school and start a separate pro player.",
+    "高校編を飛ばし、別のプロ選手として始めます。"
+  ],
+  [
+    "새 프로 선수",
+    "새 프로 선수",
+    "New pro player",
+    "新しいプロ選手"
+  ],
+  [
+    "고교 과정을 건너뛰는 별도 커리어예요.",
+    "고교 과정을 건너뛰는 별도 커리어예요.",
+    "A separate career that skips the high-school years.",
+    "高校編を飛ばす別のキャリアです。"
+  ],
+  [
+    "프로 시작",
+    "프로 시작",
+    "Start pro career",
+    "プロを始める"
+  ],
+  [
+    "입단 계약 보기",
+    "입단 계약 보기",
+    "View rookie contract",
+    "入団契約を見る"
+  ],
+  [
+    "프로 선수 · %s · %s",
+    "프로 선수 · %s · %s",
+    "Pro player · %s · %s",
+    "プロ選手 · %s · %s"
+  ],
+  [
+    "지난 테스트, 잘 던졌어. 선발 기회를 더 줄게. 오늘은 무엇을 준비할까?",
+    "지난 테스트, 잘 던졌어. 선발 기회를 더 줄게. 오늘은 무엇을 준비할까?",
+    "You pitched well in the trial. More starts are coming. What shall we work on today?",
+    "前のテストはよく投げた。先発の機会を増やすよ。今日は何を準備しようか？"
+  ],
+  [
+    "다음 등판은 선발 테스트야. 그 전에 무엇을 준비할까?",
+    "다음 등판은 선발 테스트야. 그 전에 무엇을 준비할까?",
+    "Your next outing is a starting trial. What should we work on first?",
+    "次の登板は先発テストだ。その前に何を準備しようか？"
+  ],
+  [
+    "네 공을 더 키워보자. 훈련을 도와줄까, 선발 기회에 도전해 볼래?",
+    "네 공을 더 키워보자. 훈련을 도와줄까, 선발 기회에 도전해 볼래?",
+    "Let’s develop your pitching. Want training help, or a chance to try starting?",
+    "投球をもっと伸ばそう。練習を手伝おうか、それとも先発に挑戦する？"
+  ],
+  [
+    "다음 등판 전에 하나만 같이 맞춰보자. 배합, 코스, 결정구 중에 뭐부터 할까?",
+    "다음 등판 전에 하나만 같이 맞춰보자. 배합, 코스, 결정구 중에 뭐부터 할까?",
+    "Let’s work on one thing before your next outing: sequencing, locations, or your finishing pitch?",
+    "次の登板までに一つ合わせよう。配球、コース、決め球、どれからやる？"
+  ],
+  [
+    "훈련을 도와주세요",
+    "훈련을 도와주세요",
+    "Help me train",
+    "練習を手伝ってください"
+  ],
+  [
+    "회복하고 싶어요",
+    "회복하고 싶어요",
+    "I need to recover",
+    "回復したいです"
+  ],
+  [
+    "선발 기회에 도전할게요",
+    "선발 기회에 도전할게요",
+    "Let me try starting",
+    "先発に挑戦します"
+  ],
+  [
+    "배합을 같이 복기하자",
+    "배합을 같이 복기하자",
+    "Review our pitch sequences",
+    "配球を一緒に振り返ろう"
+  ],
+  [
+    "코스를 같이 점검하자",
+    "코스를 같이 점검하자",
+    "Work on our locations",
+    "コースを一緒に確認しよう"
+  ],
+  [
+    "결정구를 같이 연습하자",
+    "결정구를 같이 연습하자",
+    "Practice the finishing pitch",
+    "決め球を一緒に練習しよう"
+  ],
+  [
+    "다음 %s 지원",
+    "다음 %s 지원",
+    "Support for the next %s",
+    "次の%sを支援"
+  ],
+  [
+    "다음 등판: 선발 테스트",
+    "다음 등판: 선발 테스트",
+    "Next outing: starting trial",
+    "次の登板：先発テスト"
+  ],
+  [
+    "선발 테스트",
+    "선발 테스트",
+    "Starting trial",
+    "先発テスト"
+  ],
+  [
+    "선발 등판",
+    "선발 등판",
+    "Starting pitcher",
+    "先発登板"
+  ],
+  [
+    "중간계투 등판",
+    "중간계투 등판",
+    "Relief appearance",
+    "中継ぎ登板"
+  ],
+  [
+    "마무리 등판",
+    "마무리 등판",
+    "Closing appearance",
+    "抑え登板"
+  ],
+  [
+    "이번 목표",
+    "이번 목표",
+    "Outing objective",
+    "今回の目標"
+  ],
+  [
+    "투입",
+    "투입",
+    "Entry",
+    "登板時"
+  ],
+  [
+    "주자 %lld명 승계",
+    "주자 %lld명 승계",
+    "Inherited %lld runner(s)",
+    "走者%lld人を引き継ぎ"
+  ],
+  [
+    "등판 때 주자 %lld명 승계",
+    "등판 때 주자 %lld명 승계",
+    "Inherited %lld runner(s) on entry",
+    "登板時に走者%lld人を引き継ぎ"
+  ],
+  [
+    "직접 2이닝 · 2실점 이하",
+    "직접 2이닝 · 2실점 이하",
+    "Pitch 2 innings yourself · allow at most 2 runs",
+    "自分で2回投球 · 2失点以内"
+  ],
+  [
+    "리드를 지켜 이닝 마무리",
+    "리드를 지켜 이닝 마무리",
+    "Finish the inning with the lead",
+    "リードを守ってイニングを終える"
+  ],
+  [
+    "첫 이닝 무실점으로 출발",
+    "첫 이닝 무실점으로 출발",
+    "Start with a scoreless inning",
+    "初回を無失点で始める"
+  ],
+  [
+    "추가 실점 없이 이닝 마무리",
+    "추가 실점 없이 이닝 마무리",
+    "Finish the inning without another run",
+    "追加失点なしでイニングを終える"
+  ],
+  [
+    "%lld/%lld 아웃",
+    "%lld/%lld 아웃",
+    "%lld/%lld outs",
+    "%lld/%lldアウト"
+  ],
+  [
+    "테스트 통과 · 선발 기회 확보",
+    "테스트 통과 · 선발 기회 확보",
+    "Trial passed · starting opportunity earned",
+    "テスト合格 · 先発の機会を獲得"
+  ],
+  [
+    "목표 달성 · 감독 신뢰 +%lld",
+    "목표 달성 · 감독 신뢰 +%lld",
+    "Objective achieved · manager trust +%lld",
+    "目標達成 · 監督の信頼 +%lld"
+  ],
+  [
+    "목표는 놓쳤지만, 남은 아웃을 잡아보세요.",
+    "목표는 놓쳤지만, 남은 아웃을 잡아보세요.",
+    "The objective slipped away. Focus on the remaining outs.",
+    "目標は逃しましたが、残りのアウトを取りましょう。"
+  ],
+  [
+    "다음 기회를 준비해요.",
+    "다음 기회를 준비해요.",
+    "Prepare for the next opportunity.",
+    "次のチャンスに備えましょう。"
+  ],
+  [
+    "감독과 약속한 선발 테스트. 직접 두 이닝을 2실점 이하로 막아 보세요.",
+    "감독과 약속한 선발 테스트. 직접 두 이닝을 2실점 이하로 막아 보세요.",
+    "Your promised starting trial: pitch two innings yourself and allow at most two runs.",
+    "監督と約束した先発テスト。自分で2回を2失点以内に抑えましょう。"
+  ],
+  [
+    "지난 등판에서 얻은 선발 기회예요.",
+    "지난 등판에서 얻은 선발 기회예요.",
+    "A starting opportunity earned in your last outing.",
+    "前の登板で得た先発の機会です。"
+  ],
+  [
+    "선발 테스트 통과. 다음 등판부터 선발 기회가 열렸어요.",
+    "선발 테스트 통과. 다음 등판부터 선발 기회가 열렸어요.",
+    "Starting trial passed. You have earned future starting opportunities.",
+    "先発テスト合格。今後の先発機会が開かれました。"
+  ],
+  [
+    "등판 목표를 달성했어요. 감독의 신뢰가 올랐어요.",
+    "등판 목표를 달성했어요. 감독의 신뢰가 올랐어요.",
+    "Outing objective achieved. Your manager trusts you more.",
+    "登板目標を達成し、監督の信頼が上がりました。"
+  ],
+  [
+    "이번 등판을 마쳤어요. 다음 기회를 준비해요.",
+    "이번 등판을 마쳤어요. 다음 기회를 준비해요.",
+    "This outing is complete. Prepare for your next chance.",
+    "今回の登板を終えました。次のチャンスに備えましょう。"
+  ],
+  [
+    "잠재력을 돌파했어요. 더 높은 능력으로 성장할 수 있어요.",
+    "잠재력을 돌파했어요. 더 높은 능력으로 성장할 수 있어요.",
+    "You broke through your potential limit. More growth is now possible.",
+    "潜在力の限界を突破。さらに高い能力を目指せます。"
+  ],
+  [
+    "돌파 준비 %lld/%lld · 훈련 성과가 남았어요.",
+    "돌파 준비 %lld/%lld · 훈련 성과가 남았어요.",
+    "Breakthrough progress %lld/%lld · your training counted.",
+    "突破準備 %lld/%lld · 練習成果が残りました。"
+  ],
+  [
+    "성장 준비 %lld/100 · 다음 훈련으로 이어집니다.",
+    "성장 준비 %lld/100 · 다음 훈련으로 이어집니다.",
+    "Growth progress %lld/100 · carries into your next training.",
+    "成長準備 %lld/100 · 次の練習に引き継ぎます。"
+  ],
+  [
+    "대화에서 받은 훈련 지원을 사용했어요.",
+    "대화에서 받은 훈련 지원을 사용했어요.",
+    "You used the training support from your conversation.",
+    "会話で得た練習支援を使いました。"
+  ],
+  [
+    "대화에서 받은 지원",
+    "대화에서 받은 지원",
+    "Support from a conversation",
+    "会話で得た支援"
+  ],
+  [
+    "대화로 달라진 것",
+    "대화로 달라진 것",
+    "What the conversation changed",
+    "会話で変わったこと"
+  ],
+  [
+    "선택한 계획으로 다음 일정을 준비해요.",
+    "선택한 계획으로 다음 일정을 준비해요.",
+    "Prepare for what comes next with your chosen plan.",
+    "選んだ計画で次の日程に備えましょう。"
+  ],
+  [
+    "다음 등판 준비에 반영됐어요.",
+    "다음 등판 준비에 반영됐어요.",
+    "Applied to preparation for your next outing.",
+    "次の登板準備に反映されました。"
+  ],
+  [
+    "보직: %s",
+    "보직: %s",
+    "Role: %s",
+    "役割：%s"
+  ],
+  [
+    "대화를 마쳤어요. 다음 일정을 준비해요.",
+    "대화를 마쳤어요. 다음 일정을 준비해요.",
+    "Conversation complete. Prepare for the next activity.",
+    "会話を終えました。次の日程に備えましょう。"
+  ],
+  [
+    "신뢰 +%lld",
+    "신뢰 +%lld",
+    "Trust +%lld",
+    "信頼 +%lld"
+  ],
+  [
+    "신뢰 -%lld",
+    "신뢰 -%lld",
+    "Trust -%lld",
+    "信頼 -%lld"
+  ],
+  [
+    "감독 신뢰 +%lld",
+    "감독 신뢰 +%lld",
+    "Manager trust +%lld",
+    "監督の信頼 +%lld"
+  ],
+  [
+    "감독 신뢰 -%lld",
+    "감독 신뢰 -%lld",
+    "Manager trust -%lld",
+    "監督の信頼 -%lld"
+  ],
+  [
+    "포수 신뢰 +%lld",
+    "포수 신뢰 +%lld",
+    "Catcher trust +%lld",
+    "捕手の信頼 +%lld"
+  ],
+  [
+    "포수 신뢰 -%lld",
+    "포수 신뢰 -%lld",
+    "Catcher trust -%lld",
+    "捕手の信頼 -%lld"
+  ],
+  [
+    "피로 -%lld",
+    "피로 -%lld",
+    "Fatigue -%lld",
+    "疲労 -%lld"
+  ],
+  [
+    "팔 부담 +%lld",
+    "팔 부담 +%lld",
+    "Arm strain +%lld",
+    "腕の負担 +%lld"
+  ],
+  [
+    "팔 부담 -%lld",
+    "팔 부담 -%lld",
+    "Arm strain -%lld",
+    "腕の負担 -%lld"
+  ],
+  [
+    "관심도 +%lld",
+    "관심도 +%lld",
+    "Interest +%lld",
+    "注目度 +%lld"
+  ],
+  [
+    "관심도 -%lld",
+    "관심도 -%lld",
+    "Interest -%lld",
+    "注目度 -%lld"
+  ],
+  [
+    "이번 생을 마무리하는 선택",
+    "이번 생을 마무리하는 선택",
+    "Options for finishing this life",
+    "今世を終える選択"
+  ],
+  [
+    "선발 · %lld회부터 직접",
+    "선발 · %lld회부터 직접",
+    "Starter · manual play from inning %lld",
+    "先発 · %lld回から自分で投球"
+  ],
+  [
+    "다음 구위 훈련 지원",
+    "다음 구위 훈련 지원",
+    "Support for your next stuff training",
+    "次の球威トレーニングをサポート"
+  ],
+  [
+    "다음 제구 훈련 지원",
+    "다음 제구 훈련 지원",
+    "Support for your next control training",
+    "次の制球トレーニングをサポート"
+  ],
+  [
+    "다음 변화구 훈련 지원",
+    "다음 변화구 훈련 지원",
+    "Support for your next breaking ball training",
+    "次の変化球トレーニングをサポート"
+  ],
+  [
+    "다음 체력 훈련 지원",
+    "다음 체력 훈련 지원",
+    "Support for your next stamina training",
+    "次のスタミナトレーニングをサポート"
+  ],
+  [
+    "다음 경기 운영 훈련 지원",
+    "다음 경기 운영 훈련 지원",
+    "Support for your next game planning training",
+    "次の試合運びトレーニングをサポート"
+  ],
+  [
+    "기록 범위",
+    "기록 범위",
+    "Record scope",
+    "記録の範囲"
+  ],
+  [
+    "누적 기록은 보존했어요. 개별 등판은 저장된 경기부터 보여드려요.",
+    "누적 기록은 보존했어요. 개별 등판은 저장된 경기부터 보여드려요.",
+    "Career totals are preserved. Individual outings appear where details were saved.",
+    "通算記録は保持されています。登板の詳細は保存された試合から表示します。"
+  ],
+  [
+    "첫 등판 전",
+    "첫 등판 전",
+    "Before your first outing",
+    "初登板前"
+  ],
+  [
+    "등판을 마치면 내 기록이 여기에 쌓여요.",
+    "등판을 마치면 내 기록이 여기에 쌓여요.",
+    "Your record begins with your first outing.",
+    "登板を終えると、ここに記録が残ります。"
+  ],
+  [
+    "%lld번째 생 · 고교",
+    "%lld번째 생 · 고교",
+    "Life %lld · High school",
+    "%lld回目の人生 · 高校"
+  ],
+  [
+    "%lld주차 준비",
+    "%lld주차 준비",
+    "Prepare for week %lld",
+    "第%lld週の準備"
+  ],
+  [
+    "%s 성장 진도 %lld/%lld → 훈련 1회 누적",
+    "%s 성장 진도 %lld/%lld → 훈련 1회 누적",
+    "%s progress %lld/%lld → one training credit",
+    "%sの成長 %lld/%lld → 練習1回を蓄積"
+  ],
+  [
+    "%s 성장 진도 %lld/%lld",
+    "%s 성장 진도 %lld/%lld",
+    "%s progress %lld/%lld",
+    "%sの成長 %lld/%lld"
+  ],
+  [
+    "몸을 회복하는 한 주",
+    "몸을 회복하는 한 주",
+    "A week to recover",
+    "体を回復する1週間"
+  ],
+  [
+    "감독의 신뢰를 쌓는 한 주",
+    "감독의 신뢰를 쌓는 한 주",
+    "A week to earn the manager’s trust",
+    "監督の信頼を築く1週間"
+  ],
+  [
+    "예정된 자동 등판 %lld경기",
+    "예정된 자동 등판 %lld경기",
+    "Scheduled simulated outings: %lld",
+    "自動で進む登板予定：%lld試合"
+  ],
+  [
+    "예상 피로 %lld~%lld · 현재 %lld",
+    "예상 피로 %lld~%lld · 현재 %lld",
+    "Expected fatigue %lld–%lld · Current %lld",
+    "予想疲労 %lld～%lld · 現在 %lld"
+  ],
+  [
+    "이번 주 진행",
+    "이번 주 진행",
+    "Play this week",
+    "今週を進める"
+  ],
+  [
+    "여러 주 진행",
+    "여러 주 진행",
+    "Advance several weeks",
+    "数週間進める"
+  ],
+  [
+    "대화나 중요한 경기가 나오면 멈춰요.",
+    "대화나 중요한 경기가 나오면 멈춰요.",
+    "Stops for a decision or important game.",
+    "会話や重要な試合で止まります。"
+  ],
+  [
+    "감독에게 맡기기",
+    "감독에게 맡기기",
+    "Let the manager lead",
+    "監督に任せる"
+  ],
+  [
+    "이번 주의 변화",
+    "이번 주의 변화",
+    "This week’s results",
+    "今週の変化"
+  ],
+  [
+    "몸 상태와 이번 주 경기를 확인해요.",
+    "몸 상태와 이번 주 경기를 확인해요.",
+    "Review your condition and this week’s games.",
+    "体調と今週の試合を確認しましょう。"
+  ],
+  [
+    "이번 주 경기",
+    "이번 주 경기",
+    "This week’s games",
+    "今週の試合"
+  ],
+  [
+    "회복까지 %lld주",
+    "회복까지 %lld주",
+    "Recovery: %lld weeks",
+    "回復まで%lld週間"
+  ],
+  [
+    "등판 상황",
+    "등판 상황",
+    "Your assignment",
+    "登板状況"
+  ],
+  [
+    "이번 이닝에 집중해요.",
+    "이번 이닝에 집중해요.",
+    "Focus on this inning.",
+    "この回に集中しましょう。"
+  ],
+  [
+    "선발 기회",
+    "선발 기회",
+    "Starting opportunity",
+    "先発のチャンス"
+  ],
+  [
+    "상대와 경기 이야기",
+    "상대와 경기 이야기",
+    "Opponent and game context",
+    "相手と試合の背景"
+  ],
+  [
+    "테스트 이어 던지기",
+    "테스트 이어 던지기",
+    "Continue the trial",
+    "テストを続ける"
+  ],
+  [
+    "자동 진행하면 직접 투구 테스트는 여기서 끝나요.",
+    "자동 진행하면 직접 투구 테스트는 여기서 끝나요.",
+    "Simulating ends your manual pitching trial here.",
+    "自動進行を選ぶと、直接投球のテストはここで終了します。"
+  ],
+  [
+    "개막 시리즈의 승부처. %s 앞에서 올해의 첫인상을 만든다.",
+    "개막 시리즈의 승부처. %s 앞에서 올해의 첫인상을 만든다.",
+    "An opening-series moment. Make your first impression against %s.",
+    "開幕シリーズの勝負どころ。%sを相手に今年の第一印象を残す。"
+  ],
+  [
+    "외 %lld개 효과",
+    "외 %lld개 효과",
+    "%lld more effects",
+    "ほか%lld件の効果"
+  ],
+  [
+    "신뢰",
+    "신뢰",
+    "Trust",
+    "信頼"
+  ],
+  [
+    "감독 신뢰",
+    "감독 신뢰",
+    "Manager trust",
+    "監督の信頼"
+  ],
+  [
+    "포수 신뢰",
+    "포수 신뢰",
+    "Catcher trust",
+    "捕手の信頼"
+  ],
+  [
+    "관심도",
+    "관심도",
+    "Interest",
+    "注目度"
+  ],
+  [
+    "팔 부담",
+    "팔 부담",
+    "Arm strain",
+    "腕の負担"
+  ],
+  [
+    "내 투수가 해낸 일",
+    "내 투수가 해낸 일",
+    "What my pitcher achieved",
+    "この投手が成し遂げたこと"
+  ],
+  [
+    "이전 경기의 개별 기록은 남아 있지 않아요.",
+    "이전 경기의 개별 기록은 남아 있지 않아요.",
+    "Individual details of these earlier games were not saved.",
+    "過去の試合の個別記録は保存されていません。"
+  ],
+  [
+    "선수 앨범",
+    "선수 앨범",
+    "Player album",
+    "選手アルバム"
+  ],
+  [
+    "첫 등판부터 나만의 야구 인생이 여기에 쌓여요.",
+    "첫 등판부터 나만의 야구 인생이 여기에 쌓여요.",
+    "Your baseball story starts here with your first outing.",
+    "初登板から、あなただけの野球人生がここに残ります。"
+  ],
+  [
+    "선수와 시즌 선택",
+    "선수와 시즌 선택",
+    "Player and season",
+    "選手とシーズンを選択"
+  ],
+  [
+    "카드 보기",
+    "카드 보기",
+    "View card",
+    "カードを見る"
+  ],
+  [
+    "기억할 경기",
+    "기억할 경기",
+    "An outing to remember",
+    "記憶に残る登板"
+  ],
+  [
+    "인생 경기",
+    "인생 경기",
+    "Career highlight",
+    "人生のベストゲーム"
+  ],
+  [
+    "경기 카드",
+    "경기 카드",
+    "Outing card",
+    "登板カード"
+  ],
+  [
+    "시즌 카드",
+    "시즌 카드",
+    "Season card",
+    "シーズンカード"
+  ],
+  [
+    "모든 등판",
+    "모든 등판",
+    "All outings",
+    "すべての登板"
+  ],
+  [
+    "환생 계보",
+    "환생 계보",
+    "Rebirth lineage",
+    "転生の系譜"
+  ],
+  [
+    "앨범 열기",
+    "앨범 열기",
+    "Open album",
+    "アルバムを開く"
+  ],
+  [
+    "계보 카드",
+    "계보 카드",
+    "Lineage card",
+    "系譜カード"
+  ],
+  [
+    "투구 궤적 다시 보기",
+    "투구 궤적 다시 보기",
+    "Replay pitch trajectories",
+    "投球軌道を再生"
+  ],
+  [
+    "투구 재생은 저장된 직접 투구부터 제공해요.",
+    "투구 재생은 저장된 직접 투구부터 제공해요.",
+    "Replays are available for recorded manual pitches.",
+    "保存された手動投球から再生できます。"
+  ],
+  [
+    "앨범은 게임 백업에 함께 보관돼요.",
+    "앨범은 게임 백업에 함께 보관돼요.",
+    "Your album is included in your game backup.",
+    "アルバムはゲームのバックアップにも保存されます。"
+  ],
+  [
+    "재생",
+    "재생",
+    "Play",
+    "再生"
+  ],
+  [
+    "카드 미리보기",
+    "카드 미리보기",
+    "Card preview",
+    "カードのプレビュー"
+  ],
+  [
+    "공유하지 못했어요. 다시 시도해 주세요.",
+    "공유하지 못했어요. 다시 시도해 주세요.",
+    "Could not share. Please try again.",
+    "共有できませんでした。もう一度お試しください。"
+  ],
+  [
+    "사진에 저장했어요.",
+    "사진에 저장했어요.",
+    "Saved to Photos.",
+    "写真に保存しました。"
+  ],
+  [
+    "저장하지 못했어요. 공유 메뉴를 이용해 주세요.",
+    "저장하지 못했어요. 공유 메뉴를 이용해 주세요.",
+    "Could not save. Please use the share menu.",
+    "保存できませんでした。共有メニューをご利用ください。"
+  ],
+  [
+    "이미지 저장",
+    "이미지 저장",
+    "Save image",
+    "画像を保存"
+  ],
+  [
+    "기념할 순간",
+    "기념할 순간",
+    "Milestones",
+    "記念の瞬間"
+  ],
+  [
+    "첫 승",
+    "첫 승",
+    "First win",
+    "初勝利"
+  ],
+  [
+    "첫 세이브",
+    "첫 세이브",
+    "First save",
+    "初セーブ"
+  ],
+  [
+    "첫 선발",
+    "첫 선발",
+    "First start",
+    "初先発"
+  ],
+  [
+    "첫 무실점 등판",
+    "첫 무실점 등판",
+    "First scoreless outing",
+    "初の無失点登板"
+  ],
+  [
+    "선택한 기간에 저장된 경기 기준",
+    "선택한 기간에 저장된 경기 기준",
+    "Based on recorded games in this period",
+    "選択期間に保存された試合が対象です"
+  ],
+  [
+    "마지막 백업",
+    "마지막 백업",
+    "Last backup",
+    "前回のバックアップ"
+  ],
+  [
+    "앨범",
+    "앨범",
+    "Album",
+    "アルバム"
+  ],
+  [
+    "내 투수의 기록을 앨범에 보관했어요.",
+    "내 투수의 기록을 앨범에 보관했어요.",
+    "Your pitcher’s record is in the album.",
+    "投手の記録をアルバムに保存しました。"
+  ],
+  [
+    "지난 생과 성장 비교",
+    "지난 생과 성장 비교",
+    "Compare with a past life",
+    "前世との成長比較"
+  ],
+  [
+    "같은 고교 기간의 최종 능력 비교",
+    "같은 고교 기간의 최종 능력 비교",
+    "Final ratings across high school careers",
+    "同じ高校期間の最終能力を比較"
+  ],
+  [
+    "상세 투구 기록",
+    "상세 투구 기록",
+    "Detailed pitching stats",
+    "投球成績の詳細"
+  ],
+  [
+    "기록 용어",
+    "기록 용어",
+    "Stat definitions",
+    "記録の用語"
+  ],
+  [
+    "WHIP · 이닝당 허용한 피안타와 볼넷",
+    "WHIP · 이닝당 허용한 피안타와 볼넷",
+    "WHIP · Hits and walks allowed per inning",
+    "WHIP · 1イニング当たりの被安打と与四球"
+  ],
+  [
+    "K/9 · 9이닝당 탈삼진",
+    "K/9 · 9이닝당 탈삼진",
+    "K/9 · Strikeouts per nine innings",
+    "K/9 · 9イニング当たりの奪三振"
+  ],
+  [
+    "BB/9 · 9이닝당 볼넷",
+    "BB/9 · 9이닝당 볼넷",
+    "BB/9 · Walks per nine innings",
+    "BB/9 · 9イニング当たりの与四球"
+  ],
+  [
+    "H/9 · 9이닝당 피안타",
+    "H/9 · 9이닝당 피안타",
+    "H/9 · Hits allowed per nine innings",
+    "H/9 · 9イニング当たりの被安打"
+  ],
+  [
+    "K/BB · 볼넷당 탈삼진",
+    "K/BB · 볼넷당 탈삼진",
+    "K/BB · Strikeouts per walk",
+    "K/BB · 与四球当たりの奪三振"
+  ],
+  [
+    "RA/9 · 9이닝당 실점, 자책점 기준 ERA와 달라요.",
+    "RA/9 · 9이닝당 실점, 자책점 기준 ERA와 달라요.",
+    "RA/9 · Runs per nine innings; unlike ERA, this includes all runs.",
+    "RA/9 · 9イニング当たりの失点。自責点を使うERAとは異なります。"
+  ],
+  [
+    "— · 계산에 필요한 기록이 없거나 분모가 0이에요.",
+    "— · 계산에 필요한 기록이 없거나 분모가 0이에요.",
+    "— · Required records are missing or the denominator is zero.",
+    "— · 必要な記録がない、または分母がゼロです。"
+  ],
+  [
+    "G 경기 · GS 선발 · W 승 · L 패 · SV 세이브",
+    "G 경기 · GS 선발 · W 승 · L 패 · SV 세이브",
+    "G Games · GS Starts · W Wins · L Losses · SV Saves",
+    "G 登板 · GS 先発 · W 勝利 · L 敗戦 · SV セーブ"
+  ],
+  [
+    "IP 이닝 · H 피안타 · HR 피홈런 · BB 볼넷",
+    "IP 이닝 · H 피안타 · HR 피홈런 · BB 볼넷",
+    "IP Innings · H Hits · HR Home runs · BB Walks",
+    "IP 投球回 · H 被安打 · HR 被本塁打 · BB 与四球"
+  ],
+  [
+    "SO 탈삼진 · R 실점 · NP 투구 수",
+    "SO 탈삼진 · R 실점 · NP 투구 수",
+    "SO Strikeouts · R Runs · NP Pitches",
+    "SO 奪三振 · R 失点 · NP 投球数"
+  ],
+  [
+    "이 계획으로 진행",
+    "이 계획으로 진행",
+    "Continue plan",
+    "このプランで進む"
+  ],
+  [
+    "내 투수의 기록과 기억",
+    "내 투수의 기록과 기억",
+    "My pitcher’s records and memories",
+    "私の投手の記録と思い出"
+  ],
+  [
+    "SO 탈삼진 · R 실점 · ER 자책점 · NP 투구 수",
+    "SO 탈삼진 · R 실점 · ER 자책점 · NP 투구 수",
+    "SO Strikeouts · R Runs · ER Earned runs · NP Pitches",
+    "SO 奪三振 · R 失点 · ER 自責点 · NP 投球数"
+  ],
+  [
+    "ERA · 9이닝당 자책점",
+    "ERA · 9이닝당 자책점",
+    "ERA · Earned runs per nine innings",
+    "ERA · 9イニング当たりの自責点"
+  ],
+  [
+    "실책 출루",
+    "실책 출루",
+    "Reached on error",
+    "失策で出塁"
+  ],
+  [
+    "야수가 놓쳤다 · 실책 출루",
+    "야수가 놓쳤다 · 실책 출루",
+    "The fielder missed it · Reached on error",
+    "野手が取り損ねた · 失策で出塁"
+  ],
+  [
+    "포수: 잘 던졌어. 다음 타자에 집중하자.",
+    "포수: 잘 던졌어. 다음 타자에 집중하자.",
+    "Catcher: Good pitch. Focus on the next hitter.",
+    "捕手：いい球だった。次の打者に集中しよう。"
+  ],
+  [
+    "끝까지 책임지는 선발",
+    "끝까지 책임지는 선발",
+    "A starter who goes the distance",
+    "最後まで投げ抜く先発"
+  ],
+  [
+    "마지막 아웃의 주인공",
+    "마지막 아웃의 주인공",
+    "The final-out specialist",
+    "最後のアウトを任される投手"
+  ],
+  [
+    "적은 공으로 이기는 투수",
+    "적은 공으로 이기는 투수",
+    "Win with fewer pitches",
+    "少ない球数で勝つ投手"
+  ],
+  [
+    "나만의 투수",
+    "나만의 투수",
+    "My kind of pitcher",
+    "自分だけの投手"
+  ],
+  [
+    "첫 완투에 도전",
+    "첫 완투에 도전",
+    "Chase your first complete game",
+    "初完投に挑戦"
+  ],
+  [
+    "투구 수와 체력을 아껴 마지막 아웃까지",
+    "투구 수와 체력을 아껴 마지막 아웃까지",
+    "Save pitches and energy for the final out",
+    "球数と体力を節約し最後のアウトまで"
+  ],
+  [
+    "첫 완봉승에 도전",
+    "첫 완봉승에 도전",
+    "Chase your first shutout win",
+    "初完封勝利に挑戦"
+  ],
+  [
+    "첫 공부터 마지막 공까지 무실점",
+    "첫 공부터 마지막 공까지 무실점",
+    "Keep them scoreless from first pitch to last",
+    "最初の一球から最後まで無失点"
+  ],
+  [
+    "첫 완투",
+    "첫 완투",
+    "First complete game",
+    "初完投"
+  ],
+  [
+    "첫 완봉승",
+    "첫 완봉승",
+    "First shutout win",
+    "初完封勝利"
+  ],
+  [
+    "완봉승",
+    "완봉승",
+    "Shutout win",
+    "完封勝利"
+  ],
+  [
+    "CG 완투 · SHO 완봉승",
+    "CG 완투 · SHO 완봉승",
+    "CG Complete games · SHO Shutouts",
+    "CG 完投 · SHO 完封"
+  ],
+  [
+    "마운드를 지킨다",
+    "마운드를 지킨다",
+    "Stay on the mound",
+    "マウンドを守る"
+  ],
+  [
+    "불펜에 맡긴다",
+    "불펜에 맡긴다",
+    "Hand over to the bullpen",
+    "ブルペンに託す"
+  ],
+  [
+    "내 투수 자동 진행",
+    "내 투수 자동 진행",
+    "Simulate my remaining pitches",
+    "自分の投球を自動で進める"
+  ],
+  [
+    "다음 이닝도 책임질까요?",
+    "다음 이닝도 책임질까요?",
+    "Take the next inning too?",
+    "次の回も投げますか？"
+  ],
+  [
+    "9이닝 무실점 · 팀의 마지막 공격을 기다립니다",
+    "9이닝 무실점 · 팀의 마지막 공격을 기다립니다",
+    "Nine scoreless innings · Awaiting our final at-bat",
+    "9回無失点 · チームの最後の攻撃を待っています"
+  ],
+  [
+    "완봉 도전 · 마지막 아웃까지",
+    "완봉 도전 · 마지막 아웃까지",
+    "Shutout bid · To the final out",
+    "完封への挑戦 · 最後のアウトまで"
+  ],
+  [
+    "완투 도전 · 끝까지 책임지기",
+    "완투 도전 · 끝까지 책임지기",
+    "Complete-game bid · Finish what you started",
+    "完投への挑戦 · 最後まで投げ抜く"
+  ],
+  [
+    "완봉승 · 9이닝 무실점",
+    "완봉승 · 9이닝 무실점",
+    "Shutout win · Nine scoreless innings",
+    "完封勝利 · 9回無失点"
+  ],
+  [
+    "완투 · 마지막 아웃까지 책임졌습니다",
+    "완투 · 마지막 아웃까지 책임졌습니다",
+    "Complete game · You recorded the final out",
+    "完投 · 最後のアウトまで投げ抜いた"
+  ],
+  [
+    "이번 생에는 다른 야구",
+    "이번 생에는 다른 야구",
+    "A different path this life",
+    "今度の人生は違う野球を"
+  ],
+  [
+    "기록과 유산을 이어받고 학교 선택부터",
+    "기록과 유산을 이어받고 학교 선택부터",
+    "Keep your records and legacy · Start at school selection",
+    "記録と遺産を引き継ぎ、学校選択から"
+  ],
+  [
+    "이 길로 시작",
+    "이 길로 시작",
+    "Start this path",
+    "この道で始める"
+  ],
+  [
+    "이전 방식으로 이어가기",
+    "이전 방식으로 이어가기",
+    "Continue my previous style",
+    "前のスタイルを引き継ぐ"
+  ],
+  [
+    "제구형",
+    "제구형",
+    "Command",
+    "制球型"
+  ],
+  [
+    "마무리의 길",
+    "마무리의 길",
+    "The closer path",
+    "抑えへの道"
+  ],
+  [
+    "스프링캠프에서 마무리 보직에 지원하기",
+    "스프링캠프에서 마무리 보직에 지원하기",
+    "Apply for the closer role during spring camp",
+    "春季キャンプで抑えに立候補する"
+  ],
+  [
+    "체력형 · 포심 중심 · 완투를 목표로",
+    "체력형 · 포심 중심 · 완투를 목표로",
+    "Endurance · Four-seam focus · Aim for complete games",
+    "スタミナ型 · フォーシーム中心 · 完投を目指す"
+  ],
+  [
+    "변화구형 · 슬라이더 중심 · 마무리에 지원",
+    "변화구형 · 슬라이더 중심 · 마무리에 지원",
+    "Breaking-ball style · Slider focus · Apply to close",
+    "変化球型 · スライダー中心 · 抑えに立候補"
+  ],
+  [
+    "제구형 · 체인지업 중심 · 효율적인 승부",
+    "제구형 · 체인지업 중심 · 효율적인 승부",
+    "Command style · Changeup focus · Efficient pitching",
+    "制球型 · チェンジアップ中心 · 効率的な投球"
+  ],
+  [
+    "지난 생의 기록은 앨범에 남아요.",
+    "지난 생의 기록은 앨범에 남아요.",
+    "Your previous life remains in the album.",
+    "前世の記録はアルバムに残ります。"
+  ],
+  [
+    "전생의 시즌 완투 기록에 도전",
+    "전생의 시즌 완투 기록에 도전",
+    "Chase your previous life’s season complete-game record",
+    "前世のシーズン完投記録に挑戦"
+  ],
+  [
+    "제구로 증명 · 100이닝, BB/9 2.00 이하",
+    "제구로 증명 · 100이닝, BB/9 2.00 이하",
+    "Prove your command · 100 IP, BB/9 at most 2.00",
+    "制球で証明 · 100回、BB/9 2.00以下"
+  ],
+  [
+    "%lld회 종료 · %lld구 · %lld실점",
+    "%lld회 종료 · %lld구 · %lld실점",
+    "End of inning %lld · %lld pitches · %lld runs",
+    "%lld回終了 · %lld球 · %lld失点"
+  ],
+  [
+    "완봉 도전까지 아웃 %lld개",
+    "완봉 도전까지 아웃 %lld개",
+    "Shutout bid · %lld outs to go",
+    "完封まであと%lldアウト"
+  ],
+  [
+    "완투까지 아웃 %lld개",
+    "완투까지 아웃 %lld개",
+    "Complete game · %lld outs to go",
+    "完投まであと%lldアウト"
+  ],
+  [
+    "%lld아웃 남음 · %lld구",
+    "%lld아웃 남음 · %lld구",
+    "%lld outs remaining · %lld pitches",
+    "あと%lldアウト · %lld球"
+  ],
+  [
+    "통산 %lld세이브",
+    "통산 %lld세이브",
+    "%lld career saves",
+    "通算%lldセーブ"
+  ],
+  [
+    "한 경기 %lld탈삼진에 도전",
+    "한 경기 %lld탈삼진에 도전",
+    "Chase %lld strikeouts in one game",
+    "1試合%lld奪三振に挑戦"
+  ],
+  [
+    "완투 %lld회 · 완봉승 %lld회",
+    "완투 %lld회 · 완봉승 %lld회",
+    "%lld complete games · %lld shutouts",
+    "完投%lld回 · 完封%lld回"
+  ],
+  [
+    "지난 생의 기록 · 완투 %lld회 · 완봉승 %lld회",
+    "지난 생의 기록 · 완투 %lld회 · 완봉승 %lld회",
+    "Previous life · %lld complete games · %lld shutouts",
+    "前世の記録 · 完投%lld回 · 完封%lld回"
+  ],
+  [
+    "이번 시즌 %lld회 · 전생 최고 %lld회",
+    "이번 시즌 %lld회 · 전생 최고 %lld회",
+    "%lld this season · Previous life’s best %lld",
+    "今季%lld回 · 前世の最高%lld回"
+  ],
+  [
+    "마지막 아웃까지 책임진 첫 완투",
+    "마지막 아웃까지 책임진 첫 완투",
+    "Your first complete game",
+    "最後まで投げ抜いた初完投"
+  ],
+  [
+    "처음으로 끝까지 지켜낸 무실점",
+    "처음으로 끝까지 지켜낸 무실점",
+    "Your first shutout win",
+    "初めて最後まで守った無失点"
+  ],
+  [
+    "마지막 아웃까지 내 손으로 해냈어요.",
+    "마지막 아웃까지 내 손으로 해냈어요.",
+    "I recorded the final out myself.",
+    "最後のアウトまで自分で取りました。"
+  ],
+  [
+    "한 점도 주지 않고 끝까지 던졌어요.",
+    "한 점도 주지 않고 끝까지 던졌어요.",
+    "I went the distance without allowing a run.",
+    "1点も許さず最後まで投げ抜きました。"
+  ],
+  [
+    "최상급 능력",
+    "최상급 능력",
+    "Elite ability",
+    "最上級の能力"
+  ],
+  [
+    "불펜이 남은 아웃을 이어받습니다",
+    "불펜이 남은 아웃을 이어받습니다",
+    "The bullpen will take the remaining outs",
+    "残りのアウトはブルペンに託します"
+  ],
+  [
+    "9회 마지막 아웃 · 등판 종료",
+    "9회 마지막 아웃 · 등판 종료",
+    "The final out of the ninth · Outing complete",
+    "9回最後のアウト · 登板終了"
+  ],
+  [
+    "승리의 발판 · 5이닝 이상",
+    "승리의 발판 · 5이닝 이상",
+    "Build a chance to win · At least five innings",
+    "勝利への足場 · 5イニング以上"
+  ],
+  [
+    "불펜을 아끼는 투구",
+    "불펜을 아끼는 투구",
+    "Give the bullpen a rest",
+    "ブルペンを休ませる投球"
+  ],
+  [
+    "%lld.%lld이닝 · %lld구",
+    "%lld.%lld이닝 · %lld구",
+    "%lld.%lld IP · %lld pitches",
+    "%lld.%lld回 · %lld球"
+  ],
+  [
+    "%lld.%lld이닝 · BB/9 %@",
+    "%lld.%lld이닝 · BB/9 %@",
+    "%lld.%lld IP · BB/9 %@",
+    "%lld.%lld回 · BB/9 %@"
+  ],
+  [
+    "%@ · 시즌 준비",
+    "%@ · 시즌 준비",
+    "%@ · Preparing for the season",
+    "%@ · シーズン準備"
+  ],
+  [
+    "%@ %lld위 · %lld승 %lld패 %lld무",
+    "%@ %lld위 · %lld승 %lld패 %lld무",
+    "%@ #%lld · %lld W %lld L %lld D",
+    "%@ %lld位 · %lld勝%lld敗%lld分"
+  ],
+  [
+    "등판을 쉬는 주 · 회복을 준비하세요",
+    "등판을 쉬는 주 · 회복을 준비하세요",
+    "No outing this week · Focus on recovery",
+    "登板を休む週 · 回復を優先しましょう"
+  ],
+  [
+    "수싸움",
+    "경기 운영",
+    "Game planning",
+    "配球"
+  ],
+  [
+    "운영",
+    "경기 운영",
+    "Game planning",
+    "配球"
+  ],
+  [
+    "경기 계획",
+    "경기 운영",
+    "Game planning",
+    "配球"
+  ],
+  [
+    "배합 연습",
+    "경기 운영",
+    "Game planning",
+    "配球"
+  ],
+  [
+    "가볍게",
+    "가볍게",
+    "Light",
+    "軽め"
   ]
 ]

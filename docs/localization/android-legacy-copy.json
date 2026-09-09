@@ -9798,5 +9798,255 @@
     "저장이 계속 실패하고 있어요. 설정의 저장과 기록에서 기록을 파일로 보관한 뒤, 기기의 남은 저장 공간을 확인해 주세요.",
     "Saving keeps failing. Export your record from Settings, Save and records, then check the free space on your device.",
     "保存に繰り返し失敗しています。設定の「保存と記録」から記録をファイルに保管し、端末の空き容量を確認してください。"
+  ],
+  [
+    "%1$s · %2$s사 · %3$s",
+    "%1$s · %2$s outs · %3$s",
+    "%1$s・%2$sアウト・%3$s"
+  ],
+  [
+    "%1$s경기 · %2$s.%3$s이닝 · %4$s탈삼진 · %5$s실점",
+    "%1$s games · %2$s.%3$s IP · %4$s K · %5$s runs allowed",
+    "%1$s試合・%2$s.%3$s回・%4$s奪三振・%5$s失点"
+  ],
+  [
+    "%1$s시즌 · %2$s주차 · %3$s",
+    "Season %1$s · Week %2$s · %3$s",
+    "%1$sシーズン・%2$s週目・%3$s"
+  ],
+  [
+    "%1$s에 강점",
+    "Strength: %1$s",
+    "得意分野：%1$s"
+  ],
+  [
+    "%1$s장 · %2$s",
+    "Chapter %1$s · %2$s",
+    "第%1$s章・%2$s"
+  ],
+  [
+    "%1$s학년 · 훈련 %2$s회 시점",
+    "Year %1$s · After %2$s training sessions",
+    "%1$s年生・練習%2$s回の時点"
+  ],
+  [
+    "%1$s회 · %2$s사",
+    "Inning %1$s · %2$s outs",
+    "%1$s回・%2$sアウト"
+  ],
+  [
+    "%1$s회 종료 · %2$s구 · %3$s실점",
+    "End of inning %1$s · %2$s pitches · %3$s runs allowed",
+    "%1$s回終了・%2$s球・%3$s失点"
+  ],
+  [
+    "관심도 %1$s",
+    "Interest %1$s",
+    "注目度 %1$s"
+  ],
+  [
+    "구원 투수",
+    "Relief pitcher",
+    "救援投手"
+  ],
+  [
+    "기록 더 보기",
+    "More records",
+    "記録をもっと見る"
+  ],
+  [
+    "긴 이닝을 책임지는 힘 · 현재 피로와는 달라요",
+    "Endurance for long outings · Separate from current fatigue",
+    "長いイニングを投げ抜く力・現在の疲労とは別です"
+  ],
+  [
+    "내 투수의 성장",
+    "My pitcher's growth",
+    "自分の投手の成長"
+  ],
+  [
+    "능력 비교",
+    "Compare abilities",
+    "能力比較"
+  ],
+  [
+    "더 보기",
+    "Show more",
+    "もっと見る"
+  ],
+  [
+    "별도 프로 선수로 시작합니다.",
+    "Start as a separate pro player.",
+    "別のプロ選手として始めます。"
+  ],
+  [
+    "상세 성장 기록",
+    "Detailed growth history",
+    "詳しい成長記録"
+  ],
+  [
+    "성장 순서 · %1$s개 기록",
+    "Growth timeline · %1$s records",
+    "成長の順序・%1$s件の記録"
+  ],
+  [
+    "성장 유형과 구종을 바꾸고 학교 선택부터 시작합니다.",
+    "Change your growth type and pitches, then start with school selection.",
+    "成長タイプと球種を変えて、学校選びから始めます。"
+  ],
+  [
+    "소속",
+    "Team",
+    "所属"
+  ],
+  [
+    "스카우트 평가",
+    "Scout evaluation",
+    "スカウト評価"
+  ],
+  [
+    "시작 능력 → 현재",
+    "Starting abilities → Now",
+    "開始時の能力 → 現在"
+  ],
+  [
+    "신뢰 %1$s",
+    "Trust %1$s",
+    "信頼 %1$s"
+  ],
+  [
+    "아직 저장된 성장 변화가 없어요.",
+    "No growth changes saved yet.",
+    "保存された成長記録はまだありません。"
+  ],
+  [
+    "원하는 코스로 던지는 정확성",
+    "Accuracy in hitting your target",
+    "狙ったコースに投げる正確さ"
+  ],
+  [
+    "이름·얼굴·앨범·계승 유산 유지",
+    "Keep your name, face, album, and inherited legacy",
+    "名前・顔・アルバム・継承した遺産を維持"
+  ],
+  [
+    "이번 생",
+    "This life",
+    "今の人生"
+  ],
+  [
+    "이전 능력 기록이 없어요. 현재부터 기록해요.",
+    "No earlier ability records. Tracking starts now.",
+    "以前の能力記録がありません。今から記録します。"
+  ],
+  [
+    "이전 생 시작 → 선택한 다음 생",
+    "Previous life's start → Selected next life",
+    "前の人生の開始時 → 選んだ次の人生"
+  ],
+  [
+    "이전 생 시작 → 이번 생 시작",
+    "Previous life's start → This life's start",
+    "前の人生の開始時 → 今の人生の開始時"
+  ],
+  [
+    "이전 생은 남아요",
+    "Your previous life stays saved",
+    "前の人生は記録に残ります"
+  ],
+  [
+    "입단 후",
+    "After joining",
+    "入団後"
+  ],
+  [
+    "저장",
+    "Save",
+    "保存"
+  ],
+  [
+    "저장된 전생 최고 → 현재",
+    "Saved past-life best → Now",
+    "保存された前世の最高値 → 現在"
+  ],
+  [
+    "저장하지 못했어요. 다시 시도해 주세요.",
+    "Couldn't save. Please try again.",
+    "保存できませんでした。もう一度お試しください。"
+  ],
+  [
+    "전생 최고",
+    "Past-life best",
+    "前世の最高値"
+  ],
+  [
+    "점은 저장된 능력 변화예요. 기록이 없는 과거는 추정하지 않아요.",
+    "Dots show saved ability changes. Unrecorded history is not estimated.",
+    "点は保存された能力の変化です。記録のない過去は推定しません。"
+  ],
+  [
+    "지난 생보다 강한 출발",
+    "A stronger start than your last life",
+    "前の人生より強いスタート"
+  ],
+  [
+    "직접 투구 %1$s%2$s",
+    "Manual pitching %1$s%2$s",
+    "自分で投球 %1$s%2$s"
+  ],
+  [
+    "최근 성장 · 선은 이전 능력",
+    "Recent growth · Lines show previous abilities",
+    "最近の成長・線は以前の能力"
+  ],
+  [
+    "타이밍을 빼앗고 강한 타구를 줄이는 움직임",
+    "Movement that disrupts timing and limits hard contact",
+    "タイミングを外し、強い打球を減らす変化"
+  ],
+  [
+    "타자 정보",
+    "Batter information",
+    "打者情報"
+  ],
+  [
+    "타자의 배트를 이겨내는 힘",
+    "Pitch power that overcomes the bat",
+    "打者のバットに負けない球の力"
+  ],
+  [
+    "투구 결과 자세히",
+    "Pitch result details",
+    "投球結果の詳細"
+  ],
+  [
+    "팔 부담 %1$s",
+    "Arm strain %1$s",
+    "腕の負担 %1$s"
+  ],
+  [
+    "포심 기준 구속",
+    "Four-seam velocity",
+    "フォーシームの球速"
+  ],
+  [
+    "피로 %1$s → %2$s",
+    "Fatigue %1$s → %2$s",
+    "疲労 %1$s → %2$s"
+  ],
+  [
+    "환생 전후",
+    "Before and after rebirth",
+    "転生の前後"
+  ],
+  [
+    "회",
+    "times",
+    "回"
+  ],
+  [
+    "%1$s회 종료 · %2$s구 · %3$s실점\n%4$s",
+    "End of inning %1$s · %2$s pitches · %3$s runs allowed\n%4$s",
+    "%1$s回終了・%2$s球・%3$s失点\n%4$s"
   ]
 ]

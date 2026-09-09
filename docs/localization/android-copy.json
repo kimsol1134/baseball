@@ -748,5 +748,3535 @@
     "ko": "눌러서 이 구종 훈련 선택",
     "en": "Tap to select this pitch for training",
     "ja": "タップしてこの球種の練習を選ぶ"
+  },
+  "conversation.title": {
+    "ko": "대화",
+    "en": "Conversation",
+    "ja": "会話"
+  },
+  "conversation.history": {
+    "ko": "지난 대화",
+    "en": "Earlier conversation",
+    "ja": "前の会話"
+  },
+  "conversation.scene": {
+    "ko": "이야기 더 보기",
+    "en": "Read the scene",
+    "ja": "詳しい会話"
+  },
+  "conversation.effects": {
+    "ko": "효과 자세히",
+    "en": "All effects",
+    "ja": "効果の詳細"
+  },
+  "conversation.next": {
+    "ko": "다음 일정으로",
+    "en": "Continue",
+    "ja": "次の予定へ"
+  },
+  "conversation.saving": {
+    "ko": "선택을 저장하고 있어요",
+    "en": "Saving your choice",
+    "ja": "選択を保存中"
+  },
+  "conversation.result": {
+    "ko": "선택이 남긴 변화",
+    "en": "Your choice matters",
+    "ja": "選択による変化"
+  },
+  "conversation.role.coach": {
+    "ko": "감독",
+    "en": "Coach",
+    "ja": "監督"
+  },
+  "conversation.role.catcher": {
+    "ko": "포수",
+    "en": "Catcher",
+    "ja": "捕手"
+  },
+  "conversation.role.rival": {
+    "ko": "라이벌",
+    "en": "Rival",
+    "ja": "ライバル"
+  },
+  "conversation.choice.rival.listen": {
+    "ko": "뭘 읽었는데?",
+    "en": "What did you read?",
+    "ja": "何を読んだ？"
+  },
+  "conversation.choice.rival.explain": {
+    "ko": "내 생각은 이랬어",
+    "en": "Here was my thinking",
+    "ja": "こう考えたんだ"
+  },
+  "conversation.choice.rival.challenge": {
+    "ko": "다음에 보여 줄게",
+    "en": "Watch me next time",
+    "ja": "次は見せてやる"
+  },
+  "conversation.choice.arm.listen": {
+    "ko": "오늘은 쉴게요",
+    "en": "I’ll rest today",
+    "ja": "今日は休みます"
+  },
+  "conversation.choice.arm.explain": {
+    "ko": "검진을 받을게요",
+    "en": "I’ll get checked",
+    "ja": "検査を受けます"
+  },
+  "conversation.choice.arm.challenge": {
+    "ko": "그래도 던질게요",
+    "en": "I’ll pitch anyway",
+    "ja": "それでも投げます"
+  },
+  "conversation.reaction.done": {
+    "ko": "선택한 계획으로 이어가요.",
+    "en": "Your choice is part of your story.",
+    "ja": "選んだ方針で進みます。"
+  },
+  "conversation.reaction.injury": {
+    "ko": "팔이 버티지 못했다. 회복이 먼저다.",
+    "en": "Your arm gave out. Recovery comes first.",
+    "ja": "腕が限界を迎えた。まずは回復だ。"
+  },
+  "conversation.reaction.trial": {
+    "ko": "좋아. 다음 등판에서 보여 줘.",
+    "en": "All right. Show me in your next outing.",
+    "ja": "よし。次の登板で見せてくれ。"
+  },
+  "conversation.reaction.rest": {
+    "ko": "그래. 오늘은 몸부터 챙기자.",
+    "en": "All right. Take care of yourself today.",
+    "ja": "そうか。今日は体を休めよう。"
+  },
+  "conversation.reaction.coach": {
+    "ko": "좋아. 네 선택을 지켜보마.",
+    "en": "All right. Let’s see where this takes you.",
+    "ja": "よし。お前の選択を見届けよう。"
+  },
+  "conversation.reaction.catcher": {
+    "ko": "좋아. 같이 맞춰 보자.",
+    "en": "All right. Let’s work on it together.",
+    "ja": "よし。一緒に合わせよう。"
+  },
+  "conversation.reaction.rival": {
+    "ko": "그래. 다음에 마운드에서 보자.",
+    "en": "All right. See you on the mound.",
+    "ja": "そうか。次はマウンドで会おう。"
+  },
+  "conversation.reaction.coach.disagree": {
+    "ko": "생각은 알겠다. 책임도 네 몫이다.",
+    "en": "I hear you. Own that decision.",
+    "ja": "考えは分かった。責任も自分で持て。"
+  },
+  "conversation.reaction.catcher.disagree": {
+    "ko": "알겠어. 그래도 내 생각은 달라.",
+    "en": "I hear you. I still see it differently.",
+    "ja": "分かった。でも俺の考えは違う。"
+  },
+  "conversation.reaction.rival.disagree": {
+    "ko": "그래? 그럼 경기에서 보자.",
+    "en": "Really? We’ll settle it on the field.",
+    "ja": "そうか？なら試合で決めよう。"
+  },
+  "conversation.injury": {
+    "ko": "부상 · 재활 필요",
+    "en": "Injury · rehab needed",
+    "ja": "負傷・リハビリが必要"
+  },
+  "conversation.beat.coach-role.guarded": {
+    "ko": "기회는 준비한 만큼 온다. 오늘은 뭘 할 거냐?",
+    "en": "Earn your chance. What will you work on?",
+    "ja": "準備が機会を作る。今日はどうする？"
+  },
+  "conversation.beat.coach-role.open": {
+    "ko": "다음 기회를 준비하자. 오늘은 뭘 할까?",
+    "en": "Let’s prepare for your next chance. What’s the plan?",
+    "ja": "次の機会に備えよう。今日はどうする？"
+  },
+  "conversation.beat.coach-role.close": {
+    "ko": "네 판단을 믿는다. 오늘은 뭘 준비할까?",
+    "en": "I trust your judgment. What’s the plan today?",
+    "ja": "お前の判断を信じる。今日は何を準備する？"
+  },
+  "conversation.beat.coach-last.guarded": {
+    "ko": "마지막 준비다. 이제는 네가 골라라.",
+    "en": "One last preparation. This choice is yours.",
+    "ja": "最後の準備だ。今度は自分で選べ。"
+  },
+  "conversation.beat.coach-last.open": {
+    "ko": "마지막 준비는 네가 정해라.",
+    "en": "You decide how to prepare one last time.",
+    "ja": "最後の準備は自分で決めろ。"
+  },
+  "conversation.beat.coach-last.close": {
+    "ko": "함께한 시간을 믿어라. 마지막 준비는 네 몫이다.",
+    "en": "Trust the work we’ve done. This last choice is yours.",
+    "ja": "積み重ねを信じろ。最後の準備は任せる。"
+  },
+  "conversation.beat.catcher-sign.guarded": {
+    "ko": "사인부터 다시 맞추자. 뭐부터 할래?",
+    "en": "We need to get in sync. Where do we start?",
+    "ja": "サインから合わせ直そう。何からやる？"
+  },
+  "conversation.beat.catcher-sign.open": {
+    "ko": "사인, 같이 맞춰 보자. 뭐부터 할까?",
+    "en": "Let’s get in sync. Where do we start?",
+    "ja": "サインを合わせよう。何からやる？"
+  },
+  "conversation.beat.catcher-sign.close": {
+    "ko": "네 공은 내가 잘 알지. 오늘은 뭘 맞출까?",
+    "en": "I know your pitches. What shall we work on?",
+    "ja": "お前の球は分かってる。今日は何を合わせる？"
+  },
+  "conversation.beat.catcher-dinner.guarded": {
+    "ko": "받기 어려운 공이 있어. 같이 좀 맞추자.",
+    "en": "Some pitches are hard to catch. Let’s work on that.",
+    "ja": "捕りにくい球がある。一緒に合わせよう。"
+  },
+  "conversation.beat.catcher-dinner.open": {
+    "ko": "변화구 받을 때가 제일 어려워. 같이 맞춰 볼까?",
+    "en": "Your breaking ball is the tricky one. Work on it together?",
+    "ja": "変化球を捕るのが難しい。一緒に合わせるか？"
+  },
+  "conversation.beat.catcher-dinner.close": {
+    "ko": "네 공이라면 받아야지. 오늘은 뭘 맞출까?",
+    "en": "I’m here to catch your pitches. What’s the plan?",
+    "ja": "お前の球なら捕らなきゃな。今日はどうする？"
+  },
+  "conversation.beat.catcher-new.guarded": {
+    "ko": "아직 호흡이 안 맞네. 뭐부터 맞출까?",
+    "en": "We’re not in sync yet. Where do we start?",
+    "ja": "まだ息が合わないな。何から合わせる？"
+  },
+  "conversation.beat.catcher-new.open": {
+    "ko": "서로 편한 방식을 찾자. 뭐부터 할까?",
+    "en": "Let’s find what works for us. Where do we start?",
+    "ja": "二人に合うやり方を探そう。何からやる？"
+  },
+  "conversation.beat.catcher-new.close": {
+    "ko": "네가 편한 쪽으로 맞출게. 오늘은 뭘 할까?",
+    "en": "I’ll work with you. What’s the plan today?",
+    "ja": "お前に合わせるよ。今日はどうする？"
+  },
+  "conversation.beat.rival-video.guarded": {
+    "ko": "네 높은 포심, 이제 안 무서워.",
+    "en": "Your high fastball doesn’t scare me anymore.",
+    "ja": "お前の高めの直球、もう怖くない。"
+  },
+  "conversation.beat.rival-video.open": {
+    "ko": "높은 포심 타이밍, 이제 맞췄어.",
+    "en": "I’ve got the timing on your high fastball.",
+    "ja": "高めの直球、タイミングが合ってきた。"
+  },
+  "conversation.beat.rival-video.close": {
+    "ko": "그 포심 하나 맞추는 데 오래 걸렸다.",
+    "en": "It took me a while to catch up to that fastball.",
+    "ja": "あの直球に合わせるの、時間がかかったよ。"
+  },
+  "conversation.beat.rival-final.guarded": {
+    "ko": "어차피 거기로 던질 거잖아.",
+    "en": "You’re going to throw it there again.",
+    "ja": "どうせまたそこに投げるんだろ。"
+  },
+  "conversation.beat.rival-final.open": {
+    "ko": "또 그 코스로 던져 봐.",
+    "en": "Try that spot again.",
+    "ja": "またあのコースに投げてみろ。"
+  },
+  "conversation.beat.rival-final.close": {
+    "ko": "마지막이네. 네 제일 좋은 공으로 와.",
+    "en": "One last time. Give me your best pitch.",
+    "ja": "最後だな。一番いい球で来い。"
+  },
+  "conversation.beat.rival-message.guarded": {
+    "ko": "또 같은 초구겠지?",
+    "en": "Same first pitch again?",
+    "ja": "また同じ初球だろ？"
+  },
+  "conversation.beat.rival-message.open": {
+    "ko": "다음에도 같은 초구를 던질 거야?",
+    "en": "Same first pitch next time?",
+    "ja": "次も同じ初球で来るか？"
+  },
+  "conversation.beat.rival-message.close": {
+    "ko": "다음 초구? 직접 보고 맞혀 볼게.",
+    "en": "Your next first pitch? I’ll read it when I see it.",
+    "ja": "次の初球？直接見て当てるよ。"
+  },
+  "conversation.beat.arm-care.guarded": {
+    "ko": "팔이 무거워 보인다. 오늘은 어떻게 할래?",
+    "en": "Your arm looks heavy. What will you do today?",
+    "ja": "腕が重そうだ。今日はどうする？"
+  },
+  "conversation.beat.arm-care.open": {
+    "ko": "팔이 무거워 보인다. 오늘은 어떻게 할래?",
+    "en": "Your arm looks heavy. What will you do today?",
+    "ja": "腕が重そうだ。今日はどうする？"
+  },
+  "conversation.beat.arm-care.close": {
+    "ko": "팔이 무거워 보인다. 오늘은 어떻게 할래?",
+    "en": "Your arm looks heavy. What will you do today?",
+    "ja": "腕が重そうだ。今日はどうする？"
+  },
+  "conversation.beat.coach-trial.guarded": {
+    "ko": "다음은 선발 테스트다. 준비는 네 몫이다.",
+    "en": "Your starter trial is next. Come prepared.",
+    "ja": "次は先発テストだ。準備してこい。"
+  },
+  "conversation.beat.coach-trial.open": {
+    "ko": "다음 등판은 선발 테스트야. 뭘 준비할까?",
+    "en": "Your next outing is a starter trial. What’s the plan?",
+    "ja": "次の登板は先発テストだ。何を準備する？"
+  },
+  "conversation.beat.coach-trial.close": {
+    "ko": "다음 선발 테스트, 네 공을 믿어라.",
+    "en": "Trust your pitches in the coming starter trial.",
+    "ja": "次の先発テスト、自分の球を信じろ。"
+  },
+  "conversation.beat.coach.guarded": {
+    "ko": "오늘은 뭘 준비할 거냐?",
+    "en": "What will you work on today?",
+    "ja": "今日は何を準備する？"
+  },
+  "conversation.beat.coach.open": {
+    "ko": "오늘은 뭘 준비할까?",
+    "en": "What’s the plan today?",
+    "ja": "今日はどう準備しようか？"
+  },
+  "conversation.beat.coach.close": {
+    "ko": "오늘 준비는 네게 맡기마.",
+    "en": "Today’s plan is yours to make.",
+    "ja": "今日の準備はお前に任せる。"
+  },
+  "conversation.beat.catcher.guarded": {
+    "ko": "같이 좀 맞추자. 뭐부터 할래?",
+    "en": "Let’s get in sync. What first?",
+    "ja": "一緒に合わせよう。何からやる？"
+  },
+  "conversation.beat.catcher.open": {
+    "ko": "배합, 코스, 결정구. 뭐부터 맞출까?",
+    "en": "Sequence, location, or put-away pitch. What first?",
+    "ja": "配球、コース、決め球。何から合わせる？"
+  },
+  "conversation.beat.catcher.close": {
+    "ko": "우리 호흡을 믿자. 오늘은 뭘 다듬을까?",
+    "en": "Trust our teamwork. What shall we sharpen?",
+    "ja": "二人の息を信じよう。今日は何を磨く？"
+  },
+  "conversation.beat.catcher-awakening.guarded": {
+    "ko": "방금 공, 달라졌네. 같이 다시 맞춰 보자.",
+    "en": "That pitch was different. Let’s work on it together.",
+    "ja": "今の球、変わったな。一緒に合わせ直そう。"
+  },
+  "conversation.beat.catcher-awakening.open": {
+    "ko": "공이 달라졌어. 나도 받는 자리를 맞춰 볼게.",
+    "en": "Your pitch has changed. I’ll adjust with you.",
+    "ja": "球が変わったな。俺も捕る位置を合わせるよ。"
+  },
+  "conversation.beat.catcher-awakening.close": {
+    "ko": "그 공, 이제 네 거야. 같이 더 다듬자.",
+    "en": "That pitch is yours now. Let’s sharpen it together.",
+    "ja": "その球、もうお前のものだ。一緒に磨こう。"
+  },
+  "conversation.pro.rotation_push": {
+    "ko": "선발 기회다. 지금 도전하겠나?",
+    "en": "A rotation spot is within reach. Ready to push?",
+    "ja": "先発の機会だ。今、挑むか？"
+  },
+  "conversation.pro.new_pitch_trial": {
+    "ko": "새 구종, 실전에서 시험해 볼까?",
+    "en": "Shall we test that new pitch in a game?",
+    "ja": "新球種、実戦で試してみるか？"
+  },
+  "conversation.pro.farm_reset": {
+    "ko": "다시 준비할 시간이 필요하겠나?",
+    "en": "Do you need time to reset?",
+    "ja": "立て直す時間が必要か？"
+  },
+  "conversation.pro.extra_bullpen": {
+    "ko": "불펜을 더 할까, 몸을 아낄까?",
+    "en": "More bullpen work, or save your arm?",
+    "ja": "ブルペンを増やすか、体を休めるか？"
+  },
+  "conversation.pro.catcher_game_plan": {
+    "ko": "다음 등판, 어떻게 풀어 갈까?",
+    "en": "What’s our plan for the next outing?",
+    "ja": "次の登板、どう組み立てる？"
+  },
+  "conversation.pro.role_meeting": {
+    "ko": "어떤 보직을 맡고 싶나?",
+    "en": "What role do you want?",
+    "ja": "どの役割を担いたい？"
+  },
+  "conversation.pro.record_chase": {
+    "ko": "기록에 도전할까, 몸을 관리할까?",
+    "en": "Chase the record, or manage your workload?",
+    "ja": "記録に挑むか、体をいたわるか？"
+  },
+  "conversation.pro.rival_analysis": {
+    "ko": "라이벌과의 승부, 같이 준비하자.",
+    "en": "Let’s prepare for that rival together.",
+    "ja": "ライバルとの勝負、一緒に準備しよう。"
+  },
+  "conversation.pro.season_finale": {
+    "ko": "시즌의 끝이다. 어디에 힘을 쏟겠나?",
+    "en": "The season is ending. Where will you focus?",
+    "ja": "シーズン終盤だ。何に力を注ぐ？"
+  },
+  "conversation.support.reward": {
+    "ko": "%1$s 성장량 ↑ · 1회",
+    "en": "%1$s growth boost · once",
+    "ja": "%1$sの効果アップ・1回"
+  },
+  "conversation.support.explanation": {
+    "ko": "%1$s 1회에 적용돼요. 더 잘 성장하도록 도와주며, 다른 훈련을 먼저 해도 남아 있어요. 능력 한계에 도달했다면 수치가 오르지 않을 수 있어요.",
+    "en": "Helps you grow more in one %1$s session. It stays available if you do other training first. Ratings may not rise if you have reached your ability limit.",
+    "ja": "%1$sの成長効果を1回高めます。先に別の練習をしても残ります。能力の上限に達している場合、数値が上がらないことがあります。"
+  },
+  "conversation.training.sequencing": {
+    "ko": "배합 연습",
+    "en": "Pitch sequencing",
+    "ja": "配球練習"
+  },
+  "conversation.training.sequencing-detail": {
+    "ko": "어떤 공을 어떤 순서로 던질지 연습해요. 제구도 함께 늘어요.",
+    "en": "Practice which pitches to throw and in what order. Your command improves too.",
+    "ja": "どの球をどの順番で投げるか練習します。制球も一緒に磨けます。"
+  },
+  "training.plan.repeat-count": {
+    "ko": "같은 훈련 %lld회",
+    "en": "Repeat this training %lld times",
+    "ja": "同じ練習を%lld回"
+  },
+  "android.onboarding.skip-school": {
+    "ko": "건너뛰고 학교 선택",
+    "en": "Skip to school selection",
+    "ja": "スキップして学校を選ぶ"
+  },
+  "mobile.polish.next-game": {
+    "ko": "다음 등판까지 전체 일정",
+    "en": "Full schedule until your next outing",
+    "ja": "次の登板までの全日程"
+  },
+  "training.compact.condition": {
+    "ko": "피로 %lld · 팔 부담 %lld · 이번 일정 남은 훈련 %lld회",
+    "en": "Fatigue %lld · Arm strain %lld · Sessions left in this schedule: %lld",
+    "ja": "疲労 %lld · 腕の負担 %lld · 今の日程で残り%lld回"
+  },
+  "android.onboarding.first-pitch": {
+    "ko": "첫 공",
+    "en": "Your first pitch",
+    "ja": "最初の一球"
+  },
+  "android.onboarding.after-practice": {
+    "ko": "첫 공을 던졌어요. 한 구 더 던지거나 학교를 골라 보세요.",
+    "en": "Your first pitch is in. Try another or choose your school.",
+    "ja": "最初の一球を投げました。もう一球投げるか、学校を選びましょう。"
+  },
+  "android.onboarding.catcher-invite": {
+    "ko": "“어떤 공을 던지는지 한번 볼까?”",
+    "en": "“Let’s see what you’ve got.”",
+    "ja": "「どんな球を投げるか、見せてくれるか？」"
+  },
+  "android.onboarding.catcher-good": {
+    "ko": "“좋아. 그 감각을 기억해.”",
+    "en": "“Nice. Remember that feeling.”",
+    "ja": "「いいぞ。その感覚を覚えておこう。」"
+  },
+  "android.onboarding.catcher-retry": {
+    "ko": "“괜찮아. 손에서 놓는 순간만 잡아 봐.”",
+    "en": "“You’re fine. Focus on when you let go.”",
+    "ja": "「大丈夫。手を離すタイミングをつかもう。」"
+  },
+  "android.onboarding.again": {
+    "ko": "한 구 더",
+    "en": "One more pitch",
+    "ja": "もう一球"
+  },
+  "android.onboarding.choose-school": {
+    "ko": "학교 선택하기",
+    "en": "Choose a school",
+    "ja": "学校を選ぶ"
+  },
+  "android.onboarding.slider-hint": {
+    "ko": "누르고 있다가, 초록 구간에서 놓으세요.",
+    "en": "Hold, then release in the green zone.",
+    "ja": "長押しして、緑のゾーンで離そう。"
+  },
+  "android.onboarding.school-invitation": {
+    "ko": "지난 대회에서 널 본 네 학교가 연락해 왔다.",
+    "en": "Four schools saw you at the last tournament and reached out.",
+    "ja": "前の大会で君を見た4校から連絡が来た。"
+  },
+  "training.intensity.guaranteed-fixed": {
+    "ko": "성장 예상 · %1$@ +%2$lld",
+    "en": "Expected growth · %1$@ +%2$lld",
+    "ja": "成長予想 · %1$@ +%2$lld"
+  },
+  "training.intensity.guaranteed-range": {
+    "ko": "성장 예상 · %1$@ +%2$lld~+%3$lld",
+    "en": "Expected growth · %1$@ +%2$lld–+%3$lld",
+    "ja": "成長予想 · %1$@ +%2$lld〜+%3$lld"
+  },
+  "training.intensity.jackpot-fixed": {
+    "ko": "대성공 확률 %1$lld%% · 성공 시 총 %2$@ +%3$lld",
+    "en": "Great success chance %1$lld%% · Total on success: %2$@ +%3$lld",
+    "ja": "大成功率 %1$lld%% · 成功時の合計 %2$@ +%3$lld"
+  },
+  "training.intensity.jackpot-range": {
+    "ko": "대성공 확률 %1$lld%% · 성공 시 총 %2$@ +%3$lld~+%4$lld",
+    "en": "Great success chance %1$lld%% · Total on success: %2$@ +%3$lld–+%4$lld",
+    "ja": "大成功率 %1$lld%% · 成功時の合計 %2$@ +%3$lld〜+%4$lld"
+  },
+  "training.compact.recommended": {
+    "ko": "추천",
+    "en": "Recommended",
+    "ja": "おすすめ"
+  },
+  "training.compact.intensity": {
+    "ko": "어느 정도로 할까요?",
+    "en": "How hard will you train?",
+    "ja": "どのくらい取り組む？"
+  },
+  "training.compact.chance": {
+    "ko": "대성공 %1$lld%%",
+    "en": "Great result %1$lld%%",
+    "ja": "大成功 %1$lld%%"
+  },
+  "training.compact.fatigue": {
+    "ko": "피로 %1$lld",
+    "en": "Fatigue %1$lld",
+    "ja": "疲労 %1$lld"
+  },
+  "training.compact.learning": {
+    "ko": "구종 학습",
+    "en": "Pitch learning",
+    "ja": "球種の習得"
+  },
+  "training.compact.result": {
+    "ko": "결과 보기",
+    "en": "View result",
+    "ja": "結果を見る"
+  },
+  "training.compact.repeat": {
+    "ko": "3회 연속",
+    "en": "Repeat ×3",
+    "ja": "3回連続"
+  },
+  "training.compact.repeat-help": {
+    "ko": "3회 연속은 같은 선택으로 훈련합니다. 일정이 바뀌거나 몸이 지치면 멈춰요.",
+    "en": "Repeat ×3 keeps your choices. It stops if the schedule changes or your body needs rest.",
+    "ja": "3回連続では同じ選択で練習します。予定が変わったり、体が疲れたりすると止まります。"
+  },
+  "chapter.compact.title": {
+    "ko": "다음 등판 준비",
+    "en": "Prepare for your next outing",
+    "ja": "次の登板へ"
+  },
+  "chapter.compact.heading": {
+    "ko": "이번에 쌓은 것",
+    "en": "What you built this time",
+    "ja": "今回積み重ねたこと"
+  },
+  "chapter.compact.training-count": {
+    "ko": "훈련 %1$lld회 완료",
+    "en": "%1$lld training sessions completed",
+    "ja": "トレーニング%1$lld回完了"
+  },
+  "chapter.compact.training-row": {
+    "ko": "%1$@ · %2$lld회",
+    "en": "%1$@ · %2$lld sessions",
+    "ja": "%1$@ · %2$lld回"
+  },
+  "chapter.compact.current-ability": {
+    "ko": "현재 %1$@ %2$lld",
+    "en": "Current %1$@: %2$lld",
+    "ja": "現在の%1$@ %2$lld"
+  },
+  "chapter.compact.games": {
+    "ko": "마운드에서 남긴 기록",
+    "en": "Your time on the mound",
+    "ja": "マウンドで残した記録"
+  },
+  "chapter.compact.game-line": {
+    "ko": "%1$lld경기 · %2$@이닝 · 삼진 %3$lld · 실점 %4$lld",
+    "en": "%1$lld games · %2$@ IP · %3$lld K · %4$lld runs",
+    "ja": "%1$lld試合 · %2$@回 · %3$lld奪三振 · %4$lld失点"
+  },
+  "chapter.compact.perfect": {
+    "ko": "퍼펙트 릴리스 %1$lld회",
+    "en": "%1$lld perfect releases",
+    "ja": "パーフェクトリリース%1$lld回"
+  },
+  "chapter.compact.next": {
+    "ko": "다음은 훈련이에요",
+    "en": "Next up: training",
+    "ja": "次はトレーニング"
+  },
+  "chapter.compact.next-detail": {
+    "ko": "훈련 %1$lld회로 다음 등판을 준비해요.",
+    "en": "Get ready for your next outing with %1$lld training sessions.",
+    "ja": "%1$lld回のトレーニングで次の登板に備えましょう。"
+  },
+  "chapter.compact.optional": {
+    "ko": "마운드에 한 번 더 서고 싶다면",
+    "en": "Want another turn on the mound?",
+    "ja": "もう一度マウンドに立ちたいなら"
+  },
+  "chapter.compact.records": {
+    "ko": "전체 기록 보기",
+    "en": "View all records",
+    "ja": "全記録を見る"
+  },
+  "chapter.compact.advance": {
+    "ko": "다음 훈련 준비",
+    "en": "Prepare for training",
+    "ja": "次の練習へ"
+  },
+  "chapter.compact.advance-detail": {
+    "ko": "다음 훈련으로 이어갑니다.",
+    "en": "Continue to your next training session.",
+    "ja": "次の練習に進みます。"
+  },
+  "chapter.compact.claim": {
+    "ko": "한 경기 더 던지기",
+    "en": "Pitch another game",
+    "ja": "もう1試合投げる"
+  },
+  "chapter.compact.claim-detail": {
+    "ko": "원하면 정규 경기에 직접 등판할 수 있어요.",
+    "en": "You can choose to pitch a regular game yourself.",
+    "ja": "希望すれば通常の試合に自分で登板できます。"
+  },
+  "chapter.compact.completed-training": {
+    "ko": "완료한 훈련",
+    "en": "Completed training",
+    "ja": "完了したトレーニング"
+  },
+  "training.seamless.title": {
+    "ko": "훈련",
+    "en": "Training",
+    "ja": "トレーニング"
+  },
+  "training.seamless.extra-game": {
+    "ko": "한 경기 더",
+    "en": "One more game",
+    "ja": "もう1試合"
+  },
+  "training.seamless.records": {
+    "ko": "기록 보기",
+    "en": "Records",
+    "ja": "記録を見る"
+  },
+  "career.moment.pitch": {
+    "ko": "새 구종 완성!",
+    "en": "New pitch mastered!",
+    "ja": "新しい球種を習得！"
+  },
+  "career.moment.awakening": {
+    "ko": "새로운 감각!",
+    "en": "A new instinct!",
+    "ja": "新しい感覚！"
+  },
+  "career.moment.win": {
+    "ko": "첫 승!",
+    "en": "Your first win!",
+    "ja": "初勝利！"
+  },
+  "career.moment.bloom": {
+    "ko": "재능의 벽을 넘었어요!",
+    "en": "A talent breakthrough!",
+    "ja": "才能の壁を突破！"
+  },
+  "career.moment.continue": {
+    "ko": "계속하기",
+    "en": "Continue",
+    "ja": "続ける"
+  },
+  "training.seamless.load-error": {
+    "ko": "다음 훈련을 준비하지 못했어요. 다시 시도해 주세요.",
+    "en": "Could not prepare the next training session. Please try again.",
+    "ja": "次の練習を準備できませんでした。もう一度お試しください。"
+  },
+  "training.seamless.retry": {
+    "ko": "다시 시도",
+    "en": "Try again",
+    "ja": "再試行"
+  },
+  "pitch.growth.wider-window": {
+    "ko": "초록 구간이 넓어졌어요",
+    "en": "Your green zone is wider",
+    "ja": "緑のゾーンが広がった"
+  },
+  "training.plan.open": {
+    "ko": "훈련 계획",
+    "en": "Training plan",
+    "ja": "練習プラン"
+  },
+  "training.plan.title": {
+    "ko": "계획을 고르세요",
+    "en": "Choose a plan",
+    "ja": "プランを選ぶ"
+  },
+  "training.plan.balanced": {
+    "ko": "균형 성장",
+    "en": "Balanced growth",
+    "ja": "バランスよく成長"
+  },
+  "training.plan.control": {
+    "ko": "제구 집중",
+    "en": "Command focus",
+    "ja": "制球重視"
+  },
+  "training.plan.condition": {
+    "ko": "몸 관리",
+    "en": "Conditioning",
+    "ja": "コンディション調整"
+  },
+  "training.plan.limit": {
+    "ko": "이번 일정에서 최대 %1$lld회 · 경기나 중요한 선택이 오면 멈춰요.",
+    "en": "Up to %1$lld sessions now. Stops for games or important choices.",
+    "ja": "今回は最大%1$lld回。試合や大事な選択の前で止まります。"
+  },
+  "training.plan.intensities": {
+    "ko": "능력 훈련은 보통 · 회복은 가볍게. 몸이 지치면 일찍 멈춰요.",
+    "en": "Standard training, light recovery. Stops early if your body needs rest.",
+    "ja": "能力練習は通常、回復は軽め。疲れがたまると早めに止まります。"
+  },
+  "training.plan.execute": {
+    "ko": "계획 실행",
+    "en": "Run plan",
+    "ja": "プラン実行"
+  },
+  "training.plan.repeat-current": {
+    "ko": "같은 훈련 3회",
+    "en": "Repeat training ×3",
+    "ja": "同じ練習を3回"
+  },
+  "awakening.tree.title": {
+    "ko": "나의 투구 스타일",
+    "en": "My pitching style",
+    "ja": "自分の投球スタイル"
+  },
+  "awakening.tree.slots": {
+    "ko": "내 각성",
+    "en": "My skills",
+    "ja": "習得済み"
+  },
+  "awakening.tree.branch.power": {
+    "ko": "구위·체력",
+    "en": "Power / stamina",
+    "ja": "球威・体力"
+  },
+  "awakening.tree.branch.command": {
+    "ko": "제구",
+    "en": "Control",
+    "ja": "制球"
+  },
+  "awakening.tree.branch.breaking": {
+    "ko": "변화구",
+    "en": "Breaking",
+    "ja": "変化球"
+  },
+  "awakening.tree.branch.game": {
+    "ko": "경기 운영",
+    "en": "Game sense",
+    "ja": "試合運び"
+  },
+  "awakening.tree.legend": {
+    "ko": "✓ 익힘 · 테두리 강조: 선택 가능 · 자물쇠: 선행 각성 필요",
+    "en": "✓ Learned · Highlighted border: available · Lock: prerequisite needed",
+    "ja": "✓ 習得済み・枠の強調：選択可能・鍵：先に必要な覚醒あり"
+  },
+  "awakening.tree.state.owned": {
+    "ko": "익힌 각성",
+    "en": "Learned",
+    "ja": "習得済み"
+  },
+  "awakening.tree.state.available": {
+    "ko": "선택 가능",
+    "en": "Available",
+    "ja": "選択可能"
+  },
+  "awakening.tree.state.leap": {
+    "ko": "선행 각성 건너뛰기 가능",
+    "en": "Prerequisite skip available",
+    "ja": "前提スキルを飛ばせる"
+  },
+  "awakening.tree.state.locked": {
+    "ko": "잠긴 각성",
+    "en": "Locked",
+    "ja": "未解放"
+  },
+  "awakening.tree.more-fatigue": {
+    "ko": "투구 피로 소모 ↑",
+    "en": "Pitch fatigue cost ↑",
+    "ja": "投球疲労の消費 ↑"
+  },
+  "awakening.tree.less-fatigue": {
+    "ko": "투구 피로 소모 ↓",
+    "en": "Pitch fatigue cost ↓",
+    "ja": "投球疲労の消費 ↓"
+  },
+  "awakening.tree.leap": {
+    "ko": "↗ 선행 각성 없이 바로 익힐 수 있어요",
+    "en": "↗ You can skip the prerequisite",
+    "ja": "↗ 前提スキルなしで習得できます"
+  },
+  "awakening.tree.requires": {
+    "ko": "먼저 %1$@",
+    "en": "Requires %1$@",
+    "ja": "先に%1$@を習得"
+  },
+  "awakening.tree.details": {
+    "ko": "자세한 효과",
+    "en": "Full effects",
+    "ja": "詳しい効果"
+  },
+  "awakening.tree.learned": {
+    "ko": "이미 익힌 각성",
+    "en": "Already learned",
+    "ja": "習得済み"
+  },
+  "awakening.tree.complete": {
+    "ko": "이번 생의 선택 완료",
+    "en": "All choices made this life",
+    "ja": "今世の選択は完了"
+  },
+  "awakening.tree.choose": {
+    "ko": "이 각성 선택",
+    "en": "Learn this skill",
+    "ja": "このスキルを習得"
+  },
+  "awakening.tree.unavailable": {
+    "ko": "지금은 익힐 수 없어요",
+    "en": "Not available yet",
+    "ja": "まだ習得できません"
+  },
+  "awakening.tree.short.explosive_fastball": {
+    "ko": "포심 구속 ↑",
+    "en": "Fastball speed ↑",
+    "ja": "直球の球速 ↑"
+  },
+  "awakening.tree.short.rising_four_seam": {
+    "ko": "포심 움직임 ↑",
+    "en": "Fastball movement ↑",
+    "ja": "直球の変化 ↑"
+  },
+  "awakening.tree.short.iron_arm": {
+    "ko": "피로 소모 ↓",
+    "en": "Less fatigue",
+    "ja": "疲労の消費 ↓"
+  },
+  "awakening.tree.short.late_inning_reserve": {
+    "ko": "후반 버티기",
+    "en": "Late endurance",
+    "ja": "終盤の持久力"
+  },
+  "awakening.tree.short.pinpoint_edge": {
+    "ko": "코너 공략",
+    "en": "Hit the corners",
+    "ja": "コーナー攻略"
+  },
+  "awakening.tree.short.repeatable_release": {
+    "ko": "릴리스 안정",
+    "en": "Steady release",
+    "ja": "安定リリース"
+  },
+  "awakening.tree.short.first_pitch_strike": {
+    "ko": "스트라이크 ↑",
+    "en": "More strikes",
+    "ja": "ストライク ↑"
+  },
+  "awakening.tree.short.calm_under_pressure": {
+    "ko": "위기 대응",
+    "en": "Stay composed",
+    "ja": "ピンチに冷静"
+  },
+  "awakening.tree.short.scout_composure": {
+    "ko": "구위·제구 ↑",
+    "en": "Power + control",
+    "ja": "球威・制球 ↑"
+  },
+  "awakening.tree.short.disappearing_breaker": {
+    "ko": "변화구 강화",
+    "en": "Breaking boost",
+    "ja": "変化球強化"
+  },
+  "awakening.tree.short.sweeping_slider": {
+    "ko": "슬라이더 강화",
+    "en": "Slider boost",
+    "ja": "スライダー強化"
+  },
+  "awakening.tree.short.curveball_clock": {
+    "ko": "커브 강화",
+    "en": "Curveball boost",
+    "ja": "カーブ強化"
+  },
+  "awakening.tree.short.frozen_changeup": {
+    "ko": "체인지업 강화",
+    "en": "Changeup boost",
+    "ja": "チェンジアップ強化"
+  },
+  "awakening.tree.short.sinker_tunnel": {
+    "ko": "두 구종 강화",
+    "en": "Two-pitch boost",
+    "ja": "2球種を強化"
+  },
+  "awakening.tree.short.battery_sync": {
+    "ko": "배터리 호흡",
+    "en": "Battery sync",
+    "ja": "バッテリー連携"
+  },
+  "awakening.tree.short.pickoff_rhythm": {
+    "ko": "투구 리듬",
+    "en": "Steady rhythm",
+    "ja": "投球リズム"
+  },
+  "awakening.tree.short.two_strike_plan": {
+    "ko": "변화구 승부",
+    "en": "Finish with break",
+    "ja": "変化球で勝負"
+  },
+  "awakening.tree.short.traffic_controller": {
+    "ko": "위기 운영",
+    "en": "Manage pressure",
+    "ja": "ピンチの運び"
+  },
+  "awakening.tree.empty-slot": {
+    "ko": "빈 각성 자리",
+    "en": "Empty skill slot",
+    "ja": "空きスロット"
+  },
+  "awakening.tree.whiff-up": {
+    "ko": "헛스윙 유도 ↑",
+    "en": "Whiff potential ↑",
+    "ja": "空振り誘発 ↑"
+  },
+  "awakening.tree.control-up": {
+    "ko": "구종 제어 ↑",
+    "en": "Pitch control ↑",
+    "ja": "球種の制御 ↑"
+  },
+  "awakening.tree.movement-up": {
+    "ko": "구종 변화량 ↑",
+    "en": "Pitch movement ↑",
+    "ja": "球種の変化量 ↑"
+  },
+  "awakening.tree.weak-contact-up": {
+    "ko": "빗맞은 타구 유도 ↑",
+    "en": "Weak contact ↑",
+    "ja": "打ち損じ誘発 ↑"
+  },
+  "awakening.tree.no-gain": {
+    "ko": "현재 능력에서는 추가 상승 없음",
+    "en": "No further gains at current ratings",
+    "ja": "現在の能力では追加上昇なし"
+  },
+  "awakening.tree.power-control-cost": {
+    "ko": "강한 투구로 제구 %1$lld",
+    "en": "Power trade-off: command %1$lld",
+    "ja": "強い投球の代償：制球 %1$lld"
+  },
+  "awakening.tree.break-control-cost": {
+    "ko": "큰 변화폭으로 제구 %1$lld",
+    "en": "Bigger break: command %1$lld",
+    "ja": "大きな変化の代償：制球 %1$lld"
+  },
+  "awakening.tree.pitch-movement-up": {
+    "ko": "%1$@ 움직임 ↑",
+    "en": "%1$@ movement ↑",
+    "ja": "%1$@の変化 ↑"
+  },
+  "awakening.tree.pressure-stability": {
+    "ko": "압박 속 미터 흔들림 ↓",
+    "en": "Meter disturbance under pressure ↓",
+    "ja": "重圧でのメーターの揺れ ↓"
+  },
+  "android.pitch.effort.title": {
+    "ko": "힘 배분",
+    "en": "Pitch effort",
+    "ja": "投球の力加減"
+  },
+  "android.pitch.effort.control": {
+    "ko": "제구 우선",
+    "en": "Control",
+    "ja": "制球重視"
+  },
+  "android.pitch.effort.balance": {
+    "ko": "균형",
+    "en": "Balanced",
+    "ja": "バランス"
+  },
+  "android.pitch.effort.control.effect": {
+    "ko": "제구 ↑ · 구속 ↓ · 체력 절약",
+    "en": "Control ↑ · Speed ↓ · Save stamina",
+    "ja": "制球 ↑ · 球速 ↓ · 体力温存"
+  },
+  "android.pitch.effort.balance.effect": {
+    "ko": "구속과 제구의 균형",
+    "en": "Balanced speed and control",
+    "ja": "球速と制球のバランス"
+  },
+  "android.pitch.effort.max.effect": {
+    "ko": "구속 ↑ · 제구 ↓ · 체력 소모 ↑",
+    "en": "Speed ↑ · Control ↓ · Stamina cost ↑",
+    "ja": "球速 ↑ · 制球 ↓ · 体力消費 ↑"
+  },
+  "android.pitch.effort.hint": {
+    "ko": "던지기 전에 힘을 골라보세요.",
+    "en": "Choose your effort before pitching.",
+    "ja": "投げる前に力加減を選ぼう。"
+  },
+  "android.pitch.intent.open": {
+    "ko": "노림 ▾",
+    "en": "Target ▾",
+    "ja": "狙い ▾"
+  },
+  "android.pitch.intent.close": {
+    "ko": "노림 ▴",
+    "en": "Target ▴",
+    "ja": "狙い ▴"
+  },
+  "android.pitch.catcher.walk": {
+    "ko": "볼이 많아. 존 안에서 승부하자.",
+    "en": "Too many balls. Challenge in the zone.",
+    "ja": "ボールが多い。ゾーン内で勝負しよう。"
+  },
+  "android.pitch.catcher.ground": {
+    "ko": "낮게 던져 땅볼을 노리자.",
+    "en": "Keep it low and look for a grounder.",
+    "ja": "低めでゴロを狙おう。"
+  },
+  "android.pitch.catcher.fly": {
+    "ko": "뜬공을 줄이게 낮게 가자.",
+    "en": "Keep it low to limit fly balls.",
+    "ja": "フライを抑えるために低めへ。"
+  },
+  "android.pitch.catcher.adapt": {
+    "ko": "방금 공에 적응했어. 다른 구종으로 가자.",
+    "en": "They adjusted to that pitch. Change pitch type.",
+    "ja": "今の球に対応してきた。球種を変えよう。"
+  },
+  "android.pitch.catcher.location": {
+    "ko": "같은 곳은 읽혀. 이번엔 코스를 바꾸자.",
+    "en": "They can read repeats. Change location.",
+    "ja": "同じコースは読まれる。今度は変えよう。"
+  },
+  "android.pitch.catcher.chase": {
+    "ko": "두 스트라이크야. 존 밖으로 헛스윙을 노리자.",
+    "en": "Two strikes. Try for a chase outside the zone.",
+    "ja": "２ストライク。ボール球で空振りを狙おう。"
+  },
+  "android.pitch.catcher.explore": {
+    "ko": "아직 탐색 중이야. 존 경계로 반응을 보자.",
+    "en": "Still scouting. Test the edge of the zone.",
+    "ja": "まだ探っている。ゾーンの端で反応を見よう。"
+  },
+  "android.pitch.catcher.cold": {
+    "ko": "약점 코스로 먼저 승부하자.",
+    "en": "Start by attacking the weak spot.",
+    "ja": "まずは苦手なコースで勝負しよう。"
+  },
+  "android.pitch.catcher.avoid": {
+    "ko": "강한 코스를 피해 승부하자.",
+    "en": "Challenge away from their hot zone.",
+    "ja": "得意なコースを避けて勝負しよう。"
+  },
+  "android.pitch.catcher.alternative": {
+    "ko": "다른 구종과 코스로 타이밍을 흔들자.",
+    "en": "Change pitch and location to disrupt timing.",
+    "ja": "球種とコースを変えてタイミングを崩そう。"
+  },
+  "android.pitch.catcher.same": {
+    "ko": "같은 구종으로 다른 코스를 찌르자.",
+    "en": "Same pitch, different location.",
+    "ja": "同じ球種で別のコースを突こう。"
+  },
+  "android.pitch.effort.velocity": {
+    "ko": "예상 구속",
+    "en": "Est. speed",
+    "ja": "予想球速"
+  },
+  "career.compact.more": {
+    "ko": "전체 기록 보기",
+    "en": "All records",
+    "ja": "すべての記録"
+  },
+  "career.compact.drafted": {
+    "ko": "프로 지명",
+    "en": "Drafted",
+    "ja": "プロ指名"
+  },
+  "career.compact.completed": {
+    "ko": "고교 여정 완료",
+    "en": "High school journey complete",
+    "ja": "高校での歩みを終えた"
+  },
+  "career.compact.undrafted": {
+    "ko": "드래프트 미지명",
+    "en": "Not drafted",
+    "ja": "ドラフト指名なし"
+  },
+  "career.compact.assessment": {
+    "ko": "성적과 지명 평가",
+    "en": "Stats and draft assessment",
+    "ja": "成績とドラフト評価"
+  },
+  "career.compact.evidence": {
+    "ko": "이 능력을 남긴 기록",
+    "en": "Records behind this ability",
+    "ja": "この能力につながった記録"
+  },
+  "career.compact.confirm": {
+    "ko": "이 능력 이어받기",
+    "en": "Inherit ability",
+    "ja": "この能力を受け継ぐ"
+  },
+  "career.compact.win": {
+    "ko": "팀 승리",
+    "en": "Team win",
+    "ja": "チーム勝利"
+  },
+  "career.compact.loss": {
+    "ko": "팀 패배",
+    "en": "Team loss",
+    "ja": "チーム敗戦"
+  },
+  "career.compact.tie": {
+    "ko": "팀 무승부",
+    "en": "Team draw",
+    "ja": "チーム引き分け"
+  },
+  "career.compact.pitch-detail": {
+    "ko": "투구 상세",
+    "en": "Pitching details",
+    "ja": "投球の詳細"
+  },
+  "career.compact.older-games": {
+    "ko": "지난 경기 더 보기",
+    "en": "More past games",
+    "ja": "過去の試合をもっと見る"
+  },
+  "career.compact.recent": {
+    "ko": "최근 등판",
+    "en": "Latest appearance",
+    "ja": "直近の登板"
+  },
+  "career.compact.empty-games": {
+    "ko": "첫 등판을 마치면 기록이 쌓여요.",
+    "en": "Records appear after your first outing.",
+    "ja": "初登板を終えると記録が残ります。"
+  },
+  "career.compact.reward-claimed": {
+    "ko": "보상 수령 완료",
+    "en": "Reward claimed",
+    "ja": "報酬受取済み"
+  },
+  "career.compact.weekly-details": {
+    "ko": "지난 도장과 보상 안내",
+    "en": "Past stamps and reward rules",
+    "ja": "過去のスタンプと報酬案内"
+  },
+  "career.compact.reward-rule": {
+    "ko": "과제를 하나 완료하면 보상을 받을 수 있어요.",
+    "en": "Complete one task to claim the reward.",
+    "ja": "課題を一つ達成すると報酬を受け取れます。"
+  },
+  "career.compact.empty-life": {
+    "ko": "한 생을 마치면 카드가 남아요.",
+    "en": "Complete a life to keep its card.",
+    "ja": "一つの人生を終えるとカードが残ります。"
+  },
+  "career.compact.season-details": {
+    "ko": "시즌 성적과 정산",
+    "en": "Season stats and settlement",
+    "ja": "シーズン成績と精算"
+  },
+  "career.compact.season-games": {
+    "ko": "시즌 등판 기록",
+    "en": "Season appearances",
+    "ja": "シーズン登板記録"
+  },
+  "career.compact.retirement-details": {
+    "ko": "통산 수입과 훈장",
+    "en": "Career earnings and honors",
+    "ja": "通算収入と栄誉"
+  },
+  "career.compact.draft-details": {
+    "ko": "지명 평가 보기",
+    "en": "View draft assessment",
+    "ja": "指名評価を見る"
+  },
+  "career.compact.full-stats": {
+    "ko": "전체 성적",
+    "en": "Full stats",
+    "ja": "全成績"
+  },
+  "career.compact.choose-legacy": {
+    "ko": "다음 생에 가져갈 능력 고르기",
+    "en": "Choose an ability for your next life",
+    "ja": "次の人生に持っていく能力を選ぶ"
+  },
+  "career.compact.game-line": {
+    "ko": "%@이닝 · %lld탈삼진 · %lld실점",
+    "en": "%@ IP · %lld K · %lld R",
+    "ja": "%@回 · %lld奪三振 · %lld失点"
+  },
+  "career.compact.chapter": {
+    "ko": "%lld장",
+    "en": "Chapter %lld",
+    "ja": "第%lld章"
+  },
+  "career.compact.week": {
+    "ko": "%lld주차",
+    "en": "Week %lld",
+    "ja": "%lld週目"
+  },
+  "career.compact.seasons": {
+    "ko": "시즌",
+    "en": "Seasons",
+    "ja": "シーズン"
+  },
+  "career.compact.legacy-title": {
+    "ko": "이어받을 능력",
+    "en": "Carry one ability",
+    "ja": "受け継ぐ能力"
+  },
+  "career.compact.recent-awards": {
+    "ko": "최근 수상",
+    "en": "Recent honors",
+    "ja": "最近の受賞"
+  },
+  "career.compact.stat.games": {
+    "ko": "경기",
+    "en": "Games",
+    "ja": "試合"
+  },
+  "career.compact.stat.strikeouts": {
+    "ko": "탈삼진",
+    "en": "Strikeouts",
+    "ja": "奪三振"
+  },
+  "career.compact.stat.perfect": {
+    "ko": "퍼펙트 릴리스",
+    "en": "Perfect releases",
+    "ja": "パーフェクトリリース"
+  },
+  "career.compact.stat.appearances": {
+    "ko": "등판",
+    "en": "Outings",
+    "ja": "登板"
+  },
+  "career.compact.stat.innings": {
+    "ko": "이닝",
+    "en": "Innings",
+    "ja": "投球回"
+  },
+  "career.compact.stat.runs": {
+    "ko": "실점",
+    "en": "Runs",
+    "ja": "失点"
+  },
+  "career.compact.stat.walks": {
+    "ko": "볼넷",
+    "en": "Walks",
+    "ja": "与四球"
+  },
+  "career.compact.stat.hits": {
+    "ko": "피안타",
+    "en": "Hits allowed",
+    "ja": "被安打"
+  },
+  "career.compact.stat.seasons": {
+    "ko": "시즌",
+    "en": "Seasons",
+    "ja": "シーズン"
+  },
+  "career.compact.stat.completed": {
+    "ko": "완료",
+    "en": "Completed",
+    "ja": "達成"
+  },
+  "career.compact.stat.stamps": {
+    "ko": "도장",
+    "en": "Stamps",
+    "ja": "スタンプ"
+  },
+  "career.compact.stat.evaluation": {
+    "ko": "스카우트 평가",
+    "en": "Draft score",
+    "ja": "スカウト評価"
+  },
+  "feedback.training.count": {
+    "ko": "완료한 훈련 %lld회",
+    "en": "%lld training session(s) completed",
+    "ja": "トレーニング%lld回完了"
+  },
+  "feedback.training.mastery": {
+    "ko": "숙련 +%lld",
+    "en": "Mastery +%lld",
+    "ja": "熟練 +%lld"
+  },
+  "feedback.training.cost": {
+    "ko": "피로 %@ · 팔 부담 %@",
+    "en": "Fatigue %@ · Arm load %@",
+    "ja": "疲労 %@ · 腕の負担 %@"
+  },
+  "feedback.practice.step": {
+    "ko": "연습 %lld/3 · 기록에는 남지 않아요",
+    "en": "Practice %lld/3 · No career stats",
+    "ja": "練習 %lld/3 · 成績には残りません"
+  },
+  "feedback.practice.guide.1": {
+    "ko": "첫 공은 타이밍부터. 누르고 있다가 초록 구간에서 놓아보세요.",
+    "en": "First, try the timing. Hold and release in the green zone.",
+    "ja": "まずはタイミング。長押しして緑の範囲で離そう。"
+  },
+  "feedback.practice.guide.2": {
+    "ko": "이번엔 조준. 누른 채 손가락을 움직여 조준점을 가운데로 맞춰보세요.",
+    "en": "Now aim. While holding, move your finger to center the aiming dot.",
+    "ja": "次は照準。押したまま指を動かして照準を中央へ。"
+  },
+  "feedback.practice.guide.3": {
+    "ko": "이번엔 힘 배분. 예상 구속을 비교하고 한 구 던져보세요.",
+    "en": "Now choose your effort. Compare the speed estimates and pitch.",
+    "ja": "今度は力加減。予想球速を比べて投げよう。"
+  },
+  "feedback.resume": {
+    "ko": "나중에 이어하기",
+    "en": "Save and leave",
+    "ja": "保存して中断"
+  },
+  "feedback.exit": {
+    "ko": "저장하고 나갈까요?",
+    "en": "Save and leave the mound?",
+    "ja": "保存してマウンドを離れますか？"
+  },
+  "feedback.practice.wait": {
+    "ko": "포수 사인을 보고 한 구 더 던져 보세요.",
+    "en": "Try another pitch with the catcher’s sign.",
+    "ja": "捕手のサインでもう一球投げてみよう。"
+  },
+  "feedback.practice.both": {
+    "ko": "조준점을 가운데에 두고 초록 구간에서 놓아 보세요.",
+    "en": "Center the aiming dot and release in the green zone.",
+    "ja": "照準を中央に合わせ、緑の範囲で離そう。"
+  },
+  "feedback.practice.aim": {
+    "ko": "타이밍은 좋아요. 누른 채 손가락을 움직여 조준점을 가운데로 맞춰 보세요.",
+    "en": "Good timing. While holding, move your finger to center the aiming dot.",
+    "ja": "タイミングは良好。押したまま指を動かし、照準を中央へ。"
+  },
+  "feedback.practice.timing": {
+    "ko": "조준은 좋아요. 초록 구간에서 손을 놓아 보세요.",
+    "en": "Good aim. Release your finger in the green zone.",
+    "ja": "照準は良好。緑の範囲で指を離そう。"
+  },
+  "feedback.practice.good": {
+    "ko": "타이밍과 조준이 모두 좋았어요.",
+    "en": "Good timing and aim.",
+    "ja": "タイミングも照準も良好です。"
+  },
+  "feedback.training.done": {
+    "ko": "훈련 완료",
+    "en": "Training complete",
+    "ja": "トレーニング完了"
+  },
+  "feedback.training.recovered": {
+    "ko": "몸이 회복됐어요.",
+    "en": "Your body recovered.",
+    "ja": "体が回復しました。"
+  },
+  "feedback.training.unchanged": {
+    "ko": "능력치는 유지됐어요.",
+    "en": "Ratings stayed the same.",
+    "ja": "能力値は変わりませんでした。"
+  },
+  "feedback.training.targets": {
+    "ko": "훈련한 구종",
+    "en": "Pitches trained",
+    "ja": "練習した球種"
+  },
+  "feedback.training.recovery-next": {
+    "ko": "다음에는 회복을 추천해요. 피로와 팔 부담을 낮출 수 있어요.",
+    "en": "Recovery is recommended next to reduce fatigue and arm load.",
+    "ja": "次は回復がおすすめ。疲労と腕の負担を減らせます。"
+  },
+  "feedback.training.mastery-next": {
+    "ko": "숙련이 쌓였어요. 능력치가 같아도 훈련의 효과는 남아요.",
+    "en": "Mastery increased even though ratings stayed the same.",
+    "ja": "能力値は同じでも熟練は増えました。"
+  },
+  "feedback.training.choose-next": {
+    "ko": "현재 몸 상태를 보고 다음 훈련을 골라보세요.",
+    "en": "Choose your next training with your current condition in mind.",
+    "ja": "今の体調を見て次の練習を選ぼう。"
+  },
+  "feedback.training.continue": {
+    "ko": "확인하고 계속하기",
+    "en": "Continue",
+    "ja": "確認して続ける"
+  },
+  "feedback.training.velocity": {
+    "ko": "현재 예상 구속",
+    "en": "Current speed estimate",
+    "ja": "現在の予想球速"
+  },
+  "feedback.training.velocity-note": {
+    "ko": "현재 피로와 균형 힘 배분을 반영했어요.",
+    "en": "Includes current fatigue and balanced effort.",
+    "ja": "現在の疲労とバランスの力加減を反映。"
+  },
+  "feedback.training.wall": {
+    "ko": "현재 능력치의 성장 한계예요. 다른 능력 훈련을 골라보세요.",
+    "en": "This rating has reached its current growth limit. Try training another ability.",
+    "ja": "この能力は現在の成長限界です。別の能力を鍛えてみよう。"
+  },
+  "feedback.training.extra": {
+    "ko": "추가 성장!",
+    "en": "Extra growth!",
+    "ja": "追加成長！"
+  },
+  "feedback.plate": {
+    "ko": "공이 지나간 곳",
+    "en": "Plate crossing",
+    "ja": "ボールの通過位置"
+  },
+  "feedback.fast": {
+    "ko": "빠른 진행",
+    "en": "Quick progression",
+    "ja": "クイック進行"
+  },
+  "feedback.fast.note": {
+    "ko": "일반 투구만 자동으로 넘겨요. 연습·퍼펙트·다음 타자는 직접 확인해요.",
+    "en": "Only ordinary pitches advance automatically. Practice, perfect releases and new batters wait for you.",
+    "ja": "通常の投球のみ自動進行。練習・パーフェクト・次の打者は手動で進めます。"
+  },
+  "feedback.records": {
+    "ko": "통산 기록",
+    "en": "Career records",
+    "ja": "通算記録"
+  },
+  "feedback.training.condition": {
+    "ko": "피로 %lld → %lld · 팔 부담 %lld → %lld",
+    "en": "Fatigue %lld → %lld · Arm load %lld → %lld",
+    "ja": "疲労 %lld → %lld · 腕の負担 %lld → %lld"
+  },
+  "companion.rank.0": {
+    "ko": "손에 익히는 중",
+    "en": "Finding the feel",
+    "ja": "手になじませている"
+  },
+  "companion.rank.1": {
+    "ko": "실전 감각",
+    "en": "Game-ready feel",
+    "ja": "実戦の感覚"
+  },
+  "companion.rank.2": {
+    "ko": "나의 결정구",
+    "en": "My finishing pitch",
+    "ja": "自分の決め球"
+  },
+  "companion.rank.3": {
+    "ko": "손끝에 새긴 공",
+    "en": "A pitch etched in memory",
+    "ja": "指先に刻んだ球"
+  },
+  "companion.goal.signature": {
+    "ko": "선택한 결정구로 삼진 잡기",
+    "en": "Strike out a batter with the chosen pitch",
+    "ja": "選んだ決め球で三振を奪う"
+  },
+  "companion.goal.clean": {
+    "ko": "볼넷·실점 없이 한 이닝 이상 던지기",
+    "en": "Pitch at least an inning with no walks or runs",
+    "ja": "四球・失点なしで１回以上投げる"
+  },
+  "companion.goal.best": {
+    "ko": "탈삼진 최고 기록 넘기기",
+    "en": "Beat my strikeout best",
+    "ja": "奪三振の自己記録を更新する"
+  },
+  "companion.lineage": {
+    "ko": "계보 숙련 %lld단계 · %lld번 이어받음",
+    "en": "Lineage rank %lld · Inherited %lld times",
+    "ja": "系譜熟練 %lld段階 · 継承%lld回"
+  },
+  "companion.lineage.next": {
+    "ko": "다음 단계까지 %lld번",
+    "en": "%lld more inheritances to the next rank",
+    "ja": "次の段階まで継承あと%lld回"
+  },
+  "companion.lineage.effect.0": {
+    "ko": "선택한 유산의 기본 효과가 이어져요.",
+    "en": "The chosen legacy’s base effect carries over.",
+    "ja": "選んだ遺産の基本効果を受け継ぎます。"
+  },
+  "companion.lineage.effect.1": {
+    "ko": "선택한 유산의 기본 효과가 이어져요.",
+    "en": "The chosen legacy’s base effect carries over.",
+    "ja": "選んだ遺産の基本効果を受け継ぎます。"
+  },
+  "companion.lineage.effect.2": {
+    "ko": "같은 계열의 재능 돌파에 가까워져요.",
+    "en": "Start closer to a talent breakthrough in this family.",
+    "ja": "同系統の才能開花に近づいて始められます。"
+  },
+  "companion.lineage.effect.3": {
+    "ko": "관련 시작 능력치에도 추가 보너스가 생겨요.",
+    "en": "Related starting ratings gain an additional bonus.",
+    "ja": "関連する初期能力値にも追加ボーナス。"
+  },
+  "companion.lineage.effect.battery": {
+    "ko": "포수 호흡을 높여 시작해요. 숙련 3단계부터 제구·체력도 더해져요.",
+    "en": "Start with better catcher chemistry. Rank 3 also improves starting command and stamina.",
+    "ja": "捕手との呼吸を高めて開始。３段階では初期制球・体力も向上。"
+  },
+  "companion.memory.first_strikeout": {
+    "ko": "첫 공식 삼진",
+    "en": "First official strikeout",
+    "ja": "公式戦での初奪三振"
+  },
+  "companion.memory.pitch_strikeout": {
+    "ko": "이 공으로 잡은 삼진",
+    "en": "A strikeout with this pitch",
+    "ja": "この球で奪った三振"
+  },
+  "companion.memory.recovery": {
+    "ko": "쉬어서 다시 힘이 난 날",
+    "en": "The day rest restored my strength",
+    "ja": "休んで力が戻った日"
+  },
+  "companion.memory.clean_outing": {
+    "ko": "차분하게 막아낸 등판",
+    "en": "A clean, composed outing",
+    "ja": "落ち着いて抑えた登板"
+  },
+  "companion.memory.signature_rank_1": {
+    "ko": "실전에 가까워진 공",
+    "en": "A pitch ready for the next step",
+    "ja": "実戦に近づいた球"
+  },
+  "companion.memory.signature_rank_2": {
+    "ko": "내 결정구가 된 순간",
+    "en": "The moment it became my finishing pitch",
+    "ja": "自分の決め球になった瞬間"
+  },
+  "companion.memory.signature_rank_3": {
+    "ko": "손끝에 새긴 결정구",
+    "en": "A finishing pitch etched in memory",
+    "ja": "指先に刻んだ決め球"
+  },
+  "companion.memory.goal_signature": {
+    "ko": "결정구로 이룬 작은 꿈",
+    "en": "A small dream fulfilled with my pitch",
+    "ja": "決め球で叶えた小さな夢"
+  },
+  "companion.memory.goal_clean": {
+    "ko": "흔들림 없이 이룬 작은 꿈",
+    "en": "A small dream fulfilled with composure",
+    "ja": "落ち着いて叶えた小さな夢"
+  },
+  "companion.memory.goal_best": {
+    "ko": "내 기록을 넘어선 날",
+    "en": "The day I beat my own record",
+    "ja": "自己記録を超えた日"
+  },
+  "companion.reaction.first_strikeout": {
+    "ko": "방금 그 공, 다시 던질 수 있을 것 같아요.",
+    "en": "I think I can throw that pitch again.",
+    "ja": "今の球、また投げられそうです。"
+  },
+  "companion.reaction.pitch_strikeout": {
+    "ko": "연습했던 공이 통했어요.",
+    "en": "The pitch I practiced worked.",
+    "ja": "練習した球が通用しました。"
+  },
+  "companion.reaction.recovery": {
+    "ko": "쉬고 나니 몸이 한결 가벼워요.",
+    "en": "My body feels lighter after that rest.",
+    "ja": "休んだら体が軽くなりました。"
+  },
+  "companion.reaction.clean_outing": {
+    "ko": "끝까지 침착하게 던졌어요.",
+    "en": "I stayed calm all the way through.",
+    "ja": "最後まで落ち着いて投げられました。"
+  },
+  "companion.reaction.goal": {
+    "ko": "해냈어요. 이 순간을 기억할게요.",
+    "en": "I did it. I’ll remember this moment.",
+    "ja": "できました。この瞬間を覚えておきます。"
+  },
+  "companion.reaction.signature": {
+    "ko": "이제 이 공이 제 공 같아요.",
+    "en": "This pitch feels like mine now.",
+    "ja": "この球が自分のものになった気がします。"
+  },
+  "companion.ui.rest": {
+    "ko": "잠깐 쉬고 다시 던지고 싶어요.",
+    "en": "I’d like to rest, then pitch again.",
+    "ja": "少し休んで、また投げたいです。"
+  },
+  "companion.ui.ready": {
+    "ko": "몸이 가벼워요. 다음 공이 기대돼요.",
+    "en": "I feel light. I’m looking forward to the next pitch.",
+    "ja": "体が軽いです。次の一球が楽しみ。"
+  },
+  "companion.ui.steady": {
+    "ko": "한 구씩 제 공을 만들어갈게요.",
+    "en": "I’ll make this pitch mine, one ball at a time.",
+    "ja": "一球ずつ自分の球を作っていきます。"
+  },
+  "companion.ui.jersey-change": {
+    "ko": "등번호 바꾸기",
+    "en": "Change jersey number",
+    "ja": "背番号を変える"
+  },
+  "companion.ui.jersey": {
+    "ko": "등번호",
+    "en": "Jersey number",
+    "ja": "背番号"
+  },
+  "companion.ui.nickname": {
+    "ko": "내 공의 별명",
+    "en": "My pitch’s nickname",
+    "ja": "自分の球の愛称"
+  },
+  "companion.ui.name": {
+    "ko": "별명 붙이기",
+    "en": "Name my pitch",
+    "ja": "愛称を付ける"
+  },
+  "companion.ui.name-lock": {
+    "ko": "이 공으로 공식 경기 삼진을 잡으면 별명을 붙일 수 있어요.",
+    "en": "Earn an official strikeout with this pitch to name it.",
+    "ja": "この球で公式戦の三振を奪うと愛称を付けられます。"
+  },
+  "companion.ui.records": {
+    "ko": "이 공의 기록은 환생해도 남아요. 구위와 제구는 훈련으로 키워요.",
+    "en": "This pitch’s records survive rebirth. Train to improve its stuff and command.",
+    "ja": "この球の記録は転生後も残ります。球威と制球は練習で伸ばそう。"
+  },
+  "companion.ui.dream": {
+    "ko": "이번 생의 작은 꿈",
+    "en": "A small dream for this life",
+    "ja": "この人生の小さな夢"
+  },
+  "companion.ui.memories": {
+    "ko": "함께한 기억",
+    "en": "Our shared memories",
+    "ja": "共に歩んだ記憶"
+  },
+  "companion.ui.empty": {
+    "ko": "첫 공식 경기부터 우리만의 기억을 남겨요.",
+    "en": "Let’s start collecting memories in official games.",
+    "ja": "公式戦で私たちだけの記憶を残そう。"
+  },
+  "companion.ui.album": {
+    "ko": "기억첩 펼치기",
+    "en": "Open memory album",
+    "ja": "思い出帳を開く"
+  },
+  "companion.ui.inherit": {
+    "ko": "다음 생으로 이어지는 힘",
+    "en": "Strength for the next life",
+    "ja": "次の人生へ続く力"
+  },
+  "companion.ui.next-life": {
+    "ko": "계보의 힘은 환생할 때 적용돼요. 현재 경기의 능력치는 바뀌지 않아요.",
+    "en": "Lineage strength applies at rebirth; current-game ratings stay intact.",
+    "ja": "系譜の力は転生時に適用。今の試合の能力値は変わりません。"
+  },
+  "companion.ui.unpin": {
+    "ko": "고정 해제",
+    "en": "Unpin",
+    "ja": "固定を解除"
+  },
+  "companion.ui.pin": {
+    "ko": "선수 화면에 고정",
+    "en": "Pin to player profile",
+    "ja": "選手画面に固定"
+  },
+  "companion.memory.goal_attempt": {
+    "ko": "도전했던 작은 꿈",
+    "en": "A small dream I pursued",
+    "ja": "挑んだ小さな夢"
+  },
+  "companion.ui.representative": {
+    "ko": "대표 구종",
+    "en": "Signature pitch",
+    "ja": "代表球種"
+  },
+  "companion.ui.rename": {
+    "ko": "별명 바꾸기",
+    "en": "Rename pitch",
+    "ja": "愛称を変える"
+  },
+  "companion.ui.more-memories": {
+    "ko": "기억 더 보기",
+    "en": "More memories",
+    "ja": "記憶をもっと見る"
+  },
+  "companion.rank.next.0": {
+    "ko": "이 공으로 훈련이나 투구 %lld회 더",
+    "en": "%lld more training sessions or pitches with this pitch",
+    "ja": "この球で練習または投球をあと%lld回"
+  },
+  "companion.rank.next.1": {
+    "ko": "이 공으로 삼진 %lld개 더",
+    "en": "%lld more strikeouts with this pitch",
+    "ja": "この球で奪三振あと%lld個"
+  },
+  "companion.rank.next.2": {
+    "ko": "이 공으로 삼진 %lld개 더",
+    "en": "%lld more strikeouts with this pitch",
+    "ja": "この球で奪三振あと%lld個"
+  },
+  "companion.goal.remaining": {
+    "ko": "지금부터 %lld번 달성",
+    "en": "Complete %lld from now",
+    "ja": "今から%lld回達成"
+  },
+  "compact.pitch.hold": {
+    "ko": "누르고 초록에서 놓기",
+    "en": "Hold · release in green",
+    "ja": "長押しして緑で離す"
+  },
+  "compact.pitch.sign": {
+    "ko": "추천",
+    "en": "Sign",
+    "ja": "推薦"
+  },
+  "compact.pitch.alternative": {
+    "ko": "대안",
+    "en": "Alt.",
+    "ja": "別案"
+  },
+  "compact.action.choose": {
+    "ko": "선택",
+    "en": "Choose",
+    "ja": "選択"
+  },
+  "compact.action.info": {
+    "ko": "정보",
+    "en": "Info",
+    "ja": "情報"
+  },
+  "compact.school.info": {
+    "ko": "학교 정보",
+    "en": "School details",
+    "ja": "学校情報"
+  },
+  "compact.action.legacy": {
+    "ko": "능력 고르기",
+    "en": "Choose ability",
+    "ja": "能力を選ぶ"
+  },
+  "compact.action.rebirth": {
+    "ko": "환생하기",
+    "en": "Rebirth",
+    "ja": "転生する"
+  },
+  "compact.action.finish": {
+    "ko": "이번 생 마무리",
+    "en": "Finish this life",
+    "ja": "この人生を終える"
+  },
+  "compact.action.pitch": {
+    "ko": "등판하기",
+    "en": "Take the mound",
+    "ja": "登板する"
+  },
+  "compact.action.start": {
+    "ko": "시작하기",
+    "en": "Start",
+    "ja": "始める"
+  },
+  "compact.training.strong": {
+    "ko": "강하게",
+    "en": "Intense",
+    "ja": "強め"
+  },
+  "compact.action.challenge": {
+    "ko": "도전",
+    "en": "Choose",
+    "ja": "挑戦"
+  },
+  "compact.pitch.hold-too-short": {
+    "ko": "조금 더 길게 눌러주세요",
+    "en": "Hold a little longer",
+    "ja": "もう少し長く押してね"
+  },
+  "compact.pitch.wait": {
+    "ko": "준비 중",
+    "en": "Getting ready",
+    "ja": "準備中"
+  },
+  "outing.v2.player": {
+    "ko": "선수 상세",
+    "en": "Player details",
+    "ja": "選手詳細"
+  },
+  "outing.v2.weekly-sequence": {
+    "ko": "배합 성공하기",
+    "en": "Execute a pitch sequence",
+    "ja": "配球を成功させる"
+  },
+  "outing.v2.weekly-fallback": {
+    "ko": "이번 주 과제",
+    "en": "This week’s task",
+    "ja": "今週の課題"
+  },
+  "outing.v2.lineup": {
+    "ko": "상대 %lld번 타자",
+    "en": "Opposing batter #%lld",
+    "ja": "相手の%lld番打者"
+  },
+  "outing.v2.tying": {
+    "ko": "동점 주자 %lld루",
+    "en": "Tying run on base %lld",
+    "ja": "同点の走者が%lld塁"
+  },
+  "outing.v2.go-ahead": {
+    "ko": "역전 주자 %lld루",
+    "en": "Go-ahead run on base %lld",
+    "ja": "勝ち越しの走者が%lld塁"
+  },
+  "outing.v2.inning-choice": {
+    "ko": "이닝을 마쳤어요. 계속 던질까요?",
+    "en": "Inning complete. Keep pitching?",
+    "ja": "イニング終了。続けて投げますか？"
+  },
+  "outing.v2.next-inning": {
+    "ko": "다음 이닝 던지기",
+    "en": "Pitch next inning",
+    "ja": "次のイニングも投げる"
+  },
+  "outing.v2.simulate": {
+    "ko": "남은 경기 자동 진행",
+    "en": "Simulate the rest",
+    "ja": "残りを自動進行"
+  },
+  "outing.v2.sources": {
+    "ko": "직접 등판 %lld · 자동 등판 %lld",
+    "en": "Manual %lld · Simulated %lld",
+    "ja": "直接登板 %lld · 自動登板 %lld"
+  },
+  "outing.v2.old-history": {
+    "ko": "이전 자동 경기의 이닝·실점은 합산했어요. 개별 기록은 저장된 경기부터 보여드려요.",
+    "en": "Older simulated innings and runs are included. Game details are shown where recorded.",
+    "ja": "以前の自動試合の投球回・失点も合算しています。個別記録は保存済みの試合から表示します。"
+  },
+  "outing.v2.manual": {
+    "ko": "직접",
+    "en": "Manual",
+    "ja": "直接"
+  },
+  "outing.v2.auto": {
+    "ko": "자동",
+    "en": "Simulated",
+    "ja": "自動"
+  },
+  "outing.v2.both": {
+    "ko": "직접+자동",
+    "en": "Manual + simulated",
+    "ja": "直接＋自動"
+  },
+  "outing.v2.season-total": {
+    "ko": "직접·자동 경기 합산",
+    "en": "Manual and simulated games",
+    "ja": "直接・自動試合の合計"
+  },
+  "outing.v2.season-innings": {
+    "ko": "시즌 이닝",
+    "en": "Season innings",
+    "ja": "シーズン投球回"
+  },
+  "outing.v2.pitch-total": {
+    "ko": "직접·자동 투구 합산",
+    "en": "Manual and simulated pitching",
+    "ja": "直接・自動投球の合計"
+  },
+  "outing.v2.slots-full": {
+    "ko": "이번 고교 생활의 각성을 모두 익혔어요",
+    "en": "All high-school awakenings learned",
+    "ja": "今回の高校生活で学べる覚醒を習得済み"
+  },
+  "outing.v2.advanced": {
+    "ko": "환생 후 도전하는 고급 각성",
+    "en": "Advanced awakening after rebirth",
+    "ja": "転生後に挑戦する上級覚醒"
+  },
+  "outing.v2.second-gate": {
+    "ko": "고교 후반 · 훈련 6회 · 시즌 12이닝 필요",
+    "en": "Late high school · 6 training sessions · 12 season innings",
+    "ja": "高校後半・練習6回・シーズン12回が必要"
+  },
+  "outing.v2.regular-title": {
+    "ko": "정규 경기 선발 등판",
+    "en": "Regular-season start",
+    "ja": "公式戦の先発登板"
+  },
+  "outing.v2.regular-body": {
+    "ko": "1회부터 마운드를 맡았어요. 이닝이 끝날 때 계속 던질지 정할 수 있어요.",
+    "en": "Take the mound in the first inning. After each inning, choose whether to keep pitching.",
+    "ja": "初回からマウンドへ。各イニング終了時に投げ続けるか選べます。"
+  },
+  "outing.v2.weekly-pledge": {
+    "ko": "이번 생의 약속 정하기",
+    "en": "Choose a promise for this life",
+    "ja": "今回の人生の約束を決める"
+  },
+  "onboarding.instructions.start": {
+    "ko": "투구 시작",
+    "en": "Start pitching",
+    "ja": "投球を始める"
+  },
+  "school.choice.question": {
+    "ko": "어떤 강점을 키울까요?",
+    "en": "Which strength will you develop?",
+    "ja": "どんな強みを伸ばしますか？"
+  },
+  "school.choice.intro": {
+    "ko": "다른 능력도 모두 훈련할 수 있어요.",
+    "en": "You can train every other ability, too.",
+    "ja": "他の能力もすべて鍛えられます。"
+  },
+  "school.choice.compare": {
+    "ko": "성장 비교",
+    "en": "Compare growth",
+    "ja": "成長を比較"
+  },
+  "school.choice.choose": {
+    "ko": "이 학교 선택",
+    "en": "Choose this school",
+    "ja": "この学校を選ぶ"
+  },
+  "school.choice.standard": {
+    "ko": "보통 강도",
+    "en": "Standard intensity",
+    "ja": "通常の強度"
+  },
+  "school.choice.conditions": {
+    "ko": "현재 능력 · 입학 후 첫 훈련 1회 기준",
+    "en": "Current abilities · first training session after enrollment",
+    "ja": "現在の能力・入学後最初の練習1回が基準"
+  },
+  "school.choice.equal": {
+    "ko": "현재 조건에서는 기본 성장 예상이 같아요.",
+    "en": "Base growth forecasts are equal under these conditions.",
+    "ja": "現在の条件では基本成長の予想は同じです。"
+  },
+  "school.choice.limit": {
+    "ko": "현재 재능 한계에 도달해 기본 성장이 제한돼요.",
+    "en": "Base growth is restricted by your current talent limit.",
+    "ja": "現在の才能上限に達し、基本成長が制限されています。"
+  },
+  "school.choice.vary": {
+    "ko": "훈련 강도와 몸 상태가 바뀌면 성장 예상도 달라져요.",
+    "en": "The forecast changes with training intensity and physical condition.",
+    "ja": "練習強度や体の状態で成長予想も変わります。"
+  },
+  "school.choice.breakthrough": {
+    "ko": "추가 성장 %lld%% · %s %s까지 가능",
+    "en": "Breakthrough chance %lld%% · %s may reach %s",
+    "ja": "追加成長の確率 %lld%% · %sは%sまで可能"
+  },
+  "school.choice.fit.stamina": {
+    "ko": "긴 이닝을 책임지는 투수로",
+    "en": "For a pitcher who goes deep into games",
+    "ja": "長いイニングを任される投手へ"
+  },
+  "school.choice.fit.planning": {
+    "ko": "타자를 읽고 배합으로 승부하는 투수로",
+    "en": "For a pitcher who wins through smart pitch sequences",
+    "ja": "打者を読み配球で勝負する投手へ"
+  },
+  "school.choice.fit.power": {
+    "ko": "빠른 직구를 주무기로 쓰는 투수로",
+    "en": "For a pitcher built around a fast fastball",
+    "ja": "速い直球を武器にする投手へ"
+  },
+  "school.choice.fit.breaking": {
+    "ko": "결정구로 헛스윙을 끌어내는 투수로",
+    "en": "For a pitcher with a swing-and-miss finishing pitch",
+    "ja": "決め球で空振りを奪う投手へ"
+  },
+  "school.choice.fit.command": {
+    "ko": "원하는 코스로 승부하는 투수로",
+    "en": "For a pitcher who commands the zone",
+    "ja": "狙ったコースで勝負する投手へ"
+  },
+  "school.choice.strength.stamina": {
+    "ko": "체력 훈련에 강점",
+    "en": "Specialty: stamina training",
+    "ja": "体力練習が得意"
+  },
+  "school.choice.strength.planning": {
+    "ko": "경기 운영 훈련에 강점",
+    "en": "Specialty: game-planning training",
+    "ja": "試合運びの練習が得意"
+  },
+  "school.choice.strength.power": {
+    "ko": "구위 훈련에 강점",
+    "en": "Specialty: pitch-power training",
+    "ja": "球威練習が得意"
+  },
+  "school.choice.strength.breaking": {
+    "ko": "변화구 훈련에 강점",
+    "en": "Specialty: breaking-pitch training",
+    "ja": "変化球練習が得意"
+  },
+  "school.choice.strength.command": {
+    "ko": "제구 훈련에 강점",
+    "en": "Specialty: command training",
+    "ja": "制球練習が得意"
+  },
+  "school.direction.compare": {
+    "ko": "학교 비교",
+    "en": "Compare schools",
+    "ja": "学校を比較"
+  },
+  "school.direction.strength": {
+    "ko": "강점 더 키우기",
+    "en": "Build on strengths",
+    "ja": "強みを伸ばす"
+  },
+  "school.direction.weakness": {
+    "ko": "약점 보완하기",
+    "en": "Improve weaknesses",
+    "ja": "弱みを補う"
+  },
+  "school.direction.strong-reason": {
+    "ko": "현재 높은 능력을 더 키우는 학교를 추천해요.",
+    "en": "Recommendations focus on developing your higher abilities.",
+    "ja": "現在高い能力をさらに伸ばせる学校をおすすめします。"
+  },
+  "school.direction.weak-reason": {
+    "ko": "현재 낮은 능력을 보완하는 학교를 추천해요.",
+    "en": "Recommendations focus on improving your lower abilities.",
+    "ja": "現在低い能力を補える学校をおすすめします。"
+  },
+  "school.direction.current": {
+    "ko": "현재 내 %s %lld",
+    "en": "My current %s: %lld",
+    "ja": "現在の%s：%lld"
+  },
+  "school.direction.tie": {
+    "ko": "능력과 성장 여유가 비슷하면 원하는 투구 스타일로 골라 주세요.",
+    "en": "When abilities and room to grow are similar, choose the pitching style you want.",
+    "ja": "能力や成長の余地が同程度なら、目指す投球スタイルで選んでください。"
+  },
+  "school.direction.limit": {
+    "ko": "현재 재능 한계에 도달했어요.",
+    "en": "At the current talent limit.",
+    "ja": "現在の才能上限に達しています。"
+  },
+  "school.direction.long-term": {
+    "ko": "앞으로 자주 할 훈련을 기준으로 고르세요.",
+    "en": "Choose for the training you plan to do regularly.",
+    "ja": "これからよく取り組む練習を基準に選びましょう。"
+  },
+  "training.controls.recommended": {
+    "ko": "코치 추천: %s",
+    "en": "Coach recommends: %s",
+    "ja": "コーチのおすすめ：%s"
+  },
+  "controls.pitch.recommended": {
+    "ko": "포수 추천: %s",
+    "en": "Catcher recommends: %s",
+    "ja": "捕手のおすすめ：%s"
+  },
+  "controls.setup.stats": {
+    "ko": "선택한 유형의 기본 능력",
+    "en": "Base abilities of the selected type",
+    "ja": "選択したタイプの基本能力"
+  },
+  "controls.training.select": {
+    "ko": "훈련 선택",
+    "en": "Training",
+    "ja": "練習選択"
+  },
+  "controls.recovery.move": {
+    "ko": "몸 풀기",
+    "en": "Warm up",
+    "ja": "体をほぐす"
+  },
+  "controls.recovery.throw": {
+    "ko": "투구 병행",
+    "en": "Light throws",
+    "ja": "軽く投げる"
+  },
+  "controls.records.career": {
+    "ko": "통산",
+    "en": "Career",
+    "ja": "通算"
+  },
+  "controls.records.week": {
+    "ko": "주간",
+    "en": "Weekly",
+    "ja": "週間"
+  },
+  "controls.records.card": {
+    "ko": "선수 앨범",
+    "en": "Player album",
+    "ja": "選手アルバム"
+  },
+  "controls.records.return": {
+    "ko": "복귀",
+    "en": "Return",
+    "ja": "復帰"
+  },
+  "controls.news": {
+    "ko": "새 소식",
+    "en": "New update",
+    "ja": "新着"
+  },
+  "controls.backup.save": {
+    "ko": "백업 저장",
+    "en": "Save backup",
+    "ja": "バックアップ保存"
+  },
+  "controls.backup.load": {
+    "ko": "백업 불러오기",
+    "en": "Load backup",
+    "ja": "バックアップ読込"
+  },
+  "controls.load": {
+    "ko": "불러오기",
+    "en": "Load",
+    "ja": "読み込む"
+  },
+  "controls.continue": {
+    "ko": "계속하기",
+    "en": "Continue",
+    "ja": "続ける"
+  },
+  "controls.school": {
+    "ko": "학교 선택",
+    "en": "Choose school",
+    "ja": "学校を選ぶ"
+  },
+  "controls.practice": {
+    "ko": "연습 투구",
+    "en": "Practice pitch",
+    "ja": "練習投球"
+  },
+  "controls.result": {
+    "ko": "결과 확인",
+    "en": "View result",
+    "ja": "結果を見る"
+  },
+  "controls.next-inning": {
+    "ko": "다음 이닝",
+    "en": "Next inning",
+    "ja": "次のイニング"
+  },
+  "controls.auto-rest": {
+    "ko": "남은 경기 자동",
+    "en": "Simulate rest",
+    "ja": "残りを自動進行"
+  },
+  "controls.outing": {
+    "ko": "직접 등판",
+    "en": "Pitch myself",
+    "ja": "自分で登板"
+  },
+  "controls.awakening.power": {
+    "ko": "구위",
+    "en": "Power",
+    "ja": "球威"
+  },
+  "controls.awakening.command": {
+    "ko": "제구",
+    "en": "Control",
+    "ja": "制球"
+  },
+  "controls.awakening.breaking": {
+    "ko": "변화",
+    "en": "Break",
+    "ja": "変化"
+  },
+  "controls.awakening.game": {
+    "ko": "운영",
+    "en": "Tactics",
+    "ja": "配球"
+  },
+  "controls.awakening.learn": {
+    "ko": "습득하기",
+    "en": "Learn",
+    "ja": "習得する"
+  },
+  "controls.awakening.learned": {
+    "ko": "습득 완료",
+    "en": "Learned",
+    "ja": "習得済み"
+  },
+  "controls.records.games": {
+    "ko": "경기",
+    "en": "Games",
+    "ja": "試合"
+  },
+  "controls.records.achievements": {
+    "ko": "업적",
+    "en": "Badges",
+    "ja": "実績"
+  },
+  "controls.setup.boost-cost": {
+    "ko": "야구혼 %lld",
+    "en": "Baseball spirit: %lld",
+    "ja": "野球魂 %lld"
+  },
+  "practice.inline.sign": {
+    "ko": "포수가 구종과 코스를 골라뒀어요.",
+    "en": "The catcher has picked a pitch and target.",
+    "ja": "捕手が球種とコースを選んでいます。"
+  },
+  "practice.inline.hold": {
+    "ko": "버튼을 누르고, 초록 구간에서 놓아보세요.",
+    "en": "Hold the button and release in the green zone.",
+    "ja": "ボタンを押し続け、緑の範囲で離してみましょう。"
+  },
+  "practice.inline.tap": {
+    "ko": "투구 버튼을 누르면 공을 던져요.",
+    "en": "Tap the pitch button to throw.",
+    "ja": "投球ボタンを押すと投げられます。"
+  },
+  "practice.inline.start": {
+    "ko": "연습 시작",
+    "en": "Start practice",
+    "ja": "練習開始"
+  },
+  "practice.inline.resume": {
+    "ko": "연습 이어가기",
+    "en": "Resume practice",
+    "ja": "練習を再開"
+  },
+  "growth.path.mastery": {
+    "ko": "숙련을 다듬는 훈련",
+    "en": "Training toward mastery",
+    "ja": "熟練を磨く練習"
+  },
+  "growth.path.breakthrough": {
+    "ko": "돌파 준비 · %lld/%lld",
+    "en": "Breakthrough progress · %lld/%lld",
+    "ja": "突破準備 · %lld/%lld"
+  },
+  "growth.path.progress": {
+    "ko": "성장 준비 · %s %lld → %lld/100",
+    "en": "Growth progress · %s %lld → %lld/100",
+    "ja": "成長準備 · %s %lld → %lld/100"
+  },
+  "meaning.status": {
+    "ko": "현재 신분",
+    "en": "Current status",
+    "ja": "現在の立場"
+  },
+  "meaning.path": {
+    "ko": "현재 진로",
+    "en": "Career status",
+    "ja": "現在の進路"
+  },
+  "meaning.drafted": {
+    "ko": "지명 완료 · 입단 계약 전",
+    "en": "Drafted · contract pending",
+    "ja": "指名済み · 入団契約前"
+  },
+  "meaning.continuity": {
+    "ko": "고교에서 키운 능력과 구종으로 이어갑니다.",
+    "en": "Continue with the abilities and pitches you developed in high school.",
+    "ja": "高校で育てた能力と球種を引き継ぎます。"
+  },
+  "meaning.draft-team": {
+    "ko": "지명 구단",
+    "en": "Drafting club",
+    "ja": "指名球団"
+  },
+  "meaning.undrafted": {
+    "ko": "이번 드래프트 미지명",
+    "en": "Not selected in this draft",
+    "ja": "今回のドラフトは指名なし"
+  },
+  "meaning.legacy": {
+    "ko": "이번 생의 기록과 이어받을 힘을 남겨요.",
+    "en": "Keep this life’s records and choose what carries forward.",
+    "ja": "今世の記録と引き継ぐ力を残しましょう。"
+  },
+  "meaning.waiting": {
+    "ko": "드래프트 발표 전",
+    "en": "Awaiting draft results",
+    "ja": "ドラフト発表前"
+  },
+  "meaning.signed": {
+    "ko": "프로 입단 완료",
+    "en": "Professional contract signed",
+    "ja": "プロ入団契約済み"
+  },
+  "meaning.retired": {
+    "ko": "프로 커리어 완료",
+    "en": "Professional career complete",
+    "ja": "プロキャリア終了"
+  },
+  "meaning.contract": {
+    "ko": "프로 선수 · 계약 검토 중",
+    "en": "Pro player · reviewing contract",
+    "ja": "プロ選手 · 契約検討中"
+  },
+  "meaning.contract-hint": {
+    "ko": "계약 조건을 확인해 주세요.",
+    "en": "Review the contract terms.",
+    "ja": "契約条件を確認してください。"
+  },
+  "meaning.minor": {
+    "ko": "2군 · 1군 진입에 도전합니다.",
+    "en": "Minors · working toward a major-team call-up.",
+    "ja": "二軍 · 一軍昇格を目指します。"
+  },
+  "meaning.new-pro": {
+    "ko": "프로부터 새로 시작",
+    "en": "Start a new pro career",
+    "ja": "プロから新しく始める"
+  },
+  "meaning.new-pro-detail": {
+    "ko": "고교 과정을 건너뛰고 별도 프로 선수로 시작합니다.",
+    "en": "Skip high school and start a separate pro player.",
+    "ja": "高校編を飛ばし、別のプロ選手として始めます。"
+  },
+  "meaning.new-pro-title": {
+    "ko": "새 프로 선수",
+    "en": "New pro player",
+    "ja": "新しいプロ選手"
+  },
+  "meaning.new-pro-note": {
+    "ko": "고교 과정을 건너뛰는 별도 커리어예요.",
+    "en": "A separate career that skips the high-school years.",
+    "ja": "高校編を飛ばす別のキャリアです。"
+  },
+  "meaning.start-pro": {
+    "ko": "프로 시작",
+    "en": "Start pro career",
+    "ja": "プロを始める"
+  },
+  "meaning.contract-open": {
+    "ko": "입단 계약 보기",
+    "en": "View rookie contract",
+    "ja": "入団契約を見る"
+  },
+  "meaning.pro-header": {
+    "ko": "프로 선수 · %s · %s",
+    "en": "Pro player · %s · %s",
+    "ja": "プロ選手 · %s · %s"
+  },
+  "meaning.coach-win": {
+    "ko": "지난 테스트, 잘 던졌어. 선발 기회를 더 줄게. 오늘은 무엇을 준비할까?",
+    "en": "You pitched well in the trial. More starts are coming. What shall we work on today?",
+    "ja": "前のテストはよく投げた。先発の機会を増やすよ。今日は何を準備しようか？"
+  },
+  "meaning.coach-pending": {
+    "ko": "다음 등판은 선발 테스트야. 그 전에 무엇을 준비할까?",
+    "en": "Your next outing is a starting trial. What should we work on first?",
+    "ja": "次の登板は先発テストだ。その前に何を準備しようか？"
+  },
+  "meaning.coach-offer": {
+    "ko": "네 공을 더 키워보자. 훈련을 도와줄까, 선발 기회에 도전해 볼래?",
+    "en": "Let’s develop your pitching. Want training help, or a chance to try starting?",
+    "ja": "投球をもっと伸ばそう。練習を手伝おうか、それとも先発に挑戦する？"
+  },
+  "meaning.catcher-offer": {
+    "ko": "다음 등판 전에 하나만 같이 맞춰보자. 배합, 코스, 결정구 중에 뭐부터 할까?",
+    "en": "Let’s work on one thing before your next outing: sequencing, locations, or your finishing pitch?",
+    "ja": "次の登板までに一つ合わせよう。配球、コース、決め球、どれからやる？"
+  },
+  "meaning.ask-training": {
+    "ko": "훈련을 도와주세요",
+    "en": "Help me train",
+    "ja": "練習を手伝ってください"
+  },
+  "meaning.ask-rest": {
+    "ko": "회복하고 싶어요",
+    "en": "I need to recover",
+    "ja": "回復したいです"
+  },
+  "meaning.ask-start": {
+    "ko": "선발 기회에 도전할게요",
+    "en": "Let me try starting",
+    "ja": "先発に挑戦します"
+  },
+  "meaning.battery-sequence": {
+    "ko": "배합을 같이 복기하자",
+    "en": "Review our pitch sequences",
+    "ja": "配球を一緒に振り返ろう"
+  },
+  "meaning.battery-command": {
+    "ko": "코스를 같이 점검하자",
+    "en": "Work on our locations",
+    "ja": "コースを一緒に確認しよう"
+  },
+  "meaning.battery-pitch": {
+    "ko": "결정구를 같이 연습하자",
+    "en": "Practice the finishing pitch",
+    "ja": "決め球を一緒に練習しよう"
+  },
+  "meaning.support": {
+    "ko": "다음 %s 지원",
+    "en": "Support for the next %s",
+    "ja": "次の%sを支援"
+  },
+  "meaning.trial-pending": {
+    "ko": "다음 등판: 선발 테스트",
+    "en": "Next outing: starting trial",
+    "ja": "次の登板：先発テスト"
+  },
+  "meaning.trial": {
+    "ko": "선발 테스트",
+    "en": "Starting trial",
+    "ja": "先発テスト"
+  },
+  "meaning.starter": {
+    "ko": "선발 등판",
+    "en": "Starting pitcher",
+    "ja": "先発登板"
+  },
+  "meaning.relief": {
+    "ko": "중간계투 등판",
+    "en": "Relief appearance",
+    "ja": "中継ぎ登板"
+  },
+  "meaning.closer": {
+    "ko": "마무리 등판",
+    "en": "Closing appearance",
+    "ja": "抑え登板"
+  },
+  "meaning.goal": {
+    "ko": "이번 목표",
+    "en": "Outing objective",
+    "ja": "今回の目標"
+  },
+  "meaning.entry": {
+    "ko": "투입",
+    "en": "Entry",
+    "ja": "登板時"
+  },
+  "meaning.inherited": {
+    "ko": "주자 %lld명 승계",
+    "en": "Inherited %lld runner(s)",
+    "ja": "走者%lld人を引き継ぎ"
+  },
+  "meaning.inherited-hud": {
+    "ko": "등판 때 주자 %lld명 승계",
+    "en": "Inherited %lld runner(s) on entry",
+    "ja": "登板時に走者%lld人を引き継ぎ"
+  },
+  "meaning.trial-goal": {
+    "ko": "직접 2이닝 · 2실점 이하",
+    "en": "Pitch 2 innings yourself · allow at most 2 runs",
+    "ja": "自分で2回投球 · 2失点以内"
+  },
+  "meaning.hold": {
+    "ko": "리드를 지켜 이닝 마무리",
+    "en": "Finish the inning with the lead",
+    "ja": "リードを守ってイニングを終える"
+  },
+  "meaning.first-frame": {
+    "ko": "첫 이닝 무실점으로 출발",
+    "en": "Start with a scoreless inning",
+    "ja": "初回を無失点で始める"
+  },
+  "meaning.clean-frame": {
+    "ko": "추가 실점 없이 이닝 마무리",
+    "en": "Finish the inning without another run",
+    "ja": "追加失点なしでイニングを終える"
+  },
+  "meaning.outs": {
+    "ko": "%lld/%lld 아웃",
+    "en": "%lld/%lld outs",
+    "ja": "%lld/%lldアウト"
+  },
+  "meaning.trial-earned": {
+    "ko": "테스트 통과 · 선발 기회 확보",
+    "en": "Trial passed · starting opportunity earned",
+    "ja": "テスト合格 · 先発の機会を獲得"
+  },
+  "meaning.goal-earned": {
+    "ko": "목표 달성 · 감독 신뢰 +%lld",
+    "en": "Objective achieved · manager trust +%lld",
+    "ja": "目標達成 · 監督の信頼 +%lld"
+  },
+  "meaning.achieved": {
+    "ko": "목표 달성",
+    "en": "Objective achieved",
+    "ja": "目標達成"
+  },
+  "meaning.missed": {
+    "ko": "목표는 놓쳤지만, 남은 아웃을 잡아보세요.",
+    "en": "The objective slipped away. Focus on the remaining outs.",
+    "ja": "目標は逃しましたが、残りのアウトを取りましょう。"
+  },
+  "meaning.next": {
+    "ko": "다음 기회를 준비해요.",
+    "en": "Prepare for the next opportunity.",
+    "ja": "次のチャンスに備えましょう。"
+  },
+  "meaning.trial-entry": {
+    "ko": "감독과 약속한 선발 테스트. 직접 두 이닝을 2실점 이하로 막아 보세요.",
+    "en": "Your promised starting trial: pitch two innings yourself and allow at most two runs.",
+    "ja": "監督と約束した先発テスト。自分で2回を2失点以内に抑えましょう。"
+  },
+  "meaning.earned-entry": {
+    "ko": "지난 등판에서 얻은 선발 기회예요.",
+    "en": "A starting opportunity earned in your last outing.",
+    "ja": "前の登板で得た先発の機会です。"
+  },
+  "meaning.trial-news": {
+    "ko": "선발 테스트 통과. 다음 등판부터 선발 기회가 열렸어요.",
+    "en": "Starting trial passed. You have earned future starting opportunities.",
+    "ja": "先発テスト合格。今後の先発機会が開かれました。"
+  },
+  "meaning.goal-news": {
+    "ko": "등판 목표를 달성했어요. 감독의 신뢰가 올랐어요.",
+    "en": "Outing objective achieved. Your manager trusts you more.",
+    "ja": "登板目標を達成し、監督の信頼が上がりました。"
+  },
+  "meaning.outing-news": {
+    "ko": "이번 등판을 마쳤어요. 다음 기회를 준비해요.",
+    "en": "This outing is complete. Prepare for your next chance.",
+    "ja": "今回の登板を終えました。次のチャンスに備えましょう。"
+  },
+  "meaning.bloom": {
+    "ko": "잠재력을 돌파했어요. 더 높은 능력으로 성장할 수 있어요.",
+    "en": "You broke through your potential limit. More growth is now possible.",
+    "ja": "潜在力の限界を突破。さらに高い能力を目指せます。"
+  },
+  "meaning.breakthrough-result": {
+    "ko": "돌파 준비 %lld/%lld · 훈련 성과가 남았어요.",
+    "en": "Breakthrough progress %lld/%lld · your training counted.",
+    "ja": "突破準備 %lld/%lld · 練習成果が残りました。"
+  },
+  "meaning.xp-result": {
+    "ko": "성장 준비 %lld/100 · 다음 훈련으로 이어집니다.",
+    "en": "Growth progress %lld/100 · carries into your next training.",
+    "ja": "成長準備 %lld/100 · 次の練習に引き継ぎます。"
+  },
+  "meaning.support-used": {
+    "ko": "대화에서 받은 훈련 지원을 사용했어요.",
+    "en": "You used the training support from your conversation.",
+    "ja": "会話で得た練習支援を使いました。"
+  },
+  "meaning.support-label": {
+    "ko": "대화에서 받은 지원",
+    "en": "Support from a conversation",
+    "ja": "会話で得た支援"
+  },
+  "meaning.conversation-result": {
+    "ko": "대화로 달라진 것",
+    "en": "What the conversation changed",
+    "ja": "会話で変わったこと"
+  },
+  "meaning.decision-next": {
+    "ko": "선택한 계획으로 다음 일정을 준비해요.",
+    "en": "Prepare for what comes next with your chosen plan.",
+    "ja": "選んだ計画で次の日程に備えましょう。"
+  },
+  "meaning.decision-applied": {
+    "ko": "다음 등판 준비에 반영됐어요.",
+    "en": "Applied to preparation for your next outing.",
+    "ja": "次の登板準備に反映されました。"
+  },
+  "meaning.role-change": {
+    "ko": "보직: %s",
+    "en": "Role: %s",
+    "ja": "役割：%s"
+  },
+  "meaning.conversation-done": {
+    "ko": "대화를 마쳤어요. 다음 일정을 준비해요.",
+    "en": "Conversation complete. Prepare for the next activity.",
+    "ja": "会話を終えました。次の日程に備えましょう。"
+  },
+  "meaning.other-path": {
+    "ko": "이번 생을 마무리하는 선택",
+    "en": "Options for finishing this life",
+    "ja": "今世を終える選択"
+  },
+  "meaning.partial-start": {
+    "ko": "선발 · %lld회부터 직접",
+    "en": "Starter · manual play from inning %lld",
+    "ja": "先発 · %lld回から自分で投球"
+  },
+  "meaning.delta.trust.plus": {
+    "ko": "신뢰 +%lld",
+    "en": "Trust +%lld",
+    "ja": "信頼 +%lld"
+  },
+  "meaning.delta.trust.minus": {
+    "ko": "신뢰 -%lld",
+    "en": "Trust -%lld",
+    "ja": "信頼 -%lld"
+  },
+  "meaning.delta.manager-trust.plus": {
+    "ko": "감독 신뢰 +%lld",
+    "en": "Manager trust +%lld",
+    "ja": "監督の信頼 +%lld"
+  },
+  "meaning.delta.manager-trust.minus": {
+    "ko": "감독 신뢰 -%lld",
+    "en": "Manager trust -%lld",
+    "ja": "監督の信頼 -%lld"
+  },
+  "meaning.delta.catcher-trust.plus": {
+    "ko": "포수 신뢰 +%lld",
+    "en": "Catcher trust +%lld",
+    "ja": "捕手の信頼 +%lld"
+  },
+  "meaning.delta.catcher-trust.minus": {
+    "ko": "포수 신뢰 -%lld",
+    "en": "Catcher trust -%lld",
+    "ja": "捕手の信頼 -%lld"
+  },
+  "meaning.delta.fatigue.plus": {
+    "ko": "피로 +%lld",
+    "en": "Fatigue +%lld",
+    "ja": "疲労 +%lld"
+  },
+  "meaning.delta.fatigue.minus": {
+    "ko": "피로 -%lld",
+    "en": "Fatigue -%lld",
+    "ja": "疲労 -%lld"
+  },
+  "meaning.delta.arm-strain.plus": {
+    "ko": "팔 부담 +%lld",
+    "en": "Arm strain +%lld",
+    "ja": "腕の負担 +%lld"
+  },
+  "meaning.delta.arm-strain.minus": {
+    "ko": "팔 부담 -%lld",
+    "en": "Arm strain -%lld",
+    "ja": "腕の負担 -%lld"
+  },
+  "meaning.delta.interest.plus": {
+    "ko": "관심도 +%lld",
+    "en": "Interest +%lld",
+    "ja": "注目度 +%lld"
+  },
+  "meaning.delta.interest.minus": {
+    "ko": "관심도 -%lld",
+    "en": "Interest -%lld",
+    "ja": "注目度 -%lld"
+  },
+  "meaning.support-next.stuff": {
+    "ko": "다음 구위 훈련 지원",
+    "en": "Support for your next stuff training",
+    "ja": "次の球威トレーニングをサポート"
+  },
+  "meaning.support-next.command": {
+    "ko": "다음 제구 훈련 지원",
+    "en": "Support for your next control training",
+    "ja": "次の制球トレーニングをサポート"
+  },
+  "meaning.support-next.breaking": {
+    "ko": "다음 변화구 훈련 지원",
+    "en": "Support for your next breaking ball training",
+    "ja": "次の変化球トレーニングをサポート"
+  },
+  "meaning.support-next.stamina": {
+    "ko": "다음 체력 훈련 지원",
+    "en": "Support for your next stamina training",
+    "ja": "次のスタミナトレーニングをサポート"
+  },
+  "meaning.support-next.planning": {
+    "ko": "다음 경기 운영 훈련 지원",
+    "en": "Support for your next game planning training",
+    "ja": "次の試合運びトレーニングをサポート"
+  },
+  "improve.records.scope": {
+    "ko": "기록 범위",
+    "en": "Record scope",
+    "ja": "記録の範囲"
+  },
+  "improve.records.history-gap": {
+    "ko": "누적 기록은 보존했어요. 개별 등판은 저장된 경기부터 보여드려요.",
+    "en": "Career totals are preserved. Individual outings appear where details were saved.",
+    "ja": "通算記録は保持されています。登板の詳細は保存された試合から表示します。"
+  },
+  "improve.records.before": {
+    "ko": "첫 등판 전",
+    "en": "Before your first outing",
+    "ja": "初登板前"
+  },
+  "improve.records.empty": {
+    "ko": "등판을 마치면 내 기록이 여기에 쌓여요.",
+    "en": "Your record begins with your first outing.",
+    "ja": "登板を終えると、ここに記録が残ります。"
+  },
+  "improve.records.pro-season": {
+    "ko": "프로 %lld시즌",
+    "en": "Pro season %lld",
+    "ja": "プロ%lld年目"
+  },
+  "improve.records.school-life": {
+    "ko": "%lld번째 생 · 고교",
+    "en": "Life %lld · High school",
+    "ja": "%lld回目の人生 · 高校"
+  },
+  "improve.records.season": {
+    "ko": "%lld시즌",
+    "en": "Season %lld",
+    "ja": "%lld年目"
+  },
+  "improve.records.chapter": {
+    "ko": "%lld장",
+    "en": "Chapter %lld",
+    "ja": "第%lld章"
+  },
+  "improve.week.prepare": {
+    "ko": "시즌 준비",
+    "en": "Season preparation",
+    "ja": "シーズンの準備"
+  },
+  "improve.week.next": {
+    "ko": "%lld주차 준비",
+    "en": "Prepare for week %lld",
+    "ja": "第%lld週の準備"
+  },
+  "improve.week.growth": {
+    "ko": "%s 성장 진도 %lld/%lld → 훈련 1회 누적",
+    "en": "%s progress %lld/%lld → one training credit",
+    "ja": "%sの成長 %lld/%lld → 練習1回を蓄積"
+  },
+  "improve.week.progress": {
+    "ko": "%s 성장 진도 %lld/%lld",
+    "en": "%s progress %lld/%lld",
+    "ja": "%sの成長 %lld/%lld"
+  },
+  "improve.week.recover": {
+    "ko": "몸을 회복하는 한 주",
+    "en": "A week to recover",
+    "ja": "体を回復する1週間"
+  },
+  "improve.week.trust": {
+    "ko": "감독의 신뢰를 쌓는 한 주",
+    "en": "A week to earn the manager’s trust",
+    "ja": "監督の信頼を築く1週間"
+  },
+  "improve.week.outings": {
+    "ko": "예정된 자동 등판 %lld경기",
+    "en": "Scheduled simulated outings: %lld",
+    "ja": "自動で進む登板予定：%lld試合"
+  },
+  "improve.week.fatigue": {
+    "ko": "예상 피로 %lld~%lld · 현재 %lld",
+    "en": "Expected fatigue %lld–%lld · Current %lld",
+    "ja": "予想疲労 %lld～%lld · 現在 %lld"
+  },
+  "improve.week.commit": {
+    "ko": "이번 주 진행",
+    "en": "Play this week",
+    "ja": "今週を進める"
+  },
+  "improve.week.batch": {
+    "ko": "여러 주 진행",
+    "en": "Advance several weeks",
+    "ja": "数週間進める"
+  },
+  "improve.week.pause": {
+    "ko": "대화나 중요한 경기가 나오면 멈춰요.",
+    "en": "Stops for a decision or important game.",
+    "ja": "会話や重要な試合で止まります。"
+  },
+  "improve.week.delegate": {
+    "ko": "감독에게 맡기기",
+    "en": "Let the manager lead",
+    "ja": "監督に任せる"
+  },
+  "improve.week.result": {
+    "ko": "이번 주의 변화",
+    "en": "This week’s results",
+    "ja": "今週の変化"
+  },
+  "improve.week.review": {
+    "ko": "몸 상태와 이번 주 경기를 확인해요.",
+    "en": "Review your condition and this week’s games.",
+    "ja": "体調と今週の試合を確認しましょう。"
+  },
+  "improve.week.games": {
+    "ko": "이번 주 경기",
+    "en": "This week’s games",
+    "ja": "今週の試合"
+  },
+  "improve.week.next-action": {
+    "ko": "다음 일정으로",
+    "en": "Continue to the next activity",
+    "ja": "次の日程へ"
+  },
+  "improve.week.injury": {
+    "ko": "회복까지 %lld주",
+    "en": "Recovery: %lld weeks",
+    "ja": "回復まで%lld週間"
+  },
+  "improve.outing.context": {
+    "ko": "등판 상황",
+    "en": "Your assignment",
+    "ja": "登板状況"
+  },
+  "improve.outing.focus": {
+    "ko": "이번 이닝에 집중해요.",
+    "en": "Focus on this inning.",
+    "ja": "この回に集中しましょう。"
+  },
+  "improve.outing.chance": {
+    "ko": "선발 기회",
+    "en": "Starting opportunity",
+    "ja": "先発のチャンス"
+  },
+  "improve.outing.details": {
+    "ko": "상대와 경기 이야기",
+    "en": "Opponent and game context",
+    "ja": "相手と試合の背景"
+  },
+  "improve.outing.trial-continue": {
+    "ko": "테스트 이어 던지기",
+    "en": "Continue the trial",
+    "ja": "テストを続ける"
+  },
+  "improve.outing.trial-stop": {
+    "ko": "자동 진행하면 직접 투구 테스트는 여기서 끝나요.",
+    "en": "Simulating ends your manual pitching trial here.",
+    "ja": "自動進行を選ぶと、直接投球のテストはここで終了します。"
+  },
+  "improve.outing.opening": {
+    "ko": "개막 시리즈의 승부처. %s 앞에서 올해의 첫인상을 만든다.",
+    "en": "An opening-series moment. Make your first impression against %s.",
+    "ja": "開幕シリーズの勝負どころ。%sを相手に今年の第一印象を残す。"
+  },
+  "improve.effect.delta": {
+    "ko": "%s %s",
+    "en": "%s %s",
+    "ja": "%s %s"
+  },
+  "improve.effect.more": {
+    "ko": "외 %lld개 효과",
+    "en": "%lld more effects",
+    "ja": "ほか%lld件の効果"
+  },
+  "improve.effect.details": {
+    "ko": "효과 자세히",
+    "en": "All effects",
+    "ja": "効果の詳細"
+  },
+  "improve.effect.label.trust": {
+    "ko": "신뢰",
+    "en": "Trust",
+    "ja": "信頼"
+  },
+  "improve.effect.label.manager": {
+    "ko": "감독 신뢰",
+    "en": "Manager trust",
+    "ja": "監督の信頼"
+  },
+  "improve.effect.label.catcher": {
+    "ko": "포수 신뢰",
+    "en": "Catcher trust",
+    "ja": "捕手の信頼"
+  },
+  "improve.effect.label.interest": {
+    "ko": "관심도",
+    "en": "Interest",
+    "ja": "注目度"
+  },
+  "improve.effect.label.arm": {
+    "ko": "팔 부담",
+    "en": "Arm strain",
+    "ja": "腕の負担"
+  },
+  "companion.memory.starter_trial": {
+    "ko": "선발 테스트를 통과한 날",
+    "en": "The day I passed the starter trial",
+    "ja": "先発テストに合格した日"
+  },
+  "companion.reaction.starter_trial": {
+    "ko": "지난 선발 테스트, 네 공으로 기회를 얻었지.",
+    "en": "You earned that starting chance in the trial.",
+    "ja": "先発テストで自分の球を信じ、チャンスをつかんだね。"
+  },
+  "memory.recall.starter_trial": {
+    "ko": "지난 선발 테스트, 네 공으로 기회를 얻었지.",
+    "en": "You earned that starting chance in the trial.",
+    "ja": "先発テストで自分の球を信じ、チャンスをつかんだね。"
+  },
+  "companion.memory.held_lead": {
+    "ko": "내 공으로 지킨 리드",
+    "en": "The lead I protected",
+    "ja": "自分の球で守ったリード"
+  },
+  "companion.reaction.held_lead": {
+    "ko": "지난번 지켜낸 리드, 그 집중력을 기억하자.",
+    "en": "Remember the focus that protected that lead.",
+    "ja": "あのリードを守った集中力を覚えておこう。"
+  },
+  "memory.recall.held_lead": {
+    "ko": "지난번 지켜낸 리드, 그 집중력을 기억하자.",
+    "en": "Remember the focus that protected that lead.",
+    "ja": "あのリードを守った集中力を覚えておこう。"
+  },
+  "companion.memory.first_save": {
+    "ko": "첫 세이브를 올린 날",
+    "en": "My first save",
+    "ja": "初セーブを挙げた日"
+  },
+  "companion.reaction.first_save": {
+    "ko": "첫 세이브 때처럼, 마지막 아웃까지 믿어보자.",
+    "en": "Trust your pitch through the last out, like your first save.",
+    "ja": "初セーブの時のように、最後のアウトまで自分の球を信じよう。"
+  },
+  "memory.recall.first_save": {
+    "ko": "첫 세이브 때처럼, 마지막 아웃까지 믿어보자.",
+    "en": "Trust your pitch through the last out, like your first save.",
+    "ja": "初セーブの時のように、最後のアウトまで自分の球を信じよう。"
+  },
+  "companion.memory.best_outing": {
+    "ko": "직접 던진 최고의 등판",
+    "en": "My best hands-on outing",
+    "ja": "自分で投げた最高の登板"
+  },
+  "companion.reaction.best_outing": {
+    "ko": "지난 최고의 등판을 떠올려봐. 그 공은 네가 던졌어.",
+    "en": "Think of your best outing. Those were your pitches.",
+    "ja": "最高の登板を思い出して。あの球を投げたのは君だ。"
+  },
+  "memory.recall.best_outing": {
+    "ko": "지난 최고의 등판을 떠올려봐. 그 공은 네가 던졌어.",
+    "en": "Think of your best outing. Those were your pitches.",
+    "ja": "最高の登板を思い出して。あの球を投げたのは君だ。"
+  },
+  "improve.ability": {
+    "ko": "능력",
+    "en": "Abilities",
+    "ja": "能力"
+  },
+  "memory.summary": {
+    "ko": "내 투수가 해낸 일",
+    "en": "What my pitcher achieved",
+    "ja": "この投手が成し遂げたこと"
+  },
+  "improve.outing.empty-bases": {
+    "ko": "주자 없음",
+    "en": "Bases empty",
+    "ja": "走者なし"
+  },
+  "improve.outing.bases": {
+    "ko": "주자 %s루",
+    "en": "Runners on %s",
+    "ja": "走者%s塁"
+  },
+  "improve.outing.tied": {
+    "ko": "동점",
+    "en": "Tied",
+    "ja": "同点"
+  },
+  "improve.outing.lead": {
+    "ko": "%lld점 앞섬",
+    "en": "Leading by %lld",
+    "ja": "%lld点リード"
+  },
+  "improve.outing.trail": {
+    "ko": "%lld점 뒤짐",
+    "en": "Trailing by %lld",
+    "ja": "%lld点ビハインド"
+  },
+  "improve.outing.situation": {
+    "ko": "%lld회 · %lld사 · %s",
+    "en": "Inning %lld · %lld outs · %s",
+    "ja": "%lld回 · %lldアウト · %s"
+  },
+  "improve.outing.reward": {
+    "ko": "감독 신뢰 +%lld",
+    "en": "Manager trust +%lld",
+    "ja": "監督の信頼 +%lld"
+  },
+  "visual.base.occupied": {
+    "ko": "%lld루 주자 있음",
+    "en": "Runner on base %lld",
+    "ja": "%lld塁に走者"
+  },
+  "visual.base.empty": {
+    "ko": "%lld루 비어 있음",
+    "en": "Base %lld empty",
+    "ja": "%lld塁は走者なし"
+  },
+  "visual.inning": {
+    "ko": "회",
+    "en": "INNING",
+    "ja": "回"
+  },
+  "visual.outs": {
+    "ko": "아웃",
+    "en": "OUTS",
+    "ja": "アウト"
+  },
+  "visual.leading": {
+    "ko": "점 앞섬",
+    "en": "AHEAD",
+    "ja": "点リード"
+  },
+  "visual.trailing": {
+    "ko": "점 뒤짐",
+    "en": "BEHIND",
+    "ja": "点ビハインド"
+  },
+  "improve.records.no-details": {
+    "ko": "이전 경기의 개별 기록은 남아 있지 않아요.",
+    "en": "Individual details of these earlier games were not saved.",
+    "ja": "過去の試合の個別記録は保存されていません。"
+  },
+  "album.copy.0": {
+    "ko": "선수 앨범",
+    "en": "Player album",
+    "ja": "選手アルバム"
+  },
+  "album.copy.1": {
+    "ko": "첫 등판부터 나만의 야구 인생이 여기에 쌓여요.",
+    "en": "Your baseball story starts here with your first outing.",
+    "ja": "初登板から、あなただけの野球人生がここに残ります。"
+  },
+  "album.copy.2": {
+    "ko": "선수와 시즌 선택",
+    "en": "Player and season",
+    "ja": "選手とシーズンを選択"
+  },
+  "album.copy.4": {
+    "ko": "카드 보기",
+    "en": "View card",
+    "ja": "カードを見る"
+  },
+  "album.copy.5": {
+    "ko": "기억할 경기",
+    "en": "An outing to remember",
+    "ja": "記憶に残る登板"
+  },
+  "album.copy.6": {
+    "ko": "인생 경기",
+    "en": "Career highlight",
+    "ja": "人生のベストゲーム"
+  },
+  "album.copy.7": {
+    "ko": "경기 카드",
+    "en": "Outing card",
+    "ja": "登板カード"
+  },
+  "album.copy.8": {
+    "ko": "시즌 카드",
+    "en": "Season card",
+    "ja": "シーズンカード"
+  },
+  "album.copy.9": {
+    "ko": "모든 등판",
+    "en": "All outings",
+    "ja": "すべての登板"
+  },
+  "album.copy.10": {
+    "ko": "환생 계보",
+    "en": "Rebirth lineage",
+    "ja": "転生の系譜"
+  },
+  "album.copy.11": {
+    "ko": "앨범 열기",
+    "en": "Open album",
+    "ja": "アルバムを開く"
+  },
+  "album.copy.12": {
+    "ko": "계보 카드",
+    "en": "Lineage card",
+    "ja": "系譜カード"
+  },
+  "album.copy.13": {
+    "ko": "투구 궤적 다시 보기",
+    "en": "Replay pitch trajectories",
+    "ja": "投球軌道を再生"
+  },
+  "album.copy.14": {
+    "ko": "투구 재생은 저장된 직접 투구부터 제공해요.",
+    "en": "Replays are available for recorded manual pitches.",
+    "ja": "保存された手動投球から再生できます。"
+  },
+  "album.copy.15": {
+    "ko": "앨범은 게임 백업에 함께 보관돼요.",
+    "en": "Your album is included in your game backup.",
+    "ja": "アルバムはゲームのバックアップにも保存されます。"
+  },
+  "album.copy.16": {
+    "ko": "재생",
+    "en": "Play",
+    "ja": "再生"
+  },
+  "album.copy.17": {
+    "ko": "카드 미리보기",
+    "en": "Card preview",
+    "ja": "カードのプレビュー"
+  },
+  "album.copy.18": {
+    "ko": "공유하지 못했어요. 다시 시도해 주세요.",
+    "en": "Could not share. Please try again.",
+    "ja": "共有できませんでした。もう一度お試しください。"
+  },
+  "album.copy.19": {
+    "ko": "사진에 저장했어요.",
+    "en": "Saved to Photos.",
+    "ja": "写真に保存しました。"
+  },
+  "album.copy.20": {
+    "ko": "저장하지 못했어요. 공유 메뉴를 이용해 주세요.",
+    "en": "Could not save. Please use the share menu.",
+    "ja": "保存できませんでした。共有メニューをご利用ください。"
+  },
+  "album.copy.21": {
+    "ko": "이미지 저장",
+    "en": "Save image",
+    "ja": "画像を保存"
+  },
+  "album.copy.22": {
+    "ko": "기념할 순간",
+    "en": "Milestones",
+    "ja": "記念の瞬間"
+  },
+  "album.copy.23": {
+    "ko": "첫 승",
+    "en": "First win",
+    "ja": "初勝利"
+  },
+  "album.copy.24": {
+    "ko": "첫 세이브",
+    "en": "First save",
+    "ja": "初セーブ"
+  },
+  "album.copy.25": {
+    "ko": "첫 선발",
+    "en": "First start",
+    "ja": "初先発"
+  },
+  "album.copy.26": {
+    "ko": "첫 무실점 등판",
+    "en": "First scoreless outing",
+    "ja": "初の無失点登板"
+  },
+  "album.copy.27": {
+    "ko": "선택한 기간에 저장된 경기 기준",
+    "en": "Based on recorded games in this period",
+    "ja": "選択期間に保存された試合が対象です"
+  },
+  "album.copy.28": {
+    "ko": "마지막 백업",
+    "en": "Last backup",
+    "ja": "前回のバックアップ"
+  },
+  "album.copy.29": {
+    "ko": "앨범",
+    "en": "Album",
+    "ja": "アルバム"
+  },
+  "album.copy.30": {
+    "ko": "내 투수의 기록을 앨범에 보관했어요.",
+    "en": "Your pitcher’s record is in the album.",
+    "ja": "投手の記録をアルバムに保存しました。"
+  },
+  "album.copy.31": {
+    "ko": "지난 생과 성장 비교",
+    "en": "Compare with a past life",
+    "ja": "前世との成長比較"
+  },
+  "album.copy.32": {
+    "ko": "같은 고교 기간의 최종 능력 비교",
+    "en": "Final ratings across high school careers",
+    "ja": "同じ高校期間の最終能力を比較"
+  },
+  "album.stats.0": {
+    "ko": "상세 투구 기록",
+    "en": "Detailed pitching stats",
+    "ja": "投球成績の詳細"
+  },
+  "album.stats.1": {
+    "ko": "기록 용어",
+    "en": "Stat definitions",
+    "ja": "記録の用語"
+  },
+  "album.stats.2": {
+    "ko": "WHIP · 이닝당 허용한 피안타와 볼넷",
+    "en": "WHIP · Hits and walks allowed per inning",
+    "ja": "WHIP · 1イニング当たりの被安打と与四球"
+  },
+  "album.stats.3": {
+    "ko": "K/9 · 9이닝당 탈삼진",
+    "en": "K/9 · Strikeouts per nine innings",
+    "ja": "K/9 · 9イニング当たりの奪三振"
+  },
+  "album.stats.4": {
+    "ko": "BB/9 · 9이닝당 볼넷",
+    "en": "BB/9 · Walks per nine innings",
+    "ja": "BB/9 · 9イニング当たりの与四球"
+  },
+  "album.stats.5": {
+    "ko": "H/9 · 9이닝당 피안타",
+    "en": "H/9 · Hits allowed per nine innings",
+    "ja": "H/9 · 9イニング当たりの被安打"
+  },
+  "album.stats.6": {
+    "ko": "K/BB · 볼넷당 탈삼진",
+    "en": "K/BB · Strikeouts per walk",
+    "ja": "K/BB · 与四球当たりの奪三振"
+  },
+  "album.stats.7": {
+    "ko": "RA/9 · 9이닝당 실점, 자책점 기준 ERA와 달라요.",
+    "en": "RA/9 · Runs per nine innings; unlike ERA, this includes all runs.",
+    "ja": "RA/9 · 9イニング当たりの失点。自責点を使うERAとは異なります。"
+  },
+  "album.stats.8": {
+    "ko": "— · 계산에 필요한 기록이 없거나 분모가 0이에요.",
+    "en": "— · Required records are missing or the denominator is zero.",
+    "ja": "— · 必要な記録がない、または分母がゼロです。"
+  },
+  "album.stats.base.0": {
+    "ko": "G 경기 · GS 선발 · W 승 · L 패 · SV 세이브",
+    "en": "G Games · GS Starts · W Wins · L Losses · SV Saves",
+    "ja": "G 登板 · GS 先発 · W 勝利 · L 敗戦 · SV セーブ"
+  },
+  "album.stats.base.1": {
+    "ko": "IP 이닝 · H 피안타 · HR 피홈런 · BB 볼넷",
+    "en": "IP Innings · H Hits · HR Home runs · BB Walks",
+    "ja": "IP 投球回 · H 被安打 · HR 被本塁打 · BB 与四球"
+  },
+  "album.stats.base.2": {
+    "ko": "SO 탈삼진 · R 실점 · NP 투구 수",
+    "en": "SO Strikeouts · R Runs · NP Pitches",
+    "ja": "SO 奪三振 · R 失点 · NP 投球数"
+  },
+  "week.batch.plan": {
+    "ko": "진행 계획 · %s",
+    "en": "Plan · %s",
+    "ja": "進行プラン・%s"
+  },
+  "week.batch.commit": {
+    "ko": "이 계획으로 진행",
+    "en": "Continue plan",
+    "ja": "このプランで進む"
+  },
+  "album.subtitle": {
+    "ko": "내 투수의 기록과 기억",
+    "en": "My pitcher’s records and memories",
+    "ja": "私の投手の記録と思い出"
+  },
+  "balance.stats.base": {
+    "ko": "SO 탈삼진 · R 실점 · ER 자책점 · NP 투구 수",
+    "en": "SO Strikeouts · R Runs · ER Earned runs · NP Pitches",
+    "ja": "SO 奪三振 · R 失点 · ER 自責点 · NP 投球数"
+  },
+  "balance.stats.era": {
+    "ko": "ERA · 9이닝당 자책점",
+    "en": "ERA · Earned runs per nine innings",
+    "ja": "ERA · 9イニング当たりの自責点"
+  },
+  "balance.error.verdict": {
+    "ko": "실책 출루",
+    "en": "Reached on error",
+    "ja": "失策で出塁"
+  },
+  "balance.error.comment": {
+    "ko": "야수가 놓쳤다 · 실책 출루",
+    "en": "The fielder missed it · Reached on error",
+    "ja": "野手が取り損ねた · 失策で出塁"
+  },
+  "balance.error.catcher": {
+    "ko": "포수: 잘 던졌어. 다음 타자에 집중하자.",
+    "en": "Catcher: Good pitch. Focus on the next hitter.",
+    "ja": "捕手：いい球だった。次の打者に集中しよう。"
+  },
+  "ace.career.0": {
+    "ko": "끝까지 책임지는 선발",
+    "en": "A starter who goes the distance",
+    "ja": "最後まで投げ抜く先発"
+  },
+  "ace.career.1": {
+    "ko": "마지막 아웃의 주인공",
+    "en": "The final-out specialist",
+    "ja": "最後のアウトを任される投手"
+  },
+  "ace.career.2": {
+    "ko": "적은 공으로 이기는 투수",
+    "en": "Win with fewer pitches",
+    "ja": "少ない球数で勝つ投手"
+  },
+  "ace.career.3": {
+    "ko": "나만의 투수",
+    "en": "My kind of pitcher",
+    "ja": "自分だけの投手"
+  },
+  "ace.career.4": {
+    "ko": "첫 완투에 도전",
+    "en": "Chase your first complete game",
+    "ja": "初完投に挑戦"
+  },
+  "ace.career.5": {
+    "ko": "투구 수와 체력을 아껴 마지막 아웃까지",
+    "en": "Save pitches and energy for the final out",
+    "ja": "球数と体力を節約し最後のアウトまで"
+  },
+  "ace.career.6": {
+    "ko": "첫 완봉승에 도전",
+    "en": "Chase your first shutout win",
+    "ja": "初完封勝利に挑戦"
+  },
+  "ace.career.7": {
+    "ko": "첫 공부터 마지막 공까지 무실점",
+    "en": "Keep them scoreless from first pitch to last",
+    "ja": "最初の一球から最後まで無失点"
+  },
+  "ace.career.8": {
+    "ko": "첫 완투",
+    "en": "First complete game",
+    "ja": "初完投"
+  },
+  "ace.career.9": {
+    "ko": "첫 완봉승",
+    "en": "First shutout win",
+    "ja": "初完封勝利"
+  },
+  "ace.career.10": {
+    "ko": "완봉승",
+    "en": "Shutout win",
+    "ja": "完封勝利"
+  },
+  "ace.career.11": {
+    "ko": "완투",
+    "en": "Complete game",
+    "ja": "完投"
+  },
+  "ace.career.12": {
+    "ko": "CG 완투 · SHO 완봉승",
+    "en": "CG Complete games · SHO Shutouts",
+    "ja": "CG 完投 · SHO 完封"
+  },
+  "ace.career.13": {
+    "ko": "마운드를 지킨다",
+    "en": "Stay on the mound",
+    "ja": "マウンドを守る"
+  },
+  "ace.career.14": {
+    "ko": "불펜에 맡긴다",
+    "en": "Hand over to the bullpen",
+    "ja": "ブルペンに託す"
+  },
+  "ace.career.15": {
+    "ko": "내 투수 자동 진행",
+    "en": "Simulate my remaining pitches",
+    "ja": "自分の投球を自動で進める"
+  },
+  "ace.career.16": {
+    "ko": "다음 이닝도 책임질까요?",
+    "en": "Take the next inning too?",
+    "ja": "次の回も投げますか？"
+  },
+  "ace.career.17": {
+    "ko": "9이닝 무실점 · 팀의 마지막 공격을 기다립니다",
+    "en": "Nine scoreless innings · Awaiting our final at-bat",
+    "ja": "9回無失点 · チームの最後の攻撃を待っています"
+  },
+  "ace.career.18": {
+    "ko": "완봉 도전 · 마지막 아웃까지",
+    "en": "Shutout bid · To the final out",
+    "ja": "完封への挑戦 · 最後のアウトまで"
+  },
+  "ace.career.19": {
+    "ko": "완투 도전 · 끝까지 책임지기",
+    "en": "Complete-game bid · Finish what you started",
+    "ja": "完投への挑戦 · 最後まで投げ抜く"
+  },
+  "ace.career.20": {
+    "ko": "완봉승 · 9이닝 무실점",
+    "en": "Shutout win · Nine scoreless innings",
+    "ja": "完封勝利 · 9回無失点"
+  },
+  "ace.career.21": {
+    "ko": "완투 · 마지막 아웃까지 책임졌습니다",
+    "en": "Complete game · You recorded the final out",
+    "ja": "完投 · 最後のアウトまで投げ抜いた"
+  },
+  "ace.career.22": {
+    "ko": "이번 생에는 다른 야구",
+    "en": "A different path this life",
+    "ja": "今度の人生は違う野球を"
+  },
+  "ace.career.23": {
+    "ko": "기록과 유산을 이어받고 학교 선택부터",
+    "en": "Keep your records and legacy · Start at school selection",
+    "ja": "記録と遺産を引き継ぎ、学校選択から"
+  },
+  "ace.career.24": {
+    "ko": "이 길로 시작",
+    "en": "Start this path",
+    "ja": "この道で始める"
+  },
+  "ace.career.25": {
+    "ko": "이전 방식으로 이어가기",
+    "en": "Continue my previous style",
+    "ja": "前のスタイルを引き継ぐ"
+  },
+  "ace.career.26": {
+    "ko": "제구형",
+    "en": "Command",
+    "ja": "制球型"
+  },
+  "ace.career.27": {
+    "ko": "마무리의 길",
+    "en": "The closer path",
+    "ja": "抑えへの道"
+  },
+  "ace.career.28": {
+    "ko": "스프링캠프에서 마무리 보직에 지원하기",
+    "en": "Apply for the closer role during spring camp",
+    "ja": "春季キャンプで抑えに立候補する"
+  },
+  "ace.career.29": {
+    "ko": "체력형 · 포심 중심 · 완투를 목표로",
+    "en": "Endurance · Four-seam focus · Aim for complete games",
+    "ja": "スタミナ型 · フォーシーム中心 · 完投を目指す"
+  },
+  "ace.career.30": {
+    "ko": "변화구형 · 슬라이더 중심 · 마무리에 지원",
+    "en": "Breaking-ball style · Slider focus · Apply to close",
+    "ja": "変化球型 · スライダー中心 · 抑えに立候補"
+  },
+  "ace.career.31": {
+    "ko": "제구형 · 체인지업 중심 · 효율적인 승부",
+    "en": "Command style · Changeup focus · Efficient pitching",
+    "ja": "制球型 · チェンジアップ中心 · 効率的な投球"
+  },
+  "ace.career.32": {
+    "ko": "지난 생의 기록은 앨범에 남아요.",
+    "en": "Your previous life remains in the album.",
+    "ja": "前世の記録はアルバムに残ります。"
+  },
+  "ace.career.33": {
+    "ko": "전생의 시즌 완투 기록에 도전",
+    "en": "Chase your previous life’s season complete-game record",
+    "ja": "前世のシーズン完投記録に挑戦"
+  },
+  "ace.career.34": {
+    "ko": "제구로 증명 · 100이닝, BB/9 2.00 이하",
+    "en": "Prove your command · 100 IP, BB/9 at most 2.00",
+    "ja": "制球で証明 · 100回、BB/9 2.00以下"
+  },
+  "ace.career.35": {
+    "ko": "%lld회 종료 · %lld구 · %lld실점",
+    "en": "End of inning %lld · %lld pitches · %lld runs",
+    "ja": "%lld回終了 · %lld球 · %lld失点"
+  },
+  "ace.career.36": {
+    "ko": "완봉 도전까지 아웃 %lld개",
+    "en": "Shutout bid · %lld outs to go",
+    "ja": "完封まであと%lldアウト"
+  },
+  "ace.career.37": {
+    "ko": "완투까지 아웃 %lld개",
+    "en": "Complete game · %lld outs to go",
+    "ja": "完投まであと%lldアウト"
+  },
+  "ace.career.38": {
+    "ko": "%lld아웃 남음 · %lld구",
+    "en": "%lld outs remaining · %lld pitches",
+    "ja": "あと%lldアウト · %lld球"
+  },
+  "ace.career.39": {
+    "ko": "통산 %lld세이브",
+    "en": "%lld career saves",
+    "ja": "通算%lldセーブ"
+  },
+  "ace.career.40": {
+    "ko": "한 경기 %lld탈삼진에 도전",
+    "en": "Chase %lld strikeouts in one game",
+    "ja": "1試合%lld奪三振に挑戦"
+  },
+  "ace.career.41": {
+    "ko": "완투 %lld회 · 완봉승 %lld회",
+    "en": "%lld complete games · %lld shutouts",
+    "ja": "完投%lld回 · 完封%lld回"
+  },
+  "ace.career.42": {
+    "ko": "지난 생의 기록 · 완투 %lld회 · 완봉승 %lld회",
+    "en": "Previous life · %lld complete games · %lld shutouts",
+    "ja": "前世の記録 · 完投%lld回 · 完封%lld回"
+  },
+  "ace.career.43": {
+    "ko": "이번 시즌 %lld회 · 전생 최고 %lld회",
+    "en": "%lld this season · Previous life’s best %lld",
+    "ja": "今季%lld回 · 前世の最高%lld回"
+  },
+  "companion.memory.first_complete_game": {
+    "ko": "마지막 아웃까지 책임진 첫 완투",
+    "en": "Your first complete game",
+    "ja": "最後まで投げ抜いた初完投"
+  },
+  "companion.memory.first_shutout": {
+    "ko": "처음으로 끝까지 지켜낸 무실점",
+    "en": "Your first shutout win",
+    "ja": "初めて最後まで守った無失点"
+  },
+  "companion.reaction.first_complete_game": {
+    "ko": "마지막 아웃까지 내 손으로 해냈어요.",
+    "en": "I recorded the final out myself.",
+    "ja": "最後のアウトまで自分で取りました。"
+  },
+  "companion.reaction.first_shutout": {
+    "ko": "한 점도 주지 않고 끝까지 던졌어요.",
+    "en": "I went the distance without allowing a run.",
+    "ja": "1点も許さず最後まで投げ抜きました。"
+  },
+  "ace.live.0": {
+    "ko": "불펜이 남은 아웃을 이어받습니다",
+    "en": "The bullpen will take the remaining outs",
+    "ja": "残りのアウトはブルペンに託します"
+  },
+  "ace.live.1": {
+    "ko": "9회 마지막 아웃 · 등판 종료",
+    "en": "The final out of the ninth · Outing complete",
+    "ja": "9回最後のアウト · 登板終了"
+  },
+  "ace.live.2": {
+    "ko": "승리의 발판 · 5이닝 이상",
+    "en": "Build a chance to win · At least five innings",
+    "ja": "勝利への足場 · 5イニング以上"
+  },
+  "ace.live.3": {
+    "ko": "불펜을 아끼는 투구",
+    "en": "Give the bullpen a rest",
+    "ja": "ブルペンを休ませる投球"
+  },
+  "ace.live.4": {
+    "ko": "%lld.%lld이닝 · %lld구",
+    "en": "%lld.%lld IP · %lld pitches",
+    "ja": "%lld.%lld回 · %lld球"
+  },
+  "ace.live.5": {
+    "ko": "%lld.%lld이닝 · BB/9 %@",
+    "en": "%lld.%lld IP · BB/9 %@",
+    "ja": "%lld.%lld回 · BB/9 %@"
+  },
+  "ace.live.6": {
+    "ko": "%@ · 시즌 준비",
+    "en": "%@ · Preparing for the season",
+    "ja": "%@ · シーズン準備"
+  },
+  "ace.live.7": {
+    "ko": "%@ %lld위 · %lld승 %lld패 %lld무",
+    "en": "%@ #%lld · %lld W %lld L %lld D",
+    "ja": "%@ %lld位 · %lld勝%lld敗%lld分"
+  },
+  "ace.rest.week": {
+    "ko": "등판을 쉬는 주 · 회복을 준비하세요",
+    "en": "No outing this week · Focus on recovery",
+    "ja": "登板を休む週 · 回復を優先しましょう"
+  },
+  "backup.system-explanation": {
+    "ko": "기기 백업이 켜져 있으면 기록이 자동 백업 대상에 포함됩니다. 최신 기록을 확실히 옮기려면 기기 변경이나 앱 삭제 전에 파일로도 보관해 주세요.",
+    "en": "When device backup is enabled, your career is eligible for automatic backup. Export a file before changing devices or uninstalling to keep your latest progress.",
+    "ja": "端末のバックアップが有効なら、記録は自動バックアップの対象になります。最新の進行を確実に移すには、機種変更やアプリ削除の前にファイルにも保存してください。"
   }
 }
