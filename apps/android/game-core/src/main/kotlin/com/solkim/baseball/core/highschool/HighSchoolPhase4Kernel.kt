@@ -86,7 +86,7 @@ public class HighSchoolPhase4Kernel(
         val lineage = HighSchoolLineageRules.apply(request.lineageLoadout, baseRun.pitcher, baseRun.talent)
         val run = highSchool.resignShadowState(
             baseRun.copy(
-                pitcher = lineage.pitcher,
+                pitcher = if (baseRun.balanceVersion >= 7) HighSchoolRebirthGrowthRules.apply(lineage.pitcher, request.inheritedLineageMasteries.sumOf { it.contributions.toLong() }.coerceAtMost((request.lifeNumber - 1).toLong()).toInt()) else lineage.pitcher,
                 talent = lineage.talent,
                 catcherTrust = lineage.catcherTrust,
             ),
@@ -324,6 +324,7 @@ public class HighSchoolPhase4Kernel(
         delivery: PitchDelivery = PitchDelivery.NEUTRAL,
     ): HighSchoolPhase4Result {
         if (state.activePitch == null) return submitTutorialPitch(state, sessionId, call, delivery)
+        val pitch = if (state.run.balanceVersion >= 7) PitchKernel(schoolBalance = true) else this.pitch
         val session = state.activePitch
         require(session.sessionId == sessionId) { "pitch.session_stale" }
         require(!session.ended) { "pitch.ended" }
@@ -621,7 +622,7 @@ public class HighSchoolPhase4Kernel(
             outingNumber = state.seasonLog.size + 1,
         ).copy(abilityMoments = session.abilityMoments, regular = state.run.chapterGameClaimed, perfectReleases = session.perfectReleases)
         val remainder = if (state.run.chapterGameClaimed && session.sessionId.endsWith(":outing-v2") && !state.challenge.active)
-            HighSchoolAutomaticOutingSimulator().simulateRemainder(state.run, session) else null
+            HighSchoolAutomaticOutingSimulator(schoolBalance = state.run.balanceVersion >= 7).simulateRemainder(state.run, session) else null
         if (remainder != null) nextRun = highSchool.resignShadowState(nextRun.copy(
             automaticOuts = nextRun.automaticOuts + remainder.outs,
             automaticRunsAllowed = nextRun.automaticRunsAllowed + remainder.runsAllowed))
@@ -722,7 +723,7 @@ public class HighSchoolPhase4Kernel(
     private fun automaticChapterLog(seed: String, state: HighSchoolPhase4State): List<HighSchoolSeasonLine> {
         // Store the exact automatic lines used by the aggregate, with explicit provenance.
         // Old saves retain their known aggregate without inventing missing hit/strikeout data.
-        val simulated = HighSchoolAutomaticOutingSimulator().simulate(state.run, state.run.chapter, seed.toULong())
+        val simulated = HighSchoolAutomaticOutingSimulator(schoolBalance = highSchool.gameplayRulesVersion >= 7).simulate(state.run, state.run.chapter, seed.toULong())
             .let { if (state.run.chapterGameClaimed) it.drop(1) else it }
         return simulated.mapIndexed { index, line ->
             HighSchoolSeasonLine(state.run.careerId, state.run.lifeNumber, state.run.chapter.number,

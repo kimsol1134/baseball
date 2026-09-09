@@ -260,12 +260,13 @@ public data class HighSchoolResult(
     val eventHash: String,
 )
 
-public object HighSchoolGameplayRules { public const val CURRENT: Int = 6; public const val SWIFT_REFERENCE: Int = 4 }
+public object HighSchoolGameplayRules { public const val CURRENT: Int = 7; public const val SWIFT_REFERENCE: Int = 4 }
 
 public class HighSchoolKernel(private val balanceRulesVersion: Int = HighSchoolGameplayRules.CURRENT) {
     init { require(balanceRulesVersion in HighSchoolGameplayRules.SWIFT_REFERENCE..HighSchoolGameplayRules.CURRENT) }
+    public val gameplayRulesVersion: Int get() = balanceRulesVersion
     private val currentRules: Boolean get() = balanceRulesVersion >= 5
-    private val automaticOuting = HighSchoolAutomaticOutingSimulator(modernPitching = currentRules)
+    private val automaticOuting = HighSchoolAutomaticOutingSimulator(modernPitching = currentRules, schoolBalance = balanceRulesVersion >= 7)
     public data class StartRequest(
         val seed: String,
         val presetId: String,
@@ -1833,7 +1834,7 @@ public class HighSchoolKernel(private val balanceRulesVersion: Int = HighSchoolG
         if (outs == 0) return 0
         val runs = state.performance.runsAllowed + state.automaticRunsAllowed
         val runRate = runs * 27_000 / outs
-        return clamp((4_500 - runRate) / 550, -8, 8) * min(90, outs) / 90
+        return clamp(((if (balanceRulesVersion >= 7) 6_000 else 4_500) - runRate) / (if (balanceRulesVersion >= 7) 700 else 550), -8, 8) * min(90, outs) / 90
     }
 
     private fun draftThreshold(state: HighSchoolState): Int {
@@ -1842,7 +1843,7 @@ public class HighSchoolKernel(private val balanceRulesVersion: Int = HighSchoolG
             "challenging" -> 65
             else -> 61
         }
-        return base + 5
+        return base + if (balanceRulesVersion >= 7) 0 else 5
     }
 
     private fun trainingGrowth(signal: Int): Int = when {
@@ -2001,7 +2002,7 @@ public class HighSchoolKernel(private val balanceRulesVersion: Int = HighSchoolG
 
     private fun difficultyScale(chapter: Int, lifeNumber: Int): Int {
         val byChapter = min(3, max(0, chapter - 1) * 3 / 7)
-        val byLife = min(4, max(0, lifeNumber - 1) * 2)
+        val byLife = if (balanceRulesVersion >= 7) 0 else min(4, max(0, lifeNumber - 1) * 2)
         return byChapter + byLife
     }
 

@@ -1136,7 +1136,7 @@ private class CatcherRecommendationEngine {
     }
 }
 
-public class PitchKernel(private val legacyRecommendations: Boolean = false, private val professionalBalance: Boolean = false, private val professionalWorkload: Boolean = false) {
+public class PitchKernel(private val legacyRecommendations: Boolean = false, private val professionalBalance: Boolean = false, private val professionalWorkload: Boolean = false, private val schoolBalance: Boolean = false) {
     private val recommendationEngine = CatcherRecommendationEngine()
     private val rivalMemoryEngine = RivalMemoryEngine()
 
@@ -1654,7 +1654,7 @@ public class PitchKernel(private val legacyRecommendations: Boolean = false, pri
             parameters.pitcher.effectiveMastery.stamina,
         )
         val effective = clamp(command * 10 - fatiguePressure * 2 - effect.commandPenalty, 100, 900)
-        val spread = if (professionalBalance) clamp(750 - effective / 3, 450, 700) else clamp(520 - effective / 2, 70, 470)
+        val spread = if (professionalBalance || schoolBalance) clamp(750 - effective / 3, 450, 700) else clamp(520 - effective / 2, 70, 470)
         var offsetX = generator.nextInt(spread * 2 + 1) - spread
         var offsetY = generator.nextInt(spread * 2 + 1) - spread
         val wildChance = clamp(
@@ -1804,22 +1804,23 @@ public class PitchKernel(private val legacyRecommendations: Boolean = false, pri
         val platoon = platoonContactBonus(parameters.pitcher.throwingHand, parameters.batter.batSide, parameters.call.pitchType)
         // A single saturating edge prevents correlated ratings from multiplying whiffs.
         val rawEdge = difficulty + velocityEdge + speedGap + heightMatch
-        val contactEdge = if (professionalBalance) 30 + ((rawEdge - 30) * 145 / (145 + abs(rawEdge - 30))) else rawEdge
+        val contactEdge = if (professionalBalance || schoolBalance) 30 + ((rawEdge - 30) * 145 / (145 + abs(rawEdge - 30))) else rawEdge
         val contactChance = clamp(
-            (if (professionalBalance) 865 else 790) + (parameters.batter.contact - 50) * 6 + (if (pitchMatched) 90 else -70) + (if (zoneMatched) 50 else -35) +
+            (if (professionalBalance || schoolBalance) 865 else 790) + (parameters.batter.contact - 50) * 6 + (if (pitchMatched) 90 else -70) + (if (zoneMatched) 50 else -35) +
                 (if (pitchMatched) capped / 5 else 0) + plan.bias.contact + platoon + scoutingContact -
                 contactEdge,
             120,
             940,
         )
         if (generator.nextInt(1000) >= contactChance) return Resolution(PitchOutcome.SWINGING_STRIKE, null)
-        val foulChance = clamp((if (professionalBalance) 350 else 470) + (effectiveProfileMovement - parameters.batter.contact) * 3 + plan.bias.foul, 260, 620)
+        val foulChance = clamp((if (professionalBalance || schoolBalance) 350 else 470) + (effectiveProfileMovement - parameters.batter.contact) * 3 + plan.bias.foul, 260, 620)
         if (generator.nextInt(1000) < foulChance) return Resolution(PitchOutcome.FOUL, null)
+        val centerMistake = if (schoolBalance && wasInZone) (180 - max(abs(execution.actualX), abs(execution.actualY))).coerceAtLeast(0) / 3 else 0
         val contactQuality = clamp(
-            (if (professionalBalance) 450 else 429) + (parameters.batter.power - 50) * 3 + (parameters.batter.contact - 50) * 2 + (if (pitchMatched) 90 else -70) +
+            centerMistake + (if (schoolBalance) 475 else if (professionalBalance) 450 else 429) + (parameters.batter.power - 50) * 3 + (parameters.batter.contact - 50) * 2 + (if (pitchMatched) 90 else -70) +
                 (if (zoneMatched) 45 else -35) + (if (pitchMatched) capped / 8 else 0) -
-                (if (professionalBalance) (effectiveWeakContact - 50) / 2 else (effectiveWeakContact - 50) * 2) - (if (professionalBalance) (effectiveMovement - 50) / 3 else effectiveMovement - 50) -
-                (if (professionalBalance) (effectiveProfileMovement - 50) / 3 else effectiveProfileMovement - 50) - powerSpecialization / (if (professionalBalance) 5 else 2) -
+                (if (professionalBalance || schoolBalance) (effectiveWeakContact - 50) / 2 else (effectiveWeakContact - 50) * 2) - (if (professionalBalance || schoolBalance) (effectiveMovement - 50) / 3 else effectiveMovement - 50) -
+                (if (professionalBalance || schoolBalance) (effectiveProfileMovement - 50) / 3 else effectiveProfileMovement - 50) - powerSpecialization / (if (professionalBalance || schoolBalance) 5 else 2) -
                 max(0, execution.executionQuality - 500) / 5 + scoutingQuality -
                 max(0, execution.velocityTenthsKph - 1400) / 5 - heightMatch / 2 + generator.nextInt(301) - 150,
             0,
@@ -1828,7 +1829,7 @@ public class PitchKernel(private val legacyRecommendations: Boolean = false, pri
         val pull = pullShift(parameters.batter.batSide, landed.column)
         val exitVelocity = clamp(1000 + contactQuality * 3 / 4 + (parameters.batter.power - 50) * 6 + generator.nextInt(181) - 90, 700, 1900)
         val launchAngle = clamp(-100 + generator.nextInt(521) + (contactQuality - 450) / 8 + (1 - landed.row) * 55, -150, 520)
-        val quality = if (professionalBalance && exitVelocity < 1545) {
+        val quality = if ((professionalBalance || schoolBalance) && exitVelocity < (if (schoolBalance) 1510 else 1545)) {
             val fit = if (launchAngle < 90) 30 + max(0, launchAngle + 150) / 5 else max(0, 240 - abs(launchAngle - 170) * 7 / 10 - if (launchAngle > 340) launchAngle - 340 else 0)
             (exitVelocity * 7 / 10 + fit - 600).coerceIn(0, 758)
         } else battedQuality(exitVelocity, launchAngle)

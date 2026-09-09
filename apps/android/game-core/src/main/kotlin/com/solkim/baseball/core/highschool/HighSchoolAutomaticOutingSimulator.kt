@@ -29,7 +29,8 @@ import kotlin.math.max
  */
 internal class HighSchoolAutomaticOutingSimulator(
     private val modernPitching: Boolean = true,
-    private val pitch: PitchKernel = PitchKernel(legacyRecommendations = !modernPitching),
+    private val schoolBalance: Boolean = false,
+    private val pitch: PitchKernel = PitchKernel(legacyRecommendations = !modernPitching, schoolBalance = schoolBalance),
 ) {
     internal data class Line(
         val outs: Int,
@@ -49,7 +50,7 @@ internal class HighSchoolAutomaticOutingSimulator(
         seed: ULong,
     ): List<Line> {
         var rng = SplitMix64(seed xor 0x485347414D45UL) // HSGAME
-        val offset = (if (chapter.theme.contains("대회")) 0 else -6) + difficultyScale(chapter.number, state.lifeNumber)
+        val offset = (if (chapter.theme.contains("대회")) 0 else if (schoolBalance) -1 else -6) + difficultyScale(chapter.number, state.lifeNumber)
         return (0 until 2).map { index ->
             val baseSeed = rng.next()
             val line = simulateOuting(
@@ -221,7 +222,7 @@ internal class HighSchoolAutomaticOutingSimulator(
 
     private fun difficultyScale(chapter: Int, lifeNumber: Int): Int {
         val byChapter = minOf(3, maxOf(0, chapter - 1) * 3 / 7)
-        val byLife = minOf(4, maxOf(0, lifeNumber - 1) * 2)
+        val byLife = if (schoolBalance) 0 else minOf(4, maxOf(0, lifeNumber - 1) * 2)
         return byChapter + byLife
     }
 
