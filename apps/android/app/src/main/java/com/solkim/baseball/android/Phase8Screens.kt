@@ -1334,7 +1334,7 @@ private fun ColumnScope.Phase8SetupFields(
                     onAction(Phase8UiAction(model.id, setupAction.id, payloads))
                 },
                 enabled = valid && !busy,
-                modifier = Modifier.heightIn(min = 48.dp).testTag("setup.confirm"),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("setup.confirm"),
             ) { Text("시작하기") }
         }
     }

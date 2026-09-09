@@ -65,7 +65,7 @@ internal fun SettingsScreen(
         containerColor = BaseballColors.canvas,
         topBar = {
             TopAppBar(title = { Text(label(page.key), verbatim = true, modifier = Modifier.testTag("settings.title")) },
-                navigationIcon = { TextButton(onClick = ::back, modifier = Modifier.testTag("settings.back")) {
+                navigationIcon = { if (page != SettingsPage.ROOT) TextButton(onClick = ::back, modifier = Modifier.testTag("settings.back")) {
                     Text("‹", modifier = Modifier.semantics { contentDescription = label("back") }, style = MaterialTheme.typography.headlineMedium)
                 } },
                 actions = { Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {

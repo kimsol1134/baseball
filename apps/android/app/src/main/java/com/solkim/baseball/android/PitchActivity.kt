@@ -31,6 +31,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -326,6 +329,8 @@ public class PitchActivity : ComponentActivity() {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .wrapContentWidth(Alignment.CenterHorizontally)
+                            .widthIn(max = 600.dp)
                             .statusBarsPadding()
                             .navigationBarsPadding(),
                     ) {
@@ -1452,7 +1457,7 @@ internal fun PitchResultCard(
                     Text(perfectCatcherLine(outcome), color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                 }
             }
-            delivery?.let { Text(releaseTimingLabel(it.releaseAccuracy, it.aimAccuracy), color = if (it.releaseAccuracy >= 820 && it.aimAccuracy >= 650) BaseballColors.action else BaseballColors.warning) }
+            delivery?.let { Text(releaseTimingLabel(it.releaseAccuracy, it.aimAccuracy), color = if (it.releaseAccuracy >= 820 && it.aimAccuracy >= 650) BaseballColors.action else BaseballColors.textSecondary) }
             if (plateXMm != null && plateYMm != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     PitchPlateFeedback(plateXMm, plateYMm, targetZone)
@@ -1469,11 +1474,15 @@ internal fun PitchResultCard(
                     style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag("pitch.practiceReaction"))
                 AdaptiveActionRow(Modifier.fillMaxWidth()) {
                     onPracticeAgain?.let { again ->
-                        OutlinedButton(onClick = again, enabled = !practiceBusy, modifier = Modifier.heightIn(min = 52.dp).testTag("pitch.practiceAgain")) {
+                        Button(onClick = again, enabled = !practiceBusy, modifier = Modifier.heightIn(min = 52.dp).testTag("pitch.practiceAgain")) {
                             Text(copy.resolve("android.onboarding.again"))
                         }
                     }
-                    Button(onClick = onPracticeSchool, enabled = !practiceBusy, modifier = Modifier.heightIn(min = 52.dp).testTag("pitch.practiceSchool")) {
+                    if (onPracticeAgain != null) {
+                        OutlinedButton(onClick = onPracticeSchool, enabled = !practiceBusy, modifier = Modifier.heightIn(min = 52.dp).testTag("pitch.practiceSchool")) {
+                            Text(copy.resolve("android.onboarding.skip-school"))
+                        }
+                    } else Button(onClick = onPracticeSchool, enabled = !practiceBusy, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("pitch.practiceSchool")) {
                         Text(copy.resolve("android.onboarding.choose-school"))
                     }
                 }
@@ -1489,7 +1498,7 @@ internal fun PitchResultCard(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("pitch.continue")) { Text(nextLabel) }
             AdaptiveActionRow(Modifier.fillMaxWidth()) {
                 TextButton(onClick = onReplay, modifier = Modifier.testTag("pitch.replay")) { Text("투구 다시 보기") }
-                if (!practice) TextButton(onClick = { onInspect(); details = true }, modifier = Modifier.testTag("pitch.resultDetails")) { Text("자세히") }
+                if (!practice) TextButton(onClick = { onInspect(); details = true }, modifier = Modifier.testTag("pitch.resultDetails")) { Text("투구 결과 자세히") }
             }
         }
     }
@@ -1655,9 +1664,11 @@ internal fun PitchControlsCard(
         border = BorderStroke(1.dp, BaseballColors.border.copy(alpha = 0.4f)),
         modifier = Modifier.fillMaxSize(),
     ) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+        val choicesHeight = (maxHeight - 90.dp).coerceIn(100.dp, 400.dp)
         Column(Modifier.fillMaxSize().padding(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             // The core choices come first. Scrolling is a fallback for accessibility text sizes.
-            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).testTag("pitch.choices"), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.fillMaxWidth().heightIn(max = choicesHeight).verticalScroll(rememberScrollState()).testTag("pitch.choices"), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 PitchTypeChoices(repertoire, selectedType, ready && !aimingLocked, signaturePitch, signatureName) { type ->
                     if (hapticsEnabled) controlsView.pitchTouchFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK, hapticsEnabled)
                     choose(PitchHudSelection.Manual(type, selectedZone, selectedIntent, selectedIntensity))
@@ -1679,6 +1690,11 @@ internal fun PitchControlsCard(
                         if (hapticsEnabled) controlsView.pitchTouchFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK, hapticsEnabled)
                         choose(PitchHudSelection.Manual(selectedType ?: repertoire.firstOrNull() ?: PitchKind.FOUR_SEAM, selectedZone, selectedIntent, intensity))
                     })
+            }
+            Box(Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(12.dp)).testTag("pitch.aimingField")) {
+                PitchDramaView(request = null, outcome = null, batSide = batSide, reduceMotion = true, aimingZone = selectedZone)
+                Text(PitchHudProjection.zoneLabel(selectedZone, batSide), modifier = Modifier.align(Alignment.TopCenter),
+                    color = BaseballColors.action, style = MaterialTheme.typography.labelMedium)
             }
             PitchDeliveryControl(
                 autoRelease = autoRelease,
@@ -1705,6 +1721,7 @@ internal fun PitchControlsCard(
             )
         }
     }
+        }
     if (settingsOpen) {
         AlertDialog(
             modifier = Modifier.semantics { testTagsAsResourceId = true },
@@ -1783,7 +1800,7 @@ private fun PitchCompactMatchup(
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
             )
-            Text("자세히", color = BaseballColors.action, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            Text("타자 정보", color = BaseballColors.action, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
         }
     }
 }

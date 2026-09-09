@@ -68,6 +68,7 @@ public fun PitchDramaView(
     perfect: Boolean = false,
     movement: Int? = null,
     reduceMotion: Boolean = false,
+    aimingZone: com.solkim.baseball.application.PitchZone? = null,
 ) {
     val textMeasurer = rememberTextMeasurer()
     val copy = rememberGameCopy()
@@ -128,6 +129,7 @@ public fun PitchDramaView(
                 canvasSize = size,
                 perfect = perfect,
                 reduceMotion = reduceMotion,
+                aimingZone = aimingZone,
             )
         }
 
@@ -156,6 +158,7 @@ private fun DrawScope.drawPitchShot(
     canvasSize: Size,
     perfect: Boolean = false,
     reduceMotion: Boolean = false,
+    aimingZone: com.solkim.baseball.application.PitchZone? = null,
 ) {
     val scale = min(canvasSize.width / PITCH_BOX_WIDTH, canvasSize.height / PITCH_BOX_HEIGHT)
     val shake = calculateShakeOffset(outcome, battedBall, progress, scale)
@@ -172,6 +175,17 @@ private fun DrawScope.drawPitchShot(
 
     // 스트라이크 존 & 홈플레이트
     drawStrikeZoneAndPlate(outcome, progress, scale, ::place)
+    if (request == null) {
+        aimingZone?.let { zone ->
+            val top = place(platePoint(-500.0, 500.0))
+            val bottom = place(platePoint(500.0, -500.0))
+            val cell = Size((bottom.x - top.x) / 3f, (bottom.y - top.y) / 3f)
+            val position = Offset(top.x + cell.width * zone.column, top.y + cell.height * zone.row)
+            drawRect(BaseballColors.action.copy(alpha = 0.25f), position, cell)
+            drawCircle(BaseballColors.action, 4.dp.toPx(), position + Offset(cell.width / 2f, cell.height / 2f))
+        }
+        return
+    }
 
     val actualX = request?.plateXMm?.toDouble() ?: 0.0
     val actualY = request?.plateYMm?.toDouble() ?: 0.0
