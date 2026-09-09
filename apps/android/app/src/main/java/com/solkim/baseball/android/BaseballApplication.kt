@@ -69,6 +69,7 @@ public class BaseballApplication : Application() {
             CSharpLegacyGameStoreRepository(
                 directory = requireNotNull(getExternalFilesDir(null)).toPath().resolve("save"),
                 installId = installId,
+                allowDeviceRestore = true,
                 resetSideEffects = phase9ResetSideEffects(),
             )
         } else {

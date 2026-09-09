@@ -5,6 +5,56 @@ import java.nio.file.Files
 import kotlin.test.*
 
 class CareerBackupTest {
+    @Test fun originalQaSoftlockSaveResumesAndAdvancesWithoutReset() = runBlocking {
+        val root = Files.createTempDirectory("career-original-softlock-")
+        try {
+            val bytes = requireNotNull(javaClass.getResourceAsStream("/regression/high-school-terminal-v42.json")).use { it.readBytes() }
+            Files.write(root.resolve("save.json"), bytes)
+            val store = KotlinGameStore.open("qa-recovered-device", CSharpLegacyGameStoreRepository(root, "qa-recovered-device", allowDeviceRestore = true), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
+            try {
+                assertEquals(PitchBoundary.TERMINAL, store.current.pitch?.boundary)
+                val controller = Phase8Controller(store)
+                val careerId = store.current.highSchool!!.run.careerId
+                val launch = assertNotNull(controller.execute(Phase8ScreenId.P008_IMPORTANT_GAME, "resumePitch").launch)
+                val pitching = Phase7VerticalController(store)
+                val result = pitching.preparePresentation(launch.sessionId, 0)
+                pitching.consumePresentation(launch.sessionId, result)
+                pitching.completePitchAndPostgame(launch.sessionId)
+                assertEquals(PitchBoundary.COMPLETED, store.current.pitch?.boundary)
+                assertEquals(careerId, store.current.highSchool!!.run.careerId)
+                if (store.current.highSchool?.activePitch != null) {
+                    assertNotNull(controller.execute(Phase8ScreenId.P008_IMPORTANT_GAME, "nextImportantPitch").launch)
+                    assertEquals(PitchBoundary.PLAYING, store.current.pitch?.boundary)
+                } else assertNotEquals(Phase8ScreenId.P008_IMPORTANT_GAME, controller.preferredScreen())
+            } finally { store.close() }
+        } finally { root.toFile().deleteRecursively() }
+    }
+
+    @Test fun osRestoredCareerRebindsToNewInstallOnceAndContinues() = runBlocking {
+        val root = Files.createTempDirectory("career-device-restore-")
+        try {
+            val original = KotlinGameStore.open("old-device", CSharpLegacyGameStoreRepository(root, "old-device"), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
+            val controller = Phase8Controller(original)
+            controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
+            controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
+            val career = original.current.highSchool
+            val revision = original.current.revision
+            original.close()
+            assertFails { CSharpLegacyGameStoreRepository(root, "new-device").load() }
+            val repository = CSharpLegacyGameStoreRepository(root, "new-device", allowDeviceRestore = true)
+            val restored = KotlinGameStore.open("new-device", repository, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
+            try {
+                assertEquals(career, restored.current.highSchool)
+                assertEquals("new-device", restored.current.installId)
+                assertEquals(revision + 1UL, restored.current.revision)
+                assertEquals(restored.current.revision, repository.load().envelope!!.revision)
+                Phase8Controller(restored).execute(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
+                assertEquals(restored.current.highSchool, repository.load().envelope!!.payload.highSchool)
+                assertEquals(restored.current.highSchool, CareerBackup.preview(restored.exportCareerBackup()).highSchool)
+            } finally { restored.close() }
+        } finally { root.toFile().deleteRecursively() }
+    }
+
     @Test fun shadowAlbumBackupRestoresWithAnIntactReceiptChain() = runBlocking {
         val source = KotlinGameStore.open("shadow-source", InMemoryShadowFixtureGameStoreRepository(GameAggregateState.initial("shadow-source")), NativeAuthorityMode.NATIVE_SHADOW_READ_ONLY)
         val destination = KotlinGameStore.open("shadow-destination", InMemoryShadowFixtureGameStoreRepository(GameAggregateState.initial("shadow-destination")), NativeAuthorityMode.NATIVE_SHADOW_READ_ONLY)

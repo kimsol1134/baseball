@@ -61,6 +61,7 @@ public class CSharpLegacyGameStoreRepository(
     private val installId: String,
     private val resetSideEffects: ResetSideEffects = NoResetSideEffects,
     faults: SaveFaultInjector = SaveFaultInjector.NONE,
+    private val allowDeviceRestore: Boolean = false,
 ) : NativeAuthoritativeGameStoreRepository {
     private val delegate: KotlinSaveRepository<JsonValue.Obj> = AtomicJsonRepository(
         layout = SaveFileLayout(directory),
@@ -88,7 +89,20 @@ public class CSharpLegacyGameStoreRepository(
 
     override suspend fun load(): SaveLoadResult<GameAggregateState> = withContext(Dispatchers.IO) {
         finishPendingReset()
-        project(delegate.load())
+        val loaded = delegate.load()
+        val restored = loaded.envelope
+        if (allowDeviceRestore && restored != null && restored.payload.string("installId") != installId) {
+            // OS restore moves only the validated career files, never the no-backup install identity.
+            // Rebind once through the atomic writer; preserve the career, command receipts and pitch result.
+            val revision = restored.revision.checkedIncrement()
+            val payload = JsonValue.Obj(LinkedHashMap(restored.payload.entries).apply {
+                put("installId", JsonValue.Str(installId))
+                put("revision", JsonValue.Num(revision.toString()))
+            })
+            CSharpPayloadCodec.validate(payload)
+            delegate.save(payload, revision)
+            project(delegate.load())
+        } else project(loaded)
     }
 
     override suspend fun reset(): Unit = withContext(Dispatchers.IO) { delegate.reset(); resetIntent.reset() }

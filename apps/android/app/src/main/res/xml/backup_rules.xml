@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only durable career data; install identity, telemetry, temporary files and caches stay local. -->
+<full-backup-content>
+        <include domain="external" path="save/save.json" />
+        <include domain="external" path="save/save.bak.1" />
+        <include domain="external" path="save/save.bak.2" />
+        <include domain="external" path="save/save.bak.3" />
+</full-backup-content>
