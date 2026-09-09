@@ -93,6 +93,36 @@ jobs:
           BASEBALL_UPLOAD_CERT_SHA256: ${{ secrets.BASEBALL_UPLOAD_CERT_SHA256 }}
           BASEBALL_AMPLITUDE_API_KEY: ${{ secrets.BASEBALL_AMPLITUDE_API_KEY }}
         run: npm run build:android:compose:rc
+      - name: Build matching signed APK for device verification
+        env:
+          BASEBALL_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.BASEBALL_UPLOAD_KEYSTORE_PASSWORD }}
+          BASEBALL_UPLOAD_KEY_ALIAS: ${{ secrets.BASEBALL_UPLOAD_KEY_ALIAS }}
+          BASEBALL_UPLOAD_KEY_PASSWORD: ${{ secrets.BASEBALL_UPLOAD_KEY_PASSWORD }}
+          BASEBALL_UPLOAD_CERT_SHA256: ${{ secrets.BASEBALL_UPLOAD_CERT_SHA256 }}
+          BASEBALL_AMPLITUDE_API_KEY: ${{ secrets.BASEBALL_AMPLITUDE_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "$BASEBALL_GOOGLE_SERVICES_PATH" apps/android/app/google-services.json
+          chmod 600 apps/android/app/google-services.json
+          ./apps/android/gradlew -p apps/android :app:assembleRelease --console=plain \
+            -Pphase10VersionName="$BASEBALL_VERSION_NAME" \
+            -Pphase10VersionCode="$BASEBALL_VERSION_CODE" \
+            -Pphase9ExternalSdks=true \
+            -Pphase9AmplitudeApiKey="$BASEBALL_AMPLITUDE_API_KEY" \
+            -Pphase11Distribution=production
+          out="artifacts/android-compose/rc/${BASEBALL_VERSION_NAME}-${BASEBALL_VERSION_CODE}"
+          cp apps/android/app/build/outputs/apk/release/app-release.apk "$out/device-verification.apk"
+          signer="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort | tail -1)"
+          "$signer" verify --verbose --print-certs "$out/device-verification.apk" > "$out/apk-signature.txt"
+          python3 - <<'PYVERIFY'
+          import os, re, pathlib, hashlib
+          p=pathlib.Path('artifacts/android-compose/rc') / (os.environ['BASEBALL_VERSION_NAME']+'-'+os.environ['BASEBALL_VERSION_CODE'])
+          cert=re.search(r'Signer #1 certificate SHA-256 digest: ([0-9a-f]+)', (p/'apk-signature.txt').read_text()).group(1)
+          assert cert == os.environ['BASEBALL_UPLOAD_CERT_SHA256'].replace(':','').lower().strip()
+          with (p/'checksums.sha256').open('a') as f:
+              f.write(hashlib.sha256((p/'device-verification.apk').read_bytes()).hexdigest()+'  device-verification.apk\n')
+          PYVERIFY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
