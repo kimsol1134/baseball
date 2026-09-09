@@ -64,11 +64,10 @@ class Phase8CareerCompletionStoreTest {
     }
 
     @Test
-    fun newDirectCareerUsesRulesVersion11AndReviewSeasonRoundTripsOnFileStore() = runBlocking {
+    fun newDirectCareerUsesCurrentRulesAndReviewSeasonRoundTripsOnFileStore() = runBlocking {
         withTempDirectory { directory ->
             var session = openFileSession("phase8-v10-direct-review", directory)
             session.executeFirst(Phase8ScreenId.P016_PRO_CONTRACT, "startDirect")
-            assertEquals(11, session.store.current.pro?.proRulesVersion)
             assertEquals(ProCatalog.RULES_VERSION, session.store.current.pro?.proRulesVersion)
             assertFalse(session.store.current.settings.autoReleaseEnabled)
             session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
@@ -76,7 +75,7 @@ class Phase8CareerCompletionStoreTest {
             session.finishSettlementIfOpen()
             session.finishNationalTeamIfOpen()
             session = session.reopenAndAssert(ProCareerPhase.OFFSEASON_DECISION, "v10-direct-review")
-            assertEquals(11, session.store.current.pro?.proRulesVersion)
+            assertEquals(ProCatalog.RULES_VERSION, session.store.current.pro?.proRulesVersion)
             assertEquals(ProCareerPhase.OFFSEASON_DECISION, session.store.current.pro?.phase)
             session.store.close()
         }
@@ -87,7 +86,6 @@ class Phase8CareerCompletionStoreTest {
         withTempDirectory { directory ->
             var session = openFileSession("phase8-review-save", directory)
             session.completeHighSchoolAndEnterPro()
-            assertEquals(11, session.store.current.pro?.proRulesVersion)
             assertEquals(ProCatalog.RULES_VERSION, session.store.current.pro?.proRulesVersion)
             repeat(2) { index ->
                 session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
