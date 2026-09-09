@@ -8,7 +8,7 @@ class PlayerAlbumTest {
         val k = ProKernel()
         val p = k.planWeek(k.startDirect(ProStartDirectRequest("918220", "power_prospect", "앨범투수")).state, "99881", ProWeekPlan.DEVELOP_STUFF).state
         val before = GameAggregateState.initial("album").copy(stage = GameStage.PRO, pro = p).committed()
-        val next = before.copy(pro = p.copy(season = 2, currentStats = p.currentStats.copy(season = 2, games = 0, inningsOuts = 0, runsAllowed = 0, strikeouts = 0), careerStats = listOf(p.currentStats), currentGameLines = emptyList()))
+        val next = before.copy(pro = p.copy(season = 2, currentStats = ProSeasonStats(season = 2, teamId = p.team.id), careerStats = listOf(p.currentStats), currentGameLines = emptyList()))
         val pages = PlayerAlbum.capture(before, next)
         val season1 = pages.single { it.scope.id.endsWith(":1") }
         assertEquals(p.currentGameLines.size, season1.rows.size)

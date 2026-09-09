@@ -159,6 +159,8 @@ class Phase8CareerCompletionStoreTest {
             val oldLife = requireNotNull(session.store.current.highSchool).run.lifeNumber
             val beforePreview = session.store.current
             val preservedAlbum = beforePreview.meta.album
+            val preservedGrowth = beforePreview.meta.abilityHistory
+            assertTrue(preservedGrowth.any { it.pro && it.source != "start" })
             val quick = session.controller.projection(Phase8ScreenId.P015_REBIRTH).actions.single { it.id == "quickRebirth" }
             val preview = assertNotNull(RebirthStartPreview.resolve(beforePreview, quick))
             assertEquals(preview, RebirthStartPreview.resolve(beforePreview, quick))
@@ -175,6 +177,7 @@ class Phase8CareerCompletionStoreTest {
             assertEquals(ProCareerPhase.COMPLETED, session.store.current.pro?.phase)
             assertEquals(retired.careerId, session.store.current.pro?.careerId)
             assertEquals(archived, session.store.current.meta.retiredProCareers.single())
+            assertEquals(preservedGrowth, session.store.current.meta.abilityHistory.take(preservedGrowth.size))
             for (page in preservedAlbum) {
                 val kept = session.store.current.meta.album.single { it.scope.id == page.scope.id }
                 assertEquals(page.rows, kept.rows)
@@ -236,11 +239,18 @@ class Phase8CareerCompletionStoreTest {
                     nativeAuditRow(audit, before, "life-${index+1}-finished")
                     if (index < 2) {
                         val path = if (index == 0) "endurance" else "closer"
+                        val option = session.controller.projection(Phase8ScreenId.P015_REBIRTH).actions.single { it.id == "rebirthPath:$path" }
+                        val preview = assertNotNull(RebirthStartPreview.resolve(before, option))
+                        assertEquals(before, session.store.current)
                         session.executeFirst(Phase8ScreenId.P015_REBIRTH, "rebirthPath:$path")
+                        val started = session.store.current.highSchool!!.startingPitcher
+                        assertEquals(preview.next, listOf(started.stuff, started.command, started.movement, started.stamina))
                         assertEquals(path, session.store.current.meta.companion?.careerPath)
                         assertEquals(HighSchoolPhase.SCHOOL_SELECTION, session.store.current.highSchool?.run?.phase)
                         assertEquals(before.highSchool!!.run.identity, session.store.current.highSchool?.run?.identity)
                         assertEquals(if (index == 0) "innings_eater" else "breaking_ball_artist", session.store.current.highSchool?.run?.presetId)
+                        assertEquals(before.meta.abilityHistory, session.store.current.meta.abilityHistory.take(before.meta.abilityHistory.size))
+                        assertTrue(session.store.current.meta.abilityHistory.any { it.career == session.store.current.highSchool!!.run.careerId && it.source == "start" })
                         for (page in before.meta.album) {
                             val kept = session.store.current.meta.album.single { it.scope.id == page.scope.id }
                             assertEquals(page.rows, kept.rows)
