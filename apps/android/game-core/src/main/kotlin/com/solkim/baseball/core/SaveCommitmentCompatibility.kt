@@ -9,6 +9,7 @@ package com.solkim.baseball.core
  */
 public object SaveCommitmentCompatibility {
     private val DEFAULT_TOKENS = listOf(
+        ", completeGames=null", ", shutouts=null", ", completeGame=null",
         ", earnedRuns=null",
         ", runLedger=null",
         ", regular=false, perfectReleases=0",

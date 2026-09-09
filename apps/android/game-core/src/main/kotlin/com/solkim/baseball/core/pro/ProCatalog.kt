@@ -12,7 +12,7 @@ import kotlin.math.max
 /** Frozen fictional pro catalog copied from the current Swift/C# source set. */
 public object ProCatalog {
     /** Pro schedule, fatigue, and overload-injury rules currently used by new careers. */
-    public const val RULES_VERSION: Int = 12
+    public const val RULES_VERSION: Int = 13
     public const val BALANCE_VERSION: Int = 4
     public const val MAXIMUM_CAREER_SEASONS: Int = 20
     public const val WEEKS_PER_SEASON: Int = 24
@@ -186,6 +186,10 @@ public object ProLeagueBaseline {
     public const val saveLeadCeiling: Int = 3
 
     public fun teamRuns(rng: SplitMix64): Int = weighted(rng.nextInt(1_000), teamRunsPerGamePermille)
+
+    public fun inningRuns(rng: SplitMix64): Int = when (rng.nextInt(1000)) {
+        in 0..699 -> 0; in 700..849 -> 1; in 850..939 -> 2; in 940..979 -> 3; else -> 4
+    }
 
     public fun restOfTeamRuns(outsCovered: Int, rng: SplitMix64): Int =
         teamRuns(rng) * max(0, outsCovered) / 27

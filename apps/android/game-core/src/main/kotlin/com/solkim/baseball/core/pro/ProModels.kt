@@ -269,6 +269,8 @@ public data class ProSeasonStats(
     val postseasonGames: List<ProPostseasonGameLine>? = null,
     val perfectReleases: Int = 0,
     val earnedRuns: Int? = null,
+    val completeGames: Int? = null,
+    val shutouts: Int? = null,
 ) {
     public val runPerNinePermille: Int
         get() = if (inningsOuts == 0) 9_990 else runsAllowed * 27_000 / inningsOuts
@@ -299,6 +301,7 @@ public data class ProGameLine(
     val homeRuns: Int = 0,
     val perfectReleases: Int = 0,
     val earnedRuns: Int? = null,
+    val completeGame: Boolean? = null,
 )
 
 public data class ProRivalBatter(

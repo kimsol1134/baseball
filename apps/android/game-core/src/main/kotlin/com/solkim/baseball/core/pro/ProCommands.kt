@@ -18,7 +18,7 @@ public object ProWire {
     public const val STATE_SCHEMA: String = "baseball-pro-state-v1"
     public const val COMMAND_SCHEMA: String = "baseball-pro-command-v1"
     /** Command envelopes and state payloads evolve independently. */
-    public const val STATE_SCHEMA_VERSION: Int = 6
+    public const val STATE_SCHEMA_VERSION: Int = 7
     public const val SCHEMA_VERSION: Int = 1
     public const val MAX_COMMAND_ID_LENGTH: Int = 128
 }
@@ -45,6 +45,7 @@ public sealed interface ProCommand {
     public data class SubmitPitch(val pitchSessionId: String, val call: PitchCall, val delivery: PitchDelivery = PitchDelivery.NEUTRAL) : ProCommand
     public data object ContinueOuting : ProCommand
     public data object FinishImportantGame : ProCommand
+    public data object HandOffOuting : ProCommand
     public data class ReviewSeason(val seed: String) : ProCommand
     public data class AcknowledgeSeasonSettlement(val seed: String, val settlementId: String) : ProCommand
     public data class ChooseOffseason(val seed: String, val decision: OffseasonDecision) : ProCommand
@@ -140,6 +141,7 @@ public object ProCommandCodec {
         is ProCommand.ReserveImportantGame -> "reserveImportantGame"
         is ProCommand.SubmitPitch -> "submitPitch"
         ProCommand.ContinueOuting -> "continueOuting"
+        ProCommand.HandOffOuting -> "handOffOuting"
         ProCommand.FinishImportantGame -> "finishImportantGame"
         is ProCommand.ReviewSeason -> "reviewSeason"
         is ProCommand.AcknowledgeSeasonSettlement -> "acknowledgeSeasonSettlement"
@@ -173,7 +175,7 @@ public object ProCommandCodec {
             command.call.zoneIntent.wire, command.call.intensity.wire, command.delivery.releaseAccuracy.toString(), command.delivery.aimAccuracy.toString(),
         ))
         ProCommand.ContinueOuting -> pack(emptyList())
-        ProCommand.FinishImportantGame -> pack(emptyList())
+        ProCommand.HandOffOuting, ProCommand.FinishImportantGame -> pack(emptyList())
         is ProCommand.ReviewSeason -> pack(listOf(command.seed))
         is ProCommand.AcknowledgeSeasonSettlement -> pack(listOf(command.seed, command.settlementId))
         is ProCommand.ChooseOffseason -> pack(listOf(command.seed, command.decision.wire))
@@ -214,6 +216,7 @@ public object ProCommandCodec {
             ProCommand.SubmitPitch(values[0], PitchCall(pitchKind(values[1]), PitchZone(values[2].int("pitch.row"), values[3].int("pitch.column")), zoneIntent(values[4]), intensity(values[5])), PitchDelivery(values[6].int("pitch.release"), values[7].int("pitch.aim")))
         }
         "continueOuting" -> exactPayload(payload) { ProCommand.ContinueOuting }
+        "handOffOuting" -> exactPayload(payload) { ProCommand.HandOffOuting }
         "finishImportantGame" -> exactPayload(payload) { ProCommand.FinishImportantGame }
         "reviewSeason" -> unpack(payload, 1).let { ProCommand.ReviewSeason(it.single()) }
         "acknowledgeSeasonSettlement" -> unpack(payload, 2).let { ProCommand.AcknowledgeSeasonSettlement(it[0], it[1]) }
@@ -400,6 +403,7 @@ public class ProCommandStore(
             kernel.submitPitch(state, command.pitchSessionId, command.call, command.delivery)
         }
         ProCommand.ContinueOuting -> kernel.continueOuting(state)
+        ProCommand.HandOffOuting -> kernel.finishImportantGame(state, handOff = true)
         ProCommand.FinishImportantGame -> kernel.finishImportantGame(state)
         is ProCommand.ReviewSeason -> kernel.reviewSeason(state, command.seed)
         is ProCommand.AcknowledgeSeasonSettlement -> kernel.acknowledgeSeasonSettlement(state, command.seed, command.settlementId)

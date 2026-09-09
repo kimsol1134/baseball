@@ -31,7 +31,7 @@ class ProfessionalBalanceTest {
         assertTrue(projection(false, false) < 70)
     }
     @Test fun perfectDeliveryAndHighMasteryStillAllowHitsAndRuns() {
-        val simulator = ProAutomaticOutingSimulator(PitchKernel(professionalBalance = true), professionalBalance = true)
+        val simulator = ProAutomaticOutingSimulator(PitchKernel(professionalBalance = true, professionalWorkload = true), professionalBalance = true)
         val pitcher = PitcherSnapshot("elite", "완성형 투수", 80, 80, 80, 80, mastery = AbilityMasterySnapshot(100, 100, 100, 100))
         val lines = (1..120).map { simulator.simulate(pitcher, 10, 18, 100, it.toULong() * 772019UL,
             diverseScouting = true, delivery = PitchDelivery(1000, 1000)) }
@@ -42,7 +42,7 @@ class ProfessionalBalanceTest {
         println("PERFECT_MASTERY K9=$k9 H=${lines.sumOf { it.hits }} R=${lines.sumOf { it.runsAllowed }}")
     }
     @Test fun calibratedPitcherDistribution() {
-        val simulator = ProAutomaticOutingSimulator(PitchKernel(professionalBalance = true), professionalBalance = true)
+        val simulator = ProAutomaticOutingSimulator(PitchKernel(professionalBalance = true, professionalWorkload = true), professionalBalance = true)
         for (rating in listOf(45, 50, 55, 60, 70, 80)) {
             val pitcher = PitcherSnapshot("audit", "검증 투수", rating, rating, rating, rating)
             val lines = (1..120).map { simulator.simulate(pitcher, 10, 18, 100, it.toULong() * 918221UL, diverseScouting = true) }

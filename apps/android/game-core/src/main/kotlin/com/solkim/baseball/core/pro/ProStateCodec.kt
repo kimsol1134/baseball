@@ -180,19 +180,19 @@ public object ProStateCodec {
     private fun DataOutputStream.writeStats(value: ProSeasonStats) {
         writeInt(value.season); writeString(value.teamId); writeInt(value.games); writeInt(value.starts); writeInt(value.inningsOuts); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.hits); writeInt(value.homeRuns); writeInt(value.pitches); writeInt(value.wins); writeInt(value.losses); writeInt(value.saves)
         writeNullable(value.postseasonGames) { writeList(it) { writePostseasonLine(it) } }
-        writeInt(value.perfectReleases); writeNullableInt(value.earnedRuns)
+        writeInt(value.perfectReleases); writeNullableInt(value.earnedRuns); writeNullableInt(value.completeGames); writeNullableInt(value.shutouts)
     }
     private fun DataInputStream.readStats(version: Int): ProSeasonStats {
         val stats = ProSeasonStats(readInt(), readString(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt())
         val postseasonGames = if (version >= 3) readNullable { readList { readPostseasonLine() } } else null
         val perfectReleases = if (version >= 4) readInt() else 0
-        return stats.copy(postseasonGames = postseasonGames, perfectReleases = perfectReleases, earnedRuns = if (version >= 6) readNullableInt() else null)
+        return stats.copy(postseasonGames = postseasonGames, perfectReleases = perfectReleases, earnedRuns = if (version >= 6) readNullableInt() else null, completeGames = if (version >= 7) readNullableInt() else null, shutouts = if (version >= 7) readNullableInt() else null)
     }
-    private fun DataOutputStream.writeGameLine(value: ProGameLine) { writeInt(value.season); writeInt(value.week); writeInt(value.outingNumber); writeBoolean(value.started); writeInt(value.outs); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.pitches); writeInt(value.teamRuns); writeInt(value.opponentRuns); writeString(value.decision.wire); writeBoolean(value.played); writeInt(value.hits); writeInt(value.homeRuns); writeInt(value.perfectReleases); writeNullableInt(value.earnedRuns) }
+    private fun DataOutputStream.writeGameLine(value: ProGameLine) { writeInt(value.season); writeInt(value.week); writeInt(value.outingNumber); writeBoolean(value.started); writeInt(value.outs); writeInt(value.strikeouts); writeInt(value.walks); writeInt(value.runsAllowed); writeInt(value.pitches); writeInt(value.teamRuns); writeInt(value.opponentRuns); writeString(value.decision.wire); writeBoolean(value.played); writeInt(value.hits); writeInt(value.homeRuns); writeInt(value.perfectReleases); writeNullableInt(value.earnedRuns); writeNullableInt(value.completeGame?.let { if (it) 1 else 0 }) }
     private fun DataInputStream.readGameLine(version: Int): ProGameLine {
         val line = ProGameLine(readInt(), readInt(), readInt(), readBoolean(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), pitchingDecision(readString()), readBoolean(), readInt(), readInt())
         val perfect = if (version >= 4) readInt() else 0
-        return line.copy(perfectReleases = perfect, earnedRuns = if (version >= 6) readNullableInt() else null)
+        return line.copy(perfectReleases = perfect, earnedRuns = if (version >= 6) readNullableInt() else null, completeGame = if (version >= 7) readNullableInt()?.let { require(it in 0..1); it == 1 } else null)
     }
 
     private fun DataOutputStream.writeEffect(value: ProDecisionEffect) { writeInt(value.stuffDelta); writeInt(value.commandDelta); writeInt(value.movementDelta); writeInt(value.staminaDelta); writeInt(value.managerTrustDelta); writeInt(value.catcherTrustDelta); writeInt(value.fatigueDelta); writeNullableString(value.roleTarget?.wire) }

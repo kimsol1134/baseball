@@ -1136,7 +1136,7 @@ private class CatcherRecommendationEngine {
     }
 }
 
-public class PitchKernel(private val legacyRecommendations: Boolean = false, private val professionalBalance: Boolean = false) {
+public class PitchKernel(private val legacyRecommendations: Boolean = false, private val professionalBalance: Boolean = false, private val professionalWorkload: Boolean = false) {
     private val recommendationEngine = CatcherRecommendationEngine()
     private val rivalMemoryEngine = RivalMemoryEngine()
 
@@ -1231,7 +1231,13 @@ public class PitchKernel(private val legacyRecommendations: Boolean = false, pri
         val count = advanceCount(parameters.context, outcome)
         val nextSeed = deriveNextSeed(seed)
         val revision = parameters.context.revision + 1UL
-        val fatigue = min(100, parameters.context.fatigue + PitchAbilityRules.fatigueCost(parameters.call.intensity, parameters.pitcher.profile(parameters.call.pitchType)))
+        val fatigueGain = if (professionalWorkload) {
+            val ordinal = (parameters.gameLog?.totalPitches ?: 0).toLong()
+            val effort = when (parameters.call.intensity) { PitchIntensity.CONTROLLED -> -150; PitchIntensity.NORMAL -> 0; PitchIntensity.MAX_EFFORT -> 250 }
+            val load = (850 - (parameters.pitcher.stamina - 50) * 5 + effort).coerceIn(450, 1250)
+            (((ordinal + 1) * load) / 1000 - (ordinal * load) / 1000).toInt()
+        } else PitchAbilityRules.fatigueCost(parameters.call.intensity, parameters.pitcher.profile(parameters.call.pitchType))
+        val fatigue = min(100, parameters.context.fatigue + fatigueGain)
         val memory = rivalMemoryEngine.record(
             parameters.rivalMemory,
             parameters.pitcher,

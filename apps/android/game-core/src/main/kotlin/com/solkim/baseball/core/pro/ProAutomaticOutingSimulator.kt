@@ -60,18 +60,20 @@ internal class ProAutomaticOutingSimulator(
         callPolicy: AutoCallPolicy = AutoCallPolicy.PERFECT,
         diverseScouting: Boolean = false,
         delivery: com.solkim.baseball.core.pitch.PitchDelivery? = null,
+        fullStart: Boolean = false,
+        priorOuts: Int = 0, priorPitches: Int = 0, priorRuns: Int = 0,
     ): Line {
         val rng = SplitMix64(baseSeed)
         val fielders = listOf(
             "pitcher", "catcher", "first_base", "second_base", "third_base", "shortstop",
             "left_field", "center_field", "right_field",
         ).map { position -> FielderSnapshot("week-$position", position, position, 50, 50, 50) }
-        var inning = InningStateSnapshot(1, HalfInning.TOP, 0)
+        var inning = InningStateSnapshot(if (fullStart) priorOuts / 3 + 1 else 1, HalfInning.TOP, 0)
         var runners = BaserunnerStateSnapshot(false, false, false, 52)
         var runsOnBoard = 0
         var currentFatigue = startingFatigue.coerceIn(0, 95)
         var benchMemory: RivalMemorySnapshot? = null
-        var carriedLog = GameLogSnapshot("week-outing", 0UL, 0, emptyList())
+        var carriedLog = GameLogSnapshot("week-outing", 0UL, priorPitches, emptyList())
         var outsTotal = 0
         var strikeouts = 0
         var walks = 0
@@ -85,11 +87,12 @@ internal class ProAutomaticOutingSimulator(
         var lastGame: GameStateSnapshot? = null
         var lastSeed = baseSeed.toString()
         var plateAppearanceIndex = 0
-        val extensionOuts = if (outsTarget >= 18) starterExtensionOuts(pitcher) else 0
-        val effectiveOutsTarget = outsTarget + extensionOuts
-        val effectivePitchCap = pitchCap + extensionOuts * 4
+        val extensionOuts = if (!fullStart && outsTarget >= 18) starterExtensionOuts(pitcher) else 0
+        val effectiveOutsTarget = if (fullStart) 27 - priorOuts else outsTarget + extensionOuts
+        val effectivePitchCap = if (fullStart) 125 - priorPitches else pitchCap + extensionOuts * 4
 
         while (outsTotal < effectiveOutsTarget && pitches < effectivePitchCap && plateAppearanceIndex < 60) {
+            if (fullStart && !ProOutingUsageRules.canContinue(pitcher, outsTotal + priorOuts, pitches + priorPitches, currentFatigue, runsAllowed + priorRuns, true)) break
             plateAppearanceIndex += 1
             val legacyBatter = BatterSnapshot(
                 id = "week-batter-$plateAppearanceIndex",
@@ -201,6 +204,7 @@ internal class ProAutomaticOutingSimulator(
                     inning = result.gameState.inningState ?: inning
                     runners = result.gameState.runners
                     outsTotal += max(0, absoluteOuts(inning) - outsBefore)
+                    if (fullStart) inning = InningStateSnapshot(minOf(9, (outsTotal + priorOuts) / 3 + 1), HalfInning.TOP, outsTotal % 3)
                     break
                 }
                 seedText = result.nextSeed

@@ -17,10 +17,11 @@ public fun proWeekForecast(state: ProState, plan: ProWeekPlan): ProWeekForecast 
     val modifiers = state.activeDecisionModifiers.orEmpty().filter { it.expiresWeek >= state.week + 1 }
     val budget = weeklyOutingBudget(state.role, state.week + 1, state.proRulesVersion)
     val recovering = state.injuryWeeks > 0
-    val outings = if (recovering || modifiers.any { it.suppressOutings }) 0 else budget.first + modifiers.sumOf { (it.extraOutingChance - (it.extraOutingsGranted ?: 0)).coerceAtLeast(0) }
+    val unavailable = state.proRulesVersion >= 13 && state.role == ProRole.STARTER && !ProOutingUsageRules.canContinue(state.pitcher, 0, 0, state.fatigue, 0, true)
+    val outings = if (recovering || unavailable || modifiers.any { it.suppressOutings }) 0 else budget.first + modifiers.sumOf { (it.extraOutingChance - (it.extraOutingsGranted ?: 0)).coerceAtLeast(0) }
     val base = if (recovering) -20 else weeklyTrainingLoad(plan) - ((state.pitcher.stamina - 50) / 15).coerceAtLeast(0)
     val minimum = (state.fatigue + base).coerceIn(0, 100)
-    val maximum = (state.fatigue + base + (if (recovering) 0 else (outings * budget.third + 14) / 15)).coerceIn(0, 100)
+    val maximum = (state.fatigue + base + (if (recovering) 0 else (outings * (if (state.proRulesVersion >= 13 && state.role == ProRole.STARTER) 125 else budget.third) + 14) / 15)).coerceIn(0, 100)
     val (ability, progress) = when (plan) {
         ProWeekPlan.REFINE_COMMAND -> state.pitcher.command to state.developmentProgress.command
         ProWeekPlan.DEVELOP_MOVEMENT -> state.pitcher.movement to state.developmentProgress.movement
