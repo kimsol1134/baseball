@@ -13,6 +13,7 @@ struct HighSchoolCareerView: View {
     var onOpenDraftForecast: (() -> Void)? = nil
     /// 이 회차로 프로에 이미 진출했는가. 은퇴 뒤 돌아왔을 때 다시 들어가지 못하게 한다.
     var hasEnteredPro = false
+    var onRecoverMissingPro: (() -> Void)? = nil
     var weekly: WeeklyProgramStore = .shared
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -129,29 +130,6 @@ struct HighSchoolCareerView: View {
                     PrimaryPill(title: copyResolver.resolve(.careerErrorRetry), identifier: "hs.retry") {
                         career.returnToSetup()
                     }
-                    Button(role: .destructive) {
-                        confirmingReset = true
-                    } label: {
-                        Text(verbatim: copyResolver.resolve(.careerErrorRestart))
-                    }
-                    .font(BaseballType.detail.weight(.semibold))
-                    .accessibilityIdentifier("hs.restart")
-                    .alert(
-                        copyResolver.resolve(.careerErrorResetTitle),
-                        isPresented: $confirmingReset
-                    ) {
-                        Button(role: .destructive) {
-                            career.deleteCareer()
-                        } label: {
-                            Text(verbatim: copyResolver.resolve(.careerErrorResetConfirm))
-                        }
-                        // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
-                        Button { confirmingReset = false } label: {
-                            Text(verbatim: copyResolver.resolve(.careerErrorResetCancel))
-                        }
-                    } message: {
-                        Text(verbatim: copyResolver.resolve(.careerErrorResetMessage))
-                    }
                 }
             case .ready:
                 content
@@ -211,7 +189,7 @@ struct HighSchoolCareerView: View {
                 rebirthStamp = nil
                 // 정산 화면에서 바로 온 경우엔 설정을 건너뛰고 같은 조건으로 시작한다.
                 if stamp.startsImmediately {
-                    career.beginNextLife()
+                    guard career.beginNextLife() else { return }
                     career.startQuickRebirth(entryPoint: "recap")
                 } else {
                     career.beginNextLife()
@@ -283,8 +261,6 @@ struct HighSchoolCareerView: View {
         let feedbackTrigger: Int
     }
 
-    /// 전체 삭제 확인. 파괴적 출구는 반드시 한 번 더 묻는다.
-    @State private var confirmingReset = false
     /// 훈련 화면의 선택. 카드가 고르고 스크롤 밖 고정 바가 커밋한다. 훈련 국면에
     /// 들어올 때 직전 훈련에서 다시 시작한다(`TrainingCard.onAppear`).
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -873,6 +849,7 @@ struct HighSchoolCareerView: View {
                     career: career,
                     state: state,
                     hasEnteredPro: hasEnteredPro,
+                    onRecoverMissingPro: onRecoverMissingPro,
                     onEnterPro: onEnterPro,
                     onSkipToPro: onSkipToPro,
                     includeReason: false

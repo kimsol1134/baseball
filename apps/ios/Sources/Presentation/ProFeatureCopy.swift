@@ -378,7 +378,10 @@ enum ProWeeklyCopy {
         qualityUses: Int,
         resolver: GameCopyResolver
     ) -> String {
-        resolver.resolve(
+        if PitchLearningProjectSnapshot.stage(practiceCredits: practiceCredits, qualityUses: qualityUses) == .completed {
+            return resolver.resolve(AppCopyKey.trainingPitchLearningCompleted)
+        }
+        return resolver.resolve(
             AppCopyKey.trainingPitchLearningProgress,
             arguments: [
                 .integer(practiceCredits),

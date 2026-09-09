@@ -551,6 +551,7 @@ struct CompletionCard: View {
     let state: HighSchoolCareerSnapshot
     /// 이 회차로 프로에 이미 진출했는가.
     let hasEnteredPro: Bool
+    var onRecoverMissingPro: (() -> Void)? = nil
     let onEnterPro: (DraftResultSnapshot, PitcherSnapshot, PlayerIdentitySnapshot) -> Void
     var onSkipToPro: (() -> Void)? = nil
     var includeReason = true
@@ -561,6 +562,17 @@ struct CompletionCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            if let onRecoverMissingPro {
+                BaseballCard(title: copyResolver.resolve(.localizable("career.recovery.missing-pro.title")), tone: .milestone) {
+                    Text(verbatim: copyResolver.resolve(.localizable("career.recovery.missing-pro.body")))
+                        .detailStyle()
+                    PrimaryButton(
+                        title: copyResolver.resolve(.localizable("career.recovery.missing-pro.action")),
+                        identifier: "hs.recoverMissingPro",
+                        action: onRecoverMissingPro
+                    )
+                }
+            }
             let bestPast = career.archive
                 .filter { $0.lifeNumber != state.lifeNumber }
                 .map(\.evaluationScore).max() ?? 0
@@ -714,10 +726,12 @@ struct CompletionCard: View {
             // 읽힌다. 기억까지 확정한 회차의 다음 행동은 환생 하나뿐이므로 주 버튼으로
             // 세운다 — 드래프트를 본 42명 중 27명만 다음 회차를 시작했다(2026-08).
             if awaitsProRetirement {
-                BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionAwaitingRetirementTitle), tone: .milestone) {
-                    Text(copyResolver.resolve(AppCopyKey.conclusionAwaitingRetirementBody))
-                        .font(.subheadline)
-                        .fixedSize(horizontal: false, vertical: true)
+                if onRecoverMissingPro == nil {
+                    BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionAwaitingRetirementTitle), tone: .milestone) {
+                        Text(copyResolver.resolve(AppCopyKey.conclusionAwaitingRetirementBody))
+                            .font(.subheadline)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             } else if !opensLegacy {
                 // 지명 위쪽의 목표.

@@ -7,6 +7,203 @@ import BaseballIOSPersistence
 
 @MainActor
 final class SignatureLegacyIntegrationTests: XCTestCase {
+    func testMissingProRecoveryKeepsPreFeatureMemoryRulesUntilTheNextLife() throws {
+        let hsSync = SaveSync(key: "old-orphan-hs-\(UUID().uuidString).json")
+        let proSync = SaveSync(key: "old-orphan-pro-\(UUID().uuidString).json")
+        defer { hsSync.clear(); proSync.clear() }
+        let career = try Self.completedDraftedCareer()
+        let store = HighSchoolCareerStore(sync: hsSync)
+        store.updatePersisted {
+            $0.result = career.result
+            $0.enteredProCareerID = career.result.snapshot.careerID
+        }
+        store.loadState = .ready
+        XCTAssertTrue(store.save())
+        let pro = MobileCareerStore(sync: proSync)
+        pro.restoreOrCreateCareer()
+        XCTAssertTrue(store.recoverMissingProCareer(pro))
+        XCTAssertFalse(store.usesSignatureLegacyRules)
+        XCTAssertNil(store.frozenSignatureLegacyCandidates)
+        let legacy = try XCTUnwrap(store.state)
+        store.selectedMemories = Array(legacy.legacyOptions.prefix(legacy.memorySlots))
+        let chosen = store.selectedMemories
+        store.confirmLegacy()
+        XCTAssertEqual(store.inheritance.memories, chosen)
+        XCTAssertEqual(store.archive.count, 1)
+        XCTAssertTrue(store.beginNextLife())
+        XCTAssertEqual(store.inheritance.memories, chosen)
+    }
+
+    func testNextLifeCannotDiscardAnUnsettledPlayer() throws {
+        let store = HighSchoolCareerStore(saveWriter: { _ in true })
+        let career = try Self.completedDraftedCareer()
+        store.updatePersisted { $0.result = career.result }
+        store.loadState = .ready
+        let before = store.capturePersisted()
+        XCTAssertFalse(store.beginNextLife())
+        XCTAssertEqual(store.capturePersisted(), before)
+    }
+
+    func testMissingProRecoveryPreservesRewardsAndRequiresKnownEmptyProSave() throws {
+        let hsSync = SaveSync(key: "orphan-hs-\(UUID().uuidString).json")
+        let proSync = SaveSync(key: "orphan-pro-\(UUID().uuidString).json")
+        defer { hsSync.clear(); proSync.clear() }
+        var rejectsWrites = false
+        let store = HighSchoolCareerStore(sync: hsSync, saveWriter: { !rejectsWrites && hsSync.write($0) })
+        let pro = MobileCareerStore(sync: proSync)
+        let career = try Self.completedDraftedCareer()
+        store.updatePersisted {
+            $0.result = career.result
+            $0.enteredProCareerID = career.result.snapshot.careerID
+            $0.inheritance.soulPoints = 123
+            $0.inheritance.soulTotalEarned = 123
+            $0.inheritance.automaticSoulEarned = 123
+            $0.careerStartingPitcher = career.startingPitcher
+            $0.signatureLegacyRulesVersion = HighSchoolCareerStore.currentSignatureLegacyRulesVersion
+        }
+        store.loadState = .ready
+        XCTAssertTrue(store.save())
+        let before = store.capturePersisted()
+        for unavailable in [CareerLoadState.loading, .failed("unreadable")] {
+            pro.loadState = unavailable
+            XCTAssertFalse(store.canRecoverMissingProCareer(pro))
+            XCTAssertFalse(store.recoverMissingProCareer(pro))
+        }
+        pro.restoreOrCreateCareer()
+        XCTAssertTrue(store.canRecoverMissingProCareer(pro))
+        rejectsWrites = true
+        XCTAssertFalse(store.recoverMissingProCareer(pro))
+        XCTAssertEqual(store.capturePersisted(), before)
+        rejectsWrites = false
+        store.returnToSetup()
+        XCTAssertTrue(store.recoverMissingProCareer(pro))
+        XCTAssertEqual(store.state?.phase, .legacy)
+        XCTAssertEqual(store.inheritance.soulPoints, 123)
+        XCTAssertEqual(store.archive, before.archive)
+        XCTAssertTrue(store.hasEnteredPro)
+        XCTAssertFalse(store.recoverMissingProCareer(pro))
+        let reopened = HighSchoolCareerStore(sync: hsSync)
+        reopened.restoreOrCreate()
+        XCTAssertEqual(reopened.state?.phase, .legacy)
+        let candidate = try XCTUnwrap(reopened.frozenSignatureLegacyCandidates?.first)
+        reopened.selectSignatureLegacy(candidate.id)
+        reopened.confirmLegacy()
+        XCTAssertGreaterThan(reopened.inheritance.soulPoints, 123)
+        XCTAssertTrue(reopened.beginNextLife())
+        XCTAssertEqual(reopened.loadState, .needsSetup)
+        XCTAssertEqual(reopened.archive.count, 1)
+    }
+
+    func testMissingProRecoveryRechecksAProSaveThatArrivedAfterTheButtonWasShown() throws {
+        let hsSync = SaveSync(key: "late-hs-\(UUID().uuidString).json")
+        let proSync = SaveSync(key: "late-pro-\(UUID().uuidString).json")
+        defer { hsSync.clear(); proSync.clear() }
+        let store = HighSchoolCareerStore(sync: hsSync)
+        let career = try Self.completedDraftedCareer()
+        store.updatePersisted {
+            $0.result = career.result
+            $0.enteredProCareerID = career.result.snapshot.careerID
+        }
+        store.loadState = .ready
+        XCTAssertTrue(store.save())
+        let pro = MobileCareerStore(sync: proSync)
+        pro.restoreOrCreateCareer()
+        XCTAssertTrue(store.canRecoverMissingProCareer(pro))
+        let incoming = MobileCareerStore(sync: proSync)
+        XCTAssertTrue(incoming.startNewCareer(preset: PitcherPresetCatalog.all[0], playerName: "Another player"))
+        XCTAssertFalse(store.recoverMissingProCareer(pro))
+        XCTAssertEqual(store.state?.phase, .completed)
+        XCTAssertNotNil(pro.state)
+    }
+
+    func testFiveHighSchoolProRetirementsPreserveEveryLifeAcrossReloads() throws {
+        let sync = SaveSync(key: "five-lives-\(UUID().uuidString).json")
+        defer { sync.clear() }
+        var store = HighSchoolCareerStore(sync: sync)
+        let previousSetup = store.lastSetup
+        defer { store.lastSetup = previousSetup }
+        store.restoreOrCreate()
+        var priorSoul = 0
+        var previousArchive: [LifeRecord] = []
+        for life in 1...5 {
+            store.startCareer(preset: PitcherPresetCatalog.all[0], playerName: "Five lives",
+                              seedOverride: String(20260723 + life))
+            XCTAssertEqual(store.state?.lifeNumber, life)
+            let started = try XCTUnwrap(store.result)
+            let completed = try Self.completedDraftedCareer(start: started)
+            store.updatePersisted { $0.result = completed.result }
+            XCTAssertTrue(store.save())
+            XCTAssertTrue(store.markEnteredPro())
+            let pro = Self.completedProCareer(highSchoolState: completed.result.snapshot)
+            XCTAssertTrue(store.recordProLegacy(pro, sourceHighSchoolCareerID: completed.result.snapshot.careerID))
+            let candidate = try XCTUnwrap(store.frozenSignatureLegacyCandidates?.first)
+            store.selectSignatureLegacy(candidate.id)
+            store.confirmLegacy()
+            XCTAssertEqual(store.archive.count, life)
+            XCTAssertEqual(Array(store.archive.dropFirst()), previousArchive)
+            XCTAssertGreaterThan(store.inheritance.soulPoints, priorSoul)
+            XCTAssertEqual(store.inheritance.equippedSignatureLegacyID, candidate.id)
+            let retained = store.inheritance
+            previousArchive = store.archive
+            priorSoul = retained.soulPoints
+            XCTAssertTrue(store.beginNextLife())
+            store = HighSchoolCareerStore(sync: sync)
+            store.restoreOrCreate()
+            XCTAssertEqual(store.loadState, .needsSetup)
+            XCTAssertEqual(store.inheritance, retained)
+            XCTAssertEqual(store.archive, previousArchive)
+        }
+        store.startCareer(preset: PitcherPresetCatalog.all[0], playerName: "Sixth life", seedOverride: "20260909")
+        XCTAssertEqual(store.state?.lifeNumber, 6)
+        XCTAssertEqual(store.archive.count, 5)
+    }
+
+    func testNextLifeSaveFailureKeepsCompletedPlayerAndInheritanceForRetry() throws {
+        let sync = SaveSync(key: "next-life-failure-\(UUID().uuidString).json")
+        defer { sync.clear() }
+        var rejectsWrites = false
+        let store = HighSchoolCareerStore(sync: sync, saveWriter: { data in
+            !rejectsWrites && sync.write(data)
+        })
+        let career = try Self.completedDraftedCareer()
+        store.updatePersisted {
+            $0.result = career.result
+            $0.inheritance.lifeNumber = career.result.snapshot.lifeNumber + 1
+            $0.inheritance.soulPoints = 123
+        }
+        store.loadState = .ready
+        XCTAssertTrue(store.save())
+        let before = store.capturePersisted()
+        rejectsWrites = true
+        store.beginNextLife()
+        XCTAssertEqual(store.capturePersisted(), before)
+        XCTAssertNotEqual(store.loadState, .needsSetup)
+        rejectsWrites = false
+        store.beginNextLife()
+        XCTAssertEqual(store.loadState, .needsSetup)
+        let restored = HighSchoolCareerStore(sync: sync)
+        restored.restoreOrCreate()
+        XCTAssertEqual(restored.loadState, .needsSetup)
+        XCTAssertEqual(restored.inheritance.soulPoints, 123)
+        XCTAssertEqual(restored.inheritance.lifeNumber, before.inheritance.lifeNumber)
+    }
+
+    func testCompletedPitchResearchShowsCompletionInsteadOfRemainingLiveUses() {
+        for language in AppLanguage.allCases {
+            let resolver = GameCopyResolver(language: language)
+            for (practice, uses) in [(7, 2), (9, 0), (9, 1)] {
+                XCTAssertEqual(ProWeeklyCopy.pitchLearningProgress(
+                    practiceCredits: practice, qualityUses: uses, resolver: resolver
+                ), resolver.resolve(AppCopyKey.trainingPitchLearningCompleted))
+            }
+            for (practice, uses) in [(5, 0), (7, 1)] {
+                XCTAssertNotEqual(ProWeeklyCopy.pitchLearningProgress(
+                    practiceCredits: practice, qualityUses: uses, resolver: resolver
+                ), resolver.resolve(AppCopyKey.trainingPitchLearningCompleted))
+            }
+        }
+    }
+
     func testReturningPracticeUsesNewAbilitiesForOnePitchWithoutCareerRewards() throws {
         let sync = SaveSync(key: "reborn-practice-\(UUID().uuidString).json")
         defer { sync.clear() }
@@ -530,12 +727,12 @@ final class SignatureLegacyIntegrationTests: XCTestCase {
         XCTAssertEqual(reloaded.loadState, .needsSetup)
     }
 
-    private static func completedDraftedCareer() throws -> (
+    private static func completedDraftedCareer(start: HighSchoolCareerResult? = nil) throws -> (
         startingPitcher: PitcherSnapshot,
         result: HighSchoolCareerResult
     ) {
         let engine = HighSchoolCareerEngine()
-        var result = try engine.start(.init(seed: "20260723", presetID: "power_prospect"))
+        var result = try start ?? engine.start(.init(seed: "20260723", presetID: "power_prospect"))
         let startingPitcher = result.snapshot.pitcher
         result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
         result = try engine.chooseSchool(.init(

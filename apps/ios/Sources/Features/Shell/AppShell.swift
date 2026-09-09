@@ -253,6 +253,8 @@ struct AppShell: View {
                 onSkipToPro: highSchool.archive.isEmpty ? nil : { showsProSkipSetup = true },
                 onOpenDraftForecast: { showsDraftForecastSheet = true },
                 hasEnteredPro: pro.loadState == .ready || highSchool.hasEnteredPro,
+                onRecoverMissingPro: highSchool.canRecoverMissingProCareer(pro)
+                    ? { _ = highSchool.recoverMissingProCareer(pro) } : nil,
                 weekly: weekly
             )
             .toolbar(.hidden, for: .navigationBar)
@@ -986,7 +988,6 @@ private struct ProCareerTabs: View {
 private struct CareerFailureView: View {
     let message: String
     let career: MobileCareerStore
-    @State private var confirmingReset = false
     @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
@@ -1001,22 +1002,6 @@ private struct CareerFailureView: View {
         } actions: {
             PrimaryPill(title: copyResolver.resolve(AppCopyKey.errorRetry), identifier: "pro.retry") {
                 career.retryRestoreOrReturn()
-            }
-            Button(copyResolver.resolve(AppCopyKey.errorReset), role: .destructive) {
-                confirmingReset = true
-            }
-            .font(BaseballType.detail.weight(.semibold))
-            .accessibilityIdentifier("pro.restart")
-            .alert(
-                copyResolver.resolve(AppCopyKey.errorDeleteTitle),
-                isPresented: $confirmingReset
-            ) {
-                Button(copyResolver.resolve(AppCopyKey.errorDeleteAction), role: .destructive) {
-                    _ = career.deleteCareer()
-                }
-                Button(copyResolver.resolve(AppCopyKey.errorCancel)) { confirmingReset = false }
-            } message: {
-                GameCopyText(AppCopyKey.errorDeleteMessage)
             }
         }
         .background(BaseballTheme.canvas)

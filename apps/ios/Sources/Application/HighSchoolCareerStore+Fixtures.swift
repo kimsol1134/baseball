@@ -78,7 +78,7 @@ extension HighSchoolCareerStore {
         selectSignatureLegacy(legacy.id)
         confirmLegacy()
         guard self.state?.phase == .completed else { return false }
-        beginNextLife()
+        guard beginNextLife() else { return false }
         pendingRecap = nil
         startQuickRebirth(entryPoint: "qa_fixture")
         return self.state?.phase == .prologue && self.state?.lifeNumber == 2

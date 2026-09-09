@@ -479,17 +479,19 @@ struct TrainingCard: View {
                     VStack(alignment: .leading, spacing: 5) {
                         GameCopyText(learningStageKey(project.stage))
                             .font(.subheadline.weight(.bold))
-                        GameCopyText(
-                            AppCopyKey.trainingPitchLearningProgress,
-                            arguments: [
-                                .integer(project.practiceCredits),
-                                .integer(CareerDisplayRules.pitchLearningPracticeCap),
-                                .integer(project.qualityUses),
-                                .integer(CareerDisplayRules.pitchLearningQualityUses),
-                            ]
-                        )
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        if !project.isCompleted {
+                            GameCopyText(
+                                AppCopyKey.trainingPitchLearningProgress,
+                                arguments: [
+                                    .integer(project.practiceCredits),
+                                    .integer(CareerDisplayRules.pitchLearningPracticeCap),
+                                    .integer(project.qualityUses),
+                                    .integer(CareerDisplayRules.pitchLearningQualityUses),
+                                ]
+                            )
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                        }
                     }
                     .accessibilityIdentifier("hs.training.pitchLearning.stage")
                 }

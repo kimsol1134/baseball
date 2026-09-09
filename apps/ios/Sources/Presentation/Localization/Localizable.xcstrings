@@ -1,6 +1,75 @@
 {
   "sourceLanguage": "ko",
   "strings": {
+    "career.recovery.missing-pro.action": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "유산 선택으로 이어가기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue to legacy selection"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "継承選択へ進む"
+          }
+        }
+      }
+    },
+    "career.recovery.missing-pro.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프로 진행 기록을 찾지 못했습니다. 지금까지 모은 유산과 보상은 유지하고, 남아 있는 고교 기록에서 유산을 골라 새 선수를 시작할 수 있습니다. 사라진 프로 기록이 복구되는 것은 아닙니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your pro career could not be found. Keep your accumulated legacies and rewards, choose a legacy from your saved high-school career, and start a new player. This does not restore missing pro records."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロの進行記録が見つかりません。これまでの継承と報酬を保ったまま、残っている高校の記録から継承を選び、新しい選手を始められます。失われたプロの記録は復元されません。"
+          }
+        }
+      }
+    },
+    "career.recovery.missing-pro.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "남은 기록으로 이어가기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with your saved records"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "残っている記録で続ける"
+          }
+        }
+      }
+    },
     "accessibility.stat.line": {
       "localizations": {
         "en": {

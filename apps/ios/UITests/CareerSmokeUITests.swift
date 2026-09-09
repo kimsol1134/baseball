@@ -10,6 +10,30 @@ final class CareerSmokeUITests: XCTestCase {
     /// 고교 한 회차는 훈련 12~16 + 관계 4~6 + 경기 4~6 + 각성 3 + 챕터 8이라 단계 수가 많다.
     private let maximumSteps = 400
 
+    func testMissingProRecoveryOpensLegacyWithoutDeletingTheHighSchoolPlayer() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestIsolatedCareer", "-uiTestResetCareer", "-uiTestMissingProFixture",
+                               "-baseball.audio.sound", "NO", "-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        let continueResult = app.buttons["hs.draft.result.continue"]
+        XCTAssertTrue(continueResult.waitForExistence(timeout: timeout))
+        XCTAssertTrue(tapIfPresent(continueResult))
+        let recover = app.buttons["hs.recoverMissingPro"]
+        XCTAssertTrue(recover.waitForExistence(timeout: timeout))
+        capture(app, name: "missing-pro-recovery-japanese")
+        XCTAssertTrue(tapIfPresent(recover))
+        let confirm = app.buttons["hs.legacy.confirm"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: timeout))
+        XCTAssertFalse(app.buttons["hs.restart"].exists)
+        app.terminate()
+        app.launchArguments = ["-uiTestIsolatedCareer", "-baseball.audio.sound", "NO",
+                               "-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        // The recovered legacy phase must survive a real process restart.
+        if continueResult.waitForExistence(timeout: 3) { _ = tapIfPresent(continueResult) }
+        XCTAssertTrue(confirm.waitForExistence(timeout: timeout))
+    }
+
     override func setUp() {
         continueAfterFailure = false
         journeyCopyLocale = .japanese
@@ -444,7 +468,7 @@ final class CareerSmokeUITests: XCTestCase {
 
     func testRebornReadyOffersImmediateContinueAndOptionalMemoriesInJapanese() {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestResetCareer", "-uiTestRebornFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launchArguments = ["-uiTestIsolatedCareer", "-uiTestResetCareer", "-uiTestRebornFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
         let proceed = app.buttons["hs.reborn.continue"]
         XCTAssertTrue(proceed.waitForExistence(timeout: timeout))
@@ -464,7 +488,7 @@ final class CareerSmokeUITests: XCTestCase {
 
     func testRebornOptionalPracticeFinishesAfterOneManualPitch() {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestResetCareer", "-uiTestRebornFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
+        app.launchArguments = ["-uiTestIsolatedCareer", "-uiTestResetCareer", "-uiTestRebornFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
         app.launch()
         XCTAssertTrue(app.buttons["hs.reborn.practice"].waitForExistence(timeout: timeout))
         capture(app, name: "loop-reborn-ready-ko")

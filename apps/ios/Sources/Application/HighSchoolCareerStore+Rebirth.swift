@@ -299,19 +299,30 @@ extension HighSchoolCareerStore {
     /// `save()`가 진행 없이는 아무것도 쓰지 않아서, "다시 태어나기"를 누른 순간부터
     /// 새 선수 생성 완료까지 계승분(야구혼·기억·아카이브)이 메모리에만 있었다 —
     /// 그 사이가 하필 이름을 고민하는 화면이라, 앱이 내려가면 회차 전체가 1회차로 리셋됐다.
-    func beginNextLife() {
+    @discardableResult
+    func beginNextLife() -> Bool {
+        if result == nil, loadState == .needsSetup { return true }
+        guard let state, state.phase == .completed,
+              inheritance.lifeNumber > state.lifeNumber else { return false }
+        let previous = capturePersisted()
         updatePersisted {
             $0.result = nil
+            $0.gameResume = nil
+            $0.pendingGameCompletion = nil
+            $0.enteredProCareerID = nil
             $0.selectedSignatureLegacyID = nil
             $0.careerStartingPitcher = nil
             $0.signatureLegacyRulesVersion = nil
             $0.frozenSignatureLegacyCandidates = nil
         }
-        pitchSession = nil
-        pendingGains = []
-        trainingReceipt = nil
+        guard save() else {
+            replacePersisted(previous)
+            loadState = .failed("새 선수의 시작을 준비하지 못했습니다. 기록은 그대로 남아 있습니다. 다시 시도해 주세요.")
+            return false
+        }
+        clearLiveSession()
         loadState = .needsSetup
-        save()
+        return true
     }
 
     /// 지난 회차와 같은 설정으로 곧장 다음 회차를 연다. 설정을 다시 물을 것이 없으면 nil.

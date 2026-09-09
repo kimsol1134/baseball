@@ -20,6 +20,17 @@ struct BaseballApp: App {
         let proConfiguration = AppFeatureConfiguration.production
 #endif
         _pro = State(initialValue: MobileCareerStore(configuration: proConfiguration))
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uiTestIsolatedCareer") {
+            _highSchool = State(initialValue: HighSchoolCareerStore(
+                sync: CareerSaveSync.isolatedUITestStore(key: "highschool.json")
+            ))
+            _pro = State(initialValue: MobileCareerStore(
+                sync: CareerSaveSync.isolatedUITestStore(key: "pro.json"),
+                configuration: proConfiguration
+            ))
+        }
+#endif
     }
 
     /// UI 스모크 테스트가 저장된 커리어를 지우고 첫 실행 상태에서 시작하도록 하는 인자.
@@ -360,7 +371,11 @@ struct BaseballApp: App {
                             forKey: PitchControlPreferences.autoReleaseKey
                         )
 #if DEBUG
-                        if arguments.contains(Self.draftedCareerFixtureLaunchArgument) {
+                        if arguments.contains("-uiTestMissingProFixture") {
+                            if highSchool.installDraftedCareerFixtureForUITesting() {
+                                _ = highSchool.markEnteredPro()
+                            }
+                        } else if arguments.contains(Self.draftedCareerFixtureLaunchArgument) {
                             _ = highSchool.installDraftedCareerFixtureForUITesting()
                         } else if arguments.contains(Self.undraftedCareerFixtureLaunchArgument) {
                             _ = highSchool.installUndraftedDraftFixtureForUITesting()
