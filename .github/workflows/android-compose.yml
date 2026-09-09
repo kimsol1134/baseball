@@ -69,6 +69,8 @@ jobs:
       - run: npm ci
       - name: Require Compose source contracts
         run: npm run check:android:compose && npm run check:android:compose:release
+      - name: Verify frozen Swift parity and persistence before signing
+        run: ./apps/android/gradlew -p apps/android :game-core:test :game-application:test :game-persistence:test --console=plain
       - name: Inject production-only configuration
         shell: bash
         env:

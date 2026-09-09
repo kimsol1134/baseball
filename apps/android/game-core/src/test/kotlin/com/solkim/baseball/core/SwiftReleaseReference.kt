@@ -11,7 +11,7 @@ import java.security.MessageDigest
 internal object SwiftReleaseReference {
     private val reference: JsonValue.Obj by lazy {
         val bytes = checkNotNull(javaClass.getResourceAsStream("/fixtures/swift-release-parity-v4-v10.json")).use { it.readBytes() }
-        check(Hashing.sha256Hex(bytes) == "b13bfbf5346d534af6a88f8ddbab266eb092ea8893578d59cf209d576c4d98f4") { "Swift reference bytes changed; regenerate and review from Swift, never from Kotlin output" }
+        check(Hashing.sha256Hex(bytes) == "b3d02ad0e1e3617cbb0cfc8ca5f6970a29c71c64d66643955c35b055c718fec6") { "Swift reference bytes changed; regenerate and review from Swift, never from Kotlin output" }
         val root = StrictJson.parseUtf8(bytes) as JsonValue.Obj
         val source = Path.of("../../../packages/simulation-core/Sources/SimulationCore")
         if (Files.isDirectory(source)) {
