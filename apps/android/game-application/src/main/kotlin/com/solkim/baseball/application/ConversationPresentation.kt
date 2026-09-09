@@ -4,20 +4,51 @@ import com.solkim.baseball.core.highschool.*
 
 public object ConversationPresentation {
     private fun category(run: HighSchoolState): String = run.currentRelationshipCategory ?: run.currentRelationshipTarget?.wire ?: "coach"
-    public fun line(run: HighSchoolState): String {
-        if (run.currentRelationshipEvent?.id == "evt-arm-care") return RelationshipNarrative.line(run)
-        return when (category(run)) {
-            "coach" -> when {
-                run.development?.trialOutcome == "achieved" -> "지난 테스트, 잘 던졌어. 선발 기회를 더 줄게. 오늘은 무엇을 준비할까?"
-                run.development?.starterTrialPending == true -> "다음 등판은 선발 테스트야. 그 전에 무엇을 준비할까?"
-                else -> "네 공을 더 키워보자. 훈련을 도와줄까, 선발 기회에 도전해 볼래?"
+    public fun line(run: HighSchoolState): String = compactLineKey(run)?.let {
+        GameCopy(GameLanguage.KOREAN).resolve(it)
+    } ?: RelationshipNarrative.line(run)
+
+    /** Authored short beats, never a substring cut through a sentence or a gameplay promise. */
+    public fun compactLineKey(run: HighSchoolState): String? {
+        val event = run.currentRelationshipEvent?.id
+        val beat = when (event) {
+            "evt-coach-role" -> if (run.development?.starterTrialPending == true) "coach-trial" else "coach-role"
+            "evt-coach-last-advice" -> "coach-last"
+            "evt-catcher-sign", "evt-catcher-doubt" -> "catcher-sign"
+            "evt-battery-dinner" -> "catcher-dinner"
+            "evt-new-catcher" -> "catcher-new"
+            "evt-rival-video" -> "rival-video"
+            "evt-rival-final" -> "rival-final"
+            "evt-rival-message" -> "rival-message"
+            "evt-arm-care" -> "arm-care"
+            else -> when (category(run)) {
+                "coach" -> if (run.development?.starterTrialPending == true) "coach-trial" else "coach"
+                "catcher", "game" -> "catcher"
+                "awakening" -> "catcher-awakening"
+                "rival" -> "rival-message"
+                else -> return null
             }
-            "catcher", "game", "awakening" -> "다음 등판 전에 하나만 같이 맞춰보자. 배합, 코스, 결정구 중에 뭐부터 할까?"
-            else -> RelationshipNarrative.line(run)
         }
+        val trust = when (RelationshipNarrative.speakerRole(run)) {
+            "coach" -> run.managerTrust; "catcher" -> run.catcherTrust; "rival" -> run.rivalTrust
+            else -> 50
+        }
+        return "conversation.beat.$beat.${if (trust < 45) "guarded" else if (trust >= 65) "close" else "open"}"
+    }
+
+    public fun reactionKey(before: HighSchoolState, after: HighSchoolState): String {
+        val result = after.lastRelationship ?: return "conversation.reaction.done"
+        if (after.injuryRecovery > before.injuryRecovery) return "conversation.reaction.injury"
+        val offer = after.development?.takeIf { it.lastConversation == after.relationshipsCompleted }?.lastOffer
+        if (offer == "starter_trial") return "conversation.reaction.trial"
+        if (offer == "recovery") return "conversation.reaction.rest"
+        val role = RelationshipNarrative.speakerRole(before)
+        if (result.trustAfter < result.trustBefore) return "conversation.reaction.$role.disagree".takeIf { role in setOf("coach", "catcher", "rival") } ?: "conversation.reaction.done"
+        return "conversation.reaction.$role".takeIf { role in setOf("coach", "catcher", "rival") } ?: "conversation.reaction.done"
     }
     public fun title(run: HighSchoolState, response: HighSchoolRelationshipResponse): String? {
-        if (run.currentRelationshipEvent?.id == "evt-arm-care") return RelationshipNarrative.choice(run, response)?.title
+        if (run.currentRelationshipEvent?.id == "evt-arm-care") return GameCopy(GameLanguage.KOREAN).resolve("conversation.choice.arm.${response.wire}")
+        if (category(run) == "rival") return GameCopy(GameLanguage.KOREAN).resolve("conversation.choice.rival.${response.wire}")
         return when (category(run)) {
             "coach" -> when (response) { HighSchoolRelationshipResponse.LISTEN -> "훈련을 도와주세요"; HighSchoolRelationshipResponse.EXPLAIN -> "회복하고 싶어요"; HighSchoolRelationshipResponse.CHALLENGE -> "선발 기회에 도전할게요" }
             "catcher", "game", "awakening" -> when (response) { HighSchoolRelationshipResponse.LISTEN -> "배합을 같이 복기하자"; HighSchoolRelationshipResponse.EXPLAIN -> "코스를 같이 점검하자"; HighSchoolRelationshipResponse.CHALLENGE -> "결정구를 같이 연습하자" }
@@ -27,6 +58,7 @@ public object ConversationPresentation {
     public fun effects(before: HighSchoolState, after: HighSchoolState): List<String> {
         val result = after.lastRelationship ?: return emptyList()
         val lines = mutableListOf<String>()
+        if (after.injuryRecovery > before.injuryRecovery) lines += "부상 · 재활 필요"
         val d = after.development?.takeIf { it.lastConversation == after.relationshipsCompleted }
         when (d?.lastOffer) {
             "starter_trial" -> lines += "다음 등판: 선발 테스트"

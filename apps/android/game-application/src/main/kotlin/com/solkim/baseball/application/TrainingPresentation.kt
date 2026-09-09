@@ -31,7 +31,7 @@ public object TrainingPresentation {
         TrainingFocus.BREAKING_BALL -> "구종 하나를 골라 공 끝을 더 흔든다. 헛스윙이 늘어난다."
         TrainingFocus.STAMINA -> "긴 이닝을 버티는 몸을 만든다."
         TrainingFocus.RECOVERY -> "성장 대신 피로를 던다. 재활 중이면 팔도 돌아온다."
-        TrainingFocus.GAME_PLANNING -> "타자를 읽는 연습. 제구가 같이 는다."
+        TrainingFocus.GAME_PLANNING -> "어떤 공을 어떤 순서로 던질지 연습해요. 제구도 함께 늘어요."
     }
     public fun intensityTitle(value: TrainingIntensity, focus: TrainingFocus): String =
         if (focus == TrainingFocus.RECOVERY) when (value) {

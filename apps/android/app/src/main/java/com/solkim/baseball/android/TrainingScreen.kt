@@ -58,7 +58,7 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (run.fatigue >= 70 || run.armRisk >= 55) BaseballColors.warning else BaseballColors.textSecondary)
             run.development?.let { if (it.hasSupport(focus)) focus else it.supportFocus }?.let { support ->
-                Text("${copy.legacy(TrainingPresentation.title(support))} · ${copy.legacy("대화에서 받은 지원")}", verbatim = true,
+                Text(ChoiceEffect.trainingSupportLabel(support, copy), verbatim = true,
                     color = BaseballColors.milestone, style = MaterialTheme.typography.labelMedium, modifier = Modifier.testTag("training.conversationSupport"))
             }
             if (run.development?.starterTrialPending == true) Text("다음 등판: 선발 테스트", color = BaseballColors.milestone, style = MaterialTheme.typography.labelMedium)
@@ -269,5 +269,5 @@ private fun trainingChoiceLabel(focus: TrainingFocus): String = when (focus) {
     TrainingFocus.BREAKING_BALL -> "변화구"
     TrainingFocus.STAMINA -> "체력"
     TrainingFocus.RECOVERY -> "회복"
-    TrainingFocus.GAME_PLANNING -> "수싸움"
+    TrainingFocus.GAME_PLANNING -> "배합 연습"
 }

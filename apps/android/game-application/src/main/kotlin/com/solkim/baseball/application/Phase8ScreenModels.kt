@@ -584,13 +584,14 @@ public object Phase8ScreenProjection {
                     Phase8Row("상대", run?.currentRelationshipTarget?.label ?: "팀", "감독 ${trustWord(run?.managerTrust ?: 0)} · 포수 ${trustWord(run?.catcherTrust ?: 0)} · 라이벌 ${trustWord(run?.rivalTrust ?: 0)}"),
                 )))
                 HighSchoolRelationshipResponse.entries.forEach { response ->
+                    val effects = run?.let { ConversationPresentation.previewEffects(it, context.seed(state, "relationship:${response.wire}"), response) }.orEmpty()
                     addAction(
                         "relationship:${response.wire}",
                         run?.let { ConversationPresentation.title(it, response) } ?: relationshipChoiceTitle(event?.category, response),
-                        run?.let { ConversationPresentation.preview(it, context.seed(state, "relationship:${response.wire}"), response) } ?: relationshipChoiceDetail(event?.category, response),
+                        if (run != null) ChoiceEffect.summary(effects) else relationshipChoiceDetail(event?.category, response),
                         run?.phase == HighSchoolPhase.RELATIONSHIP,
                         listOf(hs(HighSchoolPhase4Command.Relationship(context.seed(state, "relationship:${response.wire}"), response))),
-                        effects = run?.let { ConversationPresentation.previewEffects(it, context.seed(state, "relationship:${response.wire}"), response) }.orEmpty(),
+                        effects = effects,
                     )
                 }
             }
@@ -1046,7 +1047,10 @@ public object Phase8ScreenProjection {
                         ) + honorRows))
                         pro?.pendingDecision?.let { decision ->
                             decision.choices.forEach { choice ->
-                                addAction("seasonDecision:${choice.id}", choice.title, choice.detail, pro.phase == ProCareerPhase.SEASON_DECISION, listOf(pro(ProCommand.ApplySeasonDecision(context.seed(state, "decision:${choice.id}"), decision.id, choice.id))))
+                                addAction("seasonDecision:${choice.id}", choice.title, choice.detail, pro.phase == ProCareerPhase.SEASON_DECISION,
+                                    listOf(pro(ProCommand.ApplySeasonDecision(context.seed(state, "decision:${choice.id}"), decision.id, choice.id))),
+                                    effects = if (pro.phase == ProCareerPhase.SEASON_DECISION && ProConversationPresentation.role(decision.type) != null)
+                                        ProConversationPresentation.preview(pro, context.seed(state, "decision:${choice.id}"), choice.id) else emptyList())
                             }
                         }
                         addAction("reviewSeason", "시즌 결산 보기", "올해 남긴 것을 본다.", pro?.phase == ProCareerPhase.SEASON_REVIEW, listOf(pro(ProCommand.ReviewSeason(context.seed(state, "season-review")))))

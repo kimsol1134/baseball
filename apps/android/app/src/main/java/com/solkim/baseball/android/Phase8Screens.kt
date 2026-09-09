@@ -160,6 +160,17 @@ public fun Phase8Shell(
     val model = Phase8ScreenProjection.project(state, visibleScreen, commandContext).localized(gameCopy, state)
     TrainingFeedbackGate(state)
     ProWeekFeedbackGate(state)
+    if (ConversationFeedbackGate(state)) return
+    if (visibleScreen == Phase8ScreenId.P007_RELATIONSHIP) {
+        RelationshipConversationScreen(state, model, busy, actionError, onAction)
+        return
+    }
+    if (visibleScreen == Phase8ScreenId.P019_PRO_SEASON &&
+        com.solkim.baseball.application.ProConversationPresentation.role(state.pro?.pendingDecision?.type) != null &&
+        model.actions.any { it.id.startsWith("seasonDecision:") && it.enabled }) {
+        ProConversationScreen(state, model, busy, actionError, onAction)
+        return
+    }
     if (visibleScreen == Phase8ScreenId.P004_PITCH_TUTORIAL ||
         (visibleScreen == Phase8ScreenId.P003_PROLOGUE && RebirthContinuity.resolve(state) == null)) {
         PracticeEntryRecovery(state, model, busy, actionError, onAction,
@@ -178,7 +189,6 @@ public fun Phase8Shell(
     val bridgeResult = nextTrainingLoad?.takeIf { it.first == bridgeKey }?.second
     val nextTraining = bridgeResult?.getOrNull()
     val trainingSurface = visibleScreen == Phase8ScreenId.P006_TRAINING || bridgesReview
-    ConversationFeedbackGate(state)
     CareerMilestoneCelebration(state, showTrainingBloom = false)
     val currentTab = ProductTab.forScreen(visibleScreen)
     if (visibleScreen == Phase8ScreenId.P027_SETTINGS) {
@@ -570,7 +580,7 @@ private fun Phase8ScreenContent(
                     Phase8ScreenId.P016_PRO_CONTRACT -> if (model.actions.any { it.id.startsWith("acceptOffer:") }) Phase8ContractChoices(model, onAction) else { Phase8Sections(model.sections); Phase8Actions(model, onAction) }
                     Phase8ScreenId.P013_DRAFT -> { Phase8DraftReveal(state, model); Phase8Actions(model, onAction) }
                     Phase8ScreenId.P008_IMPORTANT_GAME, Phase8ScreenId.P018_PRO_IMPORTANT_GAME -> OutingBriefingView(state, model, commandContext, onAction)
-                    Phase8ScreenId.P007_RELATIONSHIP, Phase8ScreenId.P017_PRO_WEEK ->
+                    Phase8ScreenId.P017_PRO_WEEK ->
                         Phase8DecisionChoices(state, model, onAction, busy)
                     in compactCareerScreens -> {
                         CompactCareerOverview(state, model, onAction)
@@ -794,26 +804,6 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
     var details by rememberSaveable(model.id.wire) { mutableStateOf(false) }
     var roleChoices by rememberSaveable(state.pro?.careerId, state.pro?.season) { mutableStateOf(false) }
     when (model.id) {
-        Phase8ScreenId.P007_RELATIONSHIP -> {
-            val run = state.highSchool?.run
-            val role = run?.let { RelationshipNarrative.speakerRole(it) }
-            com.solkim.baseball.application.CareerMemoryPresentation.conversationRecall(state, copy)?.let { Text(it, verbatim = true, color = BaseballColors.milestone, style = MaterialTheme.typography.bodyMedium) }
-            model.sections.firstOrNull()?.let { section ->
-                Text(section.title, style = MaterialTheme.typography.titleMedium)
-                section.rows.firstOrNull()?.let { row ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        when (role) {
-                            "coach" -> PlayerPortrait(seed = run?.let(RelationshipNarrative::speaker) ?: row.label, role = AvatarRole.COACH, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
-                            "catcher" -> PlayerPortrait(seed = run?.let(RelationshipNarrative::speaker) ?: row.label, role = AvatarRole.CATCHER, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
-                            "rival" -> PlayerPortrait(seed = run?.let(RelationshipNarrative::speaker) ?: row.label, role = AvatarRole.RIVAL, width = 44.dp, modifier = Modifier.testTag("relationship.portrait"))
-                            else -> Unit
-                        }
-                        Text(row.label, fontWeight = FontWeight.Bold)
-                    }
-                    Text(row.value, verbatim = true, style = MaterialTheme.typography.titleLarge)
-                }
-            }
-        }
         Phase8ScreenId.P017_PRO_WEEK -> {
             state.pro?.let { pro -> Text(com.solkim.baseball.application.CareerUiRules.proContext(state),
                 color = BaseballColors.milestone, style = MaterialTheme.typography.labelLarge) }
@@ -833,17 +823,7 @@ private fun Phase8DecisionChoices(state: GameAggregateState, model: Phase8Screen
         ProWeekPlanner(state, model, busy, onAction)
         return
     }
-    if (model.id == Phase8ScreenId.P007_RELATIONSHIP) {
-        model.actions.filter { it.enabled }.forEach { action ->
-            CompactChoiceCard(action.label, action.description, action.enabled, "action.${action.id}") {
-                onAction(Phase8UiAction(model.id, action.id, action.payloads))
-            }
-            if (action.effects.size > com.solkim.baseball.application.ChoiceEffect.highlighted(action.effects).size) CareerDisclosure("효과 자세히", "effect.details.${action.id}") {
-                action.effects.forEach { effect -> Text(effect.localized(copy), verbatim = true,
-                    color = if (effect.favorable) BaseballColors.action else BaseballColors.warning) }
-            }
-        }
-    } else Phase8ChoiceGrid(model, onAction)
+    Phase8ChoiceGrid(model, onAction)
     TextButton(onClick = { details = !details }) { Text(copy.resolve(if (details) "android.details.hide" else "android.details.show")) }
     if (details) Phase8Sections(model.sections.filterNot { it.id == "pitch-learning" || it.id.startsWith("followup:") || it.id == "role-result" })
 }
