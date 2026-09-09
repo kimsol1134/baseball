@@ -95,4 +95,43 @@ public enum PitchReleaseWindow {
     public static func contains(meter: Double, command: Int) -> Bool {
         calibratedAccuracy(raw: rawAccuracy(meter: meter), command: command) >= stableReleaseThreshold
     }
+
+    /// 바늘이 릴리스 지점 부근에서 느려지는 폭(미터 단위). 금색 창을 덮을 만큼 넓고,
+    /// 초록 창의 타이밍은 그대로 둘 만큼 좁다.
+    public static let releaseDwellSpan = 0.09
+
+    /// 정중앙에 머무는 정도. 제구가 오를수록 더 오래 머문다 — 가장 맞히기 어려운 것이
+    /// 성장으로 실제로 쉬워지는 자리다.
+    public static func releaseDwell(command: Int) -> Double {
+        let value = min(80, max(baselineCommand, command))
+        return 0.60 + Double(value - baselineCommand) / 45.0 * 0.18
+    }
+
+    /// 지금부터 바늘이 다음번 정중앙에 앉기까지 남은 시간(초).
+    ///
+    /// 감속은 가운데를 가운데에 그대로 두므로 통과 시각은 선형 왕복과 같다. 예고 신호를
+    /// 정확한 시각에 놓을 수 있는 이유다.
+    public static func secondsToRelease(elapsed: Double, sweepSeconds: Double) -> Double {
+        guard elapsed.isFinite, elapsed >= 0, sweepSeconds.isFinite, sweepSeconds > 0 else { return 0 }
+        let legs = elapsed / sweepSeconds
+        let next = (legs - 0.5).rounded(.down) + 1.5
+        return max(0, next * sweepSeconds - elapsed)
+    }
+
+    /// 경과 시간의 바늘 위치(0~1).
+    ///
+    /// 금색 창은 미터의 2.5%라 선형 왕복으로는 25ms 만에 지나갔다 — 가장 보상이 큰 조작이
+    /// 사실상 운이었다. 주기와 초록 창의 시간은 그대로 두고, 릴리스 지점 부근에서만
+    /// 바늘을 늦춘다.
+    public static func meterPosition(elapsed: Double, sweepSeconds: Double, command: Int) -> Double {
+        guard elapsed.isFinite, elapsed >= 0, sweepSeconds.isFinite, sweepSeconds > 0 else { return 0 }
+        let sweep = elapsed / sweepSeconds
+        let whole = sweep.rounded(.down)
+        let fraction = sweep - whole
+        let linear = Int(whole) % 2 == 0 ? fraction : 1 - fraction
+        let offset = 2 * linear - 1
+        let ratio = offset / releaseDwellSpan
+        let eased = offset * (1 - releaseDwell(command: command) * exp(-ratio * ratio))
+        return (eased + 1) / 2
+    }
 }

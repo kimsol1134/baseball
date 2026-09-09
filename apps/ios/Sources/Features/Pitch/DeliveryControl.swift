@@ -305,6 +305,7 @@ struct DeliveryControl: View {
         Haptics.shared.windUpBegan()
         driver.start(
             sweepSeconds: sweepSeconds,
+            commandRating: heldCommandRating,
             swayAmplitude: swayAmplitude,
             tension: tension,
             hapticsEnabled: hapticsEnabled,
@@ -330,7 +331,8 @@ struct DeliveryControl: View {
             onEdge: {
                 Haptics.shared.meterEdge()
                 onMeterEdge()
-            }
+            },
+            onApproachingRelease: { Haptics.shared.approachingRelease() }
         )
     }
 
@@ -474,6 +476,8 @@ final class MeterDriver {
     private var value: Double = 0
     private var rising = true
     private var sweepSeconds: Double = 1
+    /// 릴리스 감속의 폭을 정하는 제구. 성장하면 정중앙에 더 오래 머문다.
+    private var commandRating: Int = PitchReleaseWindow.baselineCommand
     private var swayAmplitude: CGFloat = 0
     private var tension: Double = 0
     private var hapticsEnabled = true
@@ -483,6 +487,12 @@ final class MeterDriver {
     private var phases: [Double] = [0, 0, 0, 0]
     private var onTick: ((Double, CGSize) -> Void)?
     private var onEdge: (() -> Void)?
+    private var onApproachingRelease: (() -> Void)?
+    /// 이번 왕복에서 예고를 이미 울렸는지. 한 번 지나가는 동안 한 번만 친다.
+    private var warnedLeg: Double = -1
+
+    /// 정중앙 도착 몇 초 전에 예고할지. 사람이 반응해서 손을 뗄 수 있는 최소 시간이다.
+    static let releaseWarningLead = 0.11
 
     /// 조준 흔들림의 주기(Hz). 서로 나누어떨어지지 않아야 같은 자리로 돌아오지 않는다.
     /// 규칙적으로 돌면 몇 번 던져 보고 외워 버려서 다시 쉬워진다.
@@ -490,6 +500,7 @@ final class MeterDriver {
 
     func start(
         sweepSeconds: Double,
+        commandRating: Int = PitchReleaseWindow.baselineCommand,
         swayAmplitude: CGFloat,
         tension: Double = 0,
         hapticsEnabled: Bool = true,
@@ -497,10 +508,12 @@ final class MeterDriver {
         heartbeatSignal: MoundHeartbeatSignal? = nil,
         disturbanceSeed: UInt64 = 0,
         onTick: @escaping (Double, CGSize) -> Void,
-        onEdge: @escaping () -> Void
+        onEdge: @escaping () -> Void,
+        onApproachingRelease: @escaping () -> Void = {}
     ) {
         stop()
         self.sweepSeconds = max(0.2, sweepSeconds)
+        self.commandRating = commandRating
         self.swayAmplitude = swayAmplitude
         self.tension = min(1, max(0, tension))
         self.hapticsEnabled = hapticsEnabled
@@ -509,6 +522,8 @@ final class MeterDriver {
         self.disturbanceSeed = disturbanceSeed
         self.onTick = onTick
         self.onEdge = onEdge
+        self.onApproachingRelease = onApproachingRelease
+        warnedLeg = -1
         // 매 투구마다 위상을 새로 뽑는다. 고정하면 항상 같은 궤적이라 외울 수 있다.
         phases = (0..<4).map { _ in Double.random(in: 0..<(2 * .pi)) }
         value = 0
@@ -525,6 +540,7 @@ final class MeterDriver {
         link = nil
         onTick = nil
         onEdge = nil
+        onApproachingRelease = nil
         heartbeatSignal = nil
     }
 
@@ -549,23 +565,30 @@ final class MeterDriver {
         lastTimestamp = link.timestamp
         // 한 프레임이 크게 밀려도(백그라운드 복귀 등) 미터가 순간이동하지 않게 묶는다.
         let step = min(0.1, delta)
+        let previousLeg = (elapsed / sweepSeconds).rounded(.down)
         elapsed += step
-        let progress = step / sweepSeconds
-
-        if rising {
-            value += progress
-            if value >= 1 { value = 1; rising = false; onEdge?() }
-        } else {
-            value -= progress
-            if value <= 0 { value = 0; rising = true; onEdge?() }
+        // 주기와 초록 구간의 시간은 그대로 두고 릴리스 지점 부근에서만 바늘이 느려진다.
+        // 끝점 통과는 왕복 다리(leg)가 바뀌는 순간이므로 값이 아니라 시간으로 센다.
+        value = PitchReleaseWindow.meterPosition(
+            elapsed: elapsed, sweepSeconds: sweepSeconds, command: commandRating)
+        let currentLeg = (elapsed / sweepSeconds).rounded(.down)
+        if currentLeg != previousLeg {
+            rising = Int(currentLeg) % 2 == 0
+            onEdge?()
+        }
+        // 도착 시각으로 예고한다. 곡선이 바뀌어도 가운데 도달 시각은 같으므로 어긋나지 않는다.
+        let remaining = PitchReleaseWindow.secondsToRelease(elapsed: elapsed, sweepSeconds: sweepSeconds)
+        if remaining <= Self.releaseWarningLead, warnedLeg != currentLeg {
+            warnedLeg = currentLeg
+            onApproachingRelease?()
         }
         let visibleMeter = MoundMeterDisturbance.position(
             base: value,
             at: link.timestamp,
             effectiveTension: tension,
             beatTimes: heartbeatSignal?.beatTimes ?? [],
-            hapticsEnabled: hapticsEnabled,
             reduceMotion: reduceMotion,
+            commandRating: commandRating,
             seed: disturbanceSeed
         )
         // `visibleMeter` is the value stored by DeliveryControl and later passed to

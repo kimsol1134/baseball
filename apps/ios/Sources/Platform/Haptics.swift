@@ -231,6 +231,24 @@ final class Haptics {
     ///
     /// `released(quality:)`의 최고 강도와 구분되어야 한다. 같은 진동이면 950과 850이
     /// 손에서 같은 공이 되고, 그러면 정확히 가운데를 노릴 이유가 사라진다.
+    /// 정중앙 도착 직전의 예고. 미터를 보지 않고도 손끝이 그 순간을 알 수 있어야 한다.
+    ///
+    /// 도착 시각은 `PitchReleaseWindow.secondsToRelease`로 계산하므로 감속 곡선이 바뀌어도
+    /// 예고와 실제가 어긋나지 않는다. 진동을 끈 사람에게는 아무 일도 일어나지 않는다.
+    func approachingRelease() {
+        guard isEnabled else { return }
+        guard supportsHaptics, let engine else { return light.impactOccurred(intensity: 0.45) }
+        let event = CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                .init(parameterID: .hapticIntensity, value: 0.42),
+                .init(parameterID: .hapticSharpness, value: 0.85),
+            ],
+            relativeTime: 0
+        )
+        try? engine.makePlayer(with: CHHapticPattern(events: [event], parameters: [])).start(atTime: 0)
+    }
+
     func perfectRelease() {
         stopWindUp()
         guard isEnabled else { return }

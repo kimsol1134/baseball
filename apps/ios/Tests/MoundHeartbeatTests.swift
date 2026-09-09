@@ -167,7 +167,6 @@ final class MoundHeartbeatTests: XCTestCase {
                 at: 0.2,
                 effectiveTension: MoundTensionModel.tension(for: practice),
                 beatTimes: [0],
-                hapticsEnabled: true,
                 reduceMotion: false,
                 seed: 7
             ),
@@ -219,8 +218,7 @@ final class MoundHeartbeatTests: XCTestCase {
                     at: time,
                     effectiveTension: tension,
                     beatTimes: beatTimes,
-                    hapticsEnabled: true,
-                    reduceMotion: false,
+                        reduceMotion: false,
                     seed: 123
                 )
             }
@@ -234,7 +232,6 @@ final class MoundHeartbeatTests: XCTestCase {
             at: 0.16,
             effectiveTension: 0.90,
             beatTimes: [0],
-            hapticsEnabled: true,
             reduceMotion: false,
             seed: 123
         )
@@ -242,7 +239,6 @@ final class MoundHeartbeatTests: XCTestCase {
             at: 0.16,
             effectiveTension: 0.90,
             beatTimes: [0],
-            hapticsEnabled: true,
             reduceMotion: true,
             seed: 123
         )
@@ -257,7 +253,6 @@ final class MoundHeartbeatTests: XCTestCase {
                 at: $0,
                 effectiveTension: 0.70,
                 beatTimes: [0.0, 0.63],
-                hapticsEnabled: true,
                 reduceMotion: false,
                 seed: 991
             )
@@ -268,7 +263,6 @@ final class MoundHeartbeatTests: XCTestCase {
                 at: $0,
                 effectiveTension: 0.70,
                 beatTimes: [0.0, 0.63],
-                hapticsEnabled: true,
                 reduceMotion: false,
                 seed: 991
             )
@@ -282,7 +276,6 @@ final class MoundHeartbeatTests: XCTestCase {
             at: 0.06,
             effectiveTension: 1,
             beatTimes: [0],
-            hapticsEnabled: true,
             reduceMotion: false,
             seed: 8
         )
@@ -291,22 +284,28 @@ final class MoundHeartbeatTests: XCTestCase {
         XCTAssertEqual(delivery.releaseAccuracy, expected)
     }
 
-    func testSettingsKeepBaseMotionButGateTensionEffects() {
-        XCTAssertFalse(MoundHeartbeatSettings.meterJitterEnabled(hapticsEnabled: false))
-        XCTAssertTrue(MoundHeartbeatSettings.meterJitterEnabled(hapticsEnabled: true))
+    func testMeterShakeIsIndependentOfTheVibrationSettingAndNeverEatsTheCommandWindow() {
+        // 흔들림은 판정에 영향을 주므로 진동 설정이 끄지 못한다 — 끄면 판정이 쉬워진다.
+        XCTAssertTrue(MoundHeartbeatSettings.meterJitterEnabled)
         XCTAssertFalse(MoundHeartbeatSettings.heartbeatAudioEnabled(soundEnabled: false))
         XCTAssertTrue(MoundHeartbeatSettings.heartbeatAudioEnabled(soundEnabled: true))
-        XCTAssertEqual(
-            MoundMeterDisturbance.offset(
-                at: 0.1,
-                effectiveTension: 1,
-                beatTimes: [0],
-                hapticsEnabled: false,
-                reduceMotion: false,
-                seed: 3
-            ),
-            0
-        )
+
+        // 상한은 제구 창의 4분의 1을 넘지 않는다. 손끝이 정확히 가운데였던 공은 흔들림이
+        // 초록 창 밖으로 밀어내지 못한다.
+        for command in [PitchReleaseWindow.baselineCommand, 50, 80] {
+            let quarterWindow = PitchReleaseWindow.width(command: command) / 4
+            for tick in 0..<40 {
+                let offset = MoundMeterDisturbance.offset(
+                    at: Double(tick) * 0.05,
+                    effectiveTension: 1,
+                    beatTimes: [0, 0.4],
+                    reduceMotion: false,
+                    commandRating: command,
+                    seed: 3
+                )
+                XCTAssertLessThanOrEqual(abs(offset), quarterWindow + 0.000_1)
+            }
+        }
         XCTAssertTrue(SettingsCopy.hapticsFooter.contains("릴리스 미터"))
     }
 }
