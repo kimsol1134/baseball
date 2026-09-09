@@ -884,10 +884,11 @@ public class NativeAudioHapticsService(
         }
         stopMusic()
         runCatching {
-            music = MediaPlayer.create(context, resourceId)?.also { player ->
+            music = MediaPlayer.create(context, resourceId)
+            music?.let { player ->
                 player.isLooping = true
                 requestFocus()
-                player.start()
+                if (!pausedForFocus) player.start()
             }
         }
     }
@@ -1049,6 +1050,7 @@ public class NativeAudioHapticsService(
 
     private fun requestFocusIfMusicPlaying() { if (music?.isPlaying == true) requestFocus() }
     private fun requestFocus() {
+        if (focusRequest != null) return
         pausedForFocus = false
         if (Build.VERSION.SDK_INT >= 26) {
             focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()).setOnAudioFocusChangeListener { change ->
@@ -1057,7 +1059,11 @@ public class NativeAudioHapticsService(
                     AudioManager.AUDIOFOCUS_GAIN -> if (pausedForFocus) { pausedForFocus = false; music?.start() }
                 }
             }.build()
-            audioManager.requestAudioFocus(requireNotNull(focusRequest))
+            if (audioManager.requestAudioFocus(requireNotNull(focusRequest)) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                focusRequest = null
+                pausedForFocus = true
+                music?.pause()
+            }
         } else {
             @Suppress("DEPRECATION")
             audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
