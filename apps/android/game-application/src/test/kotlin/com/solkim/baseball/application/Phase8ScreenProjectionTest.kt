@@ -319,7 +319,6 @@ class Phase8ScreenProjectionTest {
         assertTrue(contract.actions.single { it.id == "startDirect" }.payloads.isNotEmpty())
         controller.execute(Phase8ScreenId.P016_PRO_CONTRACT, "startDirect", contract.actions.single { it.id == "startDirect" }.payloads)
         assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
-        assertEquals(11, initialStore.current.pro?.proRulesVersion)
         assertEquals(ProCatalog.RULES_VERSION, initialStore.current.pro?.proRulesVersion)
         val weekly = controller.projection(Phase8ScreenId.P017_PRO_WEEK)
         assertEquals(6, weekly.actions.count { it.id.startsWith("proPlan:") })
@@ -727,6 +726,51 @@ class Phase8ScreenProjectionTest {
             executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP, "finalizeArchive")
         }
         return store to controller
+    }
+
+    @Test
+    fun savedImportantPitchResultsResumeWithoutDuplicatingCareerStats() = runBlocking {
+        for (boundary in listOf(PitchBoundary.COMMITTED, PitchBoundary.CONSUMED, PitchBoundary.TERMINAL)) {
+            val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("resume-$boundary"))
+            val controller = Phase8Controller(store, context)
+            executeFirst(controller, Phase8ScreenId.P001_OPENING)
+            executeFirst(controller, Phase8ScreenId.P002_SETUP)
+            executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
+            executeFirst(controller, Phase8ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
+            finishTutorialPitch(store)
+            executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
+            val phase7 = Phase7VerticalController(store, "recovery")
+            advanceHighSchoolUntil(store, controller, phase7, HighSchoolPhase.IMPORTANT_GAME)
+            executeFirst(controller, Phase8ScreenId.P008_IMPORTANT_GAME, "openImportantGame")
+            val pitch = requireNotNull(store.current.pitch)
+            val result = phase7.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
+            if (boundary == PitchBoundary.CONSUMED) {
+                val envelope = GameCommandEnvelope("consume-recovery", pitch.sessionId, store.current.revision, GameCommand.ConsumePitch(pitch.sessionId, result.pitchId))
+                store.dispatch(envelope)
+            }
+            if (boundary == PitchBoundary.TERMINAL) phase7.consumePresentation(pitch.sessionId, result)
+            assertEquals(boundary, store.current.pitch?.boundary)
+            val restored = KotlinGameStore.fromShadowFixture(store.current)
+            val resumed = Phase8Controller(restored, context)
+            val before = restored.current.highSchool?.run?.performance
+            val action = resumed.projection(Phase8ScreenId.P008_IMPORTANT_GAME).actions.single { it.id == "resumePitch" }
+            assertTrue(action.enabled)
+            assertEquals("투구 결과 확인하기", action.label)
+            executeFirst(resumed, Phase8ScreenId.P008_IMPORTANT_GAME, "resumePitch")
+            val recovered = Phase7VerticalController(restored, "recovery-restored")
+            val saved = recovered.preparePresentation(pitch.sessionId, 0)
+            assertEquals(result.pitchId, saved.pitchId)
+            recovered.consumePresentation(pitch.sessionId, saved)
+            recovered.consumePresentation(pitch.sessionId, saved)
+            recovered.completePitchAndPostgame(pitch.sessionId)
+            recovered.completePitchAndPostgame(pitch.sessionId)
+            assertEquals(PitchBoundary.COMPLETED, restored.current.pitch?.boundary)
+            if (restored.current.highSchool?.activePitch != null) {
+                assertEquals(before, restored.current.highSchool?.run?.performance)
+                executeFirst(resumed, Phase8ScreenId.P008_IMPORTANT_GAME, "nextImportantPitch")
+                assertEquals(PitchBoundary.PLAYING, restored.current.pitch?.boundary)
+            } else assertTrue(restored.current.highSchool?.run?.phase != HighSchoolPhase.IMPORTANT_GAME)
+        }
     }
 
     private suspend fun finishTutorialPitch(store: KotlinGameStore) {
