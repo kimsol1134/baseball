@@ -265,7 +265,8 @@ struct PitchView: View {
             return
         }
         guard perfectReleaseCelebrationID == id else { return }
-        audio.play(.milestone)
+        // 정중앙 릴리스에만 나는 종. 다른 어떤 순간과도 같은 소리가 나지 않는다.
+        audio.play(.perfectRelease)
 
         do {
             try await Task.sleep(
@@ -1176,6 +1177,13 @@ struct PitchView: View {
         // 전에는 포구와 콜이 같은 순간에 겹쳐서 심판이 공보다 빨랐다.
         let cues = session.lastCues
         if let release = cues.first { audio.play(release) }
+        // 릴리스 직후, 공이 날아가는 동안 공기음이 깔린다. 구속이 높을수록 크고 짧다.
+        if let velocity = session.lastResult?.snapshot.execution.velocityTenthsKPH {
+            let normalized = Double(min(1_500, max(1_100, velocity)) - 1_100) / 400
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.06 * tempo) {
+                audio.play(.pitchFlight(velocity: normalized))
+            }
+        }
         // 3타자 연속 삼진부터는 축하음이 함성 위에 얹힌다. 풀콜(1.32~3.2초)이 끝나고
         // 함성이 부풀어 있는 자리다. 매 삼진마다 울리면 3연속이 아무것도 아니게 된다.
         if session.consecutiveStrikeouts >= 3, session.lastResult?.snapshot.result == .strikeout {
