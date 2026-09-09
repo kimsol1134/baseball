@@ -79,6 +79,27 @@ internal fun CompanionProfile(state: GameAggregateState, busy: Boolean, onChange
             Text(if (fatigue >= 70) "잠깐 쉬고 다시 던지고 싶어요." else if (fatigue <= 20) "몸이 가벼워요. 다음 공이 기대돼요." else "한 구씩 제 공을 만들어갈게요.", style = MaterialTheme.typography.bodySmall)
         }
     }
+    val inheritedStart = state.highSchool?.startingPitcher
+    if (pro == null && (run?.lifeNumber ?: 1) > 1 && inheritedStart != null && c.previousStart.size == 4) {
+        val language = copy.language
+        Text(when (language) { GameLanguage.ENGLISH -> "A stronger beginning"; GameLanguage.JAPANESE -> "前世より強いスタート"; else -> "지난 생보다 강한 출발" },
+            verbatim = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("companion.rebirthGrowth"))
+        val currentStart = listOf(inheritedStart.stuff, inheritedStart.command, inheritedStart.movement, inheritedStart.stamina)
+        val labels = when(language) { GameLanguage.ENGLISH -> listOf("Stuff", "Command", "Movement", "Stamina"); GameLanguage.JAPANESE -> listOf("球威", "制球", "変化", "体力"); else -> listOf("구위", "제구", "무브먼트", "체력") }
+        currentStart.indices.chunked(2).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                row.forEach { index ->
+                    val before = AbilityDisplayScale.rating(c.previousStart[index])
+                    val after = AbilityDisplayScale.rating(currentStart[index])
+                    Column(Modifier.weight(1f)) {
+                        Text(labels[index], verbatim = true, style = MaterialTheme.typography.labelSmall)
+                        Text("$before → $after", verbatim = true, color = if (after > before) BaseballColors.action else BaseballColors.textSecondary,
+                            style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+            }
+        }
+    }
     var jersey by remember(c.jersey) { mutableStateOf(c.jersey.toString()) }
     CareerDisclosure("등번호 바꾸기", "companion.jersey") {
         OutlinedTextField(jersey, { jersey = it.filter(Char::isDigit).take(2) }, label = { Text("등번호") }, singleLine = true)
