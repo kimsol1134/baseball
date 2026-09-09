@@ -108,6 +108,7 @@ class LongHorizonBalanceAuditTest {
 
     @Test fun sevenLivesAcrossSeedsPresetsAndIntensitiesPreserveHistoryAndMeasureGrowth() {
         val output = file("school-lives.csv", "seed,preset,intensity,life,start_stuff,start_command,start_movement,start_stamina,end_stuff,end_command,end_movement,end_stamina,trainings,recovery_trainings,rating_flat_trainings,mastery_trainings,start_skills,end_skills,games,outs,k,h,bb,r,drafted,evaluation,soul_earned,soul_balance,first_skill_chapter,injury_training_steps,applied_lineage_rank,applied_lineage_contributions,selected_legacy,preferred_legacy_available,start_stuff_pressure,start_command_pressure,start_movement_pressure,start_stamina_pressure")
+        val outings = file("school-outings.csv", "seed,preset,intensity,life,game,outs,k,h,bb,r,hr,np,manual")
         for (initialSeed in seeds) for (preset in presets) for (intensity in HighSchoolTrainingIntensity.entries) {
             val k = HighSchoolPhase4Kernel()
             var state = k.start(HighSchoolPhase4StartRequest(initialSeed, preset, "long-$initialSeed", "2026-W37", "2026-09-08")).state
@@ -164,6 +165,13 @@ class LongHorizonBalanceAuditTest {
                 assertEquals(previousTournaments, state.tournaments.take(previousTournaments.size))
                 val run = state.run
                 val lines = state.seasonLog.filter { it.careerId == run.careerId }
+                assertEquals(run.performance.outs + run.automaticOuts, lines.sumOf { it.outs }, "automatic/direct innings agree")
+                assertEquals(run.performance.runsAllowed + run.automaticRunsAllowed, lines.sumOf { it.runsAllowed }, "automatic/direct runs agree")
+                lines.groupBy { it.gameNumber }.values.forEachIndexed { ordinal, parts ->
+                    val game = ordinal + 1
+                    row(outings, listOf(initialSeed, preset, intensity.wire, life, game, parts.sumOf { it.outs }, parts.sumOf { it.strikeouts },
+                        parts.sumOf { it.hits }, parts.sumOf { it.walks }, parts.sumOf { it.runsAllowed }, parts.sumOf { it.homeRuns }, parts.sumOf { it.pitches }, parts.any { it.played }))
+                }
                 val record = state.archive.last()
                 row(output, listOf(initialSeed, preset, intensity.wire, life) + start + ratings(run.pitcher) + listOf(run.totalTrainingsCompleted, recovery, flat, masteryGrowth, startSkills, run.selectedAwakenings.size,
                     lines.map { it.gameNumber }.distinct().size, lines.sumOf { it.outs }, lines.sumOf { it.strikeouts }, lines.sumOf { it.hits }, lines.sumOf { it.walks }, lines.sumOf { it.runsAllowed },
