@@ -168,16 +168,56 @@ KBO 실측(RA/9 4.96 · WHIP 1.44) 위에 정확히 얹힌다. **신인은 힘�
 이번에는 켜지 않았다. Swift 고교 7은 이미 배포된 경로라 버전을 올리지 않고 계산을 바꾸면
 안 된다(§3-1). 고교 8을 여는 단계에서 함께 올린다.
 
-### 2.4 안드로이드와 남은 차이
+### 2.4 안드로이드와 남은 차이 — 어디서 갈라지는지 찾았다
 
 같은 등급·같은 타순·같은 스카우팅 표인데 두 커널의 숫자가 일관되게 어긋난다
-(Swift 기준 K/9 −0.55, RA/9 +0.87, WHIP +0.15). 어느 쪽이 '맞다'기보다 삼진이 덜 나오고
-주자가 더 쌓이는 방향으로 치우쳐 있다. 다음 항목은 두 커널이 **같음을 확인했다**:
-확률식 게이트 10곳, `BattedBallBands` 문턱, `battedBaseQuality`, `BatterScoutingProfileRules`
-표 전체, `ProfessionalLineup`, `BatterScoutingSnapshot.reliability` 기본값, 벤치 기억 초기값.
-남은 후보는 포수 추천 엔진(`CatcherRecommendationEngine`)과 `resolvePitch`의 스윙·존 판정
-앞단이다. 이 둘은 v10 경로도 공유하므로 손대면 픽스처가 깨진다 — §3-2의 역방향 패리티
-작업(`release-parity-exporter`를 v12/v13으로 확장)에서 함께 본다.
+(Swift 기준 K/9 −0.55, RA/9 +0.87, WHIP +0.15).
+
+**집계를 비교하는 대신 등판 하나를 나란히 추적했다.** 양쪽에 같은 자리(타석 입구, 투구
+결과)에 임시 출력을 넣고 같은 파라미터로 돌렸다(`ProfessionalBalanceTest`와 동일:
+능력 45 일괄 · 시작 피로 10 · 18아웃 · 투구 상한 100 · 시드 918221 · diverseScouting).
+
+- **1번 타석은 두 공 모두 완전히 같다.** 구종·코스·의도·강도·결과가 전부 일치한다.
+- **2번 타석의 첫 공부터 갈라진다.** 그 시점의 입력은 전부 같다 — 타자(62/56/49/우),
+  스카우팅(hot 01 · cold 22 · 강점 slider · 약점 slider · chase 45), 시드
+  (9005327757629690414), 게임로그(2엔트리/2투구), 벤치 기억(2관측/1타석/2투구), 적응
+  수치(level 557 · learning · ev 2 · lean curveball · prs 0 · zrs 0), 이닝·아웃·득점.
+  **입력이 같은데 포수가 다른 칸을 요구한다** — Swift `slider,22`, Kotlin `slider,00`.
+
+즉 차이는 **포수 추천의 코스 선택**에 있다. 한 가지 눈에 띄는 증상: Swift 자동 등판은 한
+타석 내내 같은 공을 같은 칸에 요구하고(세 공이 전부 `slider,22,edge,normal`), Kotlin은
+카운트에 따라 칸·의도·강도를 바꾼다.
+
+**아래는 같음을 확인했다**(이번에 직접 대조):
+
+| 확인한 것 | 결과 |
+|---|---|
+| 수비수 배열 순서(`FielderPosition.allCases` vs Kotlin 리스트) | 동일 |
+| 타자 생성 난수 순서·`ProfessionalLineup` 키 | 동일 |
+| 벤치 기억 초기값(`audit:bench:outing`, 빈 관측) | 동일 |
+| `SignSituation`의 카운트 분류·`shift`·`zoneIntent`·`demandsControl` | 동일 |
+| `ScoutingEstimate.effectiveReliability`·`estimatedScouting` 난수 소비 순서 | 동일 |
+| `zoneDecoy`·`pitchDecoy` | 동일 |
+| `:outing-v2` 접미사가 여는 `balancedEffort` | 양쪽 모두 켜짐(Swift는 `balance.isProfessional`로) |
+
+**두 가지 오답을 측정으로 배제했다.**
+
+1. **`:outing-v2` 접미사.** Kotlin 자동 등판은 타석 id에 이것을 붙이고 Swift는 안 붙인다.
+   Swift `CatcherRecommendationEngine.zoneToken`이 타석 id를 해시에 넣으므로 후보였지만,
+   붙여도 **출력이 한 줄도 바뀌지 않았다** — 그 해시는 배합 다양성이 켜졌을 때만 쓰인다.
+2. **배합 다양성(`CatcherSignRules` 버전 2).** Swift 자동 등판은 버전 1(고정 코스)이고
+   `PitchSession`만 버전 2를 켠다. 켜 보니 K/9는 가까워졌지만 **볼넷이 폭발해 차이가 더
+   커졌다**: 등급 55에서 BB/9 3.60 → **4.62**(안드로이드 3.35), WHIP 1.65 → 1.75.
+   원인이 분명하다 — **Kotlin에는 다양성 경로가 아예 없다.** `sequencingZone`·`weightedZone`·
+   `zoneToken`·`coldWeight`가 Kotlin에 존재하지 않는다. 안드로이드 포수는 Swift의
+   **버전 1과 같은 종류**이고, 버전 2는 Swift만의 기능이다. 따라서 켜는 것은 답이 아니다.
+
+**남은 후보는 하나로 좁혀졌다**: 2번 타석 입구에서 개수만 대조한 두 가지의 **내용** —
+`gameLog.entries`(→ `lastPitch`, `SignSituation.avoidsRepeat`와 `recommendedPrimaryPitch`에
+들어간다)와 `rivalMemory.recentObservations`. 다음 세션은 여기부터 보면 된다.
+
+**측정 결과 손대지 않았다.** 두 후보 모두 v10 경로를 공유하므로 근거 없이 바꾸면 픽스처가
+깨진다. §3-2의 역방향 패리티 작업에서 마무리한다.
 
 ## 0. 현재 상태
 
