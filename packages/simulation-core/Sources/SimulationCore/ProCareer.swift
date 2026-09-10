@@ -756,8 +756,9 @@ public struct ProCareerEngine: Sendable {
             // 원장이 없으면 합계는 그 경기를 0으로 세는 거짓말이 되므로 통째로 '모른다'로 둔다.
             earnedRuns: Self.seasonEarnedRuns(state: state, newGameLines: newGameLines)
         )
-        let earnedCallUp = trust >= 60 && skill >= 46
-            && (state.season > 1 || stats.games >= 12 || stats.strikeouts >= 40)
+        let earnedCallUp = ProCallUpRules.qualifies(
+            trust: trust, skill: skill, season: state.season, stats: stats
+        )
         // **2군행이 있다.** 예전에는 한번 올라가면 내려오지 않았다 — 1군이 승급이 아니라
         // 통과 지점이었다는 뜻이고, 그러면 남은 시즌에 걸린 것이 없어진다.
         //
@@ -995,6 +996,19 @@ public struct ProCareerEngine: Sendable {
             followUpEvents.append("pro_weekly_decision_followup_resolved")
         }
         trackedModifiers.removeAll { $0.expiresWeek <= nextWeek }
+        // **문턱을 넘은 주는 그 주에 말한다.** 보드(`ProAdvancementRules`)는 그 뒤로도 계속
+        // 들고 있지만, 문이 열린 순간이 결과 화면을 한 번 지나가지 않으면 플레이어는 자기가
+        // 무엇을 얻었는지 모른 채 지나친다. 승격은 이미 위에서 알리므로 겹쳐 말하지 않는다.
+        if ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) {
+            let advanced = replacing(
+                state, pitcher: nextPitcher, level: level, role: role, managerTrust: nextTrust
+            )
+            let opened = ProAdvancementRules.newlyUnlocked(from: state, to: advanced)
+                .filter { !($0 == .majorCallUp && state.level != level) }
+            for kind in opened {
+                news.insert(ProAdvancementRules.unlockedNewsKey(kind), at: 0)
+            }
+        }
         let modifiersOverride: [ProDecisionModifier]?? = trackedModifiers.isEmpty ? .some(nil) : .some(trackedModifiers)
         let followUpsOverride: [ProDecisionFollowUp]?? = resolvedFollowUps.isEmpty ? .some(nil) : .some(resolvedFollowUps)
         let updated = replacing(state, revision: state.revision + 1, phase: phase, pitcher: nextPitcher, week: nextWeek, level: level, role: role, managerTrust: nextTrust, fatigue: fatigue, injuryWeeks: newInjury, currentStats: stats, gameLines: (state.gameLines ?? []) + newGameLines, milestones: milestones, news: Array(news.prefix(30)), seasonSegment: nextSegment, seasonTrigger: trigger, currentRival: rival, seasonTensions: seasonTensionsValue, seasonImportantGames: importantGames, pendingDecision: pendingDecision, developmentProgress: development.progress, pitchLearningProject: development.pitchLearningProject, journeyState: journeyOverride, postseason: postseasonOverride, activeDecisionModifiers: modifiersOverride, resolvedFollowUps: followUpsOverride)

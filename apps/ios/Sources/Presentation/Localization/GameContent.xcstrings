@@ -661,6 +661,424 @@
         }
       }
     },
+    "content.advancement.closer-role.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The ninth inning is handed to one pitcher. It takes stuff, and a catcher who trusts you."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "九回を託される場所です。球威と捕手との呼吸をあわせて見られます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "9회를 맡기는 자리입니다. 구위와 포수와의 호흡을 함께 봅니다."
+          }
+        }
+      }
+    },
+    "content.advancement.closer-role.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Closer's Job"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "抑えの座"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마무리 보직"
+          }
+        }
+      }
+    },
+    "content.advancement.complete-game.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a shutout into the seventh and the manager lets you keep going. You need the stamina to get there."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "七回を無失点でしのげば、監督はもう一度託してくれます。そこまで行くスタミナが要ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7회를 무실점으로 넘기면 감독이 한 번 더 맡깁니다. 거기까지 갈 체력이 필요합니다."
+          }
+        }
+      }
+    },
+    "content.advancement.complete-game.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chasing a Complete Game"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完投への挑戦"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "완투 도전"
+          }
+        }
+      }
+    },
+    "content.advancement.major-call-up.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The manager's trust and your four abilities have to rise together before the first team calls."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "監督の信頼と四つの能力の平均が揃って上がってこそ、一軍の扉が開きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "감독의 믿음과 네 능력의 평균이 함께 올라야 1군 문이 열립니다."
+          }
+        }
+      }
+    },
+    "content.advancement.major-call-up.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Called Up"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一軍昇格"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1군 승격"
+          }
+        }
+      }
+    },
+    "content.advancement.national-team.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This one is about how the league sees you. Either your market value or the fans will do it."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リーグがあなたをどう見ているかの問題です。市場評価かファンの支持、どちらか一つで足ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "리그가 당신을 어떻게 보는지의 문제입니다. 시장 평가와 팬의 지지 중 하나면 됩니다."
+          }
+        }
+      }
+    },
+    "content.advancement.national-team.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The National Team"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代表チーム"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "국가대표"
+          }
+        }
+      }
+    },
+    "content.advancement.requirement.catcher-trust": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Catcher's trust"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "捕手との呼吸"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포수와의 호흡"
+          }
+        }
+      }
+    },
+    "content.advancement.requirement.fan-support": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fan support"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファンの支持"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "팬의 지지"
+          }
+        }
+      }
+    },
+    "content.advancement.requirement.manager-trust": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manager's trust"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "監督の信頼"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "감독의 믿음"
+          }
+        }
+      }
+    },
+    "content.advancement.requirement.market-score": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Market value"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "市場評価"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시장 평가"
+          }
+        }
+      }
+    },
+    "content.advancement.requirement.skill": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overall"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "平均能力"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "평균 능력"
+          }
+        }
+      }
+    },
+    "content.advancement.requirement.stamina": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamina"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スタミナ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "체력"
+          }
+        }
+      }
+    },
+    "content.advancement.requirement.stuff": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuff"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "球威"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구위"
+          }
+        }
+      }
+    },
+    "content.advancement.starter-role.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A rotation spot goes to the arm a manager can leave out there."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ローテーションの座は、長いイニングを任せられる身体に回ってきます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "로테이션 자리는 긴 이닝을 맡길 수 있는 몸에게 돌아갑니다."
+          }
+        }
+      }
+    },
+    "content.advancement.starter-role.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Rotation Spot"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先発ローテーション"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선발 로테이션"
+          }
+        }
+      }
+    },
+    "content.advancement.starter-win.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Five innings, or the win goes to someone else. Stamina is what buys those innings."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "勝利投手になるには五回を投げ切る必要があります。そのイニングを作るのはスタミナです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "승리 투수가 되려면 5이닝을 채워야 합니다. 그 이닝을 만드는 것은 체력입니다."
+          }
+        }
+      }
+    },
+    "content.advancement.starter-win.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pitching for the Win"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先発の勝利投手資格"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선발 승리 자격"
+          }
+        }
+      }
+    },
     "content.arm-health.caution.label": {
       "localizations": {
         "en": {
@@ -21821,6 +22239,138 @@
           "stringUnit": {
             "state": "translated",
             "value": "프로 통산 %lld탈삼진"
+          }
+        }
+      }
+    },
+    "content.pro-news.advancement.closer-role": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have the stuff for the ninth. The closer's job is something you can ask for."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "九回を託される球威になりました。抑えの座を求められます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "9회를 맡길 구위가 됐습니다. 마무리 자리를 요구할 수 있습니다."
+          }
+        }
+      }
+    },
+    "content.pro-news.advancement.complete-game": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A complete game is in range. Get through the seventh and the manager will not take the ball."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完投が射程に入りました。七回を越えれば、監督はボールを取り上げません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "완투가 사정권에 들어왔습니다. 7회를 넘기면 감독은 공을 거두지 않습니다."
+          }
+        }
+      }
+    },
+    "content.pro-news.advancement.major-call-up": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have met what the first team asks. The call is yours to wait for now."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一軍の条件を満たしました。呼ばれるのを待つ資格ができました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1군의 조건을 채웠습니다. 이제 부름을 기다릴 자격이 있습니다."
+          }
+        }
+      }
+    },
+    "content.pro-news.advancement.national-team": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The national team has written your name down."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代表チームがあなたの名前を書き留めました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "대표팀이 당신의 이름을 적었습니다."
+          }
+        }
+      }
+    },
+    "content.pro-news.advancement.starter-role": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can carry the innings now. A rotation spot is something you can ask for."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "長いイニングを任せられる身体になりました。先発ローテーションを求められます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "긴 이닝을 맡길 몸이 됐습니다. 이제 선발 로테이션을 요구할 수 있습니다."
+          }
+        }
+      }
+    },
+    "content.pro-news.advancement.starter-win": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Five innings are within you now. The win can finally be yours."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "五回を投げられるようになりました。勝利投手になれる身体です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이제 5이닝을 던집니다. 승리 투수가 될 수 있는 몸이 됐습니다."
           }
         }
       }

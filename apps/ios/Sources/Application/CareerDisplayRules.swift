@@ -197,6 +197,10 @@ enum CareerDisplayRules {
         ProCareerGoalBoardRules.board(state: state)
     }
 
+    nonisolated static func advancementBoard(for state: ProCareerSnapshot) -> ProAdvancementBoard {
+        ProAdvancementRules.board(state: state)
+    }
+
     nonisolated static func goalPermille(current: Int, target: Int, completed: Bool = false) -> Int {
         ProCareerGoalBoardRules.permille(current: current, target: target, completed: completed)
     }

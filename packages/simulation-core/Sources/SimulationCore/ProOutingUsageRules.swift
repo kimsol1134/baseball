@@ -15,6 +15,37 @@ public enum ProOutingUsageRules {
         80 + max(0, pitcher.stamina - 40) / 2
     }
 
+    /// The stamina a start needs to reach the fifth inning, and with it the win.
+    ///
+    /// A starter cannot be the winning pitcher before fifteen outs. Under rules 13 the manager
+    /// decides when the outing ends, so how much stamina buys those fifteen outs is a question
+    /// only measurement answers. It is not a gradual climb — it is a step, and it lands in the
+    /// same place whatever else the pitcher can do (800 starts per cell, mixed calls, fatigue 50):
+    ///
+    /// | 체력 | 50/60/40 | 40/45/35 | 65/65/60 |
+    /// |---|---|---|---|
+    /// | 55 | 17.4% | 15.2% | 10.5% |
+    /// | 60 | **75.8%** | **69.4%** | **79.4%** |
+    ///
+    /// Below this a pitcher can lose but essentially cannot win, which is why the board says so.
+    public static let staminaForFiveInnings = 60
+
+    /// The stamina that puts a complete game within reach.
+    ///
+    /// Seven shutout innings are what make the manager stretch the count (`historicFinish`), and
+    /// reaching twenty-one outs is a second step in the same measurement — again in the same place
+    /// for every ability profile:
+    ///
+    /// | 체력 | 50/60/40 | 40/45/35 | 65/65/60 |
+    /// |---|---|---|---|
+    /// | 75 | 2.4% | 1.9% | 1.2% |
+    /// | 78 | **38.6%** | **27.9%** | **37.2%** |
+    ///
+    /// Twenty-seven outs appear only above it. `ProOutingUsageRulesTests` holds both numbers to
+    /// their measurement, so smoothing the curve fails the gate instead of quietly making the
+    /// board lie.
+    public static let staminaForCompleteGameChase = 78
+
     /// Does this pitcher go back out?
     ///
     /// - Parameter starter: starters are allowed a full game; relievers are done after four innings.

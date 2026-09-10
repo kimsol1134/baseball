@@ -321,6 +321,7 @@ private struct RecordBoard: View {
                     store: weekly,
                     highSchool: highSchool
                 )
+                ProAdvancementCard(state: state)
                 ProGoalBoardCard(state: state)
                 if let history = state.nationalTeamHistory, !history.isEmpty {
                     BaseballCard(title: copyResolver.resolve(.nationalRecordTitle), tone: .milestone) {
@@ -622,6 +623,81 @@ struct SaberMetricsCard: View {
         case .worse: BaseballTheme.negative
         case .even: BaseballTheme.textPrimary
         }
+    }
+}
+
+/// **성장을 자격으로 보여 준다.** 목표 보드가 "무엇을 남길 것인가"라면 이 카드는
+/// "지금 무엇을 할 수 있게 됐는가"다 — 능력 숫자가 아니라 열린 문으로 성장을 말한다.
+///
+/// 문턱 값은 전부 `ProAdvancementRules`가 규칙에서 그대로 가져오므로, 화면이 규칙보다
+/// 낮거나 높은 숫자를 말할 수 없다.
+struct ProAdvancementCard: View {
+    let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var board: ProAdvancementBoard {
+        MobileCareerStore.advancementBoard(state: state)
+    }
+
+    var body: some View {
+        let board = board
+        BaseballCard(title: copyResolver.resolve(.advancementTitle), tone: .raised) {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(board.rows) { row in
+                    advancementRow(row, isNext: row.id == board.next?.id)
+                }
+            }
+        }
+        .accessibilityIdentifier("pro.advancementBoard")
+    }
+
+    @ViewBuilder
+    private func advancementRow(_ row: ProAdvancement, isNext: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(verbatim: ProWeeklyCopy.advancementTitle(row, resolver: copyResolver))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(row.unlocked ? BaseballTheme.textPrimary : BaseballTheme.textSecondary)
+                Spacer()
+                if row.unlocked {
+                    Text(verbatim: copyResolver.resolve(.advancementUnlocked))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.milestone)
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(BaseballTheme.milestone)
+                        .accessibilityHidden(true)
+                } else if let gap = row.nearestGap {
+                    // 다음 문턱까지 남은 거리. 이번 주에 손댈 수 있는 조건 하나만 말한다.
+                    Text(verbatim: ProWeeklyCopy.advancementRemaining(gap, resolver: copyResolver))
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(isNext ? BaseballTheme.action : BaseballTheme.textSecondary)
+                }
+            }
+            GoalPermilleBar(permille: row.permille, completed: row.unlocked)
+            if !row.unlocked {
+                ForEach(row.requirements) { requirement in
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(verbatim: copyResolver.resolve(.gameContent(requirement.labelKey)))
+                            .detailStyle(BaseballTheme.textTertiary)
+                        Spacer()
+                        Text(verbatim: copyResolver.resolve(
+                            .goalBoardProgress,
+                            arguments: [.integer(requirement.current), .integer(requirement.target)]
+                        ))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(requirement.met ? BaseballTheme.milestone : BaseballTheme.textTertiary)
+                    }
+                }
+                Text(verbatim: ProWeeklyCopy.advancementHint(row, resolver: copyResolver))
+                    .detailStyle(BaseballTheme.textTertiary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "\(ProWeeklyCopy.advancementTitle(row, resolver: copyResolver)), "
+            + copyResolver.resolve(row.unlocked ? .advancementUnlocked : .advancementLockedAccessibility)
+        )
+        .accessibilityIdentifier("pro.advancement.\(row.id)")
     }
 }
 

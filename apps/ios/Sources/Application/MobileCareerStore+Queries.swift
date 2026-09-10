@@ -217,6 +217,10 @@ extension MobileCareerStore {
         CareerDisplayRules.goalBoard(for: state)
     }
 
+    nonisolated static func advancementBoard(state: ProCareerSnapshot) -> ProAdvancementBoard {
+        CareerDisplayRules.advancementBoard(for: state)
+    }
+
     nonisolated static func goalPermille(current: Int, target: Int, completed: Bool = false) -> Int {
         CareerDisplayRules.goalPermille(current: current, target: target, completed: completed)
     }

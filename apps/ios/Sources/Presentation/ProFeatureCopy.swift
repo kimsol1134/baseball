@@ -335,6 +335,28 @@ enum ProWeeklyCopy {
         resolver.resolve(.gameContent(row.hintKey))
     }
 
+    static func advancementTitle(_ row: ProAdvancement, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.gameContent(row.titleKey))
+    }
+
+    static func advancementHint(_ row: ProAdvancement, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.gameContent(row.hintKey))
+    }
+
+    /// "체력 4 남음". 다음 문턱까지의 거리를 사람이 읽는 한 줄로.
+    static func advancementRemaining(
+        _ requirement: ProAdvancementRequirement,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .advancementRemaining,
+            arguments: [
+                .userText(resolver.resolve(.gameContent(requirement.labelKey))),
+                .integer(requirement.remaining),
+            ]
+        )
+    }
+
     static func goalBoardLine(_ row: ProGoalBoardRow, resolver: GameCopyResolver) -> String {
         resolver.resolve(
             .weeklyGoalBoardLine,

@@ -367,6 +367,7 @@ enum ProCareerPresentation {
             return resolver.resolve(.gameContent(mediaKey))
         }
         if raw.hasPrefix("content.pro-news.role-request.")
+            || raw.hasPrefix("content.pro-news.advancement.")
             || raw.hasPrefix("content.pro-news.national-team.") {
             return resolver.resolve(.gameContent(raw))
         }
