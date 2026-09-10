@@ -217,4 +217,89 @@ final class NewSurfaceRenderTests: XCTestCase {
             name: "07-ability-bars"
         )
     }
+
+    /// 프로 대화. 얼굴·역할·풀카드·커널이 계산한 칩이 한 장에 들어오는지 눈으로 본다.
+    func testProConversation() throws {
+        let store = MobileCareerStore(saveWriter: { _ in true }, configuration: .production)
+        XCTAssertTrue(
+            store.installLiveSeasonDecisionFixtureForUITesting(),
+            String(describing: store.loadState)
+        )
+        let decision = try XCTUnwrap(store.state?.pendingDecision)
+        save(
+            ProSeasonDecisionView(career: store, decision: decision),
+            name: "08-pro-conversation"
+        )
+    }
+
+    /// 확정 뒤 같은 무대에 남는 결과.
+    func testProConversationResult() throws {
+        let store = MobileCareerStore(saveWriter: { _ in true }, configuration: .production)
+        XCTAssertTrue(
+            store.installLiveSeasonDecisionFixtureForUITesting(),
+            String(describing: store.loadState)
+        )
+        let decision = try XCTUnwrap(store.state?.pendingDecision)
+        store.applySeasonDecision(decisionID: decision.id, choiceID: decision.choices[0].id)
+        XCTAssertNil(store.state?.pendingDecision, "확정이 실제로 적용돼야 결과가 남는다")
+        let receipt = try XCTUnwrap(store.lastSeasonDecisionReceipt)
+        save(
+            ProSeasonDecisionResultView(career: store, receipt: receipt),
+            name: "09-pro-conversation-result"
+        )
+    }
+
+    /// 고교 관계 카드. 프로와 같은 관용구를 쓰는지 나란히 놓고 본다.
+    func testHighSchoolConversation() throws {
+        let engine = HighSchoolCareerEngine()
+        var result = try engine.start(.init(
+            seed: "20260903",
+            presetID: "power_prospect",
+            creationAllocation: .balanced,
+            identity: PlayerIdentitySnapshot(
+                name: "민서준", throwingHand: .right, bodyType: .balanced, region: "서울"
+            )
+        ))
+        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.chooseSchool(.init(
+            seed: result.nextSeed, state: result.snapshot, schoolID: .haedongPower
+        ))
+        // 관계 사건은 훈련 사이에 끼어든다. 각성·경기 국면을 지나쳐야 도달한다.
+        for _ in 0..<24 {
+            if result.snapshot.phase == .relationship { break }
+            switch result.snapshot.phase {
+            case .training:
+                result = try engine.commitTraining(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    focus: .command,
+                    intensity: .standard
+                ))
+            case .awakening:
+                let choice = try XCTUnwrap(result.snapshot.awakeningOptions.first)
+                result = try engine.chooseAwakening(.init(
+                    seed: result.nextSeed, state: result.snapshot, awakening: choice
+                ))
+            case .importantGame:
+                result = try engine.recordImportantGame(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    report: .init(
+                        scenarioNumber: 1, pitches: 18, strikeouts: 2, walks: 0, runsAllowed: 0,
+                        expectedDamage: 380, actualDamage: 240, recommendationAccepted: 12
+                    )
+                ))
+            case .chapterReview:
+                result = try engine.advanceChapter(.init(seed: result.nextSeed, state: result.snapshot))
+            default:
+                XCTFail("관계 사건 전에 예상 밖 국면: \(result.snapshot.phase.rawValue)")
+                return
+            }
+        }
+        XCTAssertEqual(result.snapshot.phase, .relationship)
+        save(
+            RelationshipCard(state: result.snapshot, onRespond: { _ in }),
+            name: "10-high-school-conversation"
+        )
+    }
 }

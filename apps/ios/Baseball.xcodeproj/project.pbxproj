@@ -114,6 +114,7 @@
 		6F49B2E596623B0C9401885D /* ProgressiveDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45EA165B703B8636F161942 /* ProgressiveDisclosure.swift */; };
 		6F4E1C6A64226D250255C017 /* JapaneseLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B1973DF334F6A0A28797F8B /* JapaneseLocalizationTests.swift */; };
 		711B8426DC9F37452F11C9E1 /* MobileCareerStore+Lifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DE1F860F9A238F0AACC792 /* MobileCareerStore+Lifecycle.swift */; };
+		01F9D4B58AF68D6CAD64B6D3 /* ConversationScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 094A5EB423E0BA1C19CC741C /* ConversationScene.swift */; };
 		711B9F40D400AD5D629FD9FA /* AvatarFace.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADF43449898BB854F499262 /* AvatarFace.swift */; };
 		7131600E87EBBDC6BF309DC5 /* DraftEvaluationBreakdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9E24462361534068BE714E /* DraftEvaluationBreakdownTests.swift */; };
 		744FFCF9FFC439AAA92F5CC6 /* HighSchoolSetupView+NameStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A2F974BD6224B76EBF23A1 /* HighSchoolSetupView+NameStep.swift */; };
@@ -186,6 +187,7 @@
 		D461F48E6FD8C03B8697AAA5 /* SimulationCore in Frameworks */ = {isa = PBXBuildFile; productRef = 17CAB6B06F634AF92AC437D2 /* SimulationCore */; };
 		D4697CDDA0B2DF5A34922633 /* ProRoleRequestAndGlossaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E0CFC2E7A099F6A7E369A7 /* ProRoleRequestAndGlossaryTests.swift */; };
 		D548F421B9A3A72ADF35DCB6 /* CareerDirectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E814C0BEE19D331895E8F9 /* CareerDirectionCard.swift */; };
+		07945034533FC58F0003213E /* ProPeoplePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF49F4DB63ECF814E489C7AD /* ProPeoplePresentation.swift */; };
 		D597B366CD43A6D6B0B267B8 /* ProCareerPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1DFAD69B70EDB48CFBC333 /* ProCareerPresentation.swift */; };
 		D5CD1C7D48EEBD486307FD51 /* GlossaryText.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC1782E02EE803311C6FCC85 /* GlossaryText.swift */; };
 		D83F0E62D3BDA0A5664FE891 /* HighSchoolTrainingResultViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A015A2DD5D24CB9CD6F00F7B /* HighSchoolTrainingResultViews.swift */; };
@@ -355,6 +357,7 @@
 		792EEE326BF2173EA14E3641 /* PitchCatcherCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchCatcherCard.swift; sourceTree = "<group>"; };
 		7B64DE9B62DC7776044F7E29 /* PlateFigures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateFigures.swift; sourceTree = "<group>"; };
 		7E021CB348255CD311720B67 /* CareerSaveSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerSaveSync.swift; sourceTree = "<group>"; };
+		DF49F4DB63ECF814E489C7AD /* ProPeoplePresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProPeoplePresentation.swift; sourceTree = "<group>"; };
 		7F1DFAD69B70EDB48CFBC333 /* ProCareerPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProCareerPresentation.swift; sourceTree = "<group>"; };
 		81ECBB2327ACE07418616592 /* GrowthCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthCelebrationView.swift; sourceTree = "<group>"; };
 		8291257DAA95D292E42B46C9 /* HighSchoolCareerPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolCareerPersistenceTests.swift; sourceTree = "<group>"; };
@@ -469,6 +472,7 @@
 		F783EBFCAD3BE2DC0E72CF04 /* PitchStrikeZoneViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchStrikeZoneViews.swift; sourceTree = "<group>"; };
 		FA52EE4D184D5AFF50D09209 /* LifeCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeCardView.swift; sourceTree = "<group>"; };
 		FA9E2BA959B3602B7CAF18A0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		094A5EB423E0BA1C19CC741C /* ConversationScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationScene.swift; sourceTree = "<group>"; };
 		FADF43449898BB854F499262 /* AvatarFace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarFace.swift; sourceTree = "<group>"; };
 		FD3E967CD14B8B222B6046BE /* KoreanMoneyFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KoreanMoneyFormattingTests.swift; sourceTree = "<group>"; };
 		FD85A5D7377DFD96E9DA5B4D /* CareerFlowChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerFlowChrome.swift; sourceTree = "<group>"; };
@@ -594,6 +598,7 @@
 				0D33CD07FC83E16FE7005BE6 /* AppFeatureConfiguration.swift */,
 				A7A269524738E410809729B9 /* AppShell.swift */,
 				FADF43449898BB854F499262 /* AvatarFace.swift */,
+				094A5EB423E0BA1C19CC741C /* ConversationScene.swift */,
 				33A5013DD878C7CD44C584F7 /* BaseballApp.swift */,
 				93E814C0BEE19D331895E8F9 /* CareerDirectionCard.swift */,
 				81ECBB2327ACE07418616592 /* GrowthCelebrationView.swift */,
@@ -639,6 +644,7 @@
 				5612CDC709AFB11514C35108 /* PitchCopy.swift */,
 				5037C6E789A6D78E665C115C /* PitchPresentation.swift */,
 				7F1DFAD69B70EDB48CFBC333 /* ProCareerPresentation.swift */,
+				DF49F4DB63ECF814E489C7AD /* ProPeoplePresentation.swift */,
 				B2F557696D68665E069F88EA /* ProFeatureCopy.swift */,
 				B24425BD4D8AD18C64E17911 /* ScopedPresentation.swift */,
 				15A9B13A4502DE7862FFD9E3 /* Localization */,
@@ -1062,6 +1068,7 @@
 				2806AA643313A44C7564E49A /* AppFeatureConfiguration.swift in Sources */,
 				F9D7EF36DAD5B06F9D4D90E9 /* AppLanguage.swift in Sources */,
 				45FB063D8653B7DC7CA5470F /* AppShell.swift in Sources */,
+				01F9D4B58AF68D6CAD64B6D3 /* ConversationScene.swift in Sources */,
 				711B9F40D400AD5D629FD9FA /* AvatarFace.swift in Sources */,
 				1CE7236E36E2DF15F10F6043 /* BaseballApp.swift in Sources */,
 				269CCCFA6FDFB51447B2592D /* CareerBootstrap.swift in Sources */,
@@ -1165,6 +1172,7 @@
 				51DAA1BF0E282A9476FFB26D /* PitchView.swift in Sources */,
 				3B0D52DC3050C0FA67778CF5 /* PlateFigures.swift in Sources */,
 				F45F1CB24CB13C2A31BC0B2F /* PlayerBondStory.swift in Sources */,
+				07945034533FC58F0003213E /* ProPeoplePresentation.swift in Sources */,
 				D597B366CD43A6D6B0B267B8 /* ProCareerPresentation.swift in Sources */,
 				68E893F9B5FA506F260FE6B8 /* ProContractOfferView.swift in Sources */,
 				4737093072AEB28BBE540206 /* ProCopyKeys.swift in Sources */,

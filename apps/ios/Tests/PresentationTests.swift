@@ -261,7 +261,10 @@ final class PresentationTests: XCTestCase {
         XCTAssertEqual(presentation.accessibilitySummary, "")
     }
 
-    func testRelationshipChoiceShowsOnlyTitleAndKeepsDetailAccessible() {
+    /// 선택의 대가는 **고르기 전에** 보여야 한다. 예전에는 설명이 보조 기술에만 남아 있어
+    /// 눈으로 읽는 사람에게는 제목 한 줄뿐이었다(6-A). 정책은 두 값을 그대로 나눠 주고,
+    /// 카드가 둘 다 그린다.
+    func testRelationshipChoiceKeepsTitleAndDetailSeparate() {
         let presentation = RelationshipCardPresentationPolicy.choice(
             title: "먼저 듣는다",
             detail: "포수의 설명을 끝까지 듣고 믿음을 쌓습니다."
@@ -274,17 +277,39 @@ final class PresentationTests: XCTestCase {
         )
     }
 
-    func testRelationshipCardRendersPolicyOutputInsteadOfDuplicateRawCopy() throws {
+    /// 고교와 프로가 같은 대화 관용구를 쓴다. 한쪽만 고치면 같은 게임 안에서 대화가
+    /// 두 모양이 된다(6-A).
+    func testBothConversationSurfacesShareTheSameStage() throws {
         let relationshipCard = try IOSSourceScan.typeBody(
             "RelationshipCard",
             in: "apps/ios/Sources/HighSchoolRelationshipViews.swift"
         )
+        let proDecision = try IOSSourceScan.typeBody(
+            "ProSeasonDecisionView",
+            in: "apps/ios/Sources/ProSeasonDecisionView.swift"
+        )
 
-        XCTAssertTrue(relationshipCard.contains("Text(verbatim: scene.visibleLine)"))
+        for body in [relationshipCard, proDecision] {
+            XCTAssertTrue(body.contains("ConversationStage("))
+            XCTAssertTrue(body.contains("ConversationChoiceCard("))
+        }
+        // 대사는 한 번만 보인다.
+        XCTAssertTrue(relationshipCard.contains("line: sceneLine"))
         XCTAssertFalse(relationshipCard.contains("Text(verbatim: summary)"))
-        XCTAssertTrue(relationshipCard.contains("Text(verbatim: choice.visibleLine)"))
-        XCTAssertFalse(relationshipCard.contains("Text(verbatim: choiceDetail)"))
-        XCTAssertTrue(relationshipCard.contains("detail: choice.accessibilityDetail"))
+        // 확인 알럿은 돌아오지 않는다 — iOS 26에서 팝오버로 떠 취소가 잘렸다.
+        XCTAssertFalse(proDecision.contains(".alert("))
+        XCTAssertFalse(proDecision.contains(".confirmationDialog("))
+    }
+
+    /// 미리보기는 선언된 효과가 아니라 커널을 돌려 본 결과를 쓴다(6-B).
+    func testProDecisionChipsAskTheKernel() throws {
+        let proDecision = try IOSSourceScan.typeBody(
+            "ProSeasonDecisionView",
+            in: "apps/ios/Sources/ProSeasonDecisionView.swift"
+        )
+
+        XCTAssertTrue(proDecision.contains("ProConversationPresentation.preview("))
+        XCTAssertTrue(proDecision.contains("ProCareerPresentation.conversationChips("))
     }
 
     /// App Store build에서 SwiftUICore가 TrainingCard의 `ForEach` item closure를

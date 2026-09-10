@@ -146,6 +146,11 @@ public enum AppCopyKey {
     public static let openingStart = GameCopyKey.localizable("opening.start")
     public static let onboardingBullpenNameCTA = GameCopyKey.localizable("onboarding.bullpen.name-cta")
 
+    /// 대화 장면의 공용 문구. 프로 시즌 결정과 고교 관계 사건이 같은 관용구를 쓴다.
+    public static let conversationEyebrow = GameCopyKey.localizable("conversation.eyebrow")
+    public static let conversationResultEyebrow = GameCopyKey.localizable("conversation.result.eyebrow")
+    public static let conversationSceneDisclosure = GameCopyKey.localizable("conversation.scene.disclosure")
+
     public static let prologueFirstLifeTitle = GameCopyKey.localizable("prologue.title.first-life")
     public static let prologueRebirthTitle = GameCopyKey.localizable("prologue.title.rebirth")
     public static let prologueFirstLifeCoachQuote = GameCopyKey.localizable("prologue.coach.quote.first-life")
@@ -847,6 +852,7 @@ public enum AppCopyKey {
     public static let allCases: [GameCopyKey] = [
         tabHighSchool, tabPro, tabCareer, tabRecords, tabSettings,
         openingEyebrow, openingSummary, openingDescription, openingStart, onboardingBullpenNameCTA, prologueFirstSchool,
+        conversationEyebrow, conversationResultEyebrow, conversationSceneDisclosure,
     ] + prologueKeys + [
         actionCancel,
         settingsControlTitle, settingsAutoRelease, settingsAutoReleaseDescription,

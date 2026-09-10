@@ -248,6 +248,32 @@ enum ProUICopyKey: String, CaseIterable, Sendable {
     case decisionConfirmMessage = "pro.decision.confirm.message"
     /// 선택의 피로 증가가 부상 임계(피로 70)를 넘길 때 선택지에 붙는 위험 칩.
     case decisionChipInjuryRisk = "pro.decision.chip.injury-risk"
+    /// 프로 대화의 화자 관계. 라이벌 분석도 포수가 말한다.
+    case conversationRoleCoach = "pro.conversation.role.coach"
+    case conversationRoleCatcher = "pro.conversation.role.catcher"
+    case conversationRoleStaff = "pro.conversation.role.staff"
+    /// 아래 칩들은 **커널을 돌려 본 결과**만 붙는다. 선언된 효과에는 없는 일이다.
+    /// 신구종 실전이 실제로 다듬는 구종.
+    case decisionChipPitchSharpened = "pro.decision.chip.pitch-sharpened"
+    /// 3주 창구 동안 등판이 한 번 더 잡힌다.
+    case decisionChipExtraOuting = "pro.decision.chip.extra-outing"
+    /// 부상 압력 하한이 걸린 채로 던진다.
+    case decisionChipInjuryPressure = "pro.decision.chip.injury-pressure"
+    /// 창구 동안 1군 등판이 없다.
+    case decisionChipNoFirstTeam = "pro.decision.chip.no-first-team"
+    /// 창구 동안 훈련 효율이 깎인다.
+    case decisionChipReducedTraining = "pro.decision.chip.reduced-training"
+    /// 지금 내준 제구를 후속에서 돌려받는다.
+    case decisionChipCommandReturns = "pro.decision.chip.command-returns"
+    /// 약속이 풀리는 주까지 남은 기간.
+    case decisionChipCommitmentWindow = "pro.decision.chip.commitment-window"
+    case decisionChipSeasonBenefit = "pro.decision.chip.season-benefit"
+    case decisionChipRecoveryYear = "pro.decision.chip.recovery-year"
+    /// 미리보기가 커널에게 물어본 값이라는 표시.
+    case decisionPreviewCaption = "pro.decision.preview.caption"
+    case decisionSelectPrompt = "pro.decision.select.prompt"
+    case decisionResultLine = "pro.decision.result.line"
+    case decisionResultContinue = "pro.decision.result.continue"
     case effectStuffGain = "pro.effect.stuff.gain"
     case effectStuffLoss = "pro.effect.stuff.loss"
     case effectCommandGain = "pro.effect.command.gain"

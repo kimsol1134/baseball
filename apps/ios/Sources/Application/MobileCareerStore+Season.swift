@@ -4,7 +4,22 @@ import SimulationCore
 import BaseballIOSDomain
 import BaseballIOSPersistence
 
+/// 방금 확정한 시즌 결정이 남긴 것. 저장에 들어가지 않는 화면 상태다.
+struct ProSeasonDecisionReceipt: Equatable {
+    let decisionID: String
+    let type: ProSeasonDecisionType
+    let teamID: String
+    let choiceID: String
+    let choiceTitle: String
+    let outcome: ProConversationOutcome
+}
+
 extension MobileCareerStore {
+    /// 결과 화면을 닫는다. 이 호출은 커널을 부르지 않는다 — 명령 0회다.
+    func acknowledgeSeasonDecisionReceipt() {
+        lastSeasonDecisionReceipt = nil
+    }
+
     func requestRole(_ role: ProRole) {
         guard let result, CareerDisplayRules.shouldOfferRoleRequest(result.snapshot) else { return }
         let beforeRevision = result.snapshot.revision
@@ -73,6 +88,7 @@ extension MobileCareerStore {
               decision.id == decisionID,
               let choice = decision.choices.first(where: { $0.id == choiceID }) else { return }
         let beforeRevision = result.snapshot.revision
+        let before = result.snapshot
         let fanBefore = result.snapshot.journeyState?.reputation.fanSupport ?? 0
         perform(
             summary: decision.type == .mediaOpportunity ? nil : "\(decision.title) · \(choice.title) — \(choice.effect.summary)",
@@ -85,8 +101,19 @@ extension MobileCareerStore {
                 choiceID: choice.id
             ))
         }
-        guard self.result?.snapshot.revision != beforeRevision,
-              self.result?.snapshot.decisionHistory?.last?.decisionID == decision.id else { return }
+        guard let after = self.result?.snapshot,
+              after.revision != beforeRevision,
+              after.decisionHistory?.last?.decisionID == decision.id else { return }
+        // 결과는 다음 화면으로 넘기지 않고 이 자리에 남긴다. 무엇이 바뀌었는지는
+        // 선언된 효과가 아니라 **커널이 만든 두 스냅숏의 차이**에서 읽는다.
+        lastSeasonDecisionReceipt = ProSeasonDecisionReceipt(
+            decisionID: decision.id,
+            type: decision.type,
+            teamID: after.team.id,
+            choiceID: choice.id,
+            choiceTitle: choice.title,
+            outcome: ProConversationPresentation.outcome(before: before, after: after)
+        )
         CareerTelemetry.log(.proSeasonDecisionSelected, Self.decisionAnalyticsProperties(
             decision: decision,
             choice: choice,

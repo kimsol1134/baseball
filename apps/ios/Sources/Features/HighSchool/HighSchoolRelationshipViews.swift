@@ -41,151 +41,47 @@ struct RelationshipCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            // 대화가 이 화면의 주인공이다. 예전에는 요약 한 줄이 작은 글씨로 붙고 선택지가
-            // 화면을 채워서, 무슨 일이 일어났는지보다 버튼 세 개가 먼저 눈에 들어왔다.
-            if let event, let eventCopy {
-                let speaker = copyResolver.resolve(eventCopy.event.speakerLabelToken)
-                let title = HighSchoolPresentation.localizedRelationshipEventTitle(
-                    event,
-                    resolver: copyResolver
-                )
-                let summary = HighSchoolPresentation.localizedRelationshipEventSummary(
-                    event,
-                    resolver: copyResolver
-                )
-                let quote = HighSchoolPresentation.localizedRelationshipQuote(
-                    event: event,
-                    band: band,
-                    playerName: state.identity.name,
-                    resolver: copyResolver
-                )
-                let scene = RelationshipCardPresentationPolicy.scene(
-                    quote: quote,
-                    summary: summary
-                )
-                let echoSource = event.category == "rebirth"
-                    ? state.rebirthEcho?.previousPlayerName.map {
-                        copyResolver.resolve(
-                            LegacyUICopyKey.rebirthEchoSource,
-                            arguments: [.userText($0)]
-                        )
-                    }
-                    : nil
-                let visibleName: String? = switch event.category {
-                case "coach":
-                    state.school.map {
-                        HighSchoolPresentation.localizedSchoolCastName(
-                            $0,
-                            rawRegion: state.identity.region,
-                            role: .coach,
-                            resolver: copyResolver
-                        )
-                    }
-                case "catcher":
-                    state.school.map {
-                        HighSchoolPresentation.localizedSchoolCastName(
-                            $0,
-                            rawRegion: state.identity.region,
-                            role: .catcher,
-                            resolver: copyResolver
-                        )
-                    }
-                case "rival":
-                    HighSchoolPresentation.localizedRivalName(state.rival, resolver: copyResolver)
-                default:
-                    nil
-                }
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 10) {
-                        if let portrait = portraitSeed {
-                            PortraitView(seed: portrait.seed, role: portrait.role, size: 44)
-                        } else {
-                            // 사람이 아닌 화자(집·취재·팬·몸 상태…)는 얼굴 대신 상황 그림.
-                            // 없는 인물을 지어내지 않으면서 빈 자리도 남기지 않는다.
-                            ArtThumb(assetName: "SceneArt-\(event.category)", size: 44, cornerRadius: 8)
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(verbatim: speaker).eyebrowStyle(BaseballTheme.textTertiary)
-                            if let visibleName {
-                                Text(verbatim: visibleName).font(.subheadline.weight(.bold))
-                            }
-                        }
-                        Spacer(minLength: 0)
-                    }
-                    Text(verbatim: title)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(BaseballTheme.textPrimary)
-                    // 손으로 쓴 대사가 있으면 그 한 줄이 장면 본문이다. 요약을 다시
-                    // 보이지 않아 같은 상황을 두 번 읽게 하지 않는다. 대사가 없는 옛
-                    // 이벤트만 요약을 본문으로 쓴다.
-                    Text(verbatim: scene.visibleLine)
-                        .proseStyle()
-                    if let echoSource {
-                        Text(verbatim: echoSource)
-                            .detailStyle()
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, 4)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text(verbatim: HighSchoolPresentation.localizedRelationshipEventAccessibility(
-                    speaker: speaker,
-                    name: visibleName ?? "",
-                    title: title,
-                    primaryText: [scene.visibleLine, echoSource].compactMap { $0 }.joined(separator: " "),
-                    summary: scene.accessibilitySummary,
-                    resolver: copyResolver
-                )))
-            }
+        // 프로 시즌 대화와 같은 무대를 쓴다. 한 게임 안에서 대화가 두 모양이면
+        // 그건 한 게임이 아니다.
+        ConversationStage(
+            eyebrow: copyResolver.resolve(AppCopyKey.conversationEyebrow),
+            portrait: portraitSeed.map { .init(seed: $0.seed, role: $0.role) },
+            sceneArtAsset: portraitSeed == nil ? event.map { "SceneArt-\($0.category)" } : nil,
+            roleLabel: speakerLabel,
+            speakerName: visibleName,
+            situation: eventTitle,
+            line: sceneLine,
+            headerAccessibilityText: headerAccessibility
+        ) {
             if let windEffect {
                 EffectChip(text: windEffect, tone: .neutral, systemImage: "wind")
             }
-            GameCopyText(coreToken: .relationshipPrompt()).font(.headline)
+            if let echoSource {
+                Text(verbatim: echoSource).detailStyle()
+            }
+            GameCopyText(coreToken: .relationshipPrompt())
+                .font(.headline)
+                .foregroundStyle(BaseballTheme.textPrimary)
             ForEach(RelationshipResponse.allCases, id: \.self) { response in
-                let choiceTitle = event.map {
-                    HighSchoolPresentation.localizedRelationshipChoiceTitle(
-                        event: $0,
-                        response: response,
-                        resolver: copyResolver
-                    )
-                } ?? copyResolver.resolve(.relationshipFallbackChoiceTitle(response: response))
-                let choiceDetail = event.map {
-                    HighSchoolPresentation.localizedRelationshipChoiceDetail(
-                        event: $0,
-                        response: response,
-                        resolver: copyResolver
-                    )
-                } ?? copyResolver.resolve(.relationshipFallbackChoiceDetail(response: response))
-                let choice = RelationshipCardPresentationPolicy.choice(
-                    title: choiceTitle,
-                    detail: choiceDetail
-                )
-                Button { onRespond(response) } label: {
-                    Text(verbatim: choice.visibleLine)
-                        .font(.subheadline.weight(.bold))
-                        .fixedSize(horizontal: false, vertical: true)
-                    .padding(12)
-                    .frame(
-                        maxWidth: .infinity,
-                        minHeight: BaseballMetrics.minimumTapTarget,
-                        alignment: .leading
-                    )
-                    .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-                            .stroke(BaseballTheme.border, lineWidth: 1)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text(verbatim: HighSchoolPresentation.localizedRelationshipChoiceAccessibility(
+                let choice = choiceCopy(for: response)
+                // 설명을 카드 위에 적는다. 예전에는 보조 기술에만 남아 있어서, 고르기
+                // 전에는 대가가 보이지 않았다.
+                ConversationChoiceCard(
                     title: choice.visibleLine,
                     detail: choice.accessibilityDetail,
-                    resolver: copyResolver
-                )))
-                .accessibilityIdentifier("hs.response.\(response.rawValue)")
+                    chips: [],
+                    identifier: "hs.response.\(response.rawValue)",
+                    accessibilityText: HighSchoolPresentation.localizedRelationshipChoiceAccessibility(
+                        title: choice.visibleLine,
+                        detail: choice.accessibilityDetail,
+                        resolver: copyResolver
+                    )
+                ) {
+                    onRespond(response)
+                }
             }
         }
+        .accessibilityIdentifier("hs.relationship")
         .onAppear {
             guard let event, event.category == "rebirth" else { return }
             let recent = state.rebirthEcho?.recentEventIDs?.contains(event.id) == true
@@ -203,6 +99,86 @@ struct RelationshipCard: View {
                 ]
             )
         }
+    }
+
+    private var eventTitle: String? {
+        event.map { HighSchoolPresentation.localizedRelationshipEventTitle($0, resolver: copyResolver) }
+    }
+
+    private var headerAccessibility: String? {
+        guard let scene else { return nil }
+        return HighSchoolPresentation.localizedRelationshipEventAccessibility(
+            speaker: speakerLabel ?? "",
+            name: visibleName ?? "",
+            title: eventTitle ?? "",
+            primaryText: [scene.visibleLine, echoSource].compactMap { $0 }.joined(separator: " "),
+            summary: scene.accessibilitySummary,
+            resolver: copyResolver
+        )
+    }
+
+    private var speakerLabel: String? {
+        eventCopy.map { copyResolver.resolve($0.event.speakerLabelToken) }
+    }
+
+    /// 사람이 아닌 화자(집·취재·팬·몸 상태…)는 이름을 지어내지 않는다.
+    private var visibleName: String? {
+        guard let event else { return nil }
+        switch event.category {
+        case "coach":
+            return state.school.map {
+                HighSchoolPresentation.localizedSchoolCastName(
+                    $0, rawRegion: state.identity.region, role: .coach, resolver: copyResolver
+                )
+            }
+        case "catcher":
+            return state.school.map {
+                HighSchoolPresentation.localizedSchoolCastName(
+                    $0, rawRegion: state.identity.region, role: .catcher, resolver: copyResolver
+                )
+            }
+        case "rival":
+            return HighSchoolPresentation.localizedRivalName(state.rival, resolver: copyResolver)
+        default:
+            return nil
+        }
+    }
+
+    private var scene: RelationshipCardPresentationPolicy.Scene? {
+        guard let event else { return nil }
+        return RelationshipCardPresentationPolicy.scene(
+            quote: HighSchoolPresentation.localizedRelationshipQuote(
+                event: event, band: band, playerName: state.identity.name, resolver: copyResolver
+            ),
+            summary: HighSchoolPresentation.localizedRelationshipEventSummary(event, resolver: copyResolver)
+        )
+    }
+
+    /// 손으로 쓴 대사가 있으면 그 한 줄이 장면 본문이다. 요약을 다시 보이지 않아
+    /// 같은 상황을 두 번 읽게 하지 않는다.
+    private var sceneLine: String {
+        scene?.visibleLine ?? ""
+    }
+
+    private var echoSource: String? {
+        guard event?.category == "rebirth" else { return nil }
+        return state.rebirthEcho?.previousPlayerName.map {
+            copyResolver.resolve(LegacyUICopyKey.rebirthEchoSource, arguments: [.userText($0)])
+        }
+    }
+
+    private func choiceCopy(for response: RelationshipResponse) -> RelationshipCardPresentationPolicy.Choice {
+        let title = event.map {
+            HighSchoolPresentation.localizedRelationshipChoiceTitle(
+                event: $0, response: response, resolver: copyResolver
+            )
+        } ?? copyResolver.resolve(.relationshipFallbackChoiceTitle(response: response))
+        let detail = event.map {
+            HighSchoolPresentation.localizedRelationshipChoiceDetail(
+                event: $0, response: response, resolver: copyResolver
+            )
+        } ?? copyResolver.resolve(.relationshipFallbackChoiceDetail(response: response))
+        return RelationshipCardPresentationPolicy.choice(title: title, detail: detail)
     }
 }
 

@@ -560,15 +560,17 @@ struct PrimaryPill: View {
     var body: some View {
         Button(action: action) {
             Text(verbatim: title)
+                // 꺼진 버튼의 글자도 읽을 수 있어야 한다. 어두운 잉크(actionInk)를 어두운
+                // 배경(actionSoft) 위에 0.6으로 얹으면 라벨이 사실상 사라졌다 —
+                // 선택 전에는 확정 버튼이 아예 없는 것처럼 보였다.
                 .font(.headline)
-                .foregroundStyle(BaseballTheme.actionInk)
+                .foregroundStyle(enabled ? BaseballTheme.actionInk : BaseballTheme.textSecondary)
                 .frame(maxWidth: .infinity, minHeight: 52)
         }
         .background(
             enabled ? BaseballTheme.action : BaseballTheme.actionSoft,
             in: Capsule()
         )
-        .opacity(enabled ? 1 : 0.6)
         .disabled(!enabled)
         .accessibilityIdentifier(identifier ?? title)
     }

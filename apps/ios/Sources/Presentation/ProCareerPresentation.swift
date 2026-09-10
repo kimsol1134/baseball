@@ -886,6 +886,158 @@ enum ProCareerPresentation {
         return chips
     }
 
+    /// **커널이 실제로 한 일**을 칩으로 나눈다.
+    ///
+    /// `effectChips(_:journeyEffect:resolver:)`는 선언된 `ProDecisionEffect`를 읽는다.
+    /// 그 값은 커널이 하려는 일이지 하는 일이 아니다 — 80에 닿은 능력의 "+1"은 일어나지
+    /// 않고, 신구종 실전이 구종 하나를 다듬는 일과 주간 2지선다가 남기는 3주 약속은
+    /// 아예 적혀 있지 않다. 선택 전에 보이는 칩은 이쪽을 쓴다.
+    static func conversationChips(
+        _ outcome: ProConversationOutcome,
+        resolver: GameCopyResolver
+    ) -> [ConversationChip] {
+        var chips: [ConversationChip] = []
+        func value(_ id: String, _ delta: Int, gain: ProUICopyKey, loss: ProUICopyKey, favorable: Bool = true) {
+            guard delta != 0 else { return }
+            let good = favorable ? delta > 0 : delta < 0
+            chips.append(ConversationChip(
+                id: id,
+                text: resolver.resolve(delta > 0 ? gain : loss, arguments: [.integer(abs(delta))]),
+                tone: good ? .gain : .cost
+            ))
+        }
+        for change in outcome.abilities {
+            switch change.ability {
+            case .stuff:
+                value("stuff", change.displayDelta, gain: .effectStuffGain, loss: .effectStuffLoss)
+            case .command:
+                value("command", change.displayDelta, gain: .effectCommandGain, loss: .effectCommandLoss)
+            case .movement:
+                value("movement", change.displayDelta, gain: .effectMovementGain, loss: .effectMovementLoss)
+            case .stamina:
+                value("stamina", change.displayDelta, gain: .effectStaminaGain, loss: .effectStaminaLoss)
+            }
+        }
+        value("manager", outcome.managerTrustDelta, gain: .effectManagerGain, loss: .effectManagerLoss)
+        value("catcher", outcome.catcherTrustDelta, gain: .effectCatcherGain, loss: .effectCatcherLoss)
+        // 피로는 부호가 반대다 — 오르면 비용, 내리면 이득.
+        value("fatigue", outcome.fatigueDelta, gain: .effectFatigueGain, loss: .effectFatigueLoss, favorable: false)
+        if let role = outcome.role {
+            chips.append(ConversationChip(
+                id: "role",
+                text: resolver.resolve(.effectRole, arguments: [.userText(resolver.resolve(role.displayCopyToken))]),
+                tone: .neutral
+            ))
+        }
+        if let pitch = outcome.sharpenedPitch {
+            chips.append(ConversationChip(
+                id: "pitch",
+                text: resolver.resolve(
+                    .decisionChipPitchSharpened,
+                    arguments: [.userText(PitchCopy.localized(pitch, resolver: resolver))]
+                ),
+                tone: .gain
+            ))
+        }
+        for commitment in outcome.commitments {
+            chips.append(commitmentChip(commitment, resolver: resolver))
+        }
+        if let expires = outcome.commitmentExpiresWeek {
+            chips.append(ConversationChip(
+                id: "window",
+                text: resolver.resolve(.decisionChipCommitmentWindow, arguments: [.integer(expires)]),
+                tone: .neutral,
+                systemImage: "clock"
+            ))
+        }
+        if outcome.incomeDelta != 0 {
+            chips.append(ConversationChip(
+                id: "income",
+                text: resolver.resolve(
+                    .journeyEffectIncome,
+                    arguments: [.userText(GameFormatters.krw(Int(clamping: outcome.incomeDelta), language: resolver.language))]
+                ),
+                tone: outcome.incomeDelta > 0 ? .gain : .cost
+            ))
+        }
+        if outcome.fanDelta != 0 {
+            chips.append(ConversationChip(
+                id: "fan",
+                text: resolver.resolve(.journeyEffectFan, arguments: [.integer(outcome.fanDelta)]),
+                tone: outcome.fanDelta > 0 ? .gain : .cost
+            ))
+        }
+        if outcome.communityDelta != 0 {
+            chips.append(ConversationChip(
+                id: "community",
+                text: resolver.resolve(.journeyEffectCommunity, arguments: [.integer(outcome.communityDelta)]),
+                tone: outcome.communityDelta > 0 ? .gain : .cost
+            ))
+        }
+        if outcome.seasonBenefit != nil {
+            chips.append(ConversationChip(
+                id: "benefit",
+                text: resolver.resolve(.decisionChipSeasonBenefit),
+                tone: .gain
+            ))
+        }
+        if outcome.recoveryYear {
+            chips.append(ConversationChip(
+                id: "recovery",
+                text: resolver.resolve(.decisionChipRecoveryYear),
+                tone: .gain
+            ))
+        }
+        if chips.isEmpty {
+            chips.append(ConversationChip(
+                id: "none",
+                text: resolver.resolve(.journeyEffectNone),
+                tone: .neutral
+            ))
+        }
+        return chips
+    }
+
+    private static func commitmentChip(
+        _ commitment: ProConversationOutcome.Commitment,
+        resolver: GameCopyResolver
+    ) -> ConversationChip {
+        switch commitment {
+        case .extraOuting:
+            ConversationChip(
+                id: "extra-outing",
+                text: resolver.resolve(.decisionChipExtraOuting),
+                tone: .neutral
+            )
+        case .injuryPressure:
+            ConversationChip(
+                id: "injury-pressure",
+                text: resolver.resolve(.decisionChipInjuryPressure),
+                tone: .risk,
+                systemImage: "exclamationmark.triangle.fill"
+            )
+        case .noFirstTeamOutings:
+            ConversationChip(
+                id: "no-first-team",
+                text: resolver.resolve(.decisionChipNoFirstTeam),
+                tone: .cost
+            )
+        case .reducedTraining:
+            ConversationChip(
+                id: "reduced-training",
+                text: resolver.resolve(.decisionChipReducedTraining),
+                tone: .cost
+            )
+        case .commandReturnsLater:
+            ConversationChip(
+                id: "command-returns",
+                text: resolver.resolve(.decisionChipCommandReturns),
+                tone: .neutral,
+                systemImage: "arrow.uturn.backward"
+            )
+        }
+    }
+
     static func effect(_ effect: ProDecisionEffect, resolver: GameCopyResolver) -> String {
         guard resolver.language != .korean else { return effect.summary }
         var parts: [String] = []

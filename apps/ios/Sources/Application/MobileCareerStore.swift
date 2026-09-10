@@ -127,6 +127,9 @@ final class MobileCareerStore {
     var careerOrigin: ProCareerOrigin? { durableCareerOrigin }
     /// 진행 중인 중요 경기. `importantGame` 단계에서만 존재한다.
     var pitchSession: PitchSession?
+    /// 방금 확정한 시즌 결정이 남긴 것. 화면에 결과를 **같은 자리에** 남기기 위한 값이라
+    /// 저장에 들어가지 않는다. 플레이어가 "계속"을 누르면 사라진다.
+    var lastSeasonDecisionReceipt: ProSeasonDecisionReceipt?
 
     @ObservationIgnored let engine: ProCareerEngine
     @ObservationIgnored let featureConfiguration: AppFeatureConfiguration

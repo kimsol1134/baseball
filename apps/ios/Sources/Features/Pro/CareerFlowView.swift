@@ -106,7 +106,12 @@ struct CareerFlowView: View {
                 // 그 반투명 겹침이 "화면이 어긋나서 글자가 깨진다"(1.0.x 리뷰)로 보였다.
                 // 국면을 identity로 못 박고 전환을 끄면 겹치는 프레임 자체가 없다.
                 Group {
-                if settlementOwnsGrowth {
+                if let receipt = career.lastSeasonDecisionReceipt {
+                    // 결정을 확정하면 커널은 이미 다음 국면으로 넘어가 있다. 결과를 다음
+                    // 화면에 흘리면 "내가 무엇을 골랐고 무엇이 바뀌었는지"가 사라지므로,
+                    // 플레이어가 "계속"을 누를 때까지 같은 무대를 붙잡는다.
+                    ProSeasonDecisionResultView(career: career, receipt: receipt)
+                } else if settlementOwnsGrowth {
                     ProSeasonSettlementView(
                         career: career,
                         state: state,
