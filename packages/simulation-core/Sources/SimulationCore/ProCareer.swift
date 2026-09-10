@@ -2248,6 +2248,13 @@ public struct ProCareerEngine: Sendable {
     }
 
     public static func liveBatterOffset(for state: ProCareerSnapshot, week: Int? = nil) -> Int {
+        // v12부터 상대는 평평한 50이 아니라 실제 타순이다. 타순 자체가 리그 수준을
+        // 표현하므로, 평평한 상대용으로 만든 시즌 계단·능력 추적 가산을 그 위에 얹으면
+        // 아홉 명 전원이 컨택 73 이상이 된다(실측: 능력 80/80 선수의 시즌 10 RA/9 20).
+        // 남는 것은 무대의 차이뿐이다 — 2군 타선은 1군 타선이 아니다.
+        if ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) {
+            return state.level == .major ? 0 : -7
+        }
         let skill = (state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina) / 4
         if usesCareerArcRules(state), let climate = liveClimate(for: state, week: week) {
             return DifficultyScale.proArc(
