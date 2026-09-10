@@ -195,6 +195,54 @@ final class NewSurfaceRenderTests: XCTestCase {
         }
     }
 
+    /// 화면 전체를 그대로 찍는다.
+    ///
+    /// `ImageRenderer`는 `ScrollView` 본문을 그리지 못한다 — 스크롤이 바깥에 있는 화면은
+    /// 캔버스가 비고 `safeAreaInset` 바만 남는다. 진짜 창에 올린 `UIHostingController`를
+    /// 찍으면 스크롤도 레이아웃을 받는다. 스크롤 안쪽까지 보려면 `height`를 화면보다
+    /// 크게 준다(뷰가 그만큼 세로로 펼쳐진다).
+    private func saveScreen(
+        _ view: some View,
+        name: String,
+        width: CGFloat = 390,
+        height: CGFloat = 844
+    ) {
+        let host = UIHostingController(
+            rootView: AnyView(
+                view
+                    .environment(\.gameCopyResolver, GameCopyResolver(language: .korean))
+                    .frame(width: width, height: height)
+                    .background(BaseballTheme.canvas)
+            )
+        )
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: width, height: height))
+        window.rootViewController = host
+        window.isHidden = false
+        window.makeKeyAndVisible()
+        host.view.frame = window.bounds
+        host.view.layoutIfNeeded()
+        // 한 번의 레이아웃으로는 스크롤 내용이 비는 경우가 있다. 런루프를 한 바퀴 돌린다.
+        RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        host.view.setNeedsLayout()
+        host.view.layoutIfNeeded()
+
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 3
+        // `drawHierarchy(afterScreenUpdates:)`는 실제 화면이 없는 유닛 테스트에서 흰 판을
+        // 준다. 레이어를 직접 그린다.
+        let data = UIGraphicsImageRenderer(bounds: window.bounds, format: format).pngData { context in
+            window.layer.render(in: context.cgContext)
+        }
+        let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.png")
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        if let dir = ProcessInfo.processInfo.environment["BASEBALL_SHOT_DIR"] {
+            try? data.write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(name).png"))
+        }
+        window.isHidden = true
+    }
+
     private func history() -> [AbilityHistoryPoint] {
         [
             .init(season: 1, stuff: 42, command: 41, movement: 36, stamina: 39),
@@ -266,19 +314,130 @@ final class NewSurfaceRenderTests: XCTestCase {
         XCTAssertTrue(store.installLiveSeasonDecisionFixtureForUITesting())
         let market = try XCTUnwrap(started.snapshot.journeyState?.pendingContractMarket)
         let offer = try XCTUnwrap(market.offers.first)
-        save(
+        saveScreen(
             ProContractOfferView(career: store, state: started.snapshot),
-            name: "11-contract-offer",
-            height: 1_100
+            name: "11-contract-offer"
         )
-        save(
+        saveScreen(
             ProContractOfferView(
                 career: store,
                 state: started.snapshot,
                 initialSelection: (offerID: offer.id, ambition: .franchiseIcon)
             ),
-            name: "12-contract-offer-confirm",
-            height: 1_100
+            name: "12-contract-offer-confirm"
+        )
+
+    }
+
+    /// 다음 회차의 세 갈래. 고르는 일과 시작하는 일이 갈라져 있는지 눈으로 본다(6-E).
+    func testRebirthPathPicker() throws {
+        let store = HighSchoolCareerStore(saveWriter: { _ in true })
+        XCTAssertTrue(store.installUndraftedDraftFixtureForUITesting())
+        store.updatePersisted {
+            $0.signatureLegacyRulesVersion = HighSchoolCareerStore.currentSignatureLegacyRulesVersion
+        }
+        store.lastSetup = .init(
+            presetID: "precision_commander", playerName: "민서준", region: "서울",
+            harshness: "standard", karmas: [], soulDomain: nil,
+            startingRepertoire: PitchLearningRules.recommendedSelection(presetID: "precision_commander"),
+            throwingHand: .right
+        )
+        store.resolveDraft()
+        let legacyState = try XCTUnwrap(store.state)
+        XCTAssertEqual(legacyState.phase, .legacy)
+        XCTAssertTrue(store.prepareSignatureLegacyCandidates())
+        if let legacy = store.signatureLegacyCandidates(for: legacyState).first {
+            store.selectSignatureLegacy(legacy.id)
+        }
+        store.confirmLegacy()
+        let completed = try XCTUnwrap(store.state)
+        XCTAssertEqual(completed.phase, .completed)
+        XCTAssertTrue(store.canChooseRebirthPath, "길 고르기가 열려야 이 검사가 의미 있다")
+        saveScreen(
+            ScrollView {
+                CompletionCard(
+                    career: store,
+                    state: completed,
+                    hasEnteredPro: false,
+                    onEnterPro: { _, _, _ in },
+                    includeReason: false,
+                    onRebirth: {},
+                    onRebirthPath: { _ in }
+                )
+                .padding(BaseballMetrics.gutter)
+            }
+            .background(BaseballTheme.canvas),
+            name: "14-rebirth-path",
+            height: 1_600
+        )
+    }
+
+    /// 드래프트 직후 "3년의 결과". 지명 구단이 먼저 오고, 여정의 숫자가 따라오는지 본다(6-C).
+    func testDraftJourneySummary() throws {
+        let engine = HighSchoolCareerEngine()
+        var result = try engine.start(.init(
+            seed: "20260903",
+            presetID: "power_prospect",
+            creationAllocation: .balanced,
+            identity: PlayerIdentitySnapshot(
+                name: "민서준", throwingHand: .right, bodyType: .balanced, region: "서울"
+            )
+        ))
+        let start = result.snapshot.pitcher
+        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.chooseSchool(.init(
+            seed: result.nextSeed, state: result.snapshot, schoolID: .haedongPower
+        ))
+        for _ in 0..<400 {
+            if result.snapshot.phase == .draft { break }
+            switch result.snapshot.phase {
+            case .training:
+                result = try engine.commitTraining(.init(
+                    seed: result.nextSeed, state: result.snapshot,
+                    focus: .command, intensity: .standard
+                ))
+            case .relationship:
+                result = try engine.resolveRelationship(.init(
+                    seed: result.nextSeed, state: result.snapshot, response: .listen
+                ))
+            case .importantGame:
+                result = try engine.recordImportantGame(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    report: .init(
+                        scenarioNumber: result.snapshot.performance.importantGamesCompleted + 1,
+                        pitches: 84, strikeouts: 7, walks: 1, runsAllowed: 1,
+                        expectedDamage: 1_100, actualDamage: 700, recommendationAccepted: 48,
+                        outs: 18, hits: 4
+                    )
+                ))
+            case .awakening:
+                let choice = try XCTUnwrap(result.snapshot.awakeningOptions.first)
+                result = try engine.chooseAwakening(.init(
+                    seed: result.nextSeed, state: result.snapshot, awakening: choice
+                ))
+            case .chapterReview:
+                result = try engine.advanceChapter(.init(seed: result.nextSeed, state: result.snapshot))
+            default:
+                XCTFail("드래프트 전에 예상 밖 국면: \(result.snapshot.phase.rawValue)")
+                return
+            }
+        }
+        XCTAssertEqual(result.snapshot.phase, .draft)
+        result = try engine.resolveDraft(.init(seed: result.nextSeed, state: result.snapshot))
+        let drafted = try XCTUnwrap(result.snapshot.draftResult)
+        saveScreen(
+            ScrollView {
+                DraftPeakResultView(
+                    state: result.snapshot,
+                    drafted: drafted.outcome == .drafted,
+                    startingPitcher: start,
+                    onContinue: {}
+                )
+                .padding(BaseballMetrics.gutter)
+            }
+            .background(BaseballTheme.canvas),
+            name: "13-draft-journey"
         )
     }
 

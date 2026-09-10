@@ -185,10 +185,22 @@ struct ProContractOfferView: View {
     private func confirmBlock(_ market: ProContractMarket) -> some View {
         if let pendingOffer {
             VStack(alignment: .leading, spacing: 8) {
-                Text(verbatim: confirmationMessage(for: pendingOffer))
-                    .proseStyle()
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("pro.contractOffer.confirm.message")
+                // 돌아가기는 확인 문장과 한 줄을 쓴다. 세 줄로 쌓으면 고정 바가 본문을
+                // 밀어내고 마지막 버튼이 화면 밖으로 잘린다.
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(verbatim: confirmationMessage(for: pendingOffer))
+                        .proseStyle()
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("pro.contractOffer.confirm.message")
+                    Spacer(minLength: 0)
+                    Button(copyResolver.resolve(.contractOfferConfirmCancel)) {
+                        pendingOfferID = nil
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .accessibilityIdentifier("pro.contractOffer.confirm.cancel")
+                }
                 if !goalSelectionComplete {
                     Label(copyResolver.resolve(.contractOfferAmbitionRequired), systemImage: "hand.tap")
                         .detailStyle()
@@ -206,13 +218,6 @@ struct ProContractOfferView: View {
                     )
                     pendingOfferID = nil
                 }
-                Button(copyResolver.resolve(.contractOfferConfirmCancel)) {
-                    pendingOfferID = nil
-                }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
-                .accessibilityIdentifier("pro.contractOffer.confirm.cancel")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
