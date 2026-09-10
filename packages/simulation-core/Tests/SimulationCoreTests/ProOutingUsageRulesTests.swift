@@ -6,20 +6,30 @@ import XCTest
 final class ProOutingUsageRulesTests: XCTestCase {
     private let engine = ProCareerEngine()
 
-    /// **체력 60이 5이닝을 연다.** 이 아래에서는 선발이 승리 자격에 거의 닿지 못한다.
+    /// **체력 60이 5이닝을 연다.**
+    ///
+    /// 보드가 말하는 것은 "여기가 계단이다"이지 "여기서 몇 퍼센트다"가 아니다. 그래서 절대
+    /// 비율이 아니라 **계단 자체**를 붙든다 — 커널을 다시 손봐도 계단이 이 자리에 남아
+    /// 있으면 통과하고, 계단이 옮겨 가거나 사라지면 실패한다.
     func testStaminaThresholdForFiveInningsIsWhereTheBoardSaysItIs() {
         let below = qualifyingStartRate(stamina: ProOutingUsageRules.staminaForFiveInnings - 5, outs: 15)
         let at = qualifyingStartRate(stamina: ProOutingUsageRules.staminaForFiveInnings, outs: 15)
-        XCTAssertLessThan(below, 35, "문턱 아래에서 15아웃 도달률이 \(below)%입니다 — 문턱이 낮아졌습니다")
         XCTAssertGreaterThan(at, 60, "문턱에서 15아웃 도달률이 \(at)%뿐입니다 — 문턱이 높아졌습니다")
+        XCTAssertGreaterThanOrEqual(
+            at - below, 20,
+            "체력 \(ProOutingUsageRules.staminaForFiveInnings - 5)→\(ProOutingUsageRules.staminaForFiveInnings)에서 \(below)%→\(at)%뿐입니다 — 계단이 사라졌습니다"
+        )
     }
 
     /// **체력 78이 완투 도전을 연다.** 그 아래에서 7회는 사실상 오지 않는다.
     func testStaminaThresholdForTheCompleteGameChaseIsWhereTheBoardSaysItIs() {
         let below = qualifyingStartRate(stamina: ProOutingUsageRules.staminaForCompleteGameChase - 3, outs: 21)
         let at = qualifyingStartRate(stamina: ProOutingUsageRules.staminaForCompleteGameChase, outs: 21)
-        XCTAssertLessThan(below, 10, "문턱 아래에서 21아웃 도달률이 \(below)%입니다 — 문턱이 낮아졌습니다")
         XCTAssertGreaterThan(at, 20, "문턱에서 21아웃 도달률이 \(at)%뿐입니다 — 문턱이 높아졌습니다")
+        XCTAssertGreaterThanOrEqual(
+            at - below, 15,
+            "체력 \(ProOutingUsageRules.staminaForCompleteGameChase - 3)→\(ProOutingUsageRules.staminaForCompleteGameChase)에서 \(below)%→\(at)%뿐입니다 — 계단이 사라졌습니다"
+        )
     }
 
     /// 커리어 조건(감독 배합 mixed, 피로 50)에서 `outs`아웃 이상 던진 등판의 비율(%).

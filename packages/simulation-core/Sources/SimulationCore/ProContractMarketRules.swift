@@ -1617,6 +1617,27 @@ public enum ProContractMarketRules {
             let primaryDecline = recoveryYear ? max(0, primary - 1) : primary
             let secondaryDecline = recoveryYear ? 0 : secondary
             guard primaryDecline > 0 || secondaryDecline > 0 else { return pitcher }
+            // **레퍼토리도 같이 늙는다**(규칙 12, 이식 계획 2-E).
+            //
+            // 예전에는 네 능력치만 깎고 구종은 그대로 뒀다. 그러면 서른여덟의 투수가 스무 살
+            // 때의 구속과 헛스윙을 그대로 들고 던진다 — 화면의 숫자만 내려가고 공은 안 늙는다.
+            // 실제로 먼저 떠나는 것은 구속이라, 구속은 하락 한 단계당 0.3km/h씩 깎는다.
+            let agedProfiles = ProGameplayRules.usesProfessionalBalance(proRulesVersion)
+                ? pitcher.pitchProfiles?.map { profile in
+                    PitchProfileSnapshot(
+                        pitchType: profile.pitchType,
+                        role: profile.role,
+                        velocityTenthsKPH: max(1_000, profile.velocityTenthsKPH - primaryDecline * 3),
+                        control: max(20, profile.control - secondaryDecline),
+                        command: max(20, profile.command - secondaryDecline),
+                        movement: max(20, profile.movement - primaryDecline),
+                        whiff: max(20, profile.whiff - primaryDecline),
+                        weakContact: max(20, profile.weakContact - primaryDecline),
+                        fatigueCost: profile.fatigueCost,
+                        availability: profile.availability
+                    )
+                }
+                : pitcher.pitchProfiles
             return PitcherSnapshot(
                 id: pitcher.id,
                 name: pitcher.name,
@@ -1624,7 +1645,7 @@ public enum ProContractMarketRules {
                 command: clamp(pitcher.command - secondaryDecline, 20, 80),
                 movement: clamp(pitcher.movement - primaryDecline, 20, 80),
                 stamina: clamp(pitcher.stamina - secondaryDecline, 20, 80),
-                pitchProfiles: pitcher.pitchProfiles,
+                pitchProfiles: agedProfiles,
                 throwingHand: pitcher.throwingHand,
                 mastery: pitcher.mastery
             )

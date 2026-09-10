@@ -70,7 +70,18 @@ public struct AutoOutingSimulator: Sendable {
         priorPitches: Int = 0,
         priorRuns: Int = 0
     ) -> Line {
-        let engine = PitchKernelEngine(balance: balance)
+        // 프로 자동 등판의 포수는 안드로이드와 같은 코스 선택 규칙을 쓴다(버전 3).
+        // v10·고교는 이미 배포된 계산이므로 버전 1 그대로다.
+        let engine = PitchKernelEngine(
+            recommendationEngine: CatcherRecommendationEngine(
+                rules: CatcherSignRules(
+                    version: balance.isProfessional
+                        ? CatcherSignRules.scoutingTargetVersion
+                        : CatcherSignRules.fixtureSafeVersion
+                )
+            ),
+            balance: balance
+        )
         var rng = SplitMix64(seed: baseSeed)
         var line = Line()
         let fielders = FielderPosition.allCases.map {

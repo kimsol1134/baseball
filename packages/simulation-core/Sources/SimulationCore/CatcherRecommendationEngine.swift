@@ -179,7 +179,86 @@ public struct CatcherRecommendationEngine: Sendable {
                 protectZone ? "count.avoid_walk" : "count.alternative"
             ]
         )
-        return (primary, alternative)
+        guard rules.usesScoutingTargets else { return (primary, alternative) }
+
+        // **같은 곳에 두 번 던지면 세 번째는 읽힌다.**
+        //
+        // 버전 1의 포수는 약점 코스를 카운트로 밀기만 해서, 한 타석 내내 같은 칸을 요구했다
+        // (실측: 세 공이 전부 `slider,22,edge,normal`). 안드로이드 포수는 모든 칸에 점수를
+        // 매기고 **최근 네 공이 갔던 칸을 깎는다** — 그래서 2번 타석 첫 공에서 22가 아니라
+        // 00으로 간다. 두 커널이 갈라지던 지점이 정확히 여기였다(이식 계획 §2.4).
+        //
+        // 난수를 쓰지 않는다. 같은 상황이면 같은 칸이고, 버전 2의 가중 추첨과는 다른 규칙이다.
+        let recent = Array(observations.suffix(4))
+        func target(excluding: PitchZone? = nil) -> PitchZone {
+            var best = PitchZone(row: 0, column: 0)
+            var bestScore = Int.min
+            for zone in Self.allZones where zone != excluding {
+                var score = zone == scouting.coldZone ? 45 : 0
+                if zone == scouting.hotZone { score -= 90 }
+                if zone.row == 1 && zone.column == 1 { score -= 35 }
+                if protectZone || situation.demandsControl, zone.row == 1 || zone.column == 1 {
+                    score += 45
+                }
+                if situation.doublePlayChance || situation.sacrificeFlyRisk { score += zone.row * 25 }
+                if twoStrikes, !protectZone, primaryPitch != .fourSeam { score += zone.row * 12 }
+                for (index, observation) in recent.enumerated() where observation.zone == zone {
+                    score -= 24 + index * 14
+                }
+                // 동점이면 앞선 칸이 이긴다. Kotlin `maxBy`와 같은 규칙 — Swift `max(by:)`는
+                // 뒤를 고르므로 쓰지 않는다.
+                if score > bestScore {
+                    bestScore = score
+                    best = zone
+                }
+            }
+            return best
+        }
+
+        let zone = target()
+        let changedLocation = recent.last.map { $0.zone != zone } ?? false
+        let intent: ZoneIntent = protectZone || situation.demandsControl
+            ? .strike
+            : twoStrikes && scouting.chaseTendency >= 50 && batter.discipline < 65
+            ? .chase
+            : .edge
+        let playable = pitcher.pitchProfiles?.map(\.pitchType)
+        let otherPitch = playable.map { $0.contains(alternativePitch) ? alternativePitch : primaryPitch }
+            ?? alternativePitch
+        let otherZone = target(excluding: zone)
+
+        return (
+            CatcherRecommendation(
+                call: PitchCall(
+                    pitchType: primaryPitch,
+                    zone: zone,
+                    zoneIntent: ZoneIntent.clamped(intent, for: zone),
+                    intensity: context.fatigue >= 60 ? .controlled : primary.call.intensity
+                ),
+                confidence: primary.confidence,
+                reasonCodes: [
+                    changedLocation ? "sequence.change_location" : "scouting.target",
+                    situation.countCode
+                ]
+            ),
+            CatcherRecommendation(
+                call: PitchCall(
+                    pitchType: otherPitch,
+                    zone: otherZone,
+                    zoneIntent: protectZone || situation.demandsControl
+                        ? .strike
+                        : ZoneIntent.clamped(.edge, for: otherZone),
+                    intensity: alternative.call.intensity
+                ),
+                confidence: alternative.confidence,
+                reasonCodes: ["sequence.alternative_target"]
+            )
+        )
+    }
+
+    /// 3×3 존을 행 우선으로 편 목록. 동점 판정이 순서에 의존하므로 고정된 순서가 필요하다.
+    static let allZones: [PitchZone] = (0..<3).flatMap { row in
+        (0..<3).map { PitchZone(row: row, column: $0) }
     }
 
     /// 무엇을 던질지 고른다. **타자의 약점과 투수가 실제로 던질 수 있는 공을 저울질한다.**

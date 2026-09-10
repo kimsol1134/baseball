@@ -87,14 +87,14 @@ class ReleaseCareerParityTest {
                 } else kernel.startLinked(ProStartLinkedRequest(seed, "fixture-hs", "민서준", ProCatalog.pitcherForPreset("power_prospect", "민서준"), ProCatalog.teams.first().id, 72, draftRound = 2, signingBonus = 120_000_000, overallPick = 18))
                 "contract" -> kernel.acceptContractOffer(s!!, seed, s.journeyState!!.pendingContractMarket!!.offers.first().id, ProCareerAmbition.entries.firstOrNull { it.wire == args[0] })
                 "week" -> kernel.planWeek(s!!, seed, ProWeekPlan.entries.single { it.wire == args[0] })
-                "decision" -> { require(s!!.pendingDecision!!.choices.any { it.id == args[0] }) { "step=$index expected=${args[0]} actual=${s.pendingDecision.type.wire}:${s.pendingDecision.choices.map { it.id }}" }; kernel.applySeasonDecision(s, seed, s.pendingDecision.id, args[0]) }
+                "decision" -> { require(s!!.pendingDecision!!.choices.any { it.id == args[0] }) { "step=$index expected=${args[0]} actual=${s.pendingDecision!!.type.wire}:${s.pendingDecision!!.choices.map { it.id }}" }; kernel.applySeasonDecision(s, seed, s.pendingDecision!!.id, args[0]) }
                 "game" -> {
                     // Swift receives an ImportantInningReport. Adapt the same report to Android's session boundary.
                     val prepared = kernel.reserveImportantGame(s!!, seed).state
                     val entry = PitchAnalysisEntry(PitchKind.FOUR_SEAM, true, false, PitchOutcome.CALLED_STRIKE, SelectionQuality.entries.first(), 700, null, 0, 0, true, 1400)
-                    val session = prepared.activePitch!!.copy(seed = seed, pitches = 24, pitchIndex = 24, preparationToken = "", boundary = ProPitchBoundary.COMPLETED, log = prepared.activePitch.log.copy(totalPitches = 24, entries = List(24) { entry }), strikeouts = 4, walks = 0, runsAllowed = 0,
+                    val session = prepared.activePitch!!.copy(seed = seed, pitches = 24, pitchIndex = 24, preparationToken = "", boundary = ProPitchBoundary.COMPLETED, log = prepared.activePitch!!.log.copy(totalPitches = 24, entries = List(24) { entry }), strikeouts = 4, walks = 0, runsAllowed = 0,
                         expectedDamage = 420, actualDamage = 160, recommendationAccepted = 16, outs = 3, hits = 0, homeRuns = 0,
-                        sequenceMasteryCount = 1, ended = true, context = prepared.activePitch.context.copy(scoreDifferential = 2))
+                        sequenceMasteryCount = 1, ended = true, context = prepared.activePitch!!.context.copy(scoreDifferential = 2))
                     kernel.finishImportantGame(signed(s.copy(activePitch = session)))
                 }
                 "review" -> kernel.reviewSeason(s!!, seed)

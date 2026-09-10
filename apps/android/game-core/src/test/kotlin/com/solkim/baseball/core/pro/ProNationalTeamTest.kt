@@ -32,8 +32,8 @@ class ProNationalTeamTest {
     fun recordedLegacyCallSurvivesEligibilityUpdateAndCanBeAnswered() {
         val issued = eligibleCall(seed = "940101", fanSupport = 60).state
         val legacy = issued.copy(pitcher = issued.pitcher.copy(stuff = 20, command = 20, movement = 20, stamina = 20),
-            awards = listOf("시즌 1 탈삼진상"), journeyState = issued.journeyState!!.copy(reputation = issued.journeyState.reputation.copy(fanSupport = 0),
-                recognitions = issued.journeyState.recognitions.filterNot { it.season == issued.season && it.kind == ProCareerRecognitionKind.AWARD }), commitment = "")
+            awards = listOf("시즌 1 탈삼진상"), journeyState = issued.journeyState!!.copy(reputation = issued.journeyState!!.reputation.copy(fanSupport = 0),
+                recognitions = issued.journeyState!!.recognitions.filterNot { it.season == issued.season && it.kind == ProCareerRecognitionKind.AWARD }), commitment = "")
         assertFalse(ProKernel.shouldOfferNationalTeam(legacy))
         val signed = legacy.copy(commitment = kernel.commitment(legacy))
         val restored = ProStateCodec.decode(ProStateCodec.encode(signed))

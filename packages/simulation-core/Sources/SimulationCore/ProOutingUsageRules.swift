@@ -24,8 +24,9 @@ public enum ProOutingUsageRules {
     ///
     /// | 체력 | 50/60/40 | 40/45/35 | 65/65/60 |
     /// |---|---|---|---|
-    /// | 55 | 17.4% | 15.2% | 10.5% |
-    /// | 60 | **75.8%** | **69.4%** | **79.4%** |
+    /// | 55 | 38.9% | 31.9% | 28.9% |
+    /// | 58 | 55.0% | 45.5% | 47.0% |
+    /// | 60 | **81.0%** | **73.5%** | **85.1%** |
     ///
     /// Below this a pitcher can lose but essentially cannot win, which is why the board says so.
     public static let staminaForFiveInnings = 60
@@ -38,12 +39,12 @@ public enum ProOutingUsageRules {
     ///
     /// | 체력 | 50/60/40 | 40/45/35 | 65/65/60 |
     /// |---|---|---|---|
-    /// | 75 | 2.4% | 1.9% | 1.2% |
-    /// | 78 | **38.6%** | **27.9%** | **37.2%** |
+    /// | 75 | 11.4% | 8.1% | 7.6% |
+    /// | 78 | **42.0%** | **30.0%** | **47.2%** |
     ///
     /// Twenty-seven outs appear only above it. `ProOutingUsageRulesTests` holds both numbers to
-    /// their measurement, so smoothing the curve fails the gate instead of quietly making the
-    /// board lie.
+    /// their step, so smoothing the curve fails the gate instead of quietly making the board lie.
+    /// (Re-measured after the catcher reached Android parity; both steps stayed where they were.)
     public static let staminaForCompleteGameChase = 78
 
     /// Does this pitcher go back out?
