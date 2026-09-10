@@ -207,7 +207,7 @@ final class NewSurfaceRenderTests: XCTestCase {
     }
 
     func testAbilityGrowthGraph() {
-        save(AbilityGrowthGraph(points: history()), name: "01-ability-growth-graph", height: 190)
+        save(AbilityGrowthGraph(points: history()), name: "01-ability-growth-graph", height: 215)
     }
 
     func testAbilityBars() {

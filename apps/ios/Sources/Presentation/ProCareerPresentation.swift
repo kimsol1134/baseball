@@ -1492,16 +1492,25 @@ struct AbilityGrowthGraph: View {
 
     @Environment(\.gameCopyResolver) private var copyResolver
 
-    /// 눈이 앉을 자리. "프로 평균"은 이 게임에서 뜻이 있는 높이다 — 선이 이 위에 있는지
-    /// 아래에 있는지만 봐도 지금 어디쯤인지 읽힌다.
+    /// 세로축에 세울 눈금. **높이가 숫자가 아니라 뜻을 가리키게 한다.**
+    ///
+    /// 가로축만 있으면 선이 위에 있다는 것이 무슨 말인지 알 수 없다. 이 게임은 능력이
+    /// 무엇을 뜻하는지 이미 정해 두었으므로(`AbilityDisplayScale.steps`), 그 사다리를
+    /// 그대로 눈금으로 쓴다 — 눈금 숫자를 읽고 해석하는 대신 **선이 "프로 평균" 위에
+    /// 있는지 아래에 있는지**를 바로 본다.
+    private static let ladder = [75, 65, 50]
     private static let leagueAverage = 50
+    /// 눈금 이름이 앉을 왼쪽 여백. 선이 여기까지 오면 글자와 겹쳐 둘 다 안 읽힌다.
+    private static let axisGutter: CGFloat = 66
 
     var body: some View {
         if points.count >= 2 {
             VStack(alignment: .leading, spacing: 6) {
                 GeometryReader { proxy in
-                    ZStack {
-                        referenceLine(in: proxy.size)
+                    ZStack(alignment: .topLeading) {
+                        ForEach(Self.ladder, id: \.self) { rung in
+                            gridline(rung, in: proxy.size)
+                        }
                         ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
                             path(for: axis, in: proxy.size)
                                 .stroke(axis.tint, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
@@ -1510,7 +1519,7 @@ struct AbilityGrowthGraph: View {
                         }
                     }
                 }
-                .frame(height: 96)
+                .frame(height: 118)
                 .accessibilityHidden(true)
 
                 seasonAxis
@@ -1524,15 +1533,23 @@ struct AbilityGrowthGraph: View {
         }
     }
 
+    /// 시즌 번호.
+    ///
+    /// 균등 칸에 나눠 놓으면 숫자가 자기 점보다 안쪽에 선다. **점이 실제로 찍힌 x에**
+    /// 맞춰야 "이 숫자가 저 꺾임"이라는 연결이 성립한다.
     private var seasonAxis: some View {
-        HStack(spacing: 0) {
-            ForEach(points) { point in
-                Text(verbatim: "\(point.season)")
+        GeometryReader { proxy in
+            ForEach(Array(points.enumerated()), id: \.element.id) { index, entry in
+                Text(verbatim: "\(entry.season)")
                     .font(.system(size: 9).monospacedDigit())
                     .foregroundStyle(BaseballTheme.textTertiary)
-                    .frame(maxWidth: .infinity)
+                    .position(
+                        x: point(entry.value(.stuff), index: index, in: proxy.size).x,
+                        y: proxy.size.height / 2
+                    )
             }
         }
+        .frame(height: 12)
     }
 
     /// 축마다 지금 값과 처음부터의 변화. 내려간 축도 숨기지 않는다 — 노화는 실제로 일어난 일이다.
@@ -1565,19 +1582,40 @@ struct AbilityGrowthGraph: View {
         }
     }
 
-    private func referenceLine(in size: CGSize) -> some View {
-        let y = size.height * (1 - AbilityDisplayScale.position(Self.leagueAverage))
-        return Path { path in
-            path.move(to: CGPoint(x: 0, y: y))
-            path.addLine(to: CGPoint(x: size.width, y: y))
+    /// 눈금 한 칸. 선 위에 그 높이가 무엇을 뜻하는지 적는다.
+    private func gridline(_ rung: Int, in size: CGSize) -> some View {
+        let y = size.height * (1 - AbilityDisplayScale.position(rung))
+        // 프로 평균은 기준선이라 조금 더 또렷하게 둔다.
+        let isAverage = rung == Self.leagueAverage
+        return ZStack(alignment: .topLeading) {
+            Path { path in
+                path.move(to: CGPoint(x: Self.axisGutter - 4, y: y))
+                path.addLine(to: CGPoint(x: size.width, y: y))
+            }
+            .stroke(
+                BaseballTheme.border.opacity(isAverage ? 0.55 : 0.3),
+                style: StrokeStyle(lineWidth: 1, dash: isAverage ? [3, 3] : [2, 4])
+            )
+            Text(verbatim: MetaPresentation.ratingMeaning(rung, context: .pro, resolver: copyResolver))
+                .font(.system(size: 8))
+                .foregroundStyle(BaseballTheme.textTertiary.opacity(isAverage ? 1 : 0.8))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                // 눈금 여백 안, 자기 선과 같은 높이에 오른쪽 맞춤으로 앉는다.
+                .frame(width: Self.axisGutter - 8, alignment: .trailing)
+                .offset(x: 0, y: max(0, min(size.height - 10, y - 5)))
         }
-        .stroke(BaseballTheme.border.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+    }
+
+    /// 선이 그려지는 너비. 왼쪽 눈금 여백은 뺀다.
+    private func plotWidth(_ size: CGSize) -> CGFloat {
+        max(1, size.width - Self.axisGutter)
     }
 
     private func point(_ value: Int, index: Int, in size: CGSize) -> CGPoint {
-        let step = points.count > 1 ? size.width / CGFloat(points.count - 1) : 0
+        let step = points.count > 1 ? plotWidth(size) / CGFloat(points.count - 1) : 0
         return CGPoint(
-            x: step * CGFloat(index),
+            x: Self.axisGutter + step * CGFloat(index),
             y: size.height * (1 - AbilityDisplayScale.position(value))
         )
     }
