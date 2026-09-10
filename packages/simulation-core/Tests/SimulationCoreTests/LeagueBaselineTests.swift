@@ -93,6 +93,40 @@ final class LeagueBaselineTests: XCTestCase {
         XCTAssertEqual(decision, .loss)
     }
 
+    /// **승리를 받을 수 없는 등판은 패전도 자동으로 받지 않는다**(규칙 13).
+    ///
+    /// 다섯 이닝을 못 채운 선발은 승리 자격이 없는데 패전에는 문턱이 없어서, 짧은 등판이
+    /// 이길 수는 없고 지기만 하는 한쪽 통행이었다. 규칙 13이 등판 길이를 감독의 판단에
+    /// 맡기기 전까지는 선발이 늘 18아웃을 채웠으므로 드러나지 않던 구멍이다.
+    func testShortStartSharesTheLossWithTheBullpen() {
+        // 4이닝 2실점, 불펜이 5실점. 패배의 몫이 더 큰 쪽은 불펜이다.
+        let bullpenLost = DecisionRules.decide(
+            started: true, isCloser: false, outs: 12, runsAllowed: 2, teamRuns: 3, opponentRuns: 7,
+            shortStartSharesTheLoss: true
+        )
+        XCTAssertEqual(bullpenLost, .noDecision, "불펜이 더 무너진 경기의 패전이 선발에게 붙었습니다")
+
+        // 4이닝 5실점, 불펜이 2실점. 이 패배는 내 것이다.
+        let mine = DecisionRules.decide(
+            started: true, isCloser: false, outs: 12, runsAllowed: 5, teamRuns: 3, opponentRuns: 7,
+            shortStartSharesTheLoss: true
+        )
+        XCTAssertEqual(mine, .loss)
+
+        // 다섯 이닝을 채운 등판은 예전 규칙 그대로다. 승리 자격이 있으니 패전도 온전히 진다.
+        let qualified = DecisionRules.decide(
+            started: true, isCloser: false, outs: 15, runsAllowed: 2, teamRuns: 3, opponentRuns: 7,
+            shortStartSharesTheLoss: true
+        )
+        XCTAssertEqual(qualified, .loss)
+
+        // 규칙 12 이하는 한 줄도 바뀌지 않는다.
+        let legacy = DecisionRules.decide(
+            started: true, isCloser: false, outs: 12, runsAllowed: 2, teamRuns: 3, opponentRuns: 7
+        )
+        XCTAssertEqual(legacy, .loss)
+    }
+
     /// 세이브는 3점 차 이내를 무실점으로 지켰을 때만.
     func testSaveRequiresACloseLead() {
         let save = DecisionRules.decide(

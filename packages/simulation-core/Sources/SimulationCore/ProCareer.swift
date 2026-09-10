@@ -624,7 +624,8 @@ public struct ProCareerEngine: Sendable {
                             runsAllowed: outingLine.runsAllowed,
                             teamRuns: support,
                             opponentRuns: opponentRuns,
-                            reliefDecisionDraw: reliefDecisionDraw
+                            reliefDecisionDraw: reliefDecisionDraw,
+                            shortStartSharesTheLoss: ProGameplayRules.usesWorkload(state.proRulesVersion)
                         ),
                         played: false,
                         hits: outingLine.hits,
@@ -1483,7 +1484,10 @@ public struct ProCareerEngine: Sendable {
             reliefDecisionDraw: !started
                 && ProGameplayRules.usesProfessionalBalance(params.state.proRulesVersion)
                 ? rng.nextInt(upperBound: 1_000)
-                : nil
+                : nil,
+            // 직접 던진 선발도 같은 잣대다. 자동 등판만 고쳐 두면 플레이어가 직접 던진
+            // 짧은 등판만 여전히 지기만 한다.
+            shortStartSharesTheLoss: ProGameplayRules.usesWorkload(params.state.proRulesVersion)
         )
         let replacedGame = scheduledLine != nil
         let oldDecision = scheduledLine?.decision

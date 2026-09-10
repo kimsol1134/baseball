@@ -231,6 +231,8 @@ public enum DecisionRules {
 
     /// - Parameter reliefDecisionDraw: 0–999. 구원 등판의 승패 귀속 추첨. `nil`이면 구원 승이
     ///   없고 실점한 패전이 전부 패전이 되는 예전 규칙 그대로다(프로 규칙 11 이하).
+    /// - Parameter shortStartSharesTheLoss: 규칙 13 이상. 승리를 받을 수 없는 짧은 선발 등판이
+    ///   패전도 자동으로 받지는 않게 한다. `false`면 예전 규칙 그대로다.
     public static func decide(
         started: Bool,
         isCloser: Bool,
@@ -238,7 +240,8 @@ public enum DecisionRules {
         runsAllowed: Int,
         teamRuns: Int,
         opponentRuns: Int,
-        reliefDecisionDraw: Int? = nil
+        reliefDecisionDraw: Int? = nil,
+        shortStartSharesTheLoss: Bool = false
     ) -> PitchingDecision {
         let teamWon = teamRuns > opponentRuns
         let teamLost = teamRuns < opponentRuns
@@ -248,7 +251,24 @@ public enum DecisionRules {
                 return outs >= LeagueBaseline.minimumOutsForStarterWin ? .win : .noDecision
             }
             // 선발이 실점했고 팀이 졌으면 패전. 한 점도 안 줬는데 진 경기는 구원 투수의 몫이다.
-            return teamLost && runsAllowed > 0 ? .loss : .noDecision
+            guard teamLost, runsAllowed > 0 else { return .noDecision }
+            // **승리를 받을 수 없는 등판은 패전도 자동으로 받지 않는다.**
+            //
+            // 다섯 이닝을 못 채운 선발은 승리 자격이 없다(위). 그런데 패전에는 그런 문턱이
+            // 없어서, 짧은 등판은 이길 수는 없고 지기만 하는 한쪽 통행이 된다. 규칙 13이
+            // 등판 길이를 감독의 판단에 맡기기 전까지는 선발이 늘 18아웃을 채웠으므로 이
+            // 비대칭이 드러나지 않았다 — 규칙 13이 잠자던 구멍을 지배적인 규칙으로 만들었다.
+            // 실측(시드 11·42·300, 선발 1,580등판): 15아웃 미만 1,020등판이 **0승 417패**이고
+            // 그 경기에서 팀은 399승 503패였다.
+            //
+            // 승패는 한 경기에 한 투수에게만 붙는다(`reliefDecisionShare`와 같은 원칙). 짧은
+            // 등판은 나머지 이닝을 던진 불펜과 그 경기를 나눠 가지므로, 패배의 몫이 더 큰
+            // 쪽이 패전을 받는다. 추첨이 아니라 이미 계산된 실점으로 정하므로 새 상수도,
+            // 새 난수도 없다 — 그리고 **잘 던지면 기록이 달라진다.**
+            if shortStartSharesTheLoss, outs < LeagueBaseline.minimumOutsForStarterWin {
+                return runsAllowed >= opponentRuns - runsAllowed ? .loss : .noDecision
+            }
+            return .loss
         }
 
         if isCloser, teamWon, runsAllowed == 0,
