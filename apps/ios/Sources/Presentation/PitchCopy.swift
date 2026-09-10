@@ -303,8 +303,34 @@ enum PitchFeedbackTimeline {
     static let standardDecisionDelay: TimeInterval = 1.7
     static let clutchDecisionDelay: TimeInterval = 2.9
 
+    /// 정중앙에서 놓은 공은 15% 빨리 도착한다.
+    ///
+    /// 손으로 해낸 일이 화면에서 아무것도 바꾸지 않으면 그 조작은 그 순간에만 살고 만다.
+    /// 숫자를 하나 더 띄우는 대신 **공 자체가 빨라 보이게** 한다 — 같은 구속이라도 도착이
+    /// 빠르면 좋은 공으로 읽힌다.
+    static let perfectReleaseFlightScale = 0.85
+    /// 퍼펙트일 때 삼진 콜이 앞당겨지는 시간. 심판이 먼저 알아본 것처럼 들린다.
+    static let perfectReleaseCallLead: TimeInterval = 0.2
+
     static func tempo(isClutch: Bool) -> Double {
         isClutch ? clutchTempo : 1
+    }
+
+    /// 이 공의 비행 시간.
+    static func replayDuration(isClutch: Bool, perfectRelease: Bool) -> TimeInterval {
+        standardReplayDuration * tempo(isClutch: isClutch)
+            * (perfectRelease ? perfectReleaseFlightScale : 1)
+    }
+
+    /// 소리가 나갈 시각. 퍼펙트면 콜이 앞선다.
+    ///
+    /// **콜이 포구보다 빨라질 수는 없다.** 앞당김이 포구 시각을 넘어가면 심판이 공보다
+    /// 먼저 판정하는 셈이라, 0에서 자른다.
+    static func callDelay(
+        contactDelay: TimeInterval,
+        perfectRelease: Bool
+    ) -> TimeInterval {
+        max(0, contactDelay - (perfectRelease ? perfectReleaseCallLead : 0))
     }
 
     static func resultHapticDelay(reduceMotion: Bool, isClutch: Bool) -> TimeInterval {

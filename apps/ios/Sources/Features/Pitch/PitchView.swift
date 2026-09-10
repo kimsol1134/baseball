@@ -1168,7 +1168,13 @@ struct PitchView: View {
         // 승부구는 슬로모션 — 같은 1.6초면 승부구가 승부구로 안 읽힌다. 소리 박자도
         // 같은 배율로 늘어져야 심판이 공보다 빨라지지 않는다.
         let tempo = PitchFeedbackTimeline.tempo(isClutch: wasClutch)
-        withAnimation(.linear(duration: PitchFeedbackTimeline.standardReplayDuration * tempo)) {
+        // 정중앙에서 놓은 공은 빨리 도착한다. 손으로 해낸 일이 장면에서 보이게 하는
+        // 값싼 장치이고, 숫자를 하나 더 띄우는 것보다 낫다.
+        let perfect = session.lastDelivery?.isPerfectRelease == true
+        withAnimation(.linear(duration: PitchFeedbackTimeline.replayDuration(
+            isClutch: wasClutch,
+            perfectRelease: perfect
+        ))) {
             replayProgress = 1
         }
 
@@ -1191,7 +1197,10 @@ struct PitchView: View {
         }
         for (index, cue) in cues.dropFirst().enumerated() {
             // 삼진 풀콜은 반 박 더 뜸을 들인다 — 심판이 펀치아웃 동작과 함께 지르는 그 사이.
-            let delay = if cue == .umpireStrikeout { 1.32 * tempo } else {
+            // 정중앙에서 놓은 공은 콜이 앞선다. 심판이 먼저 알아본 것처럼 들린다.
+            let delay = if cue == .umpireStrikeout {
+                PitchFeedbackTimeline.callDelay(contactDelay: 1.32 * tempo, perfectRelease: perfect)
+            } else {
                 switch index {
                 case 0: PitchFeedbackTimeline.resultHapticDelay(
                     reduceMotion: false,

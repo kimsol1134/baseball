@@ -130,3 +130,40 @@ final class PitchDramaRenderTests: XCTestCase {
         }
     }
 }
+
+/// 손으로 정중앙을 맞힌 공은 장면에서도 다르게 흐른다(4-D).
+final class PerfectReleaseTimingTests: XCTestCase {
+    /// **퍼펙트는 15% 빨리 도착한다.** 손으로 해낸 일이 화면에서 아무것도 바꾸지 않으면
+    /// 그 조작은 그 순간에만 살고 만다.
+    func testAPerfectReleaseShortensTheFlight() {
+        let ordinary = PitchFeedbackTimeline.replayDuration(isClutch: false, perfectRelease: false)
+        let perfect = PitchFeedbackTimeline.replayDuration(isClutch: false, perfectRelease: true)
+        XCTAssertEqual(perfect, ordinary * PitchFeedbackTimeline.perfectReleaseFlightScale, accuracy: 0.0001)
+        XCTAssertLessThan(perfect, ordinary)
+    }
+
+    /// 승부구 배율과 함께 걸린다. 둘 다 곱해져야 승부구도 퍼펙트도 각자 읽힌다.
+    func testTheClutchTempoAndThePerfectScaleBothApply() {
+        let clutchPerfect = PitchFeedbackTimeline.replayDuration(isClutch: true, perfectRelease: true)
+        let clutchOrdinary = PitchFeedbackTimeline.replayDuration(isClutch: true, perfectRelease: false)
+        XCTAssertLessThan(clutchPerfect, clutchOrdinary)
+        XCTAssertGreaterThan(clutchPerfect, PitchFeedbackTimeline.replayDuration(isClutch: false, perfectRelease: true))
+    }
+
+    /// 퍼펙트면 삼진 콜이 앞선다 — 심판이 먼저 알아본 것처럼 들린다.
+    func testAPerfectReleasePullsTheStrikeoutCallForward() {
+        let ordinary = PitchFeedbackTimeline.callDelay(contactDelay: 1.32, perfectRelease: false)
+        let perfect = PitchFeedbackTimeline.callDelay(contactDelay: 1.32, perfectRelease: true)
+        XCTAssertEqual(ordinary, 1.32, accuracy: 0.0001)
+        XCTAssertEqual(perfect, 1.32 - PitchFeedbackTimeline.perfectReleaseCallLead, accuracy: 0.0001)
+    }
+
+    /// **콜이 공보다 빨라질 수는 없다.** 앞당김이 포구 시각을 넘으면 0에서 자른다.
+    func testTheCallNeverArrivesBeforeTheBall() {
+        XCTAssertEqual(
+            PitchFeedbackTimeline.callDelay(contactDelay: 0.1, perfectRelease: true),
+            0,
+            accuracy: 0.0001
+        )
+    }
+}
