@@ -64,6 +64,7 @@ enum CareerSharePresentation {
             badges.append(tierTitle)
         }
         let seasons = max(state.careerStats.count, 1)
+        let careerTotal = CareerRecordTableRules.total(state.careerStats)
         let war = CareerDisplayRules.saberBoard(for: state).career.warText
         return CareerShareCardModel(
             kind: .retirement,
@@ -103,7 +104,10 @@ enum CareerSharePresentation {
                 arguments: [.userText(state.identity.name), .integer(seasons)]
             ),
             season: state.season,
-            hasMedal: honors.contains(where: { $0.kind == .nationalGold })
+            hasMedal: honors.contains(where: { $0.kind == .nationalGold }),
+            // 통산 기록표. 자책점은 모든 시즌에 원장이 있을 때만 합쳐지고, 없으면 `—`다.
+            counting: CareerRecordTableRules.counting(careerTotal),
+            rates: CareerRecordTableRules.rates(careerTotal)
         )
     }
 
