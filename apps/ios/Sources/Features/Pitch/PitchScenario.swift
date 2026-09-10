@@ -80,6 +80,12 @@ struct PitchScenario {
 
     // MARK: - 프로 커리어
 
+    /// 프로 등판인가. 자책점 원장은 프로 경로에서만 돈다 — 고교에는 자책점 개념이 없다.
+    var isProfessional: Bool {
+        if case .pro = presentationContext { return true }
+        return false
+    }
+
     static func pro(state: ProCareerSnapshot) -> PitchScenario {
         let usesFinalSeriesRules = CareerDisplayRules.usesFinalSeriesRules(state)
         let situation = proSituation(

@@ -63,6 +63,59 @@ final class ProCareerCodecTests: XCTestCase {
         XCTAssertNil(record.deletedRevision)
     }
 
+    /// **자책점은 이어 던지기를 건너서도 이어져야 한다.** 원장 토큰이 저장을 왕복하지
+    /// 못하면 복구한 등판의 자책점이 통째로 '모른다'가 된다(이식 계획 2-D).
+    func testRunLedgerTokenSurvivesTheSaveRoundTrip() throws {
+        let ledger = PitchRunLedger(bases: [1, -1, 0], runs: 3, earnedRuns: 2, inheritedScored: 1, virtualOuts: 1)
+        var state = ProCareerPersistedState.empty
+        state.result = try fixtureResult()
+        state.gameResume = resume(runLedgerToken: ledger.token())
+
+        let record = ProCareerPersistence.record(
+            from: state,
+            schemaVersion: ProCareerPersistence.legacySchemaVersion,
+            syncRevision: 1
+        )
+        let restored = ProCareerPersistence.materialize(record)
+        let token = try XCTUnwrap(restored.gameResume?.runLedgerToken)
+        XCTAssertEqual(PitchRunLedger.decode(token), ledger)
+    }
+
+    /// 원장이 없던 체크포인트는 그대로 열린다. 새 필드는 optional이고, 없으면 계속 모른다다.
+    func testAResumeWrittenBeforeTheLedgerStillOpens() throws {
+        var state = ProCareerPersistedState.empty
+        state.result = try fixtureResult()
+        state.gameResume = resume(runLedgerToken: nil)
+        let restored = ProCareerPersistence.materialize(
+            ProCareerPersistence.record(
+                from: state,
+                schemaVersion: ProCareerPersistence.legacySchemaVersion,
+                syncRevision: 1
+            )
+        )
+        XCTAssertNotNil(restored.gameResume)
+        XCTAssertNil(restored.gameResume?.runLedgerToken)
+    }
+
+    private func resume(runLedgerToken: String?) -> PitchResumeState {
+        PitchResumeState(
+            scenarioID: "pa-1", seed: "seed", batterIndex: 1, stageKind: "between",
+            stageMessage: nil, fatigue: 30,
+            gameState: GameStateSnapshot(
+                defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 50, fielders: []),
+                park: ParkSnapshot(id: "p", name: "구장", hitFactor: 1_000, homeRunFactor: 1_000),
+                runners: BaserunnerStateSnapshot(firstOccupied: true, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 52),
+                runsAllowed: 3,
+                inningState: InningStateSnapshot(inning: 7, half: .top, outs: 1)
+            ),
+            gameLog: GameLogSnapshot(gameID: "pa-1", revision: 0, totalPitches: 20, entries: []),
+            rivalMemory: nil, pitches: 20, strikeouts: 2, consecutiveStrikeouts: 0,
+            walks: 1, runsAllowed: 3, expectedDamage: 400, actualDamage: 380,
+            recommendationAccepted: 10, outsRecorded: 6, rivalOutcomes: [],
+            runLedgerToken: runLedgerToken
+        )
+    }
+
     func testInjuryWrapperKeepsSchemaFiveAfterEngineEventClears() throws {
         let legacy = try resultWithoutMastery(fixtureResult())
         let event = ProInjuryEventSnapshot(

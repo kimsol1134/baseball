@@ -1053,6 +1053,111 @@ final class ProCareerEngineTests: XCTestCase {
         XCTAssertGreaterThan(gassedBurden, freshBurden, "지친 등판 묶음(실점×2+볼넷 \(gassedBurden))이 싱싱한 묶음(\(freshBurden))보다 좋으면 피로가 커널에 반영되지 않는 것")
     }
 
+    /// **내가 던지지 않은 이닝도 실제로 던져진다**(규칙 12, 이식 계획 2-D).
+    ///
+    /// 예전에는 예정된 자동 등판의 기록을 이닝 비율로 잘라 남겼다. 그러면 나머지 이닝이
+    /// 내가 만든 결과의 그림자일 뿐이라, 6회를 삼자범퇴로 막고 내려온 날과 만루를 남기고
+    /// 내려온 날의 남은 이닝이 같아진다.
+    func testTheInningsIDidNotPitchAreSimulatedNotProrated() throws {
+        var direct = try firstImportantGame(seed: "7701", proRulesVersion: ProGameplayRules.current)
+        let scheduled = try XCTUnwrap(
+            (direct.snapshot.gameLines ?? []).last { $0.week == direct.snapshot.week && !$0.played },
+            "예정된 자동 등판이 없으면 이 경로를 잴 수 없습니다"
+        )
+        let before = direct.snapshot.currentStats
+        // 짧게 던지고 내려온다. 나머지 이닝이 어디서 오는지가 이 검사의 대상이다.
+        let short = ImportantInningReport(
+            scenarioNumber: 1, pitches: 12, strikeouts: 1, walks: 0, runsAllowed: 0,
+            expectedDamage: 300, actualDamage: 200, recommendationAccepted: 8, outs: 3
+        )
+        direct = try engine.resolveImportantGame(
+            .init(seed: direct.nextSeed, state: direct.snapshot, report: short)
+        )
+        let line = try XCTUnwrap((direct.snapshot.gameLines ?? []).first { $0.played })
+        let complementOuts = line.outs - 3
+        XCTAssertGreaterThan(complementOuts, 0, "직접 3아웃 뒤 나머지 이닝이 하나도 없습니다")
+
+        // 비율 분배였다면 나머지 이닝의 기록은 예정 등판을 정확히 그 비율로 자른 값이다.
+        func prorated(_ value: Int) -> Int {
+            (value * complementOuts + scheduled.outs / 2) / max(1, scheduled.outs)
+        }
+        let complementStrikeouts = line.strikeouts - short.strikeouts
+        let complementPitches = line.pitches - short.pitches
+        XCTAssertFalse(
+            complementStrikeouts == prorated(scheduled.strikeouts)
+                && complementPitches == prorated(scheduled.pitches),
+            "나머지 이닝이 여전히 예정 등판의 비율 그림자입니다"
+        )
+        // 실제로 던져진 이닝이므로 투구 수가 아웃 수에 걸맞게 붙는다.
+        XCTAssertGreaterThan(complementPitches, complementOuts, "나머지 이닝에 투구가 없습니다")
+        // 시즌 합계도 그 경기 하나만큼만 움직인다.
+        XCTAssertEqual(direct.snapshot.currentStats.games, before.games)
+        XCTAssertEqual(
+            direct.snapshot.currentStats.inningsOuts - before.inningsOuts,
+            line.outs - scheduled.outs
+        )
+    }
+
+    /// **직접 던진 시즌도 평균자책을 갖는다**(이식 계획 2-D).
+    ///
+    /// 예전에는 직접 등판한 경기에 원장이 없어서 그 시즌 자책점이 통째로 nil이 됐다 —
+    /// 한 번이라도 직접 던지면 그 해 평균자책이 화면에서 사라졌다.
+    func testADirectlyPitchedSeasonStillHasEarnedRuns() throws {
+        var direct = try firstImportantGame(seed: "7801", proRulesVersion: ProGameplayRules.current)
+        XCTAssertNotNil(direct.snapshot.currentStats.earnedRuns, "직접 등판 전에 이미 자책점이 없습니다")
+        let withLedger = ImportantInningReport(
+            scenarioNumber: 1, pitches: 20, strikeouts: 2, walks: 1, runsAllowed: 3,
+            expectedDamage: 400, actualDamage: 380, recommendationAccepted: 10, outs: 6,
+            earnedRuns: 2
+        )
+        direct = try engine.resolveImportantGame(
+            .init(seed: direct.nextSeed, state: direct.snapshot, report: withLedger)
+        )
+        let line = try XCTUnwrap((direct.snapshot.gameLines ?? []).first { $0.played })
+        let lineEarned = try XCTUnwrap(line.earnedRuns, "직접 던진 경기에 자책점이 없습니다")
+        XCTAssertGreaterThanOrEqual(lineEarned, 2, "직접 던진 구간의 자책점이 빠졌습니다")
+        XCTAssertLessThanOrEqual(lineEarned, line.runsAllowed, "자책점이 실점보다 많습니다")
+        XCTAssertNotNil(direct.snapshot.currentStats.earnedRuns, "시즌 자책점이 사라졌습니다")
+    }
+
+    /// 원장이 없는 리포트는 **0이 아니라 '모른다'** 다. 없는 경기를 0으로 세면 그 시즌
+    /// 평균자책이 조용히 낮아진다.
+    func testAReportWithoutALedgerLeavesTheSeasonEarnedRunsUnknown() throws {
+        var direct = try firstImportantGame(seed: "7802", proRulesVersion: ProGameplayRules.current)
+        let noLedger = ImportantInningReport(
+            scenarioNumber: 1, pitches: 20, strikeouts: 2, walks: 1, runsAllowed: 3,
+            expectedDamage: 400, actualDamage: 380, recommendationAccepted: 10, outs: 6
+        )
+        direct = try engine.resolveImportantGame(
+            .init(seed: direct.nextSeed, state: direct.snapshot, report: noLedger)
+        )
+        let line = try XCTUnwrap((direct.snapshot.gameLines ?? []).first { $0.played })
+        XCTAssertNil(line.earnedRuns)
+        XCTAssertNil(direct.snapshot.currentStats.earnedRuns, "원장 없는 경기가 0으로 세어졌습니다")
+    }
+
+    /// 규칙 13에서 직접 등판한 선발은 예정된 길이가 아니라 **경기 전체**를 향해 간다.
+    /// 완투는 그렇게 온다 — 예정이 6이닝이라고 7회에 끌려 내려오지 않는다.
+    func testADirectStartCanRunPastItsScheduledLength() throws {
+        var longest = 0
+        for seedValue in ["7702", "7703", "7704", "7705"] {
+            var direct = try firstImportantGame(seed: seedValue, proRulesVersion: ProGameplayRules.current)
+            guard let scheduled = (direct.snapshot.gameLines ?? [])
+                .last(where: { $0.week == direct.snapshot.week && !$0.played }), scheduled.started else { continue }
+            let strong = ImportantInningReport(
+                scenarioNumber: 1, pitches: 30, strikeouts: 4, walks: 0, runsAllowed: 0,
+                expectedDamage: 300, actualDamage: 120, recommendationAccepted: 12, outs: 9
+            )
+            direct = try engine.resolveImportantGame(
+                .init(seed: direct.nextSeed, state: direct.snapshot, report: strong)
+            )
+            if let line = (direct.snapshot.gameLines ?? []).first(where: { $0.played }) {
+                longest = max(longest, line.outs)
+            }
+        }
+        XCTAssertGreaterThan(longest, 18, "직접 등판한 선발이 예정된 6이닝을 한 번도 넘지 못했습니다")
+    }
+
     private func assertCompletedCareers(
         in seedValues: Range<Int>,
         replaySeed: Int? = nil
@@ -1219,8 +1324,12 @@ final class ProCareerEngineTests: XCTestCase {
         throw SimulationError.invalidProCareer("테스트에서 시즌 결정 탐색 한도를 넘었습니다.")
     }
 
-    private func firstImportantGame(seed: String) throws -> ProCareerResult {
-        var result = try engine.start(startParams(seed: seed))
+    private func firstImportantGame(seed: String, proRulesVersion: Int? = nil) throws -> ProCareerResult {
+        var result = try engine.start(.init(
+            seed: seed, identity: .defaultPitcher, pitcher: pitcher(), draftResult: drafted(),
+            entitlement: activeEntitlement(), sourceFanInterest: nil, startingRepertoire: nil,
+            repertoireRulesVersion: nil, pitchLearningProject: nil, proRulesVersion: proRulesVersion
+        ))
         result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
         for _ in 0..<120 {
             switch result.snapshot.phase {

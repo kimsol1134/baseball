@@ -1450,24 +1450,69 @@ public struct ProCareerEngine: Sendable {
         let scheduledLine = scheduledIndex.map { gameLines[$0] }
         let started = scheduledLine?.started ?? (params.state.role == .starter)
         let scheduledOuts = scheduledLine?.outs ?? 0
-        let complementOuts = max(0, scheduledOuts - directOuts)
+        let professional = ProGameplayRules.usesProfessionalBalance(params.state.proRulesVersion)
+        let workload = ProGameplayRules.usesWorkload(params.state.proRulesVersion)
+        // 규칙 13에서는 직접 던진 뒤에도 감독이 계속 맡길지를 묻는다. 계속이면 남은 이닝은
+        // 예정된 자동 등판의 길이가 아니라 **경기 전체**(27아웃)까지다 — 완투는 그렇게 온다.
+        let staysOnTheMound = !workload || ProOutingUsageRules.canContinue(
+            pitcher: params.state.pitcher,
+            outs: directOuts,
+            pitches: report.pitches,
+            fatigue: params.state.fatigue,
+            runs: report.runsAllowed,
+            starter: started
+        )
+        let complementOuts = !staysOnTheMound ? 0
+            : workload && started ? max(0, 27 - directOuts)
+            : max(0, scheduledOuts - directOuts)
+        // **내가 던지지 않은 이닝도 실제로 던져진다.**
+        //
+        // 예전에는 예정된 자동 등판의 기록을 이닝 비율로 잘라 남겼다. 그러면 그 이닝의
+        // 안타·삼진·실점이 내가 직접 만든 결과의 그림자일 뿐이라, 6회를 삼자범퇴로 막고
+        // 내려온 날과 만루를 남기고 내려온 날의 나머지 이닝이 같아진다. 같은 투구 엔진으로
+        // 실제로 시뮬레이션하면 그 이닝이 자기 몫의 결과를 갖는다(안드로이드 v12와 같다).
+        let complement: AutoOutingSimulator.Line? = professional && complementOuts > 0
+            ? AutoOutingSimulator(balance: workload ? .professionalWorkload : .professional).simulate(
+                pitcher: params.state.pitcher,
+                startingFatigue: params.state.fatigue,
+                outsTarget: complementOuts,
+                pitchCap: complementOuts * 7 + 12,
+                batterOffset: Self.liveBatterOffset(for: params.state, week: params.state.week),
+                baseSeed: rng.next() ^ 0x434F_4D50,
+                diverseScouting: true,
+                fullStart: workload && started,
+                priorOuts: workload && started ? directOuts : 0,
+                priorPitches: workload && started ? report.pitches : 0,
+                priorRuns: workload && started ? report.runsAllowed : 0
+            )
+            : nil
 
         func retained(_ value: Int) -> Int {
+            // 규칙 11 이하의 옛 경로. 반올림 나눗셈을 쓰는 것은 내림이면 중요 경기를 치를
+            // 때마다 시즌 안타·삼진·볼넷이 조금씩 깎여 나갔기 때문이다(18→16, 133→132).
             guard scheduledOuts > 0 else { return 0 }
-            // 반올림 나눗셈. 내림을 쓰면 중요 경기를 치를 때마다 시즌 안타·삼진·볼넷이
-            // 조금씩 깎여 나갔다(실측: 18→16, 133→132처럼 resolve마다 손실).
             return (value * complementOuts + scheduledOuts / 2) / scheduledOuts
         }
 
-        // 자동 등판의 같은 비율만 남기고 사용자가 직접 만든 승부처 성적을 합친다.
-        // 선발은 나머지 이닝이 보존되고, 한 이닝 구원은 거의 전부 직접 결과가 된다.
-        let outs = scheduledLine == nil ? directOuts : complementOuts + directOuts
-        let strikeouts = retained(scheduledLine?.strikeouts ?? 0) + report.strikeouts
-        let walks = retained(scheduledLine?.walks ?? 0) + report.walks
-        let runsAllowed = retained(scheduledLine?.runsAllowed ?? 0) + report.runsAllowed
-        let pitches = retained(scheduledLine?.pitches ?? 0) + report.pitches
-        let hits = retained(scheduledLine?.hits ?? 0) + (report.hits ?? 0)
-        let homeRuns = retained(scheduledLine?.homeRuns ?? 0) + (report.homeRuns ?? 0)
+        func merged(_ direct: Int, _ complementValue: Int?, _ scheduled: Int) -> Int {
+            direct + (professional ? (complementValue ?? 0) : retained(scheduled))
+        }
+
+        let outs = professional
+            ? directOuts + (complement?.outs ?? 0)
+            : scheduledLine == nil ? directOuts : complementOuts + directOuts
+        let strikeouts = merged(report.strikeouts, complement?.strikeouts, scheduledLine?.strikeouts ?? 0)
+        let walks = merged(report.walks, complement?.walks, scheduledLine?.walks ?? 0)
+        let runsAllowed = merged(report.runsAllowed, complement?.runsAllowed, scheduledLine?.runsAllowed ?? 0)
+        let pitches = merged(report.pitches, complement?.pitches, scheduledLine?.pitches ?? 0)
+        let hits = merged(report.hits ?? 0, complement?.hits, scheduledLine?.hits ?? 0)
+        let homeRuns = merged(report.homeRuns ?? 0, complement?.homeRuns, scheduledLine?.homeRuns ?? 0)
+        // **직접 던진 경기도 자책점을 갖는다**(이식 계획 2-D). 화면이 주자 책임 원장을 들고
+        // 던졌을 때만 값이 있고, 거기에 내가 던지지 않은 이닝의 자책점을 더한다. 원장이
+        // 없으면 nil이다 — 실점으로 대신하면 그 시즌 평균자책이 조용히 틀린다.
+        let playedEarnedRuns: Int? = professional
+            ? report.earnedRuns.map { $0 + (complement?.earnedRuns ?? 0) }
+            : nil
         // 최종 스코어를 등판 시점의 점수 차에서 파생시킨다. 그래야 "1점 리드로 올라가
         // 무실점으로 막았는데 패배" 같은 모순이 생기지 않는다. 지는 경기는 반드시
         // 내 실점이나 불펜 실점으로 설명된다.
@@ -1518,9 +1563,12 @@ public struct ProCareerEngine: Sendable {
             pitches: params.state.currentStats.pitches - (scheduledLine?.pitches ?? 0) + pitches,
             wins: params.state.currentStats.wins - (oldDecision == .win ? 1 : 0) + (decision == .win ? 1 : 0),
             losses: params.state.currentStats.losses - (oldDecision == .loss ? 1 : 0) + (decision == .loss ? 1 : 0),
-            saves: params.state.currentStats.saves - (oldDecision == .save ? 1 : 0) + (decision == .save ? 1 : 0)
-            // 자책점은 여기서 끊긴다. 직접 던진 경기는 아직 원장을 남기지 않으므로(2-D
-            // 직접+자동 혼합 정산 미착수) 그 시즌 자책점은 '모른다'가 된다. 추정하지 않는다.
+            saves: params.state.currentStats.saves - (oldDecision == .save ? 1 : 0) + (decision == .save ? 1 : 0),
+            // 시즌 자책점은 그 시즌의 **모든** 등판에 원장이 있을 때만 성립한다. 바꿔 넣는
+            // 경기의 옛 값을 빼고 새 값을 더하되, 어느 한 경기라도 모르면 통째로 모른다다.
+            earnedRuns: Self.directOutingEarnedRuns(
+                state: params.state, scheduledLine: scheduledLine, playedEarnedRuns: playedEarnedRuns
+            )
         )
         // 직접 던진 경기는 기록에 그렇게 표시된다. 자동으로 지나간 경기와 섞이면
         // "내가 만든 성적"이라는 감각이 사라진다.
@@ -1539,7 +1587,11 @@ public struct ProCareerEngine: Sendable {
             decision: decision,
             played: true,
             hits: hits,
-            homeRuns: homeRuns
+            homeRuns: homeRuns,
+            earnedRuns: playedEarnedRuns,
+            completeGame: workload
+                ? started && outs == 27 && support != opponentRuns
+                : nil
         )
         if let scheduledIndex {
             gameLines[scheduledIndex] = playedLine
@@ -2330,6 +2382,28 @@ public struct ProCareerEngine: Sendable {
     /// - 이번 주의 등판 중 하나라도 원장이 없으면 nil.
     ///
     /// 아직 한 경기도 없는 시즌은 원장을 시작할 수 있으므로 예외다.
+    /// 직접 등판이 바꿔 놓은 뒤의 시즌 자책점.
+    ///
+    /// 이 경로는 예정된 자동 등판 한 줄을 직접 던진 한 줄로 **바꿔 넣는다.** 그래서 합계도
+    /// 옛 값을 빼고 새 값을 더해야 한다. 어느 한쪽이라도 원장이 없으면 통째로 '모른다'다 —
+    /// 없는 경기를 0으로 세는 합계는 거짓말이고, 평균자책이 조용히 낮아진다.
+    static func directOutingEarnedRuns(
+        state: ProCareerSnapshot,
+        scheduledLine: ProGameLine?,
+        playedEarnedRuns: Int?
+    ) -> Int? {
+        guard ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) else { return nil }
+        guard let playedEarnedRuns else { return nil }
+        guard let running = state.currentStats.earnedRuns ?? (state.currentStats.games == 0 ? 0 : nil) else {
+            return nil
+        }
+        guard let replaced = scheduledLine.map(\.earnedRuns) else {
+            return running + playedEarnedRuns
+        }
+        guard let replaced else { return nil }
+        return running - replaced + playedEarnedRuns
+    }
+
     static func seasonEarnedRuns(
         state: ProCareerSnapshot,
         newGameLines: [ProGameLine]

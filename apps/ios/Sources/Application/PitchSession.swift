@@ -223,6 +223,7 @@ final class PitchSession {
             sequenceMoments: sequenceMoments,
             deliveryScores: deliveryScores,
             perfectReleases: perfectReleases,
+            runLedgerToken: runLedger?.token(),
             pitchLearningUses: pitchLearningReceipts,
             pitchLearningAwardedPlateAppearances: Array(pitchLearningAwardedPlateAppearances).sorted()
         )
@@ -245,6 +246,8 @@ final class PitchSession {
         actualDamage = resume.actualDamage
         recommendationAccepted = resume.recommendationAccepted
         outsRecorded = resume.outsRecorded
+        // 토큰이 없거나 읽을 수 없으면 원장 없이 이어 던진다 — 그 등판의 자책점은 모른다.
+        runLedger = resume.runLedgerToken.flatMap(PitchRunLedger.decode)
         hitsAllowed = resume.hitsAllowed ?? 0
         homeRunsAllowed = resume.homeRunsAllowed ?? 0
         rivalOutcomes = resume.rivalOutcomes
@@ -346,6 +349,10 @@ final class PitchSession {
 
     func start() {
         guard preparation == nil else { return }
+        // 마운드에 오를 때 이미 나가 있는 주자는 전부 남의 책임이다.
+        if scenario.isProfessional {
+            runLedger = PitchRunLedger.entry(runners: scenario.runners, outs: scenario.outs)
+        }
         // 등판 하나가 곧 하나의 매치업이다. 시나리오 id를 벤치 식별자로 쓴다.
         rivalMemory = scenario.initialRivalMemory
             ?? RivalMemoryEngine().benchMemory(pitcher: pitcher, benchID: scenario.id)
@@ -467,6 +474,14 @@ final class PitchSession {
         return pitches - startingPitches
     }
 
+    /// 이 등판의 주자 책임 원장. 자책점은 스코어보드가 아니라 "수비가 깨끗했다면 몇 점이
+    /// 들어왔을까"를 묻기 때문에, 주자 한 명 한 명이 왜 거기 서 있는지를 들고 다녀야 한다.
+    ///
+    /// 프로 등판에서만 돈다. 원장이 커널이 보고한 주자와 어긋나면 그 자리에서 버린다 —
+    /// **어긋난 원장으로 계산한 자책점은 틀린 숫자이고, 틀린 숫자보다 '모른다'가 낫다**
+    /// (`AutoOutingSimulator`가 같은 규칙을 쓴다).
+    private(set) var runLedger: PitchRunLedger?
+
     /// 이번 등판에서 실제로 잡은 아웃카운트. 매 투구의 차이로 누적한다.
     ///
     /// 예전에는 이 값을 넘기지 않아 코어가 이닝을 `투구수 / 5`로 어림했다. 그다음에는
@@ -507,7 +522,8 @@ final class PitchSession {
             hits: hitsAllowed,
             homeRuns: homeRunsAllowed,
             pitchLearningUses: pitchLearningReceipts.isEmpty ? nil : pitchLearningReceipts,
-            perfectReleases: perfectReleases
+            perfectReleases: perfectReleases,
+            earnedRuns: runLedger?.earnedRuns
         )
     }
 
@@ -622,6 +638,10 @@ final class PitchSession {
         homeRunsAllowed += snapshot.outcome == .homeRun ? 1 : 0
         hitByPitches += snapshot.outcome == .hitByPitch ? 1 : 0
         runsAllowed += snapshot.runsScored
+        if let ledger = runLedger {
+            // 실패하면 nil이 되어 이 등판의 자책점은 '모른다'로 남는다. 되살리지 않는다.
+            runLedger = try? ledger.advance(snapshot)
+        }
         recommendationAccepted += snapshot.recommendationAccepted ? 1 : 0
         if let entry = result.gameLog.entries.last {
             expectedDamage += entry.expectedDamage

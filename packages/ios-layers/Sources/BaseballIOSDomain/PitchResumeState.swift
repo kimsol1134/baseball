@@ -49,6 +49,10 @@ public struct PitchResumeState: Codable, Equatable {
     /// 이 등판에서 미터 정중앙을 맞힌 횟수. 이어 던지기로 돌아와도 손으로 해낸 것이 남는다.
     /// 이 필드가 없던 저장은 nil이며 0으로 읽는다.
     public var perfectReleases: Int? = nil
+    /// 주자 책임 원장의 압축 표기(`PitchRunLedger.token()`). 자책점은 이어 던지기를 건너서도
+    /// 이어져야 한다 — 여기서 끊기면 복구한 등판의 자책점이 통째로 '모른다'가 된다.
+    /// 원장 도입 전 체크포인트는 nil이고, 그때는 계속 모른다로 남는다.
+    public var runLedgerToken: String? = nil
     public var pitchLearningUses: [PitchLearningUseReceipt]? = nil
     public var pitchLearningAwardedPlateAppearances: [String]? = nil
 
@@ -115,6 +119,7 @@ public struct PitchResumeState: Codable, Equatable {
         sequenceMoments: [PitchSequenceMoment]? = nil,
         deliveryScores: [Int]? = nil,
         perfectReleases: Int? = nil,
+        runLedgerToken: String? = nil,
         pitchLearningUses: [PitchLearningUseReceipt]? = nil,
         pitchLearningAwardedPlateAppearances: [String]? = nil
     ) {
@@ -150,6 +155,7 @@ public struct PitchResumeState: Codable, Equatable {
         self.sequenceMoments = sequenceMoments
         self.deliveryScores = deliveryScores
         self.perfectReleases = perfectReleases
+        self.runLedgerToken = runLedgerToken
         self.pitchLearningUses = pitchLearningUses
         self.pitchLearningAwardedPlateAppearances = pitchLearningAwardedPlateAppearances
     }
