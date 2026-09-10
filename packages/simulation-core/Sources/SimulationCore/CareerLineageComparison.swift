@@ -58,7 +58,7 @@ public enum CareerLineageComparisonRules {
             previousLabel: first.lifeNumber,
             currentLabel: latest.lifeNumber,
             metrics: [
-                change(.evaluation, first, latest, lowerIsBetter: false, isWholeNumber: true) {
+                change(.evaluation, first, latest, lowerIsBetter: false, format: .whole) {
                     Double($0.evaluationScore)
                 },
                 // 회차마다 등판 수가 다를 수 있으므로 경기당으로 견준다. 합계로 견주면
@@ -81,7 +81,7 @@ public enum CareerLineageComparisonRules {
         _ first: CareerLifeSummary,
         _ latest: CareerLifeSummary,
         lowerIsBetter: Bool,
-        isWholeNumber: Bool = false,
+        format: CareerMetricChange.Format = .decimal,
         _ value: (CareerLifeSummary) -> Double
     ) -> CareerMetricChange {
         CareerMetricChange(
@@ -90,7 +90,7 @@ public enum CareerLineageComparisonRules {
             previous: value(first),
             current: value(latest),
             lowerIsBetter: lowerIsBetter,
-            isWholeNumber: isWholeNumber
+            format: format
         )
     }
 

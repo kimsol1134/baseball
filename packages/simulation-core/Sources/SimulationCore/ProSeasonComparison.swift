@@ -44,8 +44,10 @@ public enum ProSeasonComparisonRules {
                 change(.whip, previous, current, lowerIsBetter: true) {
                     PitchingMetrics.whip(hits: $0.hits, walks: $0.walks, outs: $0.inningsOuts)
                 },
+                // 아웃 수를 그대로 넘긴다. 이닝 표기는 3분의 1 단위라 소수로 반올림해
+                // 넘기면 95⅔이 95.70으로 찍힌다.
                 change(.innings, previous, current, lowerIsBetter: false) {
-                    PitchingMetrics.innings(outs: $0.inningsOuts)
+                    Double($0.inningsOuts)
                 },
                 change(.wins, previous, current, lowerIsBetter: false) {
                     Double($0.wins)
@@ -67,8 +69,16 @@ public enum ProSeasonComparisonRules {
             previous: value(previous),
             current: value(current),
             lowerIsBetter: lowerIsBetter,
-            isWholeNumber: kind == .wins
+            format: format(for: kind)
         )
+    }
+
+    private static func format(for kind: ProSeasonMetricKind) -> CareerMetricChange.Format {
+        switch kind {
+        case .wins: .whole
+        case .innings: .innings
+        default: .decimal
+        }
     }
 
     public static let contentKeys: [String] = ProSeasonMetricKind.allCases.map(label)

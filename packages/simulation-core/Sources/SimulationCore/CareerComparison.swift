@@ -14,8 +14,18 @@ public struct CareerMetricChange: Equatable, Sendable, Identifiable {
     public let current: Double?
     /// 낮을수록 좋은 지표인가(평균자책·WHIP·볼넷).
     public let lowerIsBetter: Bool
-    /// 정수로 적을 지표인가(승리·평가점수). 나머지는 소수 둘째 자리다.
-    public let isWholeNumber: Bool
+    /// 어떻게 적을 값인가.
+    public let format: Format
+
+    public enum Format: String, Codable, Sendable {
+        /// 소수 둘째 자리.
+        case decimal
+        /// 정수(승리·평가점수).
+        case whole
+        /// **야구 기록지 이닝.** 소수점 뒤는 십진수가 아니라 아웃 개수다 — 95⅔이닝은
+        /// 95.70이 아니라 95.2로 적는다.
+        case innings
+    }
 
     public init(
         id: String,
@@ -23,14 +33,14 @@ public struct CareerMetricChange: Equatable, Sendable, Identifiable {
         previous: Double?,
         current: Double?,
         lowerIsBetter: Bool,
-        isWholeNumber: Bool = false
+        format: Format = .decimal
     ) {
         self.id = id
         self.labelKey = labelKey
         self.previous = previous
         self.current = current
         self.lowerIsBetter = lowerIsBetter
-        self.isWholeNumber = isWholeNumber
+        self.format = format
     }
 
     /// 나중 − 이전. 어느 한쪽이라도 없으면 nil이다 — **모르는 것을 0으로 세지 않는다.**

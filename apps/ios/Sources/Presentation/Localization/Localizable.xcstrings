@@ -35941,13 +35941,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@が最も良くなりました。"
+            "value": "%1$@ — 最も良くなりました。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@이(가) 가장 크게 좋아졌습니다."
+            "value": "%1$@ — 가장 크게 좋아졌습니다."
           }
         }
       }

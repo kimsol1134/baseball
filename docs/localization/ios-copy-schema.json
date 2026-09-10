@@ -80157,9 +80157,9 @@
     {
       "key": "record.season-comparison.headline",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
-      "ko": "%1$@이(가) 가장 크게 좋아졌습니다.",
+      "ko": "%1$@ — 가장 크게 좋아졌습니다.",
       "en": "%1$@ improved the most.",
-      "ja": "%1$@が最も良くなりました。",
+      "ja": "%1$@ — 最も良くなりました。",
       "ko_state": "translated",
       "en_state": "translated",
       "ja_state": "translated",

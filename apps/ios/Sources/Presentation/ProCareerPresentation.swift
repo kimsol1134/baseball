@@ -1247,7 +1247,15 @@ struct CareerComparisonCard: View {
     /// 잴 수 없으면 `—`다 — **0으로 적지 않는다.**
     private func text(_ value: Double?, _ metric: CareerMetricChange) -> String {
         guard let value else { return copyResolver.resolve(.seasonComparisonUnknown) }
-        return metric.isWholeNumber ? String(Int(value)) : String(format: "%.2f", value)
+        switch metric.format {
+        case .whole:
+            return String(Int(value))
+        case .innings:
+            // 소수점 뒤는 십진수가 아니라 아웃 개수다. 95⅔이닝은 95.70이 아니라 95.2다.
+            return PitchingMetrics.inningsText(outs: Int(value))
+        case .decimal:
+            return String(format: "%.2f", value)
+        }
     }
 
     private func color(_ metric: CareerMetricChange) -> Color {
@@ -1287,6 +1295,11 @@ struct AlbumReplayCard: View {
                         .foregroundStyle(BaseballTheme.milestone)
                         .accessibilityHidden(true)
                 }
+                // **무엇이 일어났는지 없으면 삼진과 피홈런이 같은 그림이 된다.**
+                Text(verbatim: copyResolver.resolve(replay.outcome.displayCopyToken))
+                    .detailStyle(
+                        replay.outcome == .homeRun ? BaseballTheme.negative : BaseballTheme.positive
+                    )
                 Text(verbatim: copyResolver.resolve(replay.pitchType.nameCopyToken))
                     .detailStyle(BaseballTheme.textSecondary)
                 Text(verbatim: "\(replay.velocityTenthsKPH / 10)")
@@ -1393,6 +1406,17 @@ struct AbilityGrowthGraph: View {
                 }
                 .frame(height: 96)
                 .accessibilityHidden(true)
+
+                // 가로축에 시즌 번호를 적는다. 점은 등간격이지만 번호가 있어야 그 사이가
+                // 한 해인지 세 해인지 읽힌다.
+                HStack(spacing: 0) {
+                    ForEach(points) { point in
+                        Text(verbatim: "\(point.season)")
+                            .font(.system(size: 9).monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
 
                 HStack(spacing: 10) {
                     ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
