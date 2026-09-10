@@ -19,7 +19,41 @@ final class PitchSession {
         case betweenBatters(String)
         /// 이닝이 끝났다. 리포트가 확정됐다.
         case finished
-        case failed(String)
+        /// 무너진 자리와 그때 알고 있던 것 전부. 화면은 여기서 출구를 고른다(7-B).
+        case failed(PitchFailureDiagnosis)
+    }
+
+    /// 이 세션 한 판을 로그에서 이어 붙이는 끈.
+    let sessionID = UUID().uuidString
+
+    /// 실패 진단을 만든다. 저장 확인은 호출자가 넘긴 값을 쓴다 — 세션은 디스크를 모른다.
+    private func diagnose(
+        _ error: Error,
+        step: PitchFailureDiagnosis.Step,
+        savedRevision: UInt64 = 0,
+        expectedRevision: UInt64 = 0,
+        commandID: String? = nil
+    ) -> PitchFailureDiagnosis {
+        PitchFailureDiagnosis(
+            step: step,
+            correlationID: UUID().uuidString,
+            sessionID: sessionID,
+            pitchID: "\(sessionID):\(pitchLog.count)",
+            commandID: commandID,
+            expectedRevision: expectedRevision,
+            currentRevision: savedRevision,
+            failure: CareerActionFailureRules.classify(error),
+            recovery: PitchFailureRecoveryRules.recovery(
+                savedRevision: savedRevision,
+                expectedRevision: expectedRevision
+            )
+        )
+    }
+
+    private func fail(_ error: Error, step: PitchFailureDiagnosis.Step) {
+        let diagnosis = diagnose(error, step: step)
+        stage = .failed(diagnosis)
+        CareerTelemetry.log(.pitchFailed, diagnosis.analyticsProperties)
     }
 
     private let engine = PitchKernelEngine(
@@ -437,7 +471,7 @@ final class PitchSession {
                 ])
             }
         } catch {
-            stage = .failed(error.localizedDescription)
+            fail(error, step: .submit)
         }
     }
 
@@ -747,7 +781,7 @@ final class PitchSession {
             applyRecommendation(prepared)
             stage = .ready
         } catch {
-            stage = .failed(error.localizedDescription)
+            fail(error, step: .prepare)
         }
     }
 

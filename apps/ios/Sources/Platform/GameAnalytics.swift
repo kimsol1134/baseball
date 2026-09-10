@@ -280,6 +280,8 @@ enum GameAnalytics {
         case screenStallDetected = "screen_stall_detected"
         /// 멈춘 화면을 복구 버튼으로 빠져나왔다. detected 대비 복구율을 본다.
         case screenStallRecovered = "screen_stall_recovered"
+        /// 투구가 무너진 자리와 저장 확인 결과(7-B). 속성은 전부 저카디널리티다.
+        case pitchFailed = "pitch_failed"
         /// 은퇴 후 '다음 선수 준비'가 실패했다. `reason`으로 저장 실패와 연결 붕괴를 나눈다.
         case legacyHandoffFailed = "legacy_handoff_failed"
     }

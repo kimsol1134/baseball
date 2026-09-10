@@ -165,6 +165,23 @@ extension MobileCareerStore {
         return completedSeasons > 0 ? "\(completedSeasons)시즌" : "프로 첫 시즌"
     }
 
+    /// 실패 뒤 **저장이 확인된** 등판을 재실행 없이 마무리한다(7-B).
+    ///
+    /// 같은 리포트를 다시 얹지 않는 것이 요점이다. 디스크에서 현재 상태를 다시 읽고,
+    /// 그 상태가 살아 있으면 세션만 닫는다 — 이미 기록된 이닝을 두 번 반영하지 않는다.
+    @discardableResult
+    func confirmSavedImportantGame() -> Bool {
+        guard pitchSession != nil else { return false }
+        guard case .live = restore() else { return false }
+        pitchSession = nil
+        lastActionFailure = nil
+        loadState = .ready
+        lastSummary = "저장된 등판 결과를 불러왔습니다."
+        feedbackCue = .neutral
+        feedbackTrigger += 1
+        return true
+    }
+
     @discardableResult
     func abandonImportantGame() -> Bool {
         guard let result, pitchSession != nil else { return false }

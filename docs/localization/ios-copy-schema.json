@@ -70475,6 +70475,50 @@
       "status": "ui_verified"
     },
     {
+      "key": "pitch.failure.abandon",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "돌아가기",
+      "en": "Go back",
+      "ja": "戻る",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "pitch.failure.confirm-result",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "결과 확인하기",
+      "en": "See the result",
+      "ja": "結果を確認する",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "pitch.failure.saved",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "이 등판의 결과는 저장돼 있어요.",
+      "en": "This outing's result is already saved.",
+      "ja": "この登板の結果は保存されています。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "pitch.failure.uncertain",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "아직 반영되지 않았어요. 돌아가면 저장된 이닝부터 이어서 던질 수 있어요.",
+      "en": "It hasn't been recorded yet. Go back and you can continue from the saved inning.",
+      "ja": "まだ反映されていません。戻れば保存されたイニングから続けて投げられます。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "pitch.fast-forward.body",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "포수 추천과 무난한 릴리스로 타석이 끝날 때까지 던집니다.",

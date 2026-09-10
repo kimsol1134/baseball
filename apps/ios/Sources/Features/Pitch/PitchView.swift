@@ -7,6 +7,10 @@ struct PitchView: View {
     let onFinish: () -> Void
     /// 등판 중단(진행 파기). nil이면 중단 버튼을 그리지 않는다 — 튜토리얼 불펜에는 없다.
     var onAbort: (() -> Void)? = nil
+    /// 저장이 확인된 등판을 재실행 없이 닫는다(7-B). nil이면 그 출구를 열지 않는다.
+    var onConfirmSaved: (() -> Void)? = nil
+    /// 디스크에 이어할 이닝이 남아 있는가. 실패 화면의 출구를 정하는 데 쓴다.
+    var hasSavedResume = false
     /// 연습 타석(프롤로그 불펜). 기록에 안 남는 판에 '각성의 전조 +2' 같은
     /// 정산을 그리면 첫 5분에 거짓 영수증을 발행하는 셈이다.
     var isPractice = false
@@ -715,11 +719,52 @@ struct PitchView: View {
         }
     }
 
+    /// 실패한 투구에서 나가는 길. 결과가 커밋됐으면 포기가 아니라 결과 확인이다.
+    @ViewBuilder
+    private func failureExit(_ diagnosis: PitchFailureDiagnosis) -> some View {
+        let exit = PitchSessionTransitionRules.exit(
+            for: diagnosis,
+            hasSavedResume: hasSavedResume,
+            pitchesThrown: session.pitchLog.count
+        )
+        switch exit {
+        case .confirmResult:
+            if let onConfirmSaved {
+                Text(verbatim: copyResolver.resolve(AppCopyKey.pitchFailureSaved)).detailStyle()
+                PrimaryPill(
+                    title: copyResolver.resolve(AppCopyKey.pitchFailureConfirmResult),
+                    identifier: "pitch.failure.confirmResult",
+                    action: onConfirmSaved
+                )
+            }
+        case .resume:
+            Text(verbatim: copyResolver.resolve(AppCopyKey.pitchFailureUncertain)).detailStyle()
+        case .abandon:
+            if let onAbort {
+                PrimaryPill(
+                    title: copyResolver.resolve(AppCopyKey.pitchFailureAbandon),
+                    identifier: "pitch.failure.abandon",
+                    action: onAbort
+                )
+            }
+        }
+    }
+
     @ViewBuilder private var stage: some View {
         switch session.stage {
-        case .failed:
+        case .failed(let diagnosis):
             BaseballCard(title: copyResolver.resolve(.stateFailedTitle), tone: .negative) {
-                Text(verbatim: copyResolver.resolve(.stateFailedBody)).proseStyle()
+                VStack(alignment: .leading, spacing: 10) {
+                    // 무엇이 잘못됐는지는 갈래가 말한다. "저장 공간"을 아무 실패에나
+                    // 붙이지 않는다(7-A).
+                    Text(verbatim: CareerFailureCopy.message(
+                        for: diagnosis.failure,
+                        resolver: copyResolver
+                    ))
+                    .proseStyle()
+                    // 나가는 길은 **저장이 어떻게 됐는지**가 정한다(7-B·7-C).
+                    failureExit(diagnosis)
+                }
             }
         case .finished:
             // 이닝을 끝낸 공도 장면부터 보여 준다.

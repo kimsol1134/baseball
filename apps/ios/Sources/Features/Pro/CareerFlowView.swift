@@ -37,7 +37,9 @@ struct CareerFlowView: View {
         if let state = career.state {
             if state.phase == .importantGame, let session = career.pitchSession {
                 PitchView(session: session, onFinish: career.finishImportantGame,
-                          onAbort: { _ = career.abandonImportantGame() })
+                          onAbort: { _ = career.abandonImportantGame() },
+                          onConfirmSaved: { _ = career.confirmSavedImportantGame() },
+                          hasSavedResume: career.gameResume != nil)
             } else {
                 switch state.phase {
                 case .contractOffer:

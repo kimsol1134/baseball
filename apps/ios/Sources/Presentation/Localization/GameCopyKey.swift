@@ -146,6 +146,12 @@ public enum AppCopyKey {
     public static let openingStart = GameCopyKey.localizable("opening.start")
     public static let onboardingBullpenNameCTA = GameCopyKey.localizable("onboarding.bullpen.name-cta")
 
+    /// 실패한 투구에서 나가는 길(7-B).
+    public static let pitchFailureSaved = GameCopyKey.localizable("pitch.failure.saved")
+    public static let pitchFailureUncertain = GameCopyKey.localizable("pitch.failure.uncertain")
+    public static let pitchFailureConfirmResult = GameCopyKey.localizable("pitch.failure.confirm-result")
+    public static let pitchFailureAbandon = GameCopyKey.localizable("pitch.failure.abandon")
+
     /// 실패 갈래별 문장(7-A). 규칙이 거절한 일에 저장 공간을 말하지 않는다.
     public static let failureRule = GameCopyKey.localizable("failure.rule")
     public static let failureStaleState = GameCopyKey.localizable("failure.stale-state")
@@ -887,6 +893,7 @@ public enum AppCopyKey {
         conversationEyebrow, conversationResultEyebrow, conversationSceneDisclosure,
         draftJourneyUndrafted, draftJourneyPick, draftJourneyRecord, draftJourneyGrowth,
         draftJourneyEffort, draftJourneyCoachTrusted, draftJourneyCoachNext,
+        pitchFailureSaved, pitchFailureUncertain, pitchFailureConfirmResult, pitchFailureAbandon,
         failureRule, failureStaleState, failurePitchState, failureStorageFull,
         failureIO, failureIORepeated, failureSaveValidation, failureWriteDisabled, failureUnknown,
         rebirthPathTitle, rebirthPathBody, rebirthPathConfirm, rebirthPathPrimaryPitch,
