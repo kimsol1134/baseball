@@ -62,6 +62,7 @@ enum RecordUICopyKey: String, CaseIterable, Sendable {
     case seasonComparisonUnknown = "record.season-comparison.unknown"
     case lineageComparisonTitle = "record.lineage-comparison.title"
     case lineageComparisonLives = "record.lineage-comparison.lives"
+    case abilityGrowthTitle = "record.ability-growth.title"
     case saberTitle = "record.saber.title"
     case saberIP = "record.saber.ip"
     case saberRA9 = "record.saber.ra9"

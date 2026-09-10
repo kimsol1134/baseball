@@ -34192,6 +34192,28 @@
         }
       }
     },
+    "record.ability-growth.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How you got here"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ここまでの歩み"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "여기까지 온 길"
+          }
+        }
+      }
+    },
     "record.ability.command": {
       "localizations": {
         "en": {

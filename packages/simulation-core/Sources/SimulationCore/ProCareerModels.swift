@@ -557,6 +557,16 @@ public struct ProSeasonStats: Codable, Equatable, Sendable {
     public let saves: Int
     /// 해당 시즌의 포스트시즌 경기 원장. 구저장본과 진출 실패 시즌은 nil이다.
     public let postseasonGames: [ProPostseasonGameLine]?
+    /// 이 시즌을 끝냈을 때의 네 능력(구위·제구·무브먼트·체력).
+    ///
+    /// **성장 그래프를 그릴 데이터가 어디에도 없었다.** 시즌 기록은 성적만 남기고 능력은
+    /// 지금 값 하나뿐이라, "3년 전의 나"를 그릴 방법이 없었다(안드로이드도 같다). 시즌 행에
+    /// 함께 남기면 별도 이력 필드도, 별도 수집 훅도 필요 없다 — 이 행은 이미 시즌 결산에서
+    /// 한 번씩 쌓이고 서명된 상태 안에 있다.
+    ///
+    /// 없는 옛 시즌은 nil이며 그래프는 그 지점을 건너뛴다. 추정하지 않는다.
+    public let abilities: [Int]?
+
     /// 자책점. **nil은 0이 아니라 '모른다'이다.**
     ///
     /// 자책점은 실책과 승계 주자를 가려내는 원장이 있어야만 나오고, 그 원장은 프로 규칙 12
@@ -564,8 +574,8 @@ public struct ProSeasonStats: Codable, Equatable, Sendable {
     /// 화면에 나오는 방어율이 그 시즌에 실제로 있었던 일과 무관해진다. 그래서 한 경기라도
     /// 원장이 없는 시즌은 통째로 nil로 남고, 화면은 `—`를 보여 준다.
     public let earnedRuns: Int?
-    public init(season: Int, teamID: String, games: Int = 0, starts: Int = 0, inningsOuts: Int = 0, strikeouts: Int = 0, walks: Int = 0, runsAllowed: Int = 0, hits: Int = 0, homeRuns: Int = 0, pitches: Int = 0, wins: Int = 0, losses: Int = 0, saves: Int = 0, postseasonGames: [ProPostseasonGameLine]? = nil, earnedRuns: Int? = nil) {
-        self.season = season; self.teamID = teamID; self.games = games; self.starts = starts; self.inningsOuts = inningsOuts; self.strikeouts = strikeouts; self.walks = walks; self.runsAllowed = runsAllowed; self.hits = hits; self.homeRuns = homeRuns; self.pitches = pitches; self.wins = wins; self.losses = losses; self.saves = saves; self.postseasonGames = postseasonGames; self.earnedRuns = earnedRuns
+    public init(season: Int, teamID: String, games: Int = 0, starts: Int = 0, inningsOuts: Int = 0, strikeouts: Int = 0, walks: Int = 0, runsAllowed: Int = 0, hits: Int = 0, homeRuns: Int = 0, pitches: Int = 0, wins: Int = 0, losses: Int = 0, saves: Int = 0, postseasonGames: [ProPostseasonGameLine]? = nil, earnedRuns: Int? = nil, abilities: [Int]? = nil) {
+        self.season = season; self.teamID = teamID; self.games = games; self.starts = starts; self.inningsOuts = inningsOuts; self.strikeouts = strikeouts; self.walks = walks; self.runsAllowed = runsAllowed; self.hits = hits; self.homeRuns = homeRuns; self.pitches = pitches; self.wins = wins; self.losses = losses; self.saves = saves; self.postseasonGames = postseasonGames; self.earnedRuns = earnedRuns; self.abilities = abilities
     }
 
     /// 없는 키는 0으로 읽는다.
@@ -591,9 +601,14 @@ public struct ProSeasonStats: Codable, Equatable, Sendable {
         saves = try container.decodeIfPresent(Int.self, forKey: .saves) ?? 0
         postseasonGames = try container.decodeIfPresent([ProPostseasonGameLine].self, forKey: .postseasonGames)
         earnedRuns = try container.decodeIfPresent(Int.self, forKey: .earnedRuns)
+        abilities = try container.decodeIfPresent([Int].self, forKey: .abilities)
     }
 
-    public func archivingPostseason(_ games: [ProPostseasonGameLine]?) -> ProSeasonStats {
+    /// 시즌을 기록으로 넘긴다. 그 시점의 능력을 함께 새겨야 나중에 성장 그래프가 그려진다.
+    public func archivingPostseason(
+        _ games: [ProPostseasonGameLine]?,
+        abilities pitcher: PitcherSnapshot? = nil
+    ) -> ProSeasonStats {
         ProSeasonStats(
             season: season,
             teamID: teamID,
@@ -610,7 +625,8 @@ public struct ProSeasonStats: Codable, Equatable, Sendable {
             losses: losses,
             saves: saves,
             postseasonGames: games?.isEmpty == false ? games : nil,
-            earnedRuns: earnedRuns
+            earnedRuns: earnedRuns,
+            abilities: pitcher.map { [$0.stuff, $0.command, $0.movement, $0.stamina] } ?? abilities
         )
     }
 }

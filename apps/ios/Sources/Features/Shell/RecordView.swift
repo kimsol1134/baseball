@@ -392,6 +392,16 @@ private struct RecordBoard: View {
                         Text(ProCareerPresentation.buildStrength(identity, resolver: copyResolver))
                             .detailStyle(BaseballTheme.positive)
                             .fontWeight(.semibold)
+
+                        // 막대는 "지금 어떤 투수인가"를 말하고, 그래프는 "어떻게 여기까지
+                        // 왔는가"를 말한다. 시즌을 두 번 이상 넘긴 뒤에만 선다.
+                        let history = CareerDisplayRules.abilityHistory(for: state)
+                        if history.count >= 2 {
+                            Divider().overlay(BaseballTheme.border)
+                            Text(verbatim: copyResolver.resolve(.abilityGrowthTitle))
+                                .eyebrowStyle(BaseballTheme.textTertiary)
+                            AbilityGrowthGraph(points: history)
+                        }
                     }
                 }
 

@@ -79297,6 +79297,17 @@
       "status": "ui_verified"
     },
     {
+      "key": "record.ability-growth.title",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "여기까지 온 길",
+      "en": "How you got here",
+      "ja": "ここまでの歩み",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "record.ability.command",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "제구",

@@ -2142,7 +2142,12 @@ public struct ProCareerEngine: Sendable {
         let phase: ProCareerPhase = state.season >= Self.maximumCareerSeasons
             ? .retirementDecision : .offseasonDecision
         let news = ["시즌 \(state.season) 종료 · \(state.currentStats.games)경기 · \(state.currentStats.strikeouts)K · 9이닝당 실점 \(String(format: "%.2f", Double(runsPer9Permille) / 1000))"] + state.news
-        let archivedStats = state.currentStats.archivingPostseason(state.postseason?.gameHistory)
+        // 시즌을 넘길 때 그 시점의 능력을 함께 새긴다. v10 경로는 새기지 않는다 — 이미 배포된
+        // 계산이고, 패리티 픽스처가 붙들고 있는 경로다.
+        let archivedStats = state.currentStats.archivingPostseason(
+            state.postseason?.gameHistory,
+            abilities: ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) ? state.pitcher : nil
+        )
         let updated = replacing(state, revision: state.revision + 1, phase: phase, careerStats: state.careerStats + [archivedStats], awards: awards, milestones: milestones, news: Array(news.prefix(30)))
         return result(updated, nextSeed: String(rng.next()), events: ["pro_season_reviewed"])
     }

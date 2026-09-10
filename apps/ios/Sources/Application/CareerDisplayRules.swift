@@ -201,6 +201,10 @@ enum CareerDisplayRules {
         ProAdvancementRules.board(state: state)
     }
 
+    nonisolated static func abilityHistory(for state: ProCareerSnapshot) -> [AbilityHistoryPoint] {
+        AbilityGrowthHistoryRules.history(state: state)
+    }
+
     nonisolated static func seasonComparison(for state: ProCareerSnapshot) -> CareerComparison? {
         ProSeasonComparisonRules.compare(state: state)
     }

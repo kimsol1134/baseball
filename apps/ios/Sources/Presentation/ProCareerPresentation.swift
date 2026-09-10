@@ -1259,6 +1259,99 @@ struct CareerComparisonCard: View {
     }
 }
 
+/// 능력 네 축의 고정 색.
+///
+/// **막대에는 쓰지 않는다.** `AbilityGaugeView`의 막대는 값의 좋고 나쁨으로 색을 정하고
+/// (`RatingScale.tone`), 그 색이 "45가 좋은 값인가"를 말한다 — 축 색으로 덮으면 그 정보를
+/// 잃는다. 이 색은 **네 선을 구분해야 하는 그래프**의 것이다.
+extension PitchAbilityAxis {
+    var tint: Color {
+        switch self {
+        case .stuff: BaseballTheme.teamOrange
+        case .command: BaseballTheme.teamBlue
+        case .movement: BaseballTheme.teamViolet
+        case .stamina: BaseballTheme.teamTeal
+        }
+    }
+
+    var copyKey: RecordUICopyKey {
+        switch self {
+        case .stuff: .stuff
+        case .command: .command
+        case .movement: .movement
+        case .stamina: .stamina
+        }
+    }
+}
+
+/// 능력이 시즌을 지나며 어떻게 움직였는가.
+///
+/// **가로축은 저장된 변화의 순서이지 시간이 아니다.** 비는 시즌이 있고 능력을 새기기 전에
+/// 흘러간 시즌도 있어서, 간격을 시간인 척 그리면 화면이 없는 값을 지어내게 된다. 그래서 점을
+/// 등간격으로 놓고 축에 시즌 번호를 적는다.
+struct AbilityGrowthGraph: View {
+    let points: [AbilityHistoryPoint]
+    var identifier = "pro.ability.graph"
+
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        if points.count >= 2 {
+            VStack(alignment: .leading, spacing: 6) {
+                GeometryReader { proxy in
+                    ZStack {
+                        ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
+                            path(for: axis, in: proxy.size)
+                                .stroke(axis.tint, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                        }
+                    }
+                }
+                .frame(height: 96)
+                .accessibilityHidden(true)
+
+                HStack(spacing: 10) {
+                    ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
+                        HStack(spacing: 4) {
+                            Circle().fill(axis.tint).frame(width: 7, height: 7)
+                            Text(verbatim: copyResolver.resolve(axis.copyKey))
+                                .detailStyle(BaseballTheme.textTertiary)
+                        }
+                    }
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(accessibilitySummary)
+            .accessibilityIdentifier(identifier)
+        }
+    }
+
+    private func path(for axis: PitchAbilityAxis, in size: CGSize) -> Path {
+        Path { path in
+            let maximum = CGFloat(AbilityGrowthHistoryRules.axisMaximum)
+            let step = points.count > 1 ? size.width / CGFloat(points.count - 1) : 0
+            for (index, point) in points.enumerated() {
+                let x = step * CGFloat(index)
+                let y = size.height - size.height * CGFloat(point.value(axis)) / maximum
+                if index == 0 {
+                    path.move(to: CGPoint(x: x, y: y))
+                } else {
+                    path.addLine(to: CGPoint(x: x, y: y))
+                }
+            }
+        }
+    }
+
+    /// 그림은 읽어 줄 수 없으므로 축마다 "처음 → 지금"을 말한다.
+    private var accessibilitySummary: String {
+        PitchAbilityAxis.allCases.map { axis in
+            let first = points.first?.value(axis) ?? 0
+            let last = points.last?.value(axis) ?? 0
+            return "\(copyResolver.resolve(axis.copyKey)) \(first) → \(last)"
+        }
+        .joined(separator: ", ")
+    }
+}
+
 struct GoalPermilleBar: View {
     let permille: Int
     let completed: Bool

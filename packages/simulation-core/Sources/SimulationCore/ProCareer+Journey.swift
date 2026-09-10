@@ -482,7 +482,12 @@ extension ProCareerEngine {
             recognitions: journey.recognitions,
             existing: journey.teamRecords
         )
-        let archivedStats = state.currentStats.archivingPostseason(state.postseason?.gameHistory)
+        // 시즌을 넘길 때 그 시점의 능력을 함께 새긴다. v10 경로는 새기지 않는다 — 이미 배포된
+        // 계산이고, 패리티 픽스처가 붙들고 있는 경로다.
+        let archivedStats = state.currentStats.archivingPostseason(
+            state.postseason?.gameHistory,
+            abilities: ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) ? state.pitcher : nil
+        )
         let completedCareerStats = state.careerStats + [archivedStats]
         let typedAdditions = ProCareerRecognitionRules.currentSeasonRecognitions(
             careerID: state.proCareerID,
