@@ -146,6 +146,10 @@ public enum AppCopyKey {
     public static let openingStart = GameCopyKey.localizable("opening.start")
     public static let onboardingBullpenNameCTA = GameCopyKey.localizable("onboarding.bullpen.name-cta")
 
+    /// 저장 내보내기(7-E).
+    public static let settingsExportSave = GameCopyKey.localizable("settings.export-save")
+    public static let settingsExportSaveFooter = GameCopyKey.localizable("settings.export-save.footer")
+
     /// 실패한 투구에서 나가는 길(7-B).
     public static let pitchFailureSaved = GameCopyKey.localizable("pitch.failure.saved")
     public static let pitchFailureUncertain = GameCopyKey.localizable("pitch.failure.uncertain")
@@ -893,6 +897,7 @@ public enum AppCopyKey {
         conversationEyebrow, conversationResultEyebrow, conversationSceneDisclosure,
         draftJourneyUndrafted, draftJourneyPick, draftJourneyRecord, draftJourneyGrowth,
         draftJourneyEffort, draftJourneyCoachTrusted, draftJourneyCoachNext,
+        settingsExportSave, settingsExportSaveFooter,
         pitchFailureSaved, pitchFailureUncertain, pitchFailureConfirmResult, pitchFailureAbandon,
         failureRule, failureStaleState, failurePitchState, failureStorageFull,
         failureIO, failureIORepeated, failureSaveValidation, failureWriteDisabled, failureUnknown,

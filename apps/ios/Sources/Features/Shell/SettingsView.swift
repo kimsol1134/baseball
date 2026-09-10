@@ -28,6 +28,8 @@ struct SettingsView: View {
     @State private var audio = GameAudio.shared
     @State private var achievements = AchievementStore.shared
     @State private var confirmingReset = false
+    /// 임시 폴더에 쓴 내보내기 파일. 설정 화면이 열릴 때 한 번 만든다.
+    @State private var exportedSaveURL: URL?
     @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
@@ -173,8 +175,19 @@ struct SettingsView: View {
                         GameCopyText(AppCopyKey.settingsShareCodeLabel)
                     }
                 }
+                // 저장이 거듭 실패할 때 남길 수 있는 유일한 것(7-E). 읽기만 하므로
+                // 내보내기가 저장을 더 위험하게 만들지 않는다.
+                if let url = exportedSaveURL {
+                    ShareLink(item: url) {
+                        GameCopyText(AppCopyKey.settingsExportSave)
+                    }
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .accessibilityIdentifier("settings.exportSave")
+                }
             } header: {
                 GameCopyText(AppCopyKey.settingsProgressSectionTitle)
+            } footer: {
+                GameCopyText(AppCopyKey.settingsExportSaveFooter)
             }
 
             Section {
@@ -187,6 +200,7 @@ struct SettingsView: View {
         }
         .scrollContentBackground(.hidden)
         .background(BaseballTheme.canvas)
+        .task { exportedSaveURL = SaveExport.bundle(highSchool: highSchool, pro: pro).flatMap(SaveExport.writeTemporaryFile) }
         .navigationTitle(copyResolver.resolve(AppCopyKey.settingsNavigationTitle))
         .navigationBarTitleDisplayMode(.inline)
         .alert(

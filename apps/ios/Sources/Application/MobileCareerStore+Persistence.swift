@@ -289,7 +289,11 @@ extension MobileCareerStore {
         _ action: () throws -> ProCareerResult
     ) -> Bool {
         // 영수증은 상태를 바꾸기 전에 본다. 명령을 실행한 뒤에 거절하면 이미 늦었다.
-        if let operation, !acceptsCommand(operation) { return false }
+        if let operation, !acceptsCommand(operation) {
+            // 재전송은 규칙이 막은 것이지 저장이 실패한 것이 아니다(7-A·7-D).
+            recordFailure(.init(kind: .rule, code: "duplicate_command"), operation: operation)
+            return false
+        }
         stagedCommandOperation = operation
         // 저장이 실패했거나 규칙이 거절했으면 이 명령의 영수증을 다음 저장에 얹지 않는다.
         defer { stagedCommandOperation = nil }

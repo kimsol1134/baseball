@@ -301,6 +301,39 @@ final class PresentationTests: XCTestCase {
         XCTAssertFalse(proDecision.contains(".confirmationDialog("))
     }
 
+    /// 7-E. 저장이 거듭 실패할 때 안내하는 그 자리가 실제로 있어야 한다 — 문구만 있고
+    /// 기능이 없으면 그 안내는 거짓말이다.
+    @MainActor
+    func testSettingsCanActuallyExportTheSave() throws {
+        let highSchool = HighSchoolCareerStore(saveWriter: { _ in true })
+        XCTAssertTrue(highSchool.installTrainingFixtureForUITesting())
+        let pro = MobileCareerStore(saveWriter: { _ in true }, configuration: .production)
+
+        let bundle = try XCTUnwrap(SaveExport.bundle(highSchool: highSchool, pro: pro))
+        XCTAssertFalse(bundle.isEmpty)
+        let url = try XCTUnwrap(SaveExport.writeTemporaryFile(bundle))
+        addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+        let written = try Data(contentsOf: url)
+        XCTAssertFalse(written.isEmpty)
+
+        // 담긴 것은 저장 원본 그대로다 — 다시 해석하지 않으므로 스키마가 올라가도 깨지지 않는다.
+        let decoded = try JSONDecoder().decode(SaveExportBundle.self, from: written)
+        XCTAssertNotNil(decoded.highSchool)
+
+        // 내보내기는 **읽기만 한다.** 저장을 건드리면 마지막 사본마저 위험해진다.
+        XCTAssertEqual(highSchool.state?.phase, .training)
+        XCTAssertNil(highSchool.lastActionFailure)
+
+        // 반복 실패 안내가 가리키는 자리가 이것이다.
+        let korean = GameCopyResolver(language: .korean, policy: .releaseSafe)
+        let advice = korean.resolve(AppCopyKey.failureIORepeated)
+        XCTAssertTrue(advice.contains("설정"), advice)
+        XCTAssertTrue(
+            korean.resolve(AppCopyKey.settingsExportSave).contains("파일"),
+            "안내와 실제 항목이 같은 것을 가리켜야 한다"
+        )
+    }
+
     /// 7-A. 규칙이 거절한 일은 **커리어를 못 쓰게 만들지 않고**, 저장 공간을 탓하지도 않는다.
     @MainActor
     func testARuleRejectionDoesNotBlankTheCareerOrBlameStorage() throws {

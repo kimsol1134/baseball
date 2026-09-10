@@ -81431,6 +81431,28 @@
       "status": "ui_verified"
     },
     {
+      "key": "settings.export-save",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "기록을 파일로 보관",
+      "en": "Save a copy of your record",
+      "ja": "記録をファイルに保存",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "settings.export-save.footer",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "지금 진행을 파일 한 장으로 꺼냅니다. 저장이 거듭 실패할 때 먼저 이 파일을 보관해 주세요.",
+      "en": "Exports your current progress as one file. If saving keeps failing, keep this file first.",
+      "ja": "現在の進行をファイル1つに書き出します。保存が繰り返し失敗するときは、まずこのファイルを保管してください。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "settings.glossary.footer",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "구위·제구처럼 화면에 나오는 말을 짧게 풀어 둡니다.",

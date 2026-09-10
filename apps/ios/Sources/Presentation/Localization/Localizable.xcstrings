@@ -46572,6 +46572,50 @@
           }
         }
       }
+    },
+    "settings.export-save": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save a copy of your record"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録をファイルに保存"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기록을 파일로 보관"
+          }
+        }
+      }
+    },
+    "settings.export-save.footer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exports your current progress as one file. If saving keeps failing, keep this file first."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在の進行をファイル1つに書き出します。保存が繰り返し失敗するときは、まずこのファイルを保管してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금 진행을 파일 한 장으로 꺼냅니다. 저장이 거듭 실패할 때 먼저 이 파일을 보관해 주세요."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
