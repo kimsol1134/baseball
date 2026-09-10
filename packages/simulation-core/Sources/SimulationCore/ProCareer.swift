@@ -659,7 +659,19 @@ public struct ProCareerEngine: Sendable {
             case .recover: -16
             }
             let outingLoad = (weekLine.pitches + 14) / 15
-            let staminaRelief = max(0, (state.pitcher.stamina - 50) / 15)
+            // 체력이 경기 **사이**에도 값을 해야 한다.
+            //
+            // 예전 식 `(체력−50)/15`는 체력 80에서 감면이 겨우 2였다. 40에서 80까지 올려도
+            // 주간 누적이 13에서 11로 바뀔 뿐이라, 어떤 투수든 3주에 한 주는 회복에 써야
+            // 했고 커리어는 늘 피로 50~70에서 돌아갔다. 그 피로가 `ProOutingUsageRules`의
+            // 교체 판단을 앞당겨 등판당 2~3이닝에 묶었다 — 체력을 키운 보상이 경기 안에서만
+            // 있고 시즌에는 없었다는 뜻이다.
+            //
+            // `(체력−40)/5`는 체력 80에서 8을 깎아 주간 누적을 5로 낮춘다. 세 주를 훈련하고
+            // 한 주를 쉬면 되는 몸이 된다. 체력 40은 그대로 매주 지친다.
+            let staminaRelief = ProGameplayRules.usesProfessionalBalance(state.proRulesVersion)
+                ? max(0, (state.pitcher.stamina - 40) / 5)
+                : max(0, (state.pitcher.stamina - 50) / 15)
             fatigueDelta = trainingLoad + outingLoad - staminaRelief
         } else if params.plan == .recover {
             fatigueDelta = -20
