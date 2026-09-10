@@ -173,12 +173,17 @@ struct DraftReasonCard: View {
 struct DraftPeakResultView: View {
     let state: HighSchoolCareerSnapshot
     let drafted: Bool
+    /// 회차를 시작할 때의 능력. 없으면 성장 막대만 접힌다(이 필드가 없던 구저장본).
+    var startingPitcher: PitcherSnapshot?
     let onContinue: () -> Void
     @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             if let draft = state.draftResult {
+                // 지명 결과가 먼저다. 점수와 근거보다 "어느 구단이 몇 번째로 불렀는가"가
+                // 3년의 대답이다(6-C).
+                draftDestination(draft)
                 let breakdown = HighSchoolCareerStore.draftEvaluationBreakdown(state: state)
                 let ranked = breakdown.items.sorted { lhs, rhs in
                     draft.outcome == .drafted ? lhs.points > rhs.points : lhs.points < rhs.points
@@ -216,6 +221,7 @@ struct DraftPeakResultView: View {
                         )
                     }
                 }
+                journeySummary
                 CareerShareButton(
                     model: CareerSharePresentation.draft(
                         result: draft,
@@ -233,6 +239,126 @@ struct DraftPeakResultView: View {
             )
         }
     }
+
+    /// 지명 구단 · 라운드 · 전체 순위. 미지명이면 그 사실 한 줄.
+    @ViewBuilder
+    private func draftDestination(_ draft: DraftResultSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(verbatim: draft.team.map {
+                ProCareerPresentation.teamName($0, resolver: copyResolver)
+            } ?? copyResolver.resolve(AppCopyKey.draftJourneyUndrafted))
+            .font(.title2.weight(.bold))
+            .foregroundStyle(BaseballTheme.milestone)
+            if let round = draft.round, let pick = draft.overallPick {
+                Text(copyResolver.resolve(
+                    AppCopyKey.draftJourneyPick,
+                    arguments: [.integer(round), .integer(pick)]
+                ))
+                .detailStyle(BaseballTheme.textPrimary)
+                .monospacedDigit()
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hs.draft.journey.destination")
+    }
+
+    /// 3년이 남긴 것. 신분 카드(이름·학교·얼굴)는 회차 카드가 이미 한 장으로 보여 주므로
+    /// 여기서 되풀이하지 않는다 — 여기 있는 것은 **여정의 숫자**뿐이다(6-C).
+    @ViewBuilder
+    private var journeySummary: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(copyResolver.resolve(
+                AppCopyKey.draftJourneyRecord,
+                arguments: [
+                    .integer(state.performance.importantGamesCompleted),
+                    .userText(GameFormatters.innings(
+                        outs: state.performance.outs ?? 0,
+                        language: copyResolver.language
+                    )),
+                    .integer(state.performance.strikeouts),
+                ]
+            ))
+            .proseStyle()
+            .monospacedDigit()
+            .accessibilityIdentifier("hs.draft.journey.record")
+
+            if let startingPitcher {
+                Text(copyResolver.resolve(AppCopyKey.draftJourneyGrowth))
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(BaseballTheme.textPrimary)
+                ProAbilityPanel(
+                    pitcher: state.pitcher,
+                    previous: AbilityHistoryPoint(
+                        season: 0,
+                        stuff: startingPitcher.stuff,
+                        command: startingPitcher.command,
+                        movement: startingPitcher.movement,
+                        stamina: startingPitcher.stamina
+                    ),
+                    identifierPrefix: "hs.draft.journey.ability"
+                )
+            }
+
+            Text(copyResolver.resolve(
+                AppCopyKey.draftJourneyEffort,
+                arguments: [
+                    .integer(state.totalTrainingsCompleted),
+                    .integer(state.relationshipsCompleted),
+                ]
+            ))
+            .detailStyle(BaseballTheme.textPrimary)
+            .monospacedDigit()
+            .accessibilityIdentifier("hs.draft.journey.effort")
+
+            EffectChip(
+                text: ProCareerPresentation.buildLabel(
+                    CareerDisplayRules.pitcherIdentity(for: state.pitcher),
+                    resolver: copyResolver
+                ),
+                tone: .neutral,
+                systemImage: "figure.baseball"
+            )
+            .accessibilityIdentifier("hs.draft.journey.build")
+
+            coachFarewell
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 감독의 마지막 한마디. 3년을 함께한 사람이 무슨 말로 보내는지는 **쌓은 믿음**이 정한다.
+    @ViewBuilder
+    private var coachFarewell: some View {
+        let trust = state.managerTrust ?? state.relationshipTrust
+        let quote = copyResolver.resolve(
+            trust >= DraftPeakResultView.trustedFarewellThreshold
+                ? AppCopyKey.draftJourneyCoachTrusted
+                : AppCopyKey.draftJourneyCoachNext
+        )
+        if let school = state.school {
+            AvatarRow(
+                // 시드는 관계 카드와 **같은 원본 이름**이어야 한다. 현지화된 표시 이름으로
+                // 시드를 주면 같은 감독이 화면마다 다른 얼굴이 된다.
+                seed: school.coachName,
+                role: .coach,
+                name: HighSchoolPresentation.localizedSchoolCastName(
+                    school,
+                    rawRegion: state.identity.region,
+                    role: .coach,
+                    resolver: copyResolver
+                ),
+                caption: quote,
+                size: 56
+            )
+            .accessibilityIdentifier("hs.draft.journey.coach")
+        } else {
+            Text(verbatim: quote)
+                .proseStyle()
+                .accessibilityIdentifier("hs.draft.journey.coach")
+        }
+    }
+
+    /// 주간 화면·자격 보드와 같은 "믿음이 두터운" 선. 안드로이드도 같은 65다.
+    static let trustedFarewellThreshold = 65
 
     private func nameKey(for id: String) -> GameCopyKey {
         switch id {
@@ -558,7 +684,90 @@ struct CompletionCard: View {
     /// 환생 스탬프를 띄우고 나서 다음 회차로 넘어간다. 화면이 갈아 끼워지기 전에
     /// 회차 번호를 보여 줘야 회차가 쌓이는 감각이 생긴다.
     let onRebirth: () -> Void
+    /// 고른 길로 다음 회차를 시작한다. nil이면 길 고르기 자체를 감춘다(도전 런 등).
+    var onRebirthPath: ((RebirthPath) -> Void)?
     @Environment(\.gameCopyResolver) private var copyResolver
+    @State private var selectedPath: RebirthPath?
+
+    /// **이번 생에는 다른 야구.** 이름·얼굴·앨범·이어받은 힘은 그대로 두고 성장 유형과
+    /// 주력 구종만 바꾼다. 대화 화면과 같은 카드 관용구를 쓰고, **확인 전에는 시작하지
+    /// 않는다** — 고르는 일은 명령이 아니다(6-E).
+    @ViewBuilder
+    private var rebirthPathPicker: some View {
+        if let onRebirthPath, career.canChooseRebirthPath {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(copyResolver.resolve(AppCopyKey.rebirthPathTitle))
+                    .font(.headline)
+                    .foregroundStyle(BaseballTheme.textPrimary)
+                Text(copyResolver.resolve(AppCopyKey.rebirthPathBody))
+                    .detailStyle()
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(RebirthPath.allCases, id: \.self) { path in
+                    ConversationChoiceCard(
+                        title: copyResolver.resolve(Self.pathTitleKey(path)),
+                        detail: copyResolver.resolve(Self.pathDetailKey(path)),
+                        chips: pathChips(path),
+                        isSelected: selectedPath == path,
+                        identifier: "hs.rebirthPath.\(path.rawValue)"
+                    ) {
+                        selectedPath = path
+                    }
+                }
+                PrimaryPill(
+                    title: copyResolver.resolve(AppCopyKey.rebirthPathConfirm),
+                    identifier: "hs.rebirthPath.confirm",
+                    enabled: selectedPath != nil
+                ) {
+                    guard let selectedPath else { return }
+                    onRebirthPath(selectedPath)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityIdentifier("hs.rebirthPath")
+        }
+    }
+
+    private func pathChips(_ path: RebirthPath) -> [ConversationChip] {
+        var chips: [ConversationChip] = []
+        if let identity = path.buildIdentity {
+            chips.append(ConversationChip(
+                id: "build",
+                text: ProCareerPresentation.buildLabel(identity, resolver: copyResolver),
+                tone: .neutral
+            ))
+        }
+        chips.append(ConversationChip(
+            id: "pitch",
+            text: copyResolver.resolve(
+                AppCopyKey.rebirthPathPrimaryPitch,
+                arguments: [.userText(PitchCopy.localized(path.primaryPitch, resolver: copyResolver))]
+            ),
+            tone: .gain
+        ))
+        chips.append(ConversationChip(
+            id: "role",
+            text: copyResolver.resolve(path.proRole.displayCopyToken),
+            tone: .neutral,
+            systemImage: "figure.baseball"
+        ))
+        return chips
+    }
+
+    private static func pathTitleKey(_ path: RebirthPath) -> GameCopyKey {
+        switch path {
+        case .endurance: AppCopyKey.rebirthPathEnduranceTitle
+        case .closer: AppCopyKey.rebirthPathCloserTitle
+        case .command: AppCopyKey.rebirthPathCommandTitle
+        }
+    }
+
+    private static func pathDetailKey(_ path: RebirthPath) -> GameCopyKey {
+        switch path {
+        case .endurance: AppCopyKey.rebirthPathEnduranceDetail
+        case .closer: AppCopyKey.rebirthPathCloserDetail
+        case .command: AppCopyKey.rebirthPathCommandDetail
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -774,6 +983,7 @@ struct CompletionCard: View {
                     .buttonStyle(.bordered)
                     .accessibilityIdentifier("hs.skipToPro")
                 }
+                rebirthPathPicker
                 PrimaryButton(title: copyResolver.resolve(
                     AppCopyKey.conclusionRebirthAction,
                     arguments: [.integer(career.inheritance.lifeNumber)]

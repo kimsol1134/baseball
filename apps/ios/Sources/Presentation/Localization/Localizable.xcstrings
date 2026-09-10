@@ -45912,6 +45912,380 @@
           }
         }
       }
+    },
+    "draft.journey.undrafted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not drafted this year"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今年のドラフトでは指名なし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 드래프트 미지명"
+          }
+        }
+      }
+    },
+    "draft.journey.pick": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Round %1$lld · Overall pick %2$lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld巡目 · 全体%2$lld位"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld라운드 · 전체 %2$lld순위"
+          }
+        }
+      }
+    },
+    "draft.journey.record": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld games · %2$@ · %3$lld strikeouts"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld試合 · %2$@ · %3$lld奪三振"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld경기 · %2$@ · %3$lld탈삼진"
+          }
+        }
+      }
+    },
+    "draft.journey.growth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where you started → where you are"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始まりの自分 → 今の自分"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "처음의 나 → 지금의 나"
+          }
+        }
+      }
+    },
+    "draft.journey.effort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld training sessions · %2$lld conversations"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld回の練習 · %2$lld回の会話"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld번의 훈련 · %2$lld번의 대화"
+          }
+        }
+      }
+    },
+    "draft.journey.coach.trusted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I trust the three years you built. Throw your own pitch on the next mound too."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "君が積み上げた3年を信じている。次のマウンドでも自分の球を投げろ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "네가 쌓은 3년을 믿는다. 다음 마운드에서도 네 공을 던져라."
+          }
+        }
+      }
+    },
+    "draft.journey.coach.next": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is not the end. Show your pitch on the next mound."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ここで終わりじゃない。次のマウンドで自分の球を見せろ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "여기서 끝은 아니다. 다음 마운드에서 네 공을 보여 줘라."
+          }
+        }
+      }
+    },
+    "rebirth.path.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A different game this life"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今度の人生は違う野球を"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 생에는 다른 야구"
+          }
+        }
+      }
+    },
+    "rebirth.path.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name, face, album, and inherited power all stay. Only the growth type and main pitch change, starting again from school selection."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名前・顔・アルバム・受け継いだ力はそのままです。成長タイプと決め球だけを変えて、学校選びからやり直します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이름·얼굴·앨범·이어받은 힘은 그대로예요. 성장 유형과 주력 구종을 바꾸고 학교 선택부터 시작합니다."
+          }
+        }
+      }
+    },
+    "rebirth.path.confirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start down this path"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この道で始める"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 길로 시작하기"
+          }
+        }
+      }
+    },
+    "rebirth.path.primary-pitch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main pitch: %1$@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "決め球 %1$@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "주력 %1$@"
+          }
+        }
+      }
+    },
+    "rebirth.path.endurance.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A starter who goes the distance"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最後まで投げ抜く先発"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "끝까지 책임지는 선발"
+          }
+        }
+      }
+    },
+    "rebirth.path.endurance.detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lean on stamina, work deep into games, and chase the complete game."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スタミナを土台に長いイニングを投げ、完投を狙います。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "체력을 앞세워 긴 이닝을 던지고 완투를 노립니다."
+          }
+        }
+      }
+    },
+    "rebirth.path.closer.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The final-out specialist"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最後のアウトを任される投手"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마지막 아웃의 주인공"
+          }
+        }
+      }
+    },
+    "rebirth.path.closer.detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Win short outings with breaking balls and apply for the closer role."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "変化球で短い勝負を制し、抑えの役割に志願します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "변화구로 짧게 승부하고 마무리 보직에 지원합니다."
+          }
+        }
+      }
+    },
+    "rebirth.path.command.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Win with fewer pitches"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "少ない球数で勝つ投手"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "적은 공으로 이기는 투수"
+          }
+        }
+      }
+    },
+    "rebirth.path.command.detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cut walks with command and get through innings efficiently."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "制球で四球を減らし、効率よくイニングを重ねます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제구로 볼넷을 줄이고 효율적으로 이닝을 넘깁니다."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

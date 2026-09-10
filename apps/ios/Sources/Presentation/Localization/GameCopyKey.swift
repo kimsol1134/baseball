@@ -146,6 +146,27 @@ public enum AppCopyKey {
     public static let openingStart = GameCopyKey.localizable("opening.start")
     public static let onboardingBullpenNameCTA = GameCopyKey.localizable("onboarding.bullpen.name-cta")
 
+    /// 다음 회차의 세 갈래(6-E).
+    public static let rebirthPathTitle = GameCopyKey.localizable("rebirth.path.title")
+    public static let rebirthPathBody = GameCopyKey.localizable("rebirth.path.body")
+    public static let rebirthPathConfirm = GameCopyKey.localizable("rebirth.path.confirm")
+    public static let rebirthPathPrimaryPitch = GameCopyKey.localizable("rebirth.path.primary-pitch")
+    public static let rebirthPathEnduranceTitle = GameCopyKey.localizable("rebirth.path.endurance.title")
+    public static let rebirthPathEnduranceDetail = GameCopyKey.localizable("rebirth.path.endurance.detail")
+    public static let rebirthPathCloserTitle = GameCopyKey.localizable("rebirth.path.closer.title")
+    public static let rebirthPathCloserDetail = GameCopyKey.localizable("rebirth.path.closer.detail")
+    public static let rebirthPathCommandTitle = GameCopyKey.localizable("rebirth.path.command.title")
+    public static let rebirthPathCommandDetail = GameCopyKey.localizable("rebirth.path.command.detail")
+
+    /// 드래프트 직후 "3년의 결과" 한 장(6-C).
+    public static let draftJourneyUndrafted = GameCopyKey.localizable("draft.journey.undrafted")
+    public static let draftJourneyPick = GameCopyKey.localizable("draft.journey.pick")
+    public static let draftJourneyRecord = GameCopyKey.localizable("draft.journey.record")
+    public static let draftJourneyGrowth = GameCopyKey.localizable("draft.journey.growth")
+    public static let draftJourneyEffort = GameCopyKey.localizable("draft.journey.effort")
+    public static let draftJourneyCoachTrusted = GameCopyKey.localizable("draft.journey.coach.trusted")
+    public static let draftJourneyCoachNext = GameCopyKey.localizable("draft.journey.coach.next")
+
     /// 대화 장면의 공용 문구. 프로 시즌 결정과 고교 관계 사건이 같은 관용구를 쓴다.
     public static let conversationEyebrow = GameCopyKey.localizable("conversation.eyebrow")
     public static let conversationResultEyebrow = GameCopyKey.localizable("conversation.result.eyebrow")
@@ -853,6 +874,12 @@ public enum AppCopyKey {
         tabHighSchool, tabPro, tabCareer, tabRecords, tabSettings,
         openingEyebrow, openingSummary, openingDescription, openingStart, onboardingBullpenNameCTA, prologueFirstSchool,
         conversationEyebrow, conversationResultEyebrow, conversationSceneDisclosure,
+        draftJourneyUndrafted, draftJourneyPick, draftJourneyRecord, draftJourneyGrowth,
+        draftJourneyEffort, draftJourneyCoachTrusted, draftJourneyCoachNext,
+        rebirthPathTitle, rebirthPathBody, rebirthPathConfirm, rebirthPathPrimaryPitch,
+        rebirthPathEnduranceTitle, rebirthPathEnduranceDetail,
+        rebirthPathCloserTitle, rebirthPathCloserDetail,
+        rebirthPathCommandTitle, rebirthPathCommandDetail,
     ] + prologueKeys + [
         actionCancel,
         settingsControlTitle, settingsAutoRelease, settingsAutoReleaseDescription,

@@ -301,6 +301,47 @@ final class PresentationTests: XCTestCase {
         XCTAssertFalse(proDecision.contains(".confirmationDialog("))
     }
 
+    /// 3년의 결과는 지명 결과가 먼저다. 신분 카드(이름·학교·얼굴)는 회차 카드가 이미
+    /// 보여 주므로 여기서 되풀이하지 않는다(6-C).
+    func testDraftJourneyLeadsWithTheDestinationAndDoesNotRepeatTheIdentityCard() throws {
+        let peak = try IOSSourceScan.typeBody(
+            "DraftPeakResultView",
+            in: "apps/ios/Sources/HighSchoolDraftLegacyViews.swift"
+        )
+
+        let destination = try XCTUnwrap(peak.range(of: "draftDestination(draft)"))
+        let score = try XCTUnwrap(peak.range(of: "hs.bestEvaluation"))
+        XCTAssertLessThan(
+            destination.lowerBound, score.lowerBound,
+            "지명 구단이 평가 점수보다 먼저 와야 한다"
+        )
+        for identifier in [
+            "hs.draft.journey.record",
+            "hs.draft.journey.effort",
+            "hs.draft.journey.build",
+            "hs.draft.journey.coach",
+        ] {
+            XCTAssertTrue(peak.contains(identifier), identifier)
+        }
+        XCTAssertFalse(peak.contains("LifeCardPreview"), "회차 카드를 여기서 다시 그리지 않는다")
+    }
+
+    /// 환생 경로도 같은 규칙이다 — 고르는 일은 명령이 아니고, 기존 이어가기는 남는다(6-E).
+    func testRebirthPathSeparatesChoosingFromStartingAndKeepsTheExistingRoute() throws {
+        let completion = try IOSSourceScan.typeBody(
+            "CompletionCard",
+            in: "apps/ios/Sources/HighSchoolDraftLegacyViews.swift"
+        )
+
+        XCTAssertTrue(completion.contains("ConversationChoiceCard("))
+        XCTAssertTrue(completion.contains("identifier: \"hs.rebirthPath.confirm\""))
+        // 카드를 눌러도 명령은 없다. 시작은 확인 버튼 한 곳에서만 부른다.
+        XCTAssertEqual(completion.components(separatedBy: "onRebirthPath(").count - 1, 1)
+        // 기존 "이어가기" 버튼은 그대로 남는다.
+        XCTAssertTrue(completion.contains("identifier: \"hs.rebirth\""))
+        XCTAssertFalse(completion.contains("career.startRebirth("), "화면이 직접 회차를 시작하지 않는다")
+    }
+
     /// 계약도 같은 규칙을 따른다 — 고르는 일은 명령이 아니고, 확인은 모달이 아니라
     /// 같은 화면 아래에 열린다(6-D).
     func testContractOfferSeparatesSelectionFromSigningWithoutAModal() throws {

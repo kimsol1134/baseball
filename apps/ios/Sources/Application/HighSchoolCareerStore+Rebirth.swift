@@ -414,6 +414,40 @@ extension HighSchoolCareerStore {
         )
     }
 
+    /// 세 갈래 중 하나로 다음 회차를 시작한다.
+    ///
+    /// 이름·지역·난이도·업보·이어받은 힘은 지난 회차 설정 그대로 두고, **프리셋과 구종만**
+    /// 갈아 끼운다(6-E). 기존 "이어가기"는 그대로 남는다 — 이 경로는 추가지 대체가 아니다.
+    func startRebirth(path: RebirthPath, entryPoint: String) {
+        guard canChooseRebirthPath,
+              let preset = path.preset,
+              let last = lastSetup,
+              let seed = quickRebirthSeed() else { return }
+        startCareer(
+            preset: preset,
+            playerName: last.playerName,
+            region: last.region,
+            difficulty: CareerDifficultySnapshot(
+                careerHarshness: DifficultyLevel(rawValue: last.harshness) ?? .standard),
+            karmas: last.karmas,
+            soulDomain: last.soulDomain,
+            startingRepertoire: path.repertoire,
+            throwingHand: last.throwingHand,
+            seedOverride: seed,
+            entryPoint: entryPoint
+        )
+    }
+
+    /// 길을 고를 수 있는 회차인가. "이어가기"와 같은 조건이다 — 도전 런이 아니고, 지난
+    /// 회차 설정이 남아 있으며, 되돌아갈 아카이브가 있다.
+    ///
+    /// `quickRebirthSeed()`를 부르지 않는다. 그 함수는 시드를 **예약해 저장**하므로,
+    /// 화면을 그리는 것만으로 값이 쓰이면 안 된다.
+    var canChooseRebirthPath: Bool {
+        guard quickRebirthPreset != nil, let previous = archive.first else { return false }
+        return previous.lifeNumber < inheritance.lifeNumber
+    }
+
     /// 이 정산이 별점을 물어도 좋은 회차인가. 순수 함수라 테스트할 수 있다.
     ///
     /// "잘 끝났다"는 지명 여부가 아니다 — 세상이 이름을 붙여 줬거나, 걸었던 약속을

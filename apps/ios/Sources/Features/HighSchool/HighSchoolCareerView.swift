@@ -63,6 +63,8 @@ struct HighSchoolCareerView: View {
     /// `fullScreenCover(item:)`가 요구하는 식별 가능한 값.
     struct RebirthStamp: Identifiable {
         let lifeNumber: Int
+        /// 고른 다음 생의 길. 있으면 스탬프가 끝난 뒤 그 길로 곧장 시작한다(6-E).
+        var path: RebirthPath?
         /// 정산 화면에서 곧장 온 스탬프인지 값 자체에 싣는다. 별도 `@State`로 두면
         /// cover가 만들어지는 프레임과 플래그 갱신 프레임이 엇갈려 설정 화면으로 빠질 수 있다.
         var startsImmediately = false
@@ -188,7 +190,10 @@ struct HighSchoolCareerView: View {
             RebirthStampView(lifeNumber: stamp.lifeNumber) {
                 rebirthStamp = nil
                 // 정산 화면에서 바로 온 경우엔 설정을 건너뛰고 같은 조건으로 시작한다.
-                if stamp.startsImmediately {
+                if let path = stamp.path {
+                    guard career.beginNextLife() else { return }
+                    career.startRebirth(path: path, entryPoint: "rebirth_path")
+                } else if stamp.startsImmediately {
                     guard career.beginNextLife() else { return }
                     career.startQuickRebirth(entryPoint: "recap")
                 } else {
@@ -816,6 +821,7 @@ struct HighSchoolCareerView: View {
                 DraftPeakResultView(
                     state: state,
                     drafted: false,
+                    startingPitcher: career.careerStartingPitcher,
                     onContinue: { draftLegacyStep = 1 }
                 )
             } else {
@@ -835,6 +841,7 @@ struct HighSchoolCareerView: View {
                 DraftPeakResultView(
                     state: state,
                     drafted: state.draftResult?.outcome == .drafted && !hasEnteredPro,
+                    startingPitcher: career.careerStartingPitcher,
                     onContinue: { draftLegacyStep = 1 }
                 )
             } else {
@@ -852,10 +859,17 @@ struct HighSchoolCareerView: View {
                     onRecoverMissingPro: onRecoverMissingPro,
                     onEnterPro: onEnterPro,
                     onSkipToPro: onSkipToPro,
-                    includeReason: false
-                ) {
-                    rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
-                }
+                    includeReason: false,
+                    onRebirth: {
+                        rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
+                    },
+                    onRebirthPath: { path in
+                        rebirthStamp = RebirthStamp(
+                            lifeNumber: career.inheritance.lifeNumber,
+                            path: path
+                        )
+                    }
+                )
             }
         }
     }
