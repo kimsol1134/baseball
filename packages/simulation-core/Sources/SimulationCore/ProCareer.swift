@@ -598,6 +598,12 @@ public struct ProCareerEngine: Sendable {
                 let othersRuns = LeagueBaseline.restOfTeamRuns(outsCovered: othersOuts, using: &rng)
                 let opponentRuns = outingLine.runsAllowed + othersRuns
                 let started = state.role == .starter
+                // 구원 등판의 승패 귀속. 선발은 예전 규칙 그대로이므로 뽑지 않고, 추첨은
+                // v12 이상 경로 안에만 있어 기존 난수 스트림도 그대로다.
+                let reliefDecisionDraw = !started
+                    && ProGameplayRules.usesProfessionalBalance(state.proRulesVersion)
+                    ? rng.nextInt(upperBound: 1_000)
+                    : nil
                 newGameLines.append(
                     ProGameLine(
                         season: state.season,
@@ -617,7 +623,8 @@ public struct ProCareerEngine: Sendable {
                             outs: outingLine.outs,
                             runsAllowed: outingLine.runsAllowed,
                             teamRuns: support,
-                            opponentRuns: opponentRuns
+                            opponentRuns: opponentRuns,
+                            reliefDecisionDraw: reliefDecisionDraw
                         ),
                         played: false,
                         hits: outingLine.hits,
@@ -1458,7 +1465,13 @@ public struct ProCareerEngine: Sendable {
             outs: outs,
             runsAllowed: runsAllowed,
             teamRuns: support,
-            opponentRuns: opponentRuns
+            opponentRuns: opponentRuns,
+            // 직접 던진 구원 등판도 같은 규칙을 쓴다. 플레이어가 던진 경기만 다른 잣대로
+            // 기록되면 "내가 만든 성적"이 자동 경기와 이어지지 않는다.
+            reliefDecisionDraw: !started
+                && ProGameplayRules.usesProfessionalBalance(params.state.proRulesVersion)
+                ? rng.nextInt(upperBound: 1_000)
+                : nil
         )
         let replacedGame = scheduledLine != nil
         let oldDecision = scheduledLine?.decision

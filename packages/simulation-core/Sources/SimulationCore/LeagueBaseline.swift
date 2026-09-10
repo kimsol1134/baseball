@@ -219,13 +219,26 @@ public struct ProGameLine: Codable, Equatable, Sendable, Identifiable {
 /// 대신 팀 득점을 실제 분포에서 뽑아 규칙을 적용한다 — 결과의 모양은 같고 비용은 훨씬 싸다.
 /// 등판 결과에 승패를 붙이는 규칙. 밸런스 CLI가 별도 모듈이라 public이다.
 public enum DecisionRules {
+    /// 한 경기의 승패는 한 투수에게만 붙는다.
+    ///
+    /// 구원 투수는 그 경기에 나온 여러 명 중 하나다. 한 경기에 보통 네 명이 나오므로, 승패의
+    /// 주인공이 될 자격을 갖춘 구원 등판 중 실제로 기록이 붙는 비율은 넷에 하나꼴이다.
+    ///
+    /// 이 상수 하나가 두 가지를 동시에 고친다. **구원 승이 아예 없었고**(구원 투수는 세이브와
+    /// 패전만 받을 수 있었다), **패전은 실점한 패전 경기마다 전부 붙었다**(시즌 13~16패).
+    /// 60등판 기준으로 4~6승 3~5패가 되어 실제 불펜 투수의 기록에 들어온다.
+    public static let reliefDecisionShare = 250
+
+    /// - Parameter reliefDecisionDraw: 0–999. 구원 등판의 승패 귀속 추첨. `nil`이면 구원 승이
+    ///   없고 실점한 패전이 전부 패전이 되는 예전 규칙 그대로다(프로 규칙 11 이하).
     public static func decide(
         started: Bool,
         isCloser: Bool,
         outs: Int,
         runsAllowed: Int,
         teamRuns: Int,
-        opponentRuns: Int
+        opponentRuns: Int,
+        reliefDecisionDraw: Int? = nil
     ) -> PitchingDecision {
         let teamWon = teamRuns > opponentRuns
         let teamLost = teamRuns < opponentRuns
@@ -242,8 +255,15 @@ public enum DecisionRules {
            teamRuns - opponentRuns <= LeagueBaseline.saveLeadCeiling {
             return .save
         }
-        if teamLost, runsAllowed > 0 { return .loss }
-        if teamWon, runsAllowed == 0 { return .noDecision }
+        guard let draw = reliefDecisionDraw else {
+            return teamLost && runsAllowed > 0 ? .loss : .noDecision
+        }
+        let ownsTheDecision = draw < Self.reliefDecisionShare
+        // 팀이 리드를 잡을 때 마운드에 있던 투수가 승리 투수다. 이 시뮬레이션은 경기 안에서
+        // 리드가 언제 바뀌는지를 모델링하지 않으므로, 무실점으로 막은 승리 경기를 후보로 두고
+        // 그중 넷에 하나에 승리를 준다.
+        if teamWon, runsAllowed == 0 { return ownsTheDecision ? .win : .noDecision }
+        if teamLost, runsAllowed > 0 { return ownsTheDecision ? .loss : .noDecision }
         return .noDecision
     }
 }
