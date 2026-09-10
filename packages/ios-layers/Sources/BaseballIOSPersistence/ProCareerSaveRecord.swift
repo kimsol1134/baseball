@@ -23,6 +23,8 @@ public struct ProCareerSaveRecord: Codable {
     public var acknowledgedInjuryEventID: String? = nil
     /// 앨범의 재생. 없는 옛 저장은 nil이다.
     public var replays: [AlbumReplay]? = nil
+    /// 이미 적용한 명령의 영수증. 없는 옛 저장은 nil이다.
+    public var commandReceipts: [String]? = nil
 
     public var effectiveRevision: UInt64 {
         max(syncRevision ?? 0, max(deletedRevision ?? 0, result?.snapshot.revision ?? 0))
@@ -38,7 +40,8 @@ public struct ProCareerSaveRecord: Codable {
         syncRevision: UInt64? = nil,
         pendingInjuryEvent: ProInjuryEventSnapshot? = nil,
         acknowledgedInjuryEventID: String? = nil,
-        replays: [AlbumReplay]? = nil
+        replays: [AlbumReplay]? = nil,
+        commandReceipts: [String]? = nil
     ) {
         self.result = result
         self.gameResume = gameResume
@@ -50,6 +53,7 @@ public struct ProCareerSaveRecord: Codable {
         self.pendingInjuryEvent = pendingInjuryEvent
         self.acknowledgedInjuryEventID = acknowledgedInjuryEventID
         self.replays = replays
+        self.commandReceipts = commandReceipts
     }
 }
 

@@ -30,7 +30,14 @@ extension MobileCareerStore {
                 : pendingInjuryEvent,
             acknowledgedID: acknowledgedInjuryEventID ?? existing.acknowledgedInjuryEventID
         )
-        let candidateWithAlbum = foldingStagedReplays(into: candidateState)
+        var candidateWithAlbum = foldingStagedReplays(into: candidateState)
+        // 이 명령의 영수증을 같은 트랜잭션에 태운다. 저장이 성공해야 영수증도 남는다.
+        if let operation = stagedCommandOperation {
+            candidateWithAlbum.commandReceipts = CommandReceiptRetention.retaining(
+                (candidateWithAlbum.commandReceipts ?? [])
+                    + [receipt(for: operation, at: existing.result?.snapshot.revision ?? 0)]
+            )
+        }
         let schemaVersion = ProCareerPersistence.schemaVersion(for: candidateWithAlbum)
         guard canWrite() else { return false }
         let candidateRevision = ProCareerPersistence.nextRevision(
@@ -51,6 +58,7 @@ extension MobileCareerStore {
         committed.syncedRevision = candidateRevision
         replacePersisted(committed)
         stagedReplays = []
+        stagedCommandOperation = nil
         return true
     }
 
@@ -243,13 +251,21 @@ extension MobileCareerStore {
         }
     }
 
+    /// - Parameter operation: 이 명령을 뭐라고 부르는가. 주면 **같은 명령이 두 번 적용되지
+    ///   않는다** — 버튼이 두 번 눌리거나 저장이 재시도돼도 한 번만 간다(7-D).
     @discardableResult
     func perform(
         summary: String? = nil,
         cue: FeedbackCue? = nil,
         clearGameResumeOnSuccess: Bool = false,
+        operation: String? = nil,
         _ action: () throws -> ProCareerResult
     ) -> Bool {
+        // 영수증은 상태를 바꾸기 전에 본다. 명령을 실행한 뒤에 거절하면 이미 늦었다.
+        if let operation, !acceptsCommand(operation) { return false }
+        stagedCommandOperation = operation
+        // 저장이 실패했거나 규칙이 거절했으면 이 명령의 영수증을 다음 저장에 얹지 않는다.
+        defer { stagedCommandOperation = nil }
         do {
             let before = result?.snapshot
             guard featureConfiguration.proCareerJourneyV1 || before?.journeyState == nil else {

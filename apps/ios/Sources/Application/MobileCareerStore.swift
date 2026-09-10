@@ -34,6 +34,10 @@ final class MobileCareerStore {
     /// 이번 등판이 남긴 재생. 저장이 성공할 때 앨범으로 접히고 비워진다 — 저장이
     /// 실패하면 앨범도 움직이지 않아야 화면과 디스크가 어긋나지 않는다.
     var stagedReplays: [AlbumReplay] = []
+    /// 이미 적용한 명령의 영수증.
+    private var durableCommandReceipts: [String]?
+    /// 이번 저장에 태울 명령. 저장이 성공할 때 영수증으로 남고 비워진다.
+    var stagedCommandOperation: String?
     private var durableSourceHighSchoolCareerID: String?
     private var durableCareerOrigin: ProCareerOrigin?
     private var durableSyncedRevision: UInt64 = 0
@@ -49,8 +53,24 @@ final class MobileCareerStore {
             syncedRevision: durableSyncedRevision,
             pendingInjuryEvent: durablePendingInjuryEvent,
             acknowledgedInjuryEventID: durableAcknowledgedInjuryEventID,
-            replays: durableReplays
+            replays: durableReplays,
+            commandReceipts: durableCommandReceipts
         )
+    }
+
+    /// 이 명령을 지금 적용해도 되는가. 두 번 눌린 버튼과 옛 화면에서 온 명령을 막는다.
+    func acceptsCommand(_ operation: String) -> Bool {
+        guard let revision = result?.snapshot.revision else { return true }
+        return CommandReceiptRetention.accepts(
+            CommandReceiptRetention.id(revision: revision, operation: operation),
+            at: revision,
+            seen: durableCommandReceipts ?? []
+        )
+    }
+
+    /// 저장에 태울 영수증을 만든다. 실제 보관은 저장이 성공한 뒤다.
+    func receipt(for operation: String, at revision: UInt64) -> String {
+        CommandReceiptRetention.id(revision: revision, operation: operation)
     }
 
     /// 앨범 예산을 적용해 접는다. 담기지 않은 공은 조용히 버려진다 — 기존 재생은 지우지 않는다.
@@ -82,6 +102,7 @@ final class MobileCareerStore {
         assign(&durablePendingInjuryEvent, next.pendingInjuryEvent)
         assign(&durableAcknowledgedInjuryEventID, next.acknowledgedInjuryEventID)
         assign(&durableReplays, next.replays)
+        assign(&durableCommandReceipts, next.commandReceipts)
     }
 
     private func assign<T: Equatable>(_ storage: inout T, _ next: T) {

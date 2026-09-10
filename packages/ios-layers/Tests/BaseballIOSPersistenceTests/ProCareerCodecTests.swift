@@ -118,6 +118,26 @@ final class ProCareerCodecTests: XCTestCase {
         XCTAssertEqual(restored.replays, [replay])
     }
 
+    /// 영수증도 저장을 왕복해야 한다. 빠지면 앱을 다시 켠 뒤 같은 명령이 다시 적용된다.
+    func testCommandReceiptsSurviveTheSaveRoundTrip() throws {
+        let receipt = CommandReceiptRetention.id(revision: 12, operation: "important-game:3:8")
+        var state = ProCareerPersistedState.empty
+        state.result = try fixtureResult()
+        state.commandReceipts = [receipt]
+        let restored = ProCareerPersistence.materialize(
+            ProCareerPersistence.record(
+                from: state,
+                schemaVersion: ProCareerPersistence.legacySchemaVersion,
+                syncRevision: 1
+            )
+        )
+        XCTAssertEqual(restored.commandReceipts, [receipt])
+        XCTAssertFalse(
+            CommandReceiptRetention.accepts(receipt, at: 12, seen: restored.commandReceipts ?? []),
+            "왕복한 영수증이 같은 명령을 막지 못합니다"
+        )
+    }
+
     /// 앨범이 없던 저장은 그대로 열린다. 새 필드는 optional이고 없으면 앨범이 빈 것뿐이다.
     func testASaveWrittenBeforeTheAlbumStillOpens() throws {
         var state = ProCareerPersistedState.empty

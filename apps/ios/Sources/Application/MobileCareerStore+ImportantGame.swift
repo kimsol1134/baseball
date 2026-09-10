@@ -102,7 +102,8 @@ extension MobileCareerStore {
         let didSettle = perform(
             summary: summary,
             cue: report.runsAllowed == 0 ? .success : .setback,
-            clearGameResumeOnSuccess: true
+            clearGameResumeOnSuccess: true,
+            operation: "important-game:\(result.snapshot.season):\(result.snapshot.week)"
         ) {
             try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report))
         }
