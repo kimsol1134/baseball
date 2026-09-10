@@ -9,7 +9,10 @@ final class ProCareerRetiredNumberBalanceTests: XCTestCase {
         XCTAssertEqual(started.snapshot.journeyState?.rulesVersion, 3)
         XCTAssertEqual(started.snapshot.proRulesVersion, ProCareerEngine.currentRulesVersion)
         XCTAssertEqual(ProCareerEngine.currentJourneyRulesVersion, 3)
-        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 10)
+        // 살아 있는 커리어는 프로 규칙 13(`ProGameplayRules.current`)에서 돈다. v10은 이제
+        // 안드로이드 패리티 픽스처가 붙들어 두는 참조 경로이지 새 커리어가 쓰는 값이 아니다.
+        XCTAssertEqual(ProCareerEngine.currentRulesVersion, ProGameplayRules.current)
+        XCTAssertGreaterThan(ProGameplayRules.current, ProGameplayRules.reference)
         XCTAssertTrue(ProCareerEngine.usesAgencyRules(started.snapshot))
         XCTAssertTrue(ProCareerEngine.usesRetiredNumberLiveRules(started.snapshot))
     }

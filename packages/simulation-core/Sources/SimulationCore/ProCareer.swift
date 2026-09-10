@@ -17,9 +17,17 @@ public struct ProEntitlementSnapshot: Codable, Equatable, Sendable {
 
 public struct ProCareerEngine: Sendable {
     public let journeyEnabled: Bool
+    /// The rules version this engine signs the states it produces with.
+    ///
+    /// Live play uses `currentRulesVersion`, and a career in progress moves onto it at its next
+    /// command. The **frozen reference export** pins `ProGameplayRules.reference` instead: the
+    /// Android parity fixture exists to hold the v10 path still, so it cannot be allowed to drift
+    /// forward every time the live version moves.
+    public let rulesVersion: Int
 
-    public init(journeyEnabled: Bool = false) {
+    public init(journeyEnabled: Bool = false, rulesVersion: Int = ProCareerEngine.currentRulesVersion) {
         self.journeyEnabled = journeyEnabled
+        self.rulesVersion = rulesVersion
     }
 
     public func start(_ params: StartProCareerParams) throws -> ProCareerResult {
@@ -89,7 +97,7 @@ public struct ProCareerEngine: Sendable {
         } catch {
             throw SimulationError.invalidProCareer("invalid starting repertoire")
         }
-        let base = ProCareerSnapshot(proCareerID: id, revision: 0, phase: .contractOffer, identity: params.identity, pitcher: pitcher, team: team, entitlement: params.entitlement, age: 19, season: 1, week: 0, level: .minor, role: .starter, managerTrust: 42, catcherTrust: 45, fatigue: 0, injuryWeeks: 0, serviceYears: 0, militaryCompleted: false, contract: nil, currentStats: stats, careerStats: [], awards: [], milestones: ["프로 지명"], news: ["신인 계약 제안 · \(team.name) · \(params.identity.name)"], hallOfFameScore: nil, commitment: "", balanceVersion: PitcherPresetCatalog.balanceVersion, proRulesVersion: params.proRulesVersion ?? Self.currentRulesVersion, seasonSegment: .springCamp, seasonImportantGames: 0, decisionHistory: [], repertoireRulesVersion: repertoireRulesVersion, pitchLearningProject: pitchLearningProject, journeyState: journeyState)
+        let base = ProCareerSnapshot(proCareerID: id, revision: 0, phase: .contractOffer, identity: params.identity, pitcher: pitcher, team: team, entitlement: params.entitlement, age: 19, season: 1, week: 0, level: .minor, role: .starter, managerTrust: 42, catcherTrust: 45, fatigue: 0, injuryWeeks: 0, serviceYears: 0, militaryCompleted: false, contract: nil, currentStats: stats, careerStats: [], awards: [], milestones: ["프로 지명"], news: ["신인 계약 제안 · \(team.name) · \(params.identity.name)"], hallOfFameScore: nil, commitment: "", balanceVersion: PitcherPresetCatalog.balanceVersion, proRulesVersion: params.proRulesVersion ?? rulesVersion, seasonSegment: .springCamp, seasonImportantGames: 0, decisionHistory: [], repertoireRulesVersion: repertoireRulesVersion, pitchLearningProject: pitchLearningProject, journeyState: journeyState)
         let state = signed(base)
         if journeyEnabled {
             try validateState(state)
@@ -2195,7 +2203,7 @@ public struct ProCareerEngine: Sendable {
         let pitcher = ProContractMarketRules.projectedPitcher(
             for: state.pitcher,
             effectiveAge: age,
-            proRulesVersion: Self.currentRulesVersion,
+            proRulesVersion: rulesVersion,
             recoveryYear: recoveryYear
         )
         let contract = ProContractSnapshot(yearsRemaining: max(1, (state.contract?.yearsRemaining ?? 1) - 1), annualSalary: max(state.contract?.annualSalary ?? 40_000_000, 40_000_000 + service * 50_000_000), rolePromise: state.role)
@@ -2210,7 +2218,7 @@ public struct ProCareerEngine: Sendable {
             // 새 시즌은 빈 기록으로 시작한다. 안 비우면 20시즌 구원 투수가 천 행 넘게 들고
             // 다니고 등판 번호도 시즌을 넘어 계속 늘어난다. 지난 시즌은 careerStats가 맡는다.
             gameLines: [],
-            news: Array(news.prefix(30)), proRulesVersion: Self.currentRulesVersion, pendingDecision: clearedDecision,
+            news: Array(news.prefix(30)), proRulesVersion: rulesVersion, pendingDecision: clearedDecision,
             activeDecisionModifiers: .some(nil), resolvedFollowUps: .some(nil), roleRequest: .some(nil),
             nationalTeamCarry: .some(nil))
         let tensions = seasonTensions(for: baseAdvanced)
@@ -2233,7 +2241,7 @@ public struct ProCareerEngine: Sendable {
     /// 규칙이 **함께** 맞춰진 값이라, 일부만 켜면 삼진과 실점이 현실 밴드를 벗어난다
     /// (실측: 확률식과 타순만 옮겼을 때 K/9 3, R/9 10). 나머지가 이식되면 이 상수를
     /// `ProGameplayRules.current`로 올린다.
-    public static let currentRulesVersion = ProGameplayRules.reference
+    public static let currentRulesVersion = ProGameplayRules.current
     /// First version that owns the agency weekly-plan and important-game contracts.
     /// Must stay below `currentRulesVersion` so a version bump cannot turn agency off.
     public static let agencyRulesVersion = 3
@@ -3626,6 +3634,34 @@ public struct ProCareerEngine: Sendable {
         let qualitySeasons = seasons.count { season in
             season.inningsOuts >= 180
                 && season.runsAllowed * 27_000 / max(1, season.inningsOuts) < 4_000
+        }
+        // v12: 안드로이드와 같은 기준으로 다시 잡는다(이식 계획 2-F).
+        //
+        // v3는 이닝으로만 일한 양을 셌다. 그러면 **마무리는 영원히 전당에 못 간다** — 한 시즌
+        // 60이닝짜리 커리어는 이닝 점수가 바닥이다. 세이브를 이닝의 대안으로 두고, 승리와
+        // 세이브를 함께 세고, 좋은 시즌의 기준을 실점이 아니라 **자책점**으로 본다(원장이
+        // 생겼으므로 이제 잴 수 있다). 셋을 합치면 선발과 마무리가 각자의 길로 70에 닿는다.
+        if ProGameplayRules.usesProfessionalBalance(rulesVersion) {
+            let wins = seasons.reduce(0) { $0 + $1.wins }
+            let saves = seasons.reduce(0) { $0 + $1.saves }
+            let earnedQualitySeasons = seasons.count { season in
+                guard season.inningsOuts >= 180 else { return false }
+                // 자책점이 있으면 평균자책으로, 없으면 실점으로 판단한다. 없는 시즌을
+                // 좋은 시즌으로 세지 않는다.
+                let per9 = (season.earnedRuns ?? season.runsAllowed) * 27_000
+                    / max(1, season.inningsOuts)
+                return per9 < 3_800
+            }
+            return min(100, max(0,
+                min(15, max(0, serviceYears))
+                    + min(22, max(0, strikeouts) / 140)
+                    + min(18, max(max(0, outs) / 450, max(0, saves) / 20))
+                    + min(14, max(0, wins) / 15 + max(0, saves) / 25)
+                    + min(15, earnedQualitySeasons)
+                    + min(10, max(0, awardCount))
+                    + max(0, autumnBonus)
+                    + max(0, nationalGoldBonus)
+            ))
         }
         guard rulesVersion >= Self.hallOfFameFormulaVersion else {
             // Frozen formula for legacy, v1, and v2 saves. Their stored commitment and

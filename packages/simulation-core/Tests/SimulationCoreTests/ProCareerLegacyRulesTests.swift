@@ -280,17 +280,24 @@ final class ProCareerLegacyRulesTests: XCTestCase {
         let legacyV1 = try unsignedSnapshot(legacyV2) { object in
             object["proRulesVersion"] = 1
         }
+        // 규칙 10은 v3 산식을 쓰던 세대다. 이제 참조 경로지만 그 세이브는 여전히 열린다.
+        let referenceEra = try unsignedSnapshot(legacyV2) { object in
+            object["proRulesVersion"] = ProGameplayRules.reference
+        }
         let current = try unsignedSnapshot(legacyV2) { object in
             object["proRulesVersion"] = ProCareerEngine.currentRulesVersion
         }
 
-        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 10)
+        XCTAssertEqual(ProCareerEngine.currentRulesVersion, ProGameplayRules.current)
         XCTAssertEqual(ProCareerEngine.agencyRulesVersion, 3)
         XCTAssertEqual(ProCareerEngine.currentJourneyRulesVersion, 3)
         XCTAssertEqual(ProCareerEngine.hallOfFameFormulaVersion, 3)
         XCTAssertEqual(ProCareerEngine.hallOfFameFinalScore(for: legacyV1), 100, "v1 saves retain the frozen score formula")
         XCTAssertEqual(ProCareerEngine.hallOfFameFinalScore(for: legacyV2), 100, "v2 saves retain the frozen score formula")
-        XCTAssertEqual(ProCareerEngine.hallOfFameFinalScore(for: current), 70, "v3 keeps the threshold while slowing ordinary long-career accumulation")
+        XCTAssertEqual(ProCareerEngine.hallOfFameFinalScore(for: referenceEra), 70, "v3 keeps the threshold while slowing ordinary long-career accumulation")
+        // 규칙 12부터는 안드로이드와 같은 산식이다. 이 커리어는 20시즌 180이닝 300탈삼진에
+        // 무실점이라 거의 모든 항목이 상한을 친다 — v3보다 높게 나오는 것이 맞다.
+        XCTAssertEqual(ProCareerEngine.hallOfFameFinalScore(for: current), 84, "규칙 12 산식이 이 커리어를 v3보다 높게 본다")
         XCTAssertNotEqual(legacyV2.commitment, current.commitment)
         XCTAssertEqual(try JSONDecoder().decode(ProCareerSnapshot.self, from: JSONEncoder().encode(legacyV1)), legacyV1)
         XCTAssertEqual(try JSONDecoder().decode(ProCareerSnapshot.self, from: JSONEncoder().encode(legacyV2)), legacyV2)

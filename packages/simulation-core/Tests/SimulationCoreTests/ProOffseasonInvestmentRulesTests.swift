@@ -382,8 +382,12 @@ final class ProOffseasonInvestmentRulesTests: XCTestCase {
             expectedRevision: accepted.snapshot.revision,
             investment: .recoveryTeam
         ))
+        // **지쳐 있되 던질 수는 있어야 한다.** 피로 100은 감독이 아예 내보내지 않는 상태라
+        // 한 공도 던지지 않고, 공을 안 던진 주는 과부하 부상이 될 수 없다(`planWeek`의
+        // `weekLine.pitches > 0`). 규칙 13이 등판 길이를 감독에게 맡기면서 피로 100은
+        // '가장 위험한 주'가 아니라 '등판이 없는 주'가 됐다.
         let highFatigue = try unsignedSnapshot(investment.snapshot) { object in
-            object["fatigue"] = 100
+            object["fatigue"] = 70
             object["injuryWeeks"] = 0
             object["phase"] = ProCareerPhase.weeklyPlan.rawValue
         }

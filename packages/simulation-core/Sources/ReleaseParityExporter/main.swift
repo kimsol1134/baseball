@@ -83,7 +83,9 @@ func hsValues(_ s: HighSchoolCareerSnapshot) -> [String] {
 }
 let highSchool = try runHighSchool()
 func runPro(seed: String, freeAgency: Bool, linked: Bool = false) throws -> [[String: Any]] {
-let engine = ProCareerEngine(journeyEnabled: true)
+// 이 픽스처는 **v10 경로를 붙들어 두기 위해** 있다. 살아 있는 버전을 따라가면 기준점이
+// 같이 움직여서 아무것도 고정하지 못한다. 그래서 엔진을 참조 버전에 못박는다.
+let engine = ProCareerEngine(journeyEnabled: true, rulesVersion: ProGameplayRules.reference)
 let team = ProCareerEngine.proTeams[0]
 let preset = PitcherPresetCatalog.all.first { $0.id == "power_prospect" }!
 let pitcher = linked ? highSchool.snapshot.pitcher : preset.pitcher
@@ -174,7 +176,7 @@ for preset in ["power_prospect", "precision_commander", "breaking_ball_artist", 
         }
     }
 }
-let output: [String: Any] = ["schema": "baseball-release-parity-v1", "rulesVersion": ProCareerEngine.currentRulesVersion, "journeyRulesVersion": ProCareerEngine.currentJourneyRulesVersion, "balanceVersion": PitcherPresetCatalog.balanceVersion, "sourceCommit": sourceCommit, "sourceTreeSha256": sourceTreeSha256,
+let output: [String: Any] = ["schema": "baseball-release-parity-v1", "rulesVersion": ProGameplayRules.reference, "journeyRulesVersion": ProCareerEngine.currentJourneyRulesVersion, "balanceVersion": PitcherPresetCatalog.balanceVersion, "sourceCommit": sourceCommit, "sourceTreeSha256": sourceTreeSha256,
     "scope": "current rules v10; public career commands; identical fixed important-game report; national calls declined", "pro": rows, "proFa": faRows, "proLinked": linkedRows, "highSchool": highSchoolRows, "training": trainingRows]
 let data = try JSONSerialization.data(withJSONObject: output, options: [.sortedKeys, .prettyPrinted])
 let path = "artifacts/android-compose/release-gate/swift-release-parity.json"

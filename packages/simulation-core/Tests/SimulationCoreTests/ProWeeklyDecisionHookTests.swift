@@ -67,11 +67,13 @@ final class ProWeeklyDecisionHookTests: XCTestCase {
 
         let expiresWeek = decision.week + 3
         var sawInjuryFloorThroughWindow = false
+        var grantedByModifier = 0
         while result.snapshot.week < expiresWeek {
             if let rotation = result.snapshot.activeDecisionModifiers?.first(where: { $0.type == .rotationPush }) {
                 XCTAssertEqual(rotation.injuryPressureFloor, 80)
                 XCTAssertEqual(rotation.extraOutingChance, 1)
                 XCTAssertLessThanOrEqual(rotation.extraOutingsGranted ?? 0, 1)
+                grantedByModifier = max(grantedByModifier, rotation.extraOutingsGranted ?? 0)
                 sawInjuryFloorThroughWindow = true
             }
             result = try advanceIgnoringDecisions(result)
@@ -84,11 +86,17 @@ final class ProWeeklyDecisionHookTests: XCTestCase {
         XCTAssertEqual(result.snapshot.resolvedFollowUps?.first?.decisionID, decision.id)
         XCTAssertTrue(result.events.contains("pro_weekly_decision_followup_resolved"))
 
+        // **한 번 더 나가는 것은 정확히 한 번이다.** 예전에는 "등판이 두 번인 주"의 수로
+        // 세었는데, 프로 규칙 12부터 선발은 6주마다 원래 두 번 나간다 — 그 주를 이 선택이
+        // 준 등판으로 오해하면 검사가 두 개를 센다. 선택이 실제로 몇 번 줬는지는 수정자
+        // 자신이 들고 있으므로 그것을 본다.
+        XCTAssertEqual(grantedByModifier, 1, "이 선택이 준 추가 등판이 한 번이 아닙니다")
+
         let windowLines = (result.snapshot.gameLines ?? []).filter { line in
             line.week > decision.week && line.week <= expiresWeek && !line.played
         }
-        let extraOutings = windowLines.count - Set(windowLines.map(\.week)).count
-        XCTAssertEqual(extraOutings, 1)
+        let doubledWeeks = windowLines.count - Set(windowLines.map(\.week)).count
+        XCTAssertGreaterThanOrEqual(doubledWeeks, 1, "추가 등판이 실제 경기 기록에 남지 않았습니다")
         XCTAssertEqual(result.snapshot.currentStats.starts, result.snapshot.currentStats.games)
     }
 

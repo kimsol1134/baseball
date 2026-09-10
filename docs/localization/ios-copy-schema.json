@@ -80078,6 +80078,61 @@
       "status": "ui_verified"
     },
     {
+      "key": "record.season-comparison.headline",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%1$@이(가) 가장 크게 좋아졌습니다.",
+      "en": "%1$@ improved the most.",
+      "ja": "%1$@が最も良くなりました。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.season-comparison.seasons",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%1$lld시즌 → %2$lld시즌",
+      "en": "Season %1$lld → %2$lld",
+      "ja": "%1$lldシーズン → %2$lldシーズン",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.season-comparison.steady",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "작년보다 나아진 지표가 아직 없습니다.",
+      "en": "Nothing has improved on last year yet.",
+      "ja": "去年より良くなった指標はまだありません。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.season-comparison.title",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "작년의 나 vs 올해의 나",
+      "en": "Last Year and This Year",
+      "ja": "去年の自分と今年の自分",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.season-comparison.unknown",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "—",
+      "en": "—",
+      "ja": "—",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "reminder.nudge.accessibility",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "%@. %@. %@. %@.",
@@ -105394,6 +105449,61 @@
       "ko": "울산문성고",
       "en": "Ulsan Munseong High",
       "ja": "蔚山文城高校",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.season-comparison.earned-run-average",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "평균자책",
+      "en": "ERA",
+      "ja": "防御率",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.season-comparison.innings",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "이닝",
+      "en": "Innings",
+      "ja": "イニング",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.season-comparison.strikeouts-per9",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "9이닝당 삼진",
+      "en": "Strikeouts per 9",
+      "ja": "9イニングあたり奪三振",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.season-comparison.whip",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "WHIP",
+      "en": "WHIP",
+      "ja": "WHIP",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.season-comparison.wins",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "승리",
+      "en": "Wins",
+      "ja": "勝利",
       "ko_state": "translated",
       "en_state": "translated",
       "ja_state": "translated",

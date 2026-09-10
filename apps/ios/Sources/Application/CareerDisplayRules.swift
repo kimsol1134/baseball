@@ -201,6 +201,10 @@ enum CareerDisplayRules {
         ProAdvancementRules.board(state: state)
     }
 
+    nonisolated static func seasonComparison(for state: ProCareerSnapshot) -> ProSeasonComparison? {
+        ProSeasonComparisonRules.compare(state: state)
+    }
+
     nonisolated static func goalPermille(current: Int, target: Int, completed: Bool = false) -> Int {
         ProCareerGoalBoardRules.permille(current: current, target: target, completed: completed)
     }

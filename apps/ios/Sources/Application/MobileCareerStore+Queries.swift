@@ -221,6 +221,10 @@ extension MobileCareerStore {
         CareerDisplayRules.advancementBoard(for: state)
     }
 
+    nonisolated static func seasonComparison(state: ProCareerSnapshot) -> ProSeasonComparison? {
+        CareerDisplayRules.seasonComparison(for: state)
+    }
+
     nonisolated static func goalPermille(current: Int, target: Int, completed: Bool = false) -> Int {
         CareerDisplayRules.goalPermille(current: current, target: target, completed: completed)
     }

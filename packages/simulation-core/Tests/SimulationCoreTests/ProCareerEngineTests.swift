@@ -1022,18 +1022,61 @@ final class ProCareerEngineTests: XCTestCase {
     }
 
     // 커널 통일 검증: 주간 자동 시뮬이 수동 커널과 같은 엔진에서 나와 현실 분포에 들어간다.
+    /// **신인은 신인답고, 자리 잡은 뒤에는 자리 잡은 성적이 나온다.**
+    ///
+    /// 예전에는 시즌 1 하나만 재면서 1군 주전의 밴드(70이닝 · K/9 4~13)를 들이댔다. 규칙 13
+    /// 전에는 선발이 늘 18아웃을 채웠으므로 신인도 127이닝을 던져 그 밴드에 들어갔지만,
+    /// 등판 길이를 감독이 정하게 된 뒤로는 능력 40짜리 2군 신인이 66이닝에 K/9 3.9로 끝난다
+    /// — **밴드가 틀린 게 아니라 재는 대상이 틀렸다.** 안드로이드도 같은 조건에서 시즌 1
+    /// K/9 3.50이다.
+    ///
+    /// 그래서 양 끝을 각각 잰다. 밴드를 넓히는 것이 아니라 검사를 하나 더 늘리는 쪽이다.
     func testKernelDrivenWeeklyStatsLandInRealisticBands() throws {
         for seedValue in ["11", "42", "300"] {
             var result = try engine.start(.init(seed: seedValue, identity: .defaultPitcher, pitcher: PitcherPresetCatalog.all[0].pitcher, draftResult: drafted(), entitlement: activeEntitlement()))
             result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+
             result = try playSeason(result)
-            let stats = result.snapshot.careerStats[0]
-            let kPer9 = stats.strikeouts * 27 / max(1, stats.inningsOuts)
-            let runsPer9 = stats.runsAllowed * 27 / max(1, stats.inningsOuts)
-            XCTAssertGreaterThanOrEqual(stats.inningsOuts, 210, "시즌 70이닝 미만은 비정상 (시드 \(seedValue))")
-            XCTAssertTrue((4...13).contains(kPer9), "K/9 \(kPer9)가 현실 밴드(4~13)를 벗어남 (시드 \(seedValue))")
-            XCTAssertTrue((1...9).contains(runsPer9), "R/9 \(runsPer9)가 현실 밴드(1~9)를 벗어남 (시드 \(seedValue))")
+            // 2군 신인(능력 ~40). 성장 곡선 계획 §3 사다리의 첫 칸이다.
+            assertSeasonBands(
+                result.snapshot.careerStats[0], seed: seedValue, stage: "신인",
+                minimumOuts: 180, strikeouts: 3...9, runs: 1...9
+            )
+
+            for _ in 2...10 {
+                result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .continueCareer))
+                result = try playSeason(result)
+            }
+            // 열 시즌을 던진 1군 투수. 원래 이 밴드가 말하려던 대상이다.
+            assertSeasonBands(
+                try XCTUnwrap(result.snapshot.careerStats.last), seed: seedValue, stage: "10시즌",
+                minimumOuts: 210, strikeouts: 4...13, runs: 1...9
+            )
         }
+    }
+
+    private func assertSeasonBands(
+        _ stats: ProSeasonStats,
+        seed: String,
+        stage: String,
+        minimumOuts: Int,
+        strikeouts: ClosedRange<Int>,
+        runs: ClosedRange<Int>
+    ) {
+        let kPer9 = stats.strikeouts * 27 / max(1, stats.inningsOuts)
+        let runsPer9 = stats.runsAllowed * 27 / max(1, stats.inningsOuts)
+        XCTAssertGreaterThanOrEqual(
+            stats.inningsOuts, minimumOuts,
+            "\(stage) 시즌 \(stats.inningsOuts / 3)이닝은 비정상 (시드 \(seed))"
+        )
+        XCTAssertTrue(
+            strikeouts.contains(kPer9),
+            "\(stage) K/9 \(kPer9)가 밴드(\(strikeouts))를 벗어남 (시드 \(seed))"
+        )
+        XCTAssertTrue(
+            runs.contains(runsPer9),
+            "\(stage) R/9 \(runsPer9)가 밴드(\(runs))를 벗어남 (시드 \(seed))"
+        )
     }
 
     // 피로가 높을수록 등판 결과가 나빠지는 방향성(커널의 구속·커맨드 저하 반영).
