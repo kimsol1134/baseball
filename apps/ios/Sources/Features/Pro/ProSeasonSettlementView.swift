@@ -54,7 +54,17 @@ struct ProSeasonSettlementView: View {
                     }
                 }
 
-                ProSeasonComparisonCard(state: state)
+                if let comparison = MobileCareerStore.seasonComparison(state: state) {
+                    CareerComparisonCard(
+                        comparison: comparison,
+                        title: copyResolver.resolve(.seasonComparisonTitle),
+                        subtitle: copyResolver.resolve(
+                            .seasonComparisonSeasons,
+                            arguments: [.integer(comparison.previousLabel), .integer(comparison.currentLabel)]
+                        ),
+                        identifier: "pro.settlement.seasonComparison"
+                    )
+                }
 
                 BaseballCard(title: copyResolver.resolve(.directionTitle)) {
                     VStack(alignment: .leading, spacing: 8) {
@@ -174,65 +184,3 @@ struct ProSeasonSettlementView: View {
     }
 }
 
-/// **작년의 나 vs 올해의 나.** 성장은 비교로만 느껴진다 — 숫자 하나로는 는 건지 준 건지
-/// 알 수 없고, 지난 시즌 옆에 놓아야 비로소 성장이 된다. 상대 타순이 고정된 뒤에야
-/// 두 시즌이 같은 상대에 대한 성적이 되어 이 비교가 성립한다(성장 곡선 계획 G-5).
-struct ProSeasonComparisonCard: View {
-    let state: ProCareerSnapshot
-    @Environment(\.gameCopyResolver) private var copyResolver
-
-    var body: some View {
-        if let comparison = MobileCareerStore.seasonComparison(state: state) {
-            BaseballCard(title: copyResolver.resolve(.seasonComparisonTitle)) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(verbatim: copyResolver.resolve(
-                        .seasonComparisonSeasons,
-                        arguments: [.integer(comparison.previousSeason), .integer(comparison.currentSeason)]
-                    ))
-                    .detailStyle(BaseballTheme.textTertiary)
-                    .monospacedDigit()
-
-                    if let headline = comparison.headline {
-                        Text(verbatim: copyResolver.resolve(
-                            .seasonComparisonHeadline,
-                            arguments: [.userText(copyResolver.resolve(.gameContent(ProSeasonComparisonRules.label(headline.kind))))]
-                        ))
-                        .proseLeadStyle(BaseballTheme.milestone)
-                    } else {
-                        Text(verbatim: copyResolver.resolve(.seasonComparisonSteady))
-                            .proseLeadStyle(BaseballTheme.textSecondary)
-                    }
-
-                    ForEach(comparison.metrics) { metric in
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(verbatim: copyResolver.resolve(.gameContent(ProSeasonComparisonRules.label(metric.kind))))
-                                .detailStyle(BaseballTheme.textSecondary)
-                            Spacer()
-                            Text(verbatim: "\(text(metric.previous, metric)) → \(text(metric.current, metric))")
-                                .font(.subheadline.monospacedDigit())
-                                .foregroundStyle(color(metric))
-                        }
-                        .accessibilityElement(children: .combine)
-                    }
-                }
-            }
-            .accessibilityIdentifier("pro.settlement.seasonComparison")
-        }
-    }
-
-    /// 승리는 정수, 나머지는 소수 둘째 자리. 잴 수 없으면 `—`다 — 0으로 적지 않는다.
-    private func text(_ value: Double?, _ metric: ProSeasonMetricChange) -> String {
-        guard let value else { return copyResolver.resolve(.seasonComparisonUnknown) }
-        return metric.kind == .wins
-            ? String(Int(value))
-            : String(format: "%.2f", value)
-    }
-
-    private func color(_ metric: ProSeasonMetricChange) -> Color {
-        switch metric.improved {
-        case true: BaseballTheme.information
-        case false: BaseballTheme.textSecondary
-        case nil: BaseballTheme.textTertiary
-        }
-    }
-}

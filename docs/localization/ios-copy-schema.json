@@ -79781,6 +79781,28 @@
       "status": "ui_verified"
     },
     {
+      "key": "record.lineage-comparison.lives",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%1$lld회차 → %2$lld회차",
+      "en": "Life %1$lld → %2$lld",
+      "ja": "%1$lld周目 → %2$lld周目",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.lineage-comparison.title",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "1회차의 나 vs 이번 회차의 나",
+      "en": "Your First Life and This One",
+      "ja": "1周目の自分と今回の自分",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "record.navigation",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "기록",
@@ -90665,6 +90687,50 @@
       "ko": "윤",
       "en": "Yun",
       "ja": "ゆん",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.lineage-comparison.evaluation",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "드래프트 평가",
+      "en": "Draft grade",
+      "ja": "ドラフト評価",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.lineage-comparison.runs-per-game",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "경기당 실점",
+      "en": "Runs per game",
+      "ja": "1試合あたり失点",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.lineage-comparison.strikeouts-per-game",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "경기당 삼진",
+      "en": "Strikeouts per game",
+      "ja": "1試合あたり奪三振",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.lineage-comparison.walks-per-game",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "경기당 볼넷",
+      "en": "Walks per game",
+      "ja": "1試合あたり四球",
       "ko_state": "translated",
       "en_state": "translated",
       "ja_state": "translated",

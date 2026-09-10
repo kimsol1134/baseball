@@ -201,8 +201,22 @@ enum CareerDisplayRules {
         ProAdvancementRules.board(state: state)
     }
 
-    nonisolated static func seasonComparison(for state: ProCareerSnapshot) -> ProSeasonComparison? {
+    nonisolated static func seasonComparison(for state: ProCareerSnapshot) -> CareerComparison? {
         ProSeasonComparisonRules.compare(state: state)
+    }
+
+    /// 회차 기록을 코어가 아는 모양으로 옮겨 담아 계보 비교를 만든다.
+    nonisolated static func lineageComparison(for records: [LifeRecord]) -> CareerComparison? {
+        CareerLineageComparisonRules.compare(lives: records.map {
+            CareerLifeSummary(
+                lifeNumber: $0.lifeNumber,
+                games: $0.games,
+                strikeouts: $0.strikeouts,
+                walks: $0.walks,
+                runsAllowed: $0.runsAllowed,
+                evaluationScore: $0.evaluationScore
+            )
+        })
     }
 
     nonisolated static func goalPermille(current: Int, target: Int, completed: Bool = false) -> Int {

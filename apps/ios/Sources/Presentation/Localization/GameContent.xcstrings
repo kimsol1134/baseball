@@ -14059,6 +14059,94 @@
         }
       }
     },
+    "content.lineage-comparison.evaluation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft grade"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドラフト評価"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "드래프트 평가"
+          }
+        }
+      }
+    },
+    "content.lineage-comparison.runs-per-game": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs per game"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1試合あたり失点"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "경기당 실점"
+          }
+        }
+      }
+    },
+    "content.lineage-comparison.strikeouts-per-game": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strikeouts per game"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1試合あたり奪三振"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "경기당 삼진"
+          }
+        }
+      }
+    },
+    "content.lineage-comparison.walks-per-game": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walks per game"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1試合あたり四球"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "경기당 볼넷"
+          }
+        }
+      }
+    },
     "content.memory.bullpen_compass.detail": {
       "localizations": {
         "en": {

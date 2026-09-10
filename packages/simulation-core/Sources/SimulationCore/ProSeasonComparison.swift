@@ -16,70 +16,10 @@ public enum ProSeasonMetricKind: String, Codable, Sendable, CaseIterable {
     case wins
 }
 
-public struct ProSeasonMetricChange: Equatable, Sendable, Identifiable {
-    public let kind: ProSeasonMetricKind
-    /// 지난 시즌 값. 잴 수 없으면 nil이고 화면은 `—`를 보여 준다.
-    public let previous: Double?
-    public let current: Double?
-    /// 낮을수록 좋은 지표인가(평균자책·WHIP).
-    public let lowerIsBetter: Bool
-
-    public init(kind: ProSeasonMetricKind, previous: Double?, current: Double?, lowerIsBetter: Bool) {
-        self.kind = kind
-        self.previous = previous
-        self.current = current
-        self.lowerIsBetter = lowerIsBetter
-    }
-
-    public var id: String { kind.rawValue }
-
-    /// 올해 − 작년. 어느 한쪽이라도 없으면 nil이다 — **모르는 것을 0으로 세지 않는다.**
-    public var delta: Double? {
-        guard let previous, let current else { return nil }
-        return current - previous
-    }
-
-    /// 나아졌는가. 방향은 지표마다 다르다.
-    ///
-    /// **nil은 '모른다'이고 false는 '나아지지 않았다'이다.** 잴 수 없는 지표(자책점 없는
-    /// 시즌)와 그대로인 지표는 다른 말이라 섞지 않는다.
-    public var improved: Bool? {
-        guard let delta else { return nil }
-        if delta == 0 { return false }
-        return lowerIsBetter ? delta < 0 : delta > 0
-    }
-}
-
-public struct ProSeasonComparison: Equatable, Sendable {
-    public let previousSeason: Int
-    public let currentSeason: Int
-    public let metrics: [ProSeasonMetricChange]
-
-    public init(previousSeason: Int, currentSeason: Int, metrics: [ProSeasonMetricChange]) {
-        self.previousSeason = previousSeason
-        self.currentSeason = currentSeason
-        self.metrics = metrics
-    }
-
-    /// 가장 크게 나아진 지표. 결산 화면이 한 줄로 말할 것 — 표를 읽게 하지 않는다.
-    /// 나아진 것이 하나도 없으면 nil이고, 그때는 비교표만 남는다.
-    public var headline: ProSeasonMetricChange? {
-        metrics
-            .filter { $0.improved == true }
-            .max { lhs, rhs in relativeGain(lhs) < relativeGain(rhs) }
-    }
-
-    /// 지표마다 단위가 달라 절대 변화량으로는 못 겨룬다. 작년 값 대비 비율로 견준다.
-    private func relativeGain(_ change: ProSeasonMetricChange) -> Double {
-        guard let delta = change.delta, let previous = change.previous, previous != 0 else { return 0 }
-        return abs(delta / previous)
-    }
-}
-
 public enum ProSeasonComparisonRules {
     /// 방금 끝난 시즌과 그 전 시즌을 견준다. 첫 시즌이거나 앞 시즌이 없으면 nil이다 —
     /// 견줄 대상이 없을 때 억지로 표를 만들지 않는다.
-    public static func compare(state: ProCareerSnapshot) -> ProSeasonComparison? {
+    public static func compare(state: ProCareerSnapshot) -> CareerComparison? {
         guard ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) else { return nil }
         let seasons = state.careerStats.sorted { $0.season < $1.season }
         guard seasons.count >= 2 else { return nil }
@@ -87,9 +27,9 @@ public enum ProSeasonComparisonRules {
         let previous = seasons[seasons.count - 2]
         // 한 이닝도 던지지 않은 시즌은 비교의 한쪽이 될 수 없다(부상·군 복무).
         guard current.inningsOuts > 0, previous.inningsOuts > 0 else { return nil }
-        return ProSeasonComparison(
-            previousSeason: previous.season,
-            currentSeason: current.season,
+        return CareerComparison(
+            previousLabel: previous.season,
+            currentLabel: current.season,
             metrics: [
                 change(.strikeoutsPer9, previous, current, lowerIsBetter: false) {
                     PitchingMetrics.per9($0.strikeouts, outs: $0.inningsOuts)
@@ -120,12 +60,14 @@ public enum ProSeasonComparisonRules {
         _ current: ProSeasonStats,
         lowerIsBetter: Bool,
         _ value: (ProSeasonStats) -> Double?
-    ) -> ProSeasonMetricChange {
-        ProSeasonMetricChange(
-            kind: kind,
+    ) -> CareerMetricChange {
+        CareerMetricChange(
+            id: kind.rawValue,
+            labelKey: label(kind),
             previous: value(previous),
             current: value(current),
-            lowerIsBetter: lowerIsBetter
+            lowerIsBetter: lowerIsBetter,
+            isWholeNumber: kind == .wins
         )
     }
 

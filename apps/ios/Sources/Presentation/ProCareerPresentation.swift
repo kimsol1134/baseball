@@ -1199,6 +1199,66 @@ enum ProCareerPresentation {
     }
 }
 
+/// **성장은 비교로만 느껴진다.** 시즌과 시즌, 회차와 회차가 같은 카드를 쓴다 — 무엇을
+/// 견주든 플레이어가 읽는 방식은 같아야 하고, 규칙도 하나여야 갈라지지 않는다.
+///
+/// 가장 크게 좋아진 것을 한 줄로 먼저 세우고 표는 그 아래에 둔다. 표를 읽게 하지 않는다.
+struct CareerComparisonCard: View {
+    let comparison: CareerComparison
+    let title: String
+    let subtitle: String
+    var identifier: String
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        BaseballCard(title: title) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(verbatim: subtitle)
+                    .detailStyle(BaseballTheme.textTertiary)
+                    .monospacedDigit()
+
+                if let headline = comparison.headline {
+                    Text(verbatim: copyResolver.resolve(
+                        .seasonComparisonHeadline,
+                        arguments: [.userText(copyResolver.resolve(.gameContent(headline.labelKey)))]
+                    ))
+                    .proseLeadStyle(BaseballTheme.milestone)
+                } else {
+                    Text(verbatim: copyResolver.resolve(.seasonComparisonSteady))
+                        .proseLeadStyle(BaseballTheme.textSecondary)
+                }
+
+                ForEach(comparison.metrics) { metric in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(verbatim: copyResolver.resolve(.gameContent(metric.labelKey)))
+                            .detailStyle(BaseballTheme.textSecondary)
+                        Spacer()
+                        Text(verbatim: "\(text(metric.previous, metric)) → \(text(metric.current, metric))")
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(color(metric))
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+        }
+        .accessibilityIdentifier(identifier)
+    }
+
+    /// 잴 수 없으면 `—`다 — **0으로 적지 않는다.**
+    private func text(_ value: Double?, _ metric: CareerMetricChange) -> String {
+        guard let value else { return copyResolver.resolve(.seasonComparisonUnknown) }
+        return metric.isWholeNumber ? String(Int(value)) : String(format: "%.2f", value)
+    }
+
+    private func color(_ metric: CareerMetricChange) -> Color {
+        switch metric.improved {
+        case true: BaseballTheme.information
+        case false: BaseballTheme.textSecondary
+        case nil: BaseballTheme.textTertiary
+        }
+    }
+}
+
 struct GoalPermilleBar: View {
     let permille: Int
     let completed: Bool

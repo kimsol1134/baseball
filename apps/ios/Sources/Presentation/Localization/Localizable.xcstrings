@@ -35160,6 +35160,50 @@
         }
       }
     },
+    "record.lineage-comparison.lives": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Life %1$lld → %2$lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld周目 → %2$lld周目"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld회차 → %2$lld회차"
+          }
+        }
+      }
+    },
+    "record.lineage-comparison.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your First Life and This One"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1周目の自分と今回の自分"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1회차의 나 vs 이번 회차의 나"
+          }
+        }
+      }
+    },
     "record.navigation": {
       "localizations": {
         "en": {

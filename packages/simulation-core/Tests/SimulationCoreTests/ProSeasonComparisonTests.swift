@@ -8,10 +8,10 @@ final class ProSeasonComparisonTests: XCTestCase {
             season(1, outs: 300, strikeouts: 60, earned: 50, hits: 120, walks: 40, wins: 4),
             season(2, outs: 300, strikeouts: 100, earned: 40, hits: 100, walks: 30, wins: 6),
         ])))
-        XCTAssertEqual(comparison.previousSeason, 1)
-        XCTAssertEqual(comparison.currentSeason, 2)
+        XCTAssertEqual(comparison.previousLabel, 1)
+        XCTAssertEqual(comparison.currentLabel, 2)
         // K/9는 5.4 → 9.0으로 67% 올랐고, 다른 지표는 그만큼 못 움직였다.
-        XCTAssertEqual(comparison.headline?.kind, .strikeoutsPer9)
+        XCTAssertEqual(comparison.headline?.id, ProSeasonMetricKind.strikeoutsPer9.rawValue)
         XCTAssertEqual(comparison.headline?.improved, true)
     }
 
@@ -21,13 +21,13 @@ final class ProSeasonComparisonTests: XCTestCase {
             season(1, outs: 300, strikeouts: 80, earned: 60, hits: 130, walks: 50, wins: 5),
             season(2, outs: 300, strikeouts: 80, earned: 30, hits: 90, walks: 30, wins: 5),
         ])))
-        let era = try XCTUnwrap(comparison.metrics.first { $0.kind == .earnedRunAverage })
+        let era = try XCTUnwrap(comparison.metrics.first { $0.id == ProSeasonMetricKind.earnedRunAverage.rawValue })
         XCTAssertTrue(era.lowerIsBetter)
         XCTAssertEqual(era.improved, true, "평균자책이 내려갔는데 나빠진 것으로 읽힙니다")
-        let whip = try XCTUnwrap(comparison.metrics.first { $0.kind == .whip })
+        let whip = try XCTUnwrap(comparison.metrics.first { $0.id == ProSeasonMetricKind.whip.rawValue })
         XCTAssertEqual(whip.improved, true)
         // 그대로인 지표는 '나아지지 않았다'(false)이지 '모른다'(nil)가 아니다.
-        let wins = try XCTUnwrap(comparison.metrics.first { $0.kind == .wins })
+        let wins = try XCTUnwrap(comparison.metrics.first { $0.id == ProSeasonMetricKind.wins.rawValue })
         XCTAssertEqual(wins.delta, 0)
         XCTAssertEqual(wins.improved, false, "그대로인 지표가 나아진 것으로 세어집니다")
     }
@@ -39,12 +39,12 @@ final class ProSeasonComparisonTests: XCTestCase {
             season(1, outs: 300, strikeouts: 80, earned: nil, hits: 130, walks: 50, wins: 5),
             season(2, outs: 300, strikeouts: 80, earned: 30, hits: 90, walks: 30, wins: 5),
         ])))
-        let era = try XCTUnwrap(comparison.metrics.first { $0.kind == .earnedRunAverage })
+        let era = try XCTUnwrap(comparison.metrics.first { $0.id == ProSeasonMetricKind.earnedRunAverage.rawValue })
         XCTAssertNil(era.previous)
         XCTAssertNil(era.delta, "모르는 값이 0으로 세어졌습니다")
         XCTAssertNil(era.improved)
         // 나머지 지표는 정상적으로 비교된다.
-        XCTAssertNotNil(comparison.metrics.first { $0.kind == .whip }?.delta)
+        XCTAssertNotNil(comparison.metrics.first { $0.id == ProSeasonMetricKind.whip.rawValue }?.delta)
     }
 
     /// 견줄 대상이 없으면 표를 만들지 않는다.
