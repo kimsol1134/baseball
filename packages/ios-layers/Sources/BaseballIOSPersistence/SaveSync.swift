@@ -83,17 +83,26 @@ public struct SaveSync {
     /// 현재 로컬 파일을 두 세대까지 보존한 뒤 새 값을 원자적으로 쓰고 iCloud에도 올린다.
     @discardableResult
     public func write(_ data: Data) -> Bool {
+        writing(data) == nil
+    }
+
+    /// 실패의 **이유**까지 돌려준다. 성공이면 nil.
+    ///
+    /// `Bool`만으로는 화면이 공간 부족과 권한 오류를 구분할 수 없어, 어느 쪽이든
+    /// "저장 공간을 확보해 주세요"라고 말했다(1.2.x 리뷰). 공간 부족은 파일 시스템이
+    /// 그렇게 말했을 때만 그렇게 부른다.
+    public func writing(_ data: Data) -> SaveWriteFailure? {
         do {
             if let current = try? Data(contentsOf: fileURL), current != data {
                 try preserveAsNewestBackup(current)
             }
             try data.write(to: fileURL, options: .atomic)
         } catch {
-            return false
+            return SaveWriteFailure.from(error)
         }
         store.set(data, forKey: key)
         store.synchronize()
-        return true
+        return nil
     }
 
     public func clear() {

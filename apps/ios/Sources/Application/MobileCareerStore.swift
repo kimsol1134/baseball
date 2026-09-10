@@ -127,6 +127,13 @@ final class MobileCareerStore {
     var careerOrigin: ProCareerOrigin? { durableCareerOrigin }
     /// 진행 중인 중요 경기. `importantGame` 단계에서만 존재한다.
     var pitchSession: PitchSession?
+    /// 마지막 명령이 실패한 **이유**. 화면은 여기서 문장을 고른다 — 규칙이 거절한 일에
+    /// "저장 공간을 확보하라"고 말하지 않기 위해서다(7-A).
+    var lastActionFailure: CareerActionFailure?
+    @ObservationIgnored var failureRepetition = CareerActionFailureRepetition()
+    /// 같은 실패가 같은 자리에서 되풀이됐는가. 두 번째부터는 다른 말을 한다.
+    var lastFailureRepeated = false
+
     /// 방금 확정한 시즌 결정이 남긴 것. 화면에 결과를 **같은 자리에** 남기기 위한 값이라
     /// 저장에 들어가지 않는다. 플레이어가 "계속"을 누르면 사라진다.
     var lastSeasonDecisionReceipt: ProSeasonDecisionReceipt?

@@ -136,6 +136,11 @@ final class HighSchoolCareerStore {
 
     var result: HighSchoolCareerResult? { durableResult }
     var lastSummary: String?
+    /// 마지막 명령이 실패한 **이유**(7-A). 화면은 여기서 문장을 고른다 — 근거 없이
+    /// "저장 공간을 확보하라"고 말하지 않기 위해서다.
+    var lastActionFailure: CareerActionFailure?
+    @ObservationIgnored var failureRepetition = CareerActionFailureRepetition()
+    var lastFailureRepeated = false
     var feedbackTrigger = 0
     var feedbackCue: FeedbackCue = .neutral
     var pendingGains: [AbilityGain] = []

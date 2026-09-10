@@ -998,7 +998,15 @@ private struct CareerFailureView: View {
                 Image(systemName: "exclamationmark.triangle")
             }
         } description: {
-            GameCopyText(verbatim: message)
+            // 갈래를 아는 실패는 그 갈래의 문장을 쓴다. 커널이 던진 영어 설명이나
+            // "저장 공간을 확보해 주세요"가 아무 실패에나 붙지 않게 한다(7-A).
+            GameCopyText(verbatim: career.lastActionFailure.map {
+                CareerFailureCopy.message(
+                    for: $0,
+                    repeated: career.lastFailureRepeated,
+                    resolver: copyResolver
+                )
+            } ?? message)
         } actions: {
             PrimaryPill(title: copyResolver.resolve(AppCopyKey.errorRetry), identifier: "pro.retry") {
                 career.retryRestoreOrReturn()

@@ -7,6 +7,16 @@ extension HighSchoolCareerStore {
     // MARK: - 저장
 
     @discardableResult
+    /// 실패를 한 곳에서 기록한다. 반복 여부까지 여기서 정한다.
+    func recordFailure(_ failure: CareerActionFailure, operation: String = #function) {
+        lastActionFailure = failure
+        lastFailureRepeated = failureRepetition.record(
+            operation: operation,
+            failure: failure,
+            revision: result?.snapshot.revision ?? 0
+        )
+    }
+
     func save() -> Bool {
         persist(
             result: result,
@@ -45,6 +55,8 @@ extension HighSchoolCareerStore {
             retentionEnvelope(for: current.snapshot, rivalLedger: rivalLedger)
         }
         guard canWrite(schemaVersion: HighSchoolCareerPersistence.currentSchemaVersion) else {
+            // 쓰기가 막힌 저장본은 디스크 문제가 아니다(7-A).
+            recordFailure(CareerActionFailureRules.classify(writeDisabled: true))
             return false
         }
         let draft = capturePersisted().drafting(
@@ -62,10 +74,21 @@ extension HighSchoolCareerStore {
             currentCareerRetention: currentCareerRetention,
             revision: candidateRevision
         )
-        guard let data = HighSchoolCareerPersistence.encode(record),
-              saveWriter?(data) ?? sync.write(data) else {
+        guard let data = HighSchoolCareerPersistence.encode(record) else {
+            recordFailure(CareerActionFailureRules.classify(encodeFailed: true))
             return false
         }
+        if let saveWriter {
+            guard saveWriter(data) else {
+                recordFailure(CareerActionFailureRules.classify(write: .io(code: "injected")))
+                return false
+            }
+        } else if let writeFailure = sync.writing(data) {
+            // 파일 시스템이 말한 이유를 그대로 싣는다. 공간 부족은 그렇게 말했을 때만이다.
+            recordFailure(CareerActionFailureRules.classify(write: writeFailure))
+            return false
+        }
+        lastActionFailure = nil
         updatePersisted { $0.savedRevision = candidateRevision }
         return true
     }

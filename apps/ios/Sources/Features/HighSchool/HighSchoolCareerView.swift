@@ -122,10 +122,16 @@ struct HighSchoolCareerView: View {
                         Image(systemName: "exclamationmark.triangle")
                     }
                 } description: {
-                    Text(
-                        verbatim: copyResolver.language == .korean
-                            ? message : copyResolver.resolve(.careerErrorBody)
-                    )
+                    // 갈래를 아는 실패는 그 갈래의 문장을 쓴다. 한국어에서만 원문을 보이던
+                    // 경로도 이제 세 언어 모두 같은 이유를 말한다(7-A).
+                    Text(verbatim: career.lastActionFailure.map {
+                        CareerFailureCopy.message(
+                            for: $0,
+                            repeated: career.lastFailureRepeated,
+                            resolver: copyResolver
+                        )
+                    } ?? (copyResolver.language == .korean
+                        ? message : copyResolver.resolve(.careerErrorBody)))
                 } actions: {
                     // 비파괴 출구가 먼저다. 시드 오타 하나로 도달하는 화면의 유일한
                     // 버튼이 "전 회차 삭제"면 그건 함정이다(4차 패널 P0).

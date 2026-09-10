@@ -188,6 +188,7 @@
 		D4697CDDA0B2DF5A34922633 /* ProRoleRequestAndGlossaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E0CFC2E7A099F6A7E369A7 /* ProRoleRequestAndGlossaryTests.swift */; };
 		D548F421B9A3A72ADF35DCB6 /* CareerDirectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E814C0BEE19D331895E8F9 /* CareerDirectionCard.swift */; };
 		07945034533FC58F0003213E /* ProPeoplePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF49F4DB63ECF814E489C7AD /* ProPeoplePresentation.swift */; };
+		8E43B03DE9845CCAD2C7C8FC /* CareerFailureCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CAECAF6369ED621466E81C /* CareerFailureCopy.swift */; };
 		D597B366CD43A6D6B0B267B8 /* ProCareerPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1DFAD69B70EDB48CFBC333 /* ProCareerPresentation.swift */; };
 		D5CD1C7D48EEBD486307FD51 /* GlossaryText.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC1782E02EE803311C6FCC85 /* GlossaryText.swift */; };
 		D83F0E62D3BDA0A5664FE891 /* HighSchoolTrainingResultViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A015A2DD5D24CB9CD6F00F7B /* HighSchoolTrainingResultViews.swift */; };
@@ -358,6 +359,7 @@
 		7B64DE9B62DC7776044F7E29 /* PlateFigures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateFigures.swift; sourceTree = "<group>"; };
 		7E021CB348255CD311720B67 /* CareerSaveSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerSaveSync.swift; sourceTree = "<group>"; };
 		DF49F4DB63ECF814E489C7AD /* ProPeoplePresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProPeoplePresentation.swift; sourceTree = "<group>"; };
+		56CAECAF6369ED621466E81C /* CareerFailureCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerFailureCopy.swift; sourceTree = "<group>"; };
 		7F1DFAD69B70EDB48CFBC333 /* ProCareerPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProCareerPresentation.swift; sourceTree = "<group>"; };
 		81ECBB2327ACE07418616592 /* GrowthCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthCelebrationView.swift; sourceTree = "<group>"; };
 		8291257DAA95D292E42B46C9 /* HighSchoolCareerPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolCareerPersistenceTests.swift; sourceTree = "<group>"; };
@@ -644,6 +646,7 @@
 				5612CDC709AFB11514C35108 /* PitchCopy.swift */,
 				5037C6E789A6D78E665C115C /* PitchPresentation.swift */,
 				7F1DFAD69B70EDB48CFBC333 /* ProCareerPresentation.swift */,
+				56CAECAF6369ED621466E81C /* CareerFailureCopy.swift */,
 				DF49F4DB63ECF814E489C7AD /* ProPeoplePresentation.swift */,
 				B2F557696D68665E069F88EA /* ProFeatureCopy.swift */,
 				B24425BD4D8AD18C64E17911 /* ScopedPresentation.swift */,
@@ -1173,6 +1176,7 @@
 				3B0D52DC3050C0FA67778CF5 /* PlateFigures.swift in Sources */,
 				F45F1CB24CB13C2A31BC0B2F /* PlayerBondStory.swift in Sources */,
 				07945034533FC58F0003213E /* ProPeoplePresentation.swift in Sources */,
+				8E43B03DE9845CCAD2C7C8FC /* CareerFailureCopy.swift in Sources */,
 				D597B366CD43A6D6B0B267B8 /* ProCareerPresentation.swift in Sources */,
 				68E893F9B5FA506F260FE6B8 /* ProContractOfferView.swift in Sources */,
 				4737093072AEB28BBE540206 /* ProCopyKeys.swift in Sources */,

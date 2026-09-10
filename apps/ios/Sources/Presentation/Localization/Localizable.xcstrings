@@ -46286,6 +46286,204 @@
           }
         }
       }
+    },
+    "failure.rule": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can't do that right now. Check what this screen is asking for."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今はこの操作を進められません。この画面の条件を確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금은 이 동작을 진행할 수 없어요. 현재 화면의 조건을 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.stale-state": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The progress changed somewhere else. Go back and check the current record."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "進行状況が変わりました。前の画面に戻って現在の記録を確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "진행 상태가 달라졌어요. 이전 화면으로 돌아가 현재 기록을 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.pitch-state": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The pitch is unfinished. Go back to the saved game and continue from there."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "投球の状態を確認する必要があります。保存された試合に戻って続きを進めてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "투구 상태를 확인해야 해요. 저장된 경기로 돌아가 이어서 진행해 주세요."
+          }
+        }
+      }
+    },
+    "failure.storage-full": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There wasn't enough space to save. Free some up, then check again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存容量が足りず記録を保存できませんでした。空き容量を確保してから確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저장 공간이 부족해 기록을 저장하지 못했어요. 공간을 확보한 뒤 다시 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.io": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record didn't save. Check the saved progress, then continue."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録を保存できませんでした。保存された進行を確認してから続けてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기록을 저장하지 못했어요. 저장된 진행을 다시 확인한 뒤 이어서 진행해 주세요."
+          }
+        }
+      }
+    },
+    "failure.io.repeated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving keeps failing. Export the record from Settings, then check again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録の保存が繰り返し失敗しています。設定から記録をファイルに保存してから確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기록 저장 중 문제가 반복됐어요. 설정에서 기록을 파일로 보관한 뒤 다시 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.save-validation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record couldn't be validated. The original is untouched — check it in Settings."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録を検証できませんでした。元の記録はそのままです。設定から確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기록을 검증하지 못했어요. 원본은 그대로 두었으니 설정에서 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.write-disabled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This save can't be written to. Check the app version."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この保存データには書き込めません。アプリのバージョンを確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 저장본에는 기록을 쓸 수 없어요. 앱 버전을 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.unknown": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That didn't finish. Go back and check the current state."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "進行を完了できませんでした。前の画面に戻って状態を確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "진행을 마치지 못했어요. 이전 화면으로 돌아가 상태를 확인해 주세요."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

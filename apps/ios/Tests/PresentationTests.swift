@@ -301,6 +301,44 @@ final class PresentationTests: XCTestCase {
         XCTAssertFalse(proDecision.contains(".confirmationDialog("))
     }
 
+    /// 7-A. 규칙이 거절한 일은 **커리어를 못 쓰게 만들지 않고**, 저장 공간을 탓하지도 않는다.
+    @MainActor
+    func testARuleRejectionDoesNotBlankTheCareerOrBlameStorage() throws {
+        let store = MobileCareerStore(saveWriter: { _ in true }, configuration: .production)
+        XCTAssertTrue(store.installLiveSeasonDecisionFixtureForUITesting())
+        let decision = try XCTUnwrap(store.state?.pendingDecision)
+
+        // 없는 선택지 → 커널이 거절한다.
+        store.applySeasonDecision(decisionID: decision.id, choiceID: "missing-choice")
+        // 화면 자체를 못 쓰게 만들지 않는다. (스토어가 인자 검증에서 먼저 멈추므로
+        // 국면은 그대로다.)
+        XCTAssertEqual(store.state?.phase, .seasonDecision)
+
+        // 커널까지 닿는 거절: 이미 적용한 결정을 한 번 더.
+        store.applySeasonDecision(decisionID: decision.id, choiceID: decision.choices[0].id)
+        store.acknowledgeSeasonDecisionReceipt()
+        let afterApply = try XCTUnwrap(store.result)
+        _ = store.perform(operation: "replay") {
+            try store.engine.applySeasonDecision(.init(
+                seed: afterApply.nextSeed,
+                state: afterApply.snapshot,
+                decisionID: decision.id,
+                choiceID: decision.choices[0].id
+            ))
+        }
+        let failure = try XCTUnwrap(store.lastActionFailure)
+        XCTAssertEqual(failure.kind, .rule)
+        XCTAssertFalse(failure.kind.isStorageFailure)
+        XCTAssertNotEqual(store.loadState, .failed(""), "규칙 거절이 커리어를 닫으면 안 된다")
+        if case .failed = store.loadState {
+            XCTFail("규칙 거절이 loadState를 실패로 뒤집었다")
+        }
+
+        let korean = GameCopyResolver(language: .korean, policy: .releaseSafe)
+        let message = CareerFailureCopy.message(for: failure, resolver: korean)
+        XCTAssertFalse(message.contains("저장 공간"), message)
+    }
+
     /// 3년의 결과는 지명 결과가 먼저다. 신분 카드(이름·학교·얼굴)는 회차 카드가 이미
     /// 보여 주므로 여기서 되풀이하지 않는다(6-C).
     func testDraftJourneyLeadsWithTheDestinationAndDoesNotRepeatTheIdentityCard() throws {
