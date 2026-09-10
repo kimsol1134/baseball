@@ -26,6 +26,7 @@
     "test:korean-copy": "node --test tools/tests/korean-copy.test.mjs",
     "inventory:ios-localization": "node tools/inventory-ios-localization.mjs",
     "check:ios-localization": "node tools/check-ios-localization.mjs",
+    "check:real-names": "node tools/check-real-names.mjs",
     "check:unity-assets": "node tools/check-unity-assets.mjs",
     "check:android:unity": "node tools/check-android-unity-release.mjs",
     "test:unity": "bash tools/unity-android-test.sh",
