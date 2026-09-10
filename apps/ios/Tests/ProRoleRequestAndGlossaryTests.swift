@@ -171,10 +171,15 @@ final class ProRoleRequestAndGlossaryTests: XCTestCase {
         XCTAssertNil(result.snapshot.roleRequest)
     }
 
+    /// 1.2.9 규칙 — 효과 요약이 설명보다 위다. 6-A에서 선택 카드가 공용
+    /// `ConversationChoiceCard`로 옮겨 갔으므로 순서는 그 카드가 지킨다.
     func testDecisionChoicePutsEffectSummaryAboveDetailInSource() throws {
-        let source = try IOSSourceScan.read("apps/ios/Sources/Features/Pro/ProSeasonDecisionView.swift")
-        let effect = try XCTUnwrap(source.range(of: "combinedEffect("))
-        let detail = try XCTUnwrap(source.range(of: "choiceDetail(choice"))
+        let card = try IOSSourceScan.typeBody(
+            "ConversationChoiceCard",
+            in: "apps/ios/Sources/ConversationScene.swift"
+        )
+        let effect = try XCTUnwrap(card.range(of: "ForEach(chips)"))
+        let detail = try XCTUnwrap(card.range(of: "if let detail, !detail.isEmpty"))
         XCTAssertLessThan(effect.lowerBound, detail.lowerBound)
     }
 
@@ -185,17 +190,16 @@ final class ProRoleRequestAndGlossaryTests: XCTestCase {
         XCTAssertLessThan(growth.lowerBound, detail.lowerBound)
     }
 
+    /// 용어 링크는 선택 버튼 **안에** 있으면 탭이 링크에 먹힌다. 공용 선택 카드는
+    /// 통째로 버튼이므로 그 안에 `GlossaryText`가 들어가면 안 된다.
     func testGlossaryTextIsOutsideParentChoiceButtons() throws {
-        let decision = try IOSSourceScan.read("apps/ios/Sources/Features/Pro/ProSeasonDecisionView.swift")
-        let choiceButton = try XCTUnwrap(
-            decision.range(of: "Button { pendingChoice = choice }")
+        let card = try IOSSourceScan.typeBody(
+            "ConversationChoiceCard",
+            in: "apps/ios/Sources/ConversationScene.swift"
         )
-        let choiceID = try XCTUnwrap(
-            decision.range(of: ".accessibilityIdentifier(\"pro.seasonDecision.choice.\\(choice.id)\")")
-        )
-        let nestedChoice = decision[choiceButton.lowerBound..<choiceID.upperBound]
+        XCTAssertTrue(card.contains("Button(action: action)"))
         XCTAssertFalse(
-            nestedChoice.contains("GlossaryText("),
+            card.contains("GlossaryText("),
             "choice-card GlossaryText must sit outside the select Button"
         )
 

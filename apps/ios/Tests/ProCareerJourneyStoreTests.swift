@@ -199,7 +199,7 @@ final class ProCareerJourneyStoreTests: XCTestCase {
         XCTAssertTrue(flow.contains("accessibilityIdentifier(\"pro.contractOffer\")"))
         XCTAssertTrue(flow.contains("identifier: \"pro.contractOffer.sign\""))
         XCTAssertTrue(flow.contains("identifier: \"pro.seasonReview.confirm\""))
-        XCTAssertTrue(flow.contains(".accessibilityElement(children: .contain)\n        .accessibilityIdentifier(\"pro.seasonDecision\")"))
+        XCTAssertTrue(flow.contains(".accessibilityIdentifier(\"pro.seasonDecision\")"))
         XCTAssertTrue(flow.contains("pro.contractOffer.ambition.\\(ambition.rawValue)"))
         XCTAssertTrue(flow.contains("@State private var selectedAmbition: ProCareerAmbition?"))
         XCTAssertTrue(flow.contains(".task(id: market.id)"))

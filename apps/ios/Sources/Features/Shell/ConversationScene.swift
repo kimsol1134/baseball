@@ -136,17 +136,18 @@ struct ConversationChoiceCard: View {
                         .foregroundStyle(isSelected ? BaseballTheme.selection : BaseballTheme.border)
                         .accessibilityHidden(true)
                 }
-                if let detail, !detail.isEmpty {
-                    Text(verbatim: detail)
-                        .detailStyle()
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                // 효과 요약이 설명보다 위다(1.2.9). 숫자를 먼저 읽고 문장으로 확인한다.
                 if !chips.isEmpty {
                     EffectChipFlow {
                         ForEach(chips) { chip in
                             EffectChip(text: chip.text, tone: chip.tone, systemImage: chip.systemImage)
                         }
                     }
+                }
+                if let detail, !detail.isEmpty {
+                    Text(verbatim: detail)
+                        .detailStyle()
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 ForEach(timingLines.indices, id: \.self) { index in
                     Label(timingLines[index].text, systemImage: timingLines[index].systemImage)
