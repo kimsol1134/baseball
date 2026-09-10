@@ -301,6 +301,22 @@ final class PresentationTests: XCTestCase {
         XCTAssertFalse(proDecision.contains(".confirmationDialog("))
     }
 
+    /// 계약도 같은 규칙을 따른다 — 고르는 일은 명령이 아니고, 확인은 모달이 아니라
+    /// 같은 화면 아래에 열린다(6-D).
+    func testContractOfferSeparatesSelectionFromSigningWithoutAModal() throws {
+        let contract = try IOSSourceScan.typeBody(
+            "ProContractOfferView",
+            in: "apps/ios/Sources/ProContractOfferView.swift"
+        )
+
+        XCTAssertFalse(contract.contains(".alert("))
+        XCTAssertFalse(contract.contains(".confirmationDialog("))
+        XCTAssertTrue(contract.contains("identifier: \"pro.contractOffer.confirm.accept\""))
+        XCTAssertTrue(contract.contains("pro.contractOffer.confirm.cancel"))
+        // 카드를 누르는 일은 선택만 바꾼다. `acceptContract`는 확인 블록에서 한 번만 부른다.
+        XCTAssertEqual(contract.components(separatedBy: "career.acceptContract(").count - 1, 1)
+    }
+
     /// 미리보기는 선언된 효과가 아니라 커널을 돌려 본 결과를 쓴다(6-B).
     func testProDecisionChipsAskTheKernel() throws {
         let proDecision = try IOSSourceScan.typeBody(

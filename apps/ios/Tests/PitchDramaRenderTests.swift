@@ -249,6 +249,39 @@ final class NewSurfaceRenderTests: XCTestCase {
         )
     }
 
+    /// 신인 계약. 카드를 고르는 일과 서명하는 일이 갈라져 있고, 확인이 모달이 아니라
+    /// 같은 화면 아래에 열리는지 눈으로 본다(6-D).
+    func testContractOfferConfirmStaysOnTheScreen() throws {
+        let preset = PitcherPresetCatalog.all[0]
+        let engine = ProCareerEngine(journeyEnabled: true)
+        let started = try CareerBootstrap.startCareer(
+            preset: preset,
+            playerName: "민서준",
+            seed: 20_260_903,
+            startingRepertoire: PitchLearningRules.recommendedSelection(presetID: preset.id),
+            engine: engine
+        )
+        XCTAssertEqual(started.snapshot.phase, .contractOffer)
+        let store = MobileCareerStore(saveWriter: { _ in true }, configuration: .production)
+        XCTAssertTrue(store.installLiveSeasonDecisionFixtureForUITesting())
+        let market = try XCTUnwrap(started.snapshot.journeyState?.pendingContractMarket)
+        let offer = try XCTUnwrap(market.offers.first)
+        save(
+            ProContractOfferView(career: store, state: started.snapshot),
+            name: "11-contract-offer",
+            height: 1_100
+        )
+        save(
+            ProContractOfferView(
+                career: store,
+                state: started.snapshot,
+                initialSelection: (offerID: offer.id, ambition: .franchiseIcon)
+            ),
+            name: "12-contract-offer-confirm",
+            height: 1_100
+        )
+    }
+
     /// 고교 관계 카드. 프로와 같은 관용구를 쓰는지 나란히 놓고 본다.
     func testHighSchoolConversation() throws {
         let engine = HighSchoolCareerEngine()

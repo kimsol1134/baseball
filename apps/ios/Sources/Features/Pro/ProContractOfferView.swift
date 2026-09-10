@@ -13,6 +13,9 @@ struct ProContractOfferView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var selectedAmbition: ProCareerAmbition?
     @State private var pendingOfferID: String?
+    /// 렌더 검사가 "고른 뒤" 화면을 그대로 볼 수 있게 하는 시작 선택. 실제 흐름은 항상 nil로
+    /// 들어오고, 값을 넣어도 명령은 일어나지 않는다 — 선택은 명령이 아니다.
+    var initialSelection: (offerID: String, ambition: ProCareerAmbition)?
     @State private var showingCounterSheet = false
 
     private static let ambitions: [ProCareerAmbition] = [
@@ -125,6 +128,11 @@ struct ProContractOfferView: View {
                 if market.kind == .rookie {
                     goalSelectionSection(market)
                 }
+
+                // 접근성 큰 글씨에서는 고정 바가 화면의 절반을 먹으므로 확인도 본문 끝에 둔다.
+                if typeSize.isAccessibilitySize {
+                    confirmBlock(market)
+                }
             }
             .padding(.bottom, 28)
             .accessibilityElement(children: .contain)
@@ -133,6 +141,11 @@ struct ProContractOfferView: View {
             // 서명 바가 없는 재계약·FA 시장에서는 떠 있는 탭 바가 마지막 카드를 덮는다.
             .safeAreaPadding(.bottom, market.kind == .rookie ? 0 : BaseballMetrics.floatingTabBarClearance)
             .task(id: market.id) {
+                if let initialSelection {
+                    pendingOfferID = initialSelection.offerID
+                    selectedAmbition = initialSelection.ambition
+                    return
+                }
                 // A contract screen normally disappears between markets, but resetting here
                 // keeps a reused SwiftUI identity from carrying an old ambition or dialog into
                 // the next negotiation.
@@ -146,32 +159,6 @@ struct ProContractOfferView: View {
                 }
                 selectedAmbition = activeGoal.ambition
             }
-            .alert(
-                copyResolver.resolve(.contractOfferConfirmTitle),
-                isPresented: Binding(
-                    get: { pendingOffer != nil },
-                    set: { if !$0 { pendingOfferID = nil } }
-                )
-            ) {
-                if let pendingOffer {
-                    Button(copyResolver.resolve(.contractOfferConfirmAction)) {
-                        career.acceptContract(
-                            marketID: market.id,
-                            offerID: pendingOffer.id,
-                            ambition: selectedAmbition
-                        )
-                        pendingOfferID = nil
-                    }
-                    .disabled(!goalSelectionComplete)
-                    .accessibilityIdentifier("pro.contractOffer.confirm.accept")
-                }
-                Button(copyResolver.resolve(.contractOfferConfirmCancel)) {
-                    pendingOfferID = nil
-                }
-                .accessibilityIdentifier("pro.contractOffer.confirm.cancel")
-            } message: {
-                Text(verbatim: confirmationMessage(for: pendingOffer))
-            }
         }
         .background(BaseballTheme.canvas)
         // 주 행동은 항상 손 닿는 곳에 — 서명 버튼과 비활성 이유를 탭 바 위에 고정한다.
@@ -179,9 +166,55 @@ struct ProContractOfferView: View {
         // 있었다(페르소나 보고서 §2-1, §3 P2/P3).
         .safeAreaInset(edge: .bottom) {
             // 접근성 큰 글씨에서는 고정 바가 화면의 절반을 먹으므로 본문 끝으로 보낸다(4차 D3).
-            if market.kind == .rookie, let offer, !typeSize.isAccessibilitySize {
-                rookieSignBar(offer)
+            if !typeSize.isAccessibilitySize {
+                if pendingOffer != nil {
+                    signBarContainer { confirmBlock(market) }
+                } else if market.kind == .rookie, let offer {
+                    rookieSignBar(offer)
+                }
             }
+        }
+    }
+
+    /// 서명 확인. 알럿이 아니라 **같은 화면 아래**에 열린다.
+    ///
+    /// iOS 26에서 확인 알럿은 팝오버로 떠 취소가 잘렸고(1.2.x), 본문이 카드 내용을 그대로
+    /// 되풀이했다. 고르는 일과 서명하는 일은 그대로 갈라져 있다 — 카드를 눌러도 명령은
+    /// 0회이고, 여기 버튼 한 번만 계약을 맺는다.
+    @ViewBuilder
+    private func confirmBlock(_ market: ProContractMarket) -> some View {
+        if let pendingOffer {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(verbatim: confirmationMessage(for: pendingOffer))
+                    .proseStyle()
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("pro.contractOffer.confirm.message")
+                if !goalSelectionComplete {
+                    Label(copyResolver.resolve(.contractOfferAmbitionRequired), systemImage: "hand.tap")
+                        .detailStyle()
+                }
+                PrimaryPill(
+                    title: copyResolver.resolve(.contractOfferConfirmAction),
+                    identifier: "pro.contractOffer.confirm.accept",
+                    enabled: goalSelectionComplete
+                ) {
+                    guard goalSelectionComplete else { return }
+                    career.acceptContract(
+                        marketID: market.id,
+                        offerID: pendingOffer.id,
+                        ambition: selectedAmbition
+                    )
+                    pendingOfferID = nil
+                }
+                Button(copyResolver.resolve(.contractOfferConfirmCancel)) {
+                    pendingOfferID = nil
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                .accessibilityIdentifier("pro.contractOffer.confirm.cancel")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -201,21 +234,32 @@ struct ProContractOfferView: View {
             ) {
                 pendingOfferID = offer.id
             }
-            // 확인 알럿이 떠 있는 동안 뒤의 서명 버튼을 접근성 트리에서 빼, 알럿 버튼과
-            // 같은 이름이 두 번 잡히지 않게 한다(페르소나 보고서 §2-4).
-            .accessibilityHidden(pendingOffer != nil)
         }
-        .padding(.horizontal, BaseballMetrics.gutter)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity)
-        .background(BaseballTheme.canvas)
-        .overlay(alignment: .top) {
-            Rectangle().fill(BaseballTheme.border.opacity(0.45)).frame(height: 1)
+        .modifier(SignBarChrome())
+    }
+
+    /// 하단 고정 바의 껍데기. 서명 버튼과 확인 블록이 같은 자리를 쓴다.
+    @ViewBuilder
+    private func signBarContainer<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) { content() }
+            .modifier(SignBarChrome())
+    }
+
+    private struct SignBarChrome: ViewModifier {
+        func body(content: Content) -> some View {
+            content
+                .padding(.horizontal, BaseballMetrics.gutter)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
+                .frame(maxWidth: .infinity)
+                .background(BaseballTheme.canvas)
+                .overlay(alignment: .top) {
+                    Rectangle().fill(BaseballTheme.border.opacity(0.45)).frame(height: 1)
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("pro.contractOffer.signBar")
+                .accessibilitySortPriority(-50)
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("pro.contractOffer.signBar")
-        .accessibilitySortPriority(-50)
     }
 
     private var extraYearAvailability: ProCounterAvailability {
@@ -384,12 +428,21 @@ struct ProContractOfferView: View {
         if selectable {
             Button {
                 guard enabled else { return }
+                // 고르는 일은 명령이 아니다. 서명은 아래 확인 버튼 한 번뿐이다.
                 pendingOfferID = offer.id
             } label: {
                 card
+                    .overlay {
+                        RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                            .stroke(
+                                pendingOfferID == offer.id ? BaseballTheme.selection : .clear,
+                                lineWidth: 2
+                            )
+                    }
             }
             .buttonStyle(.plain)
             .disabled(!enabled)
+            .accessibilityAddTraits(pendingOfferID == offer.id ? [.isButton, .isSelected] : .isButton)
             .accessibilityHint(copyResolver.resolve(
                 enabled ? .contractOfferReview : .contractOfferAmbitionRequired
             ))
