@@ -167,3 +167,54 @@ final class PerfectReleaseTimingTests: XCTestCase {
         )
     }
 }
+
+/// 새로 만든 화면을 눈으로 확인하기 위한 렌더. 결과 번들에 붙고,
+/// `BASEBALL_SHOT_DIR`이 있으면 PNG로도 남는다.
+@MainActor
+final class NewSurfaceRenderTests: XCTestCase {
+    private func save(_ view: some View, name: String, width: CGFloat = 360, height: CGFloat? = nil) {
+        let sized = height.map { AnyView(view.frame(width: width, height: $0)) }
+            ?? AnyView(view.frame(width: width))
+        let renderer = ImageRenderer(
+            content: sized
+                .padding(12)
+                .background(BaseballTheme.canvas)
+                .environment(\.gameCopyResolver, GameCopyResolver(language: .korean))
+        )
+        renderer.scale = 3
+        guard let image = renderer.uiImage, let data = image.pngData() else {
+            XCTFail("\(name): 렌더 실패")
+            return
+        }
+        let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.png")
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        if let dir = ProcessInfo.processInfo.environment["BASEBALL_SHOT_DIR"] {
+            try? data.write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(name).png"))
+        }
+    }
+
+    private func history() -> [AbilityHistoryPoint] {
+        [
+            .init(season: 1, stuff: 42, command: 41, movement: 36, stamina: 39),
+            .init(season: 2, stuff: 44, command: 50, movement: 36, stamina: 41),
+            .init(season: 4, stuff: 48, command: 64, movement: 36, stamina: 46),
+            .init(season: 7, stuff: 54, command: 77, movement: 35, stamina: 52),
+            .init(season: 10, stuff: 61, command: 80, movement: 31, stamina: 61),
+            .init(season: 13, stuff: 63, command: 80, movement: 27, stamina: 67),
+        ]
+    }
+
+    func testAbilityGrowthGraph() {
+        save(AbilityGrowthGraph(points: history()), name: "01-ability-growth-graph", height: 190)
+    }
+
+    func testAbilityBars() {
+        let pitcher = PitcherSnapshot(id: "p", name: "t", stuff: 63, command: 80, movement: 27, stamina: 67)
+        save(
+            ProAbilityPanel(pitcher: pitcher, previous: history().first),
+            name: "07-ability-bars"
+        )
+    }
+}

@@ -1382,51 +1382,141 @@ extension PitchAbilityAxis {
     }
 }
 
+/// 능력 네 축을 안드로이드와 같은 모양으로 보여 준다.
+///
+/// 기존 `AbilityGaugeView`는 막대 색으로 **값의 좋고 나쁨**을 말한다. 그 자체로는 좋은
+/// 설계지만, 바로 아래 성장 그래프가 축마다 고정 색을 쓰므로 같은 화면에서 구위가 위에서는
+/// 초록이고 아래에서는 주황이 된다 — 색이 두 가지를 동시에 뜻하면 둘 다 안 읽힌다. 이
+/// 화면에서는 **색이 축을 뜻한다**로 통일한다(안드로이드 `AbilityBar`와 같은 규칙).
+///
+/// 안드로이드에서 가져온 것이 하나 더 있다. **직전 값에 흰 선을 긋고 거기서 지금까지를
+/// 옅게 덧그린다** — 막대만 있으면 "지금 얼마"는 보여도 "얼마나 왔는지"가 안 보인다.
+struct ProAbilityPanel: View {
+    let pitcher: PitcherSnapshot
+    /// 견줄 지난 시점. 있으면 흰 선과 증가분이 함께 그려진다.
+    var previous: AbilityHistoryPoint?
+    var identifierPrefix = "pro.ability"
+
+    @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var revealed = false
+
+    private func value(_ axis: PitchAbilityAxis) -> Int {
+        switch axis {
+        case .stuff: pitcher.stuff
+        case .command: pitcher.command
+        case .movement: pitcher.movement
+        case .stamina: pitcher.stamina
+        }
+    }
+
+    var body: some View {
+        let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+        LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+            ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
+                bar(axis)
+            }
+        }
+        .onAppear {
+            guard !reduceMotion else { revealed = true; return }
+            withAnimation(.easeOut(duration: 0.45)) { revealed = true }
+        }
+    }
+
+    private func bar(_ axis: PitchAbilityAxis) -> some View {
+        let current = AbilityDisplayScale.displayRating(value(axis))
+        let before = previous.map { AbilityDisplayScale.displayRating($0.value(axis)) }
+        let change = before.map { current - $0 } ?? 0
+        // 애니메이션은 직전 값에서 지금 값으로 찬다. 견줄 값이 없으면 그냥 지금 값이다.
+        let shown = revealed || reduceMotion ? current : (before ?? current)
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Text(verbatim: copyResolver.resolve(axis.copyKey))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(axis.tint)
+                Spacer(minLength: 2)
+                Text(verbatim: "\(current)")
+                    .font(.subheadline.weight(.bold).monospacedDigit())
+                    .foregroundStyle(BaseballTheme.textPrimary)
+                if change != 0 {
+                    // 내려간 축도 적는다. 노화는 실제로 일어난 일이다.
+                    Text(verbatim: change > 0 ? "+\(change)" : "\(change)")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(change > 0 ? BaseballTheme.positive : BaseballTheme.negative)
+                }
+            }
+            GeometryReader { proxy in
+                let width = proxy.size.width
+                ZStack(alignment: .leading) {
+                    Capsule().fill(axis.tint.opacity(0.15))
+                    Capsule()
+                        .fill(axis.tint)
+                        .frame(width: max(3, width * CGFloat(shown) / 100))
+                    if let before, before < current {
+                        // 직전 값에서 지금까지가 이번에 는 만큼이다.
+                        Capsule()
+                            .fill(Color.white.opacity(0.3))
+                            .frame(width: max(0, width * CGFloat(shown - before) / 100), height: 3)
+                            .offset(x: width * CGFloat(before) / 100)
+                    }
+                    if let before {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.9))
+                            .frame(width: 2, height: 9)
+                            .offset(x: min(width - 2, max(0, width * CGFloat(before) / 100)))
+                    }
+                }
+            }
+            .frame(height: 9)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "\(copyResolver.resolve(axis.copyKey)) \(current) / 100"
+                + (change != 0 ? ", \(change > 0 ? "+" : "")\(change)" : "")
+        )
+        .accessibilityIdentifier("\(identifierPrefix).\(axis.rawValue)")
+    }
+}
+
 /// 능력이 시즌을 지나며 어떻게 움직였는가.
 ///
 /// **가로축은 저장된 변화의 순서이지 시간이 아니다.** 비는 시즌이 있고 능력을 새기기 전에
 /// 흘러간 시즌도 있어서, 간격을 시간인 척 그리면 화면이 없는 값을 지어내게 된다. 그래서 점을
 /// 등간격으로 놓고 축에 시즌 번호를 적는다.
+///
+/// 세로축은 능력 막대와 **같은 자**를 쓴다(`AbilityDisplayScale`). 그러지 않으면 바로 위
+/// 막대에서 80인 능력이 그래프에서는 다른 높이에 앉아, 두 그림이 서로를 반박한다.
 struct AbilityGrowthGraph: View {
     let points: [AbilityHistoryPoint]
     var identifier = "pro.ability.graph"
 
     @Environment(\.gameCopyResolver) private var copyResolver
 
+    /// 눈이 앉을 자리. "프로 평균"은 이 게임에서 뜻이 있는 높이다 — 선이 이 위에 있는지
+    /// 아래에 있는지만 봐도 지금 어디쯤인지 읽힌다.
+    private static let leagueAverage = 50
+
     var body: some View {
         if points.count >= 2 {
             VStack(alignment: .leading, spacing: 6) {
                 GeometryReader { proxy in
                     ZStack {
+                        referenceLine(in: proxy.size)
                         ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
                             path(for: axis, in: proxy.size)
                                 .stroke(axis.tint, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                            // 끝점을 찍어 "지금 여기"가 어디인지 눈이 바로 앉게 한다.
+                            endpoint(for: axis, in: proxy.size)
                         }
                     }
                 }
                 .frame(height: 96)
                 .accessibilityHidden(true)
 
-                // 가로축에 시즌 번호를 적는다. 점은 등간격이지만 번호가 있어야 그 사이가
-                // 한 해인지 세 해인지 읽힌다.
-                HStack(spacing: 0) {
-                    ForEach(points) { point in
-                        Text(verbatim: "\(point.season)")
-                            .font(.system(size: 9).monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textTertiary)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
+                seasonAxis
 
-                HStack(spacing: 10) {
-                    ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
-                        HStack(spacing: 4) {
-                            Circle().fill(axis.tint).frame(width: 7, height: 7)
-                            Text(verbatim: copyResolver.resolve(axis.copyKey))
-                                .detailStyle(BaseballTheme.textTertiary)
-                        }
-                    }
-                }
+                // **범례가 곧 계기판이다.** 선만 있으면 모양은 보여도 값을 읽을 수 없다.
+                readout
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel(accessibilitySummary)
@@ -1434,27 +1524,93 @@ struct AbilityGrowthGraph: View {
         }
     }
 
-    private func path(for axis: PitchAbilityAxis, in size: CGSize) -> Path {
-        Path { path in
-            let maximum = CGFloat(AbilityGrowthHistoryRules.axisMaximum)
-            let step = points.count > 1 ? size.width / CGFloat(points.count - 1) : 0
-            for (index, point) in points.enumerated() {
-                let x = step * CGFloat(index)
-                let y = size.height - size.height * CGFloat(point.value(axis)) / maximum
-                if index == 0 {
-                    path.move(to: CGPoint(x: x, y: y))
-                } else {
-                    path.addLine(to: CGPoint(x: x, y: y))
+    private var seasonAxis: some View {
+        HStack(spacing: 0) {
+            ForEach(points) { point in
+                Text(verbatim: "\(point.season)")
+                    .font(.system(size: 9).monospacedDigit())
+                    .foregroundStyle(BaseballTheme.textTertiary)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    /// 축마다 지금 값과 처음부터의 변화. 내려간 축도 숨기지 않는다 — 노화는 실제로 일어난 일이다.
+    private var readout: some View {
+        let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+        return LazyVGrid(columns: columns, alignment: .leading, spacing: 4) {
+            ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
+                let current = points.last?.value(axis) ?? 0
+                let change = AbilityGrowthHistoryRules.change(points, axis: axis).map { _ in
+                    AbilityDisplayScale.displayDelta(
+                        before: points.first?.value(axis) ?? 0,
+                        after: current
+                    )
+                } ?? 0
+                HStack(spacing: 5) {
+                    Circle().fill(axis.tint).frame(width: 7, height: 7)
+                    Text(verbatim: copyResolver.resolve(axis.copyKey))
+                        .detailStyle(BaseballTheme.textTertiary)
+                    Spacer(minLength: 2)
+                    Text(verbatim: "\(AbilityDisplayScale.displayRating(current))")
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                    if change != 0 {
+                        Text(verbatim: change > 0 ? "+\(change)" : "\(change)")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(change > 0 ? BaseballTheme.positive : BaseballTheme.negative)
+                    }
                 }
             }
+        }
+    }
+
+    private func referenceLine(in size: CGSize) -> some View {
+        let y = size.height * (1 - AbilityDisplayScale.position(Self.leagueAverage))
+        return Path { path in
+            path.move(to: CGPoint(x: 0, y: y))
+            path.addLine(to: CGPoint(x: size.width, y: y))
+        }
+        .stroke(BaseballTheme.border.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+    }
+
+    private func point(_ value: Int, index: Int, in size: CGSize) -> CGPoint {
+        let step = points.count > 1 ? size.width / CGFloat(points.count - 1) : 0
+        return CGPoint(
+            x: step * CGFloat(index),
+            y: size.height * (1 - AbilityDisplayScale.position(value))
+        )
+    }
+
+    private func path(for axis: PitchAbilityAxis, in size: CGSize) -> Path {
+        Path { path in
+            for (index, entry) in points.enumerated() {
+                let spot = point(entry.value(axis), index: index, in: size)
+                if index == 0 {
+                    path.move(to: spot)
+                } else {
+                    path.addLine(to: spot)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func endpoint(for axis: PitchAbilityAxis, in size: CGSize) -> some View {
+        if let last = points.last {
+            let spot = point(last.value(axis), index: points.count - 1, in: size)
+            Circle()
+                .fill(axis.tint)
+                .frame(width: 5, height: 5)
+                .position(spot)
         }
     }
 
     /// 그림은 읽어 줄 수 없으므로 축마다 "처음 → 지금"을 말한다.
     private var accessibilitySummary: String {
         PitchAbilityAxis.allCases.map { axis in
-            let first = points.first?.value(axis) ?? 0
-            let last = points.last?.value(axis) ?? 0
+            let first = AbilityDisplayScale.displayRating(points.first?.value(axis) ?? 0)
+            let last = AbilityDisplayScale.displayRating(points.last?.value(axis) ?? 0)
             return "\(copyResolver.resolve(axis.copyKey)) \(first) → \(last)"
         }
         .joined(separator: ", ")

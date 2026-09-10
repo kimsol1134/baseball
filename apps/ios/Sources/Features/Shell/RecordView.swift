@@ -388,17 +388,20 @@ private struct RecordBoard: View {
                         ))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(BaseballTheme.textSecondary)
-                        AbilityGaugeView(label: copyResolver.resolve(.stuff), value: state.pitcher.stuff)
-                        AbilityGaugeView(label: copyResolver.resolve(.command), value: state.pitcher.command)
-                        AbilityGaugeView(label: copyResolver.resolve(.movement), value: state.pitcher.movement)
-                        AbilityGaugeView(label: copyResolver.resolve(.stamina), value: state.pitcher.stamina)
+                        // 바로 아래 성장 그래프와 **같은 색·같은 자**를 쓴다. 색이 축을
+                        // 뜻해야 위아래 두 그림이 같은 것을 말한다.
+                        let history = CareerDisplayRules.abilityHistory(for: state)
+                        ProAbilityPanel(
+                            pitcher: state.pitcher,
+                            // 견줄 자리는 지난 시즌이다 — 옆의 "작년의 나 vs 올해의 나"와 같은 기준.
+                            previous: history.count >= 2 ? history[history.count - 2] : nil
+                        )
                         Text(ProCareerPresentation.buildStrength(identity, resolver: copyResolver))
                             .detailStyle(BaseballTheme.positive)
                             .fontWeight(.semibold)
 
                         // 막대는 "지금 어떤 투수인가"를 말하고, 그래프는 "어떻게 여기까지
                         // 왔는가"를 말한다. 시즌을 두 번 이상 넘긴 뒤에만 선다.
-                        let history = CareerDisplayRules.abilityHistory(for: state)
                         if history.count >= 2 {
                             Divider().overlay(BaseballTheme.border)
                             Text(verbatim: copyResolver.resolve(.abilityGrowthTitle))
