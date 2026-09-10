@@ -31,6 +31,10 @@ extension MobileCareerStore {
             $0.gameResume = nil
         }
         let session = PitchSession(state: result.snapshot, seed: sessionSeed)
+        // 재생에 새길 좌표. 앨범이 기록 화면의 등판 행과 이어 붙는 열쇠다.
+        session.replaySeason = result.snapshot.season
+        session.replayWeek = result.snapshot.week
+        session.replayOutingNumber = (result.snapshot.gameLines?.count ?? 0) + 1
         session.start()
         attachCheckpoint(session)
         pitchSession = session
@@ -93,6 +97,8 @@ extension MobileCareerStore {
         let beforeRevision = result.snapshot.revision
         let beforeState = result.snapshot
         let summary = Self.importantGameSummary(report)
+        // 이번 등판이 남긴 공을 저장과 같은 트랜잭션에 태운다.
+        stagedReplays = session.capturedReplays
         let didSettle = perform(
             summary: summary,
             cue: report.runsAllowed == 0 ? .success : .setback,

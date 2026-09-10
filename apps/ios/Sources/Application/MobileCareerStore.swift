@@ -29,6 +29,11 @@ final class MobileCareerStore {
     /// 화면이 같이 갱신된다. 디스크 왕복만 `ProCareerPersistedState`로 모은다.
     private var durableResult: ProCareerResult?
     private var durableGameResume: PitchResumeState?
+    /// 앨범에 남은 재생. 커리어 진행과 무관한 증거라 스냅샷 밖에 산다.
+    private var durableReplays: [AlbumReplay]?
+    /// 이번 등판이 남긴 재생. 저장이 성공할 때 앨범으로 접히고 비워진다 — 저장이
+    /// 실패하면 앨범도 움직이지 않아야 화면과 디스크가 어긋나지 않는다.
+    var stagedReplays: [AlbumReplay] = []
     private var durableSourceHighSchoolCareerID: String?
     private var durableCareerOrigin: ProCareerOrigin?
     private var durableSyncedRevision: UInt64 = 0
@@ -43,9 +48,24 @@ final class MobileCareerStore {
             careerOrigin: durableCareerOrigin,
             syncedRevision: durableSyncedRevision,
             pendingInjuryEvent: durablePendingInjuryEvent,
-            acknowledgedInjuryEventID: durableAcknowledgedInjuryEventID
+            acknowledgedInjuryEventID: durableAcknowledgedInjuryEventID,
+            replays: durableReplays
         )
     }
+
+    /// 앨범 예산을 적용해 접는다. 담기지 않은 공은 조용히 버려진다 — 기존 재생은 지우지 않는다.
+    func foldingStagedReplays(into state: ProCareerPersistedState) -> ProCareerPersistedState {
+        guard !stagedReplays.isEmpty else { return state }
+        var next = state
+        var album = state.replays ?? []
+        for replay in stagedReplays {
+            album = AlbumReplayRules.appending(replay, to: album)
+        }
+        next.replays = album
+        return next
+    }
+
+    var replays: [AlbumReplay] { durableReplays ?? [] }
 
     func updatePersisted(_ body: (inout ProCareerPersistedState) -> Void) {
         var next = capturePersisted()
@@ -61,6 +81,7 @@ final class MobileCareerStore {
         assign(&durableSyncedRevision, next.syncedRevision)
         assign(&durablePendingInjuryEvent, next.pendingInjuryEvent)
         assign(&durableAcknowledgedInjuryEventID, next.acknowledgedInjuryEventID)
+        assign(&durableReplays, next.replays)
     }
 
     private func assign<T: Equatable>(_ storage: inout T, _ next: T) {

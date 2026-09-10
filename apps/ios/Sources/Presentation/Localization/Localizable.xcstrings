@@ -34434,6 +34434,94 @@
         }
       }
     },
+    "record.album.empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing in the album yet. Strikeouts, home runs and pitches you released dead centre are kept."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "まだアルバムに残った球はありません。奪三振と本塁打、そして真ん中で放した球が残ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아직 앨범에 담긴 공이 없습니다. 삼진과 홈런, 그리고 정중앙을 맞힌 공이 남습니다."
+          }
+        }
+      }
+    },
+    "record.album.replay.accessibility": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season %1$lld, %2$@, %3$lld kilometres"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lldシーズン %2$@ %3$lldキロ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld시즌 %2$@ %3$lld킬로미터"
+          }
+        }
+      }
+    },
+    "record.album.replay.heading": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season %1$lld, week %2$lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lldシーズン %2$lld週"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld시즌 %2$lld주차"
+          }
+        }
+      }
+    },
+    "record.album.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pitches Worth Replaying"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "もう一度見る球"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다시 보는 공"
+          }
+        }
+      }
+    },
     "record.archive.last-player": {
       "localizations": {
         "en": {

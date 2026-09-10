@@ -482,6 +482,14 @@ final class PitchSession {
     /// (`AutoOutingSimulator`가 같은 규칙을 쓴다).
     private(set) var runLedger: PitchRunLedger?
 
+    /// 이 등판에서 다시 볼 만했던 공들. 스토어가 등판을 정산할 때 앨범으로 옮긴다.
+    /// 세션이 들고 있는 동안에는 예산을 적용하지 않는다 — 예산은 앨범 전체를 봐야 정해진다.
+    private(set) var capturedReplays: [AlbumReplay] = []
+    /// 재생에 새길 좌표. 프로 등판이 아니면 0이고, 그때는 앨범에 담기지 않는다.
+    var replaySeason = 0
+    var replayWeek = 0
+    var replayOutingNumber = 0
+
     /// 이번 등판에서 실제로 잡은 아웃카운트. 매 투구의 차이로 누적한다.
     ///
     /// 예전에는 이 값을 넘기지 않아 코어가 이닝을 `투구수 / 5`로 어림했다. 그다음에는
@@ -638,6 +646,29 @@ final class PitchSession {
         homeRunsAllowed += snapshot.outcome == .homeRun ? 1 : 0
         hitByPitches += snapshot.outcome == .hitByPitch ? 1 : 0
         runsAllowed += snapshot.runsScored
+        // 다시 볼 만한 공은 궤적째 남긴다. 커널이 이미 궤적을 내놓으므로 새로 계산하는 것은
+        // 없고, 예산과 무엇을 남길지는 `AlbumReplayRules`가 정한다.
+        if AlbumReplayRules.isWorthKeeping(
+            outcome: snapshot.outcome,
+            result: snapshot.result,
+            perfectRelease: lastDelivery?.isPerfectRelease == true
+        ), let trajectory = snapshot.execution.trajectorySeries, !trajectory.isEmpty {
+            capturedReplays.append(
+                AlbumReplay(
+                    id: "\(scenario.id)-p\(context.pitchNumber)-\(pitches)",
+                    season: replaySeason,
+                    week: replayWeek,
+                    outingNumber: replayOutingNumber,
+                    pitchNumber: pitches,
+                    pitchType: call.pitchType,
+                    velocityTenthsKPH: snapshot.execution.velocityTenthsKPH,
+                    outcome: snapshot.outcome,
+                    result: snapshot.result,
+                    perfectRelease: lastDelivery?.isPerfectRelease == true,
+                    trajectory: trajectory
+                )
+            )
+        }
         if let ledger = runLedger {
             // 실패하면 nil이 되어 이 등판의 자책점은 '모른다'로 남는다. 되살리지 않는다.
             runLedger = try? ledger.advance(snapshot)

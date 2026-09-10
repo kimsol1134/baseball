@@ -19,6 +19,7 @@ struct RecordView: View {
                 RecordBoard(
                     state: state,
                     archive: highSchool.archive,
+                    replays: career.replays,
                     weekly: weekly,
                     highSchool: highSchool
                 )
@@ -281,6 +282,7 @@ private struct HighSchoolRecordBoard: View {
 private struct RecordBoard: View {
     let state: ProCareerSnapshot
     let archive: [LifeRecord]
+    let replays: [AlbumReplay]
     let weekly: WeeklyProgramStore
     let highSchool: HighSchoolCareerStore
     @Environment(\.gameCopyResolver) private var copyResolver
@@ -321,6 +323,7 @@ private struct RecordBoard: View {
                     store: weekly,
                     highSchool: highSchool
                 )
+                ProAlbumCard(replays: replays)
                 ProAdvancementCard(state: state)
                 ProGoalBoardCard(state: state)
                 if let history = state.nationalTeamHistory, !history.isEmpty {
@@ -641,6 +644,40 @@ struct SaberMetricsCard: View {
 ///
 /// 문턱 값은 전부 `ProAdvancementRules`가 규칙에서 그대로 가져오므로, 화면이 규칙보다
 /// 낮거나 높은 숫자를 말할 수 없다.
+/// 다시 볼 만했던 공들.
+///
+/// 한 시즌이 수천 구인데 예산은 512개다. 전부 담는 것은 애초에 불가능하므로 **앨범은 기록이
+/// 아니라 highlight다** — 남는 것은 삼진, 얻어맞은 홈런, 그리고 손으로 정중앙을 맞힌 공이다
+/// (`AlbumReplayRules.isWorthKeeping`).
+struct ProAlbumCard: View {
+    let replays: [AlbumReplay]
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    /// 최근 것부터. 오래된 공을 먼저 보여 주면 지금 잘 던지고 있다는 감각이 안 온다.
+    private var newestFirst: [AlbumReplay] {
+        replays.sorted {
+            ($0.season, $0.outingNumber, $0.pitchNumber) > ($1.season, $1.outingNumber, $1.pitchNumber)
+        }
+    }
+
+    var body: some View {
+        BaseballCard(title: copyResolver.resolve(.albumTitle)) {
+            if replays.isEmpty {
+                Text(verbatim: copyResolver.resolve(.albumEmpty))
+                    .detailStyle(BaseballTheme.textTertiary)
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    // 카드 하나에 전부 그리면 스크롤이 끝나지 않는다. 최근 여섯 개만 세운다.
+                    ForEach(newestFirst.prefix(6)) { replay in
+                        AlbumReplayCard(replay: replay)
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("pro.album")
+    }
+}
+
 struct ProAdvancementCard: View {
     let state: ProCareerSnapshot
     @Environment(\.gameCopyResolver) private var copyResolver

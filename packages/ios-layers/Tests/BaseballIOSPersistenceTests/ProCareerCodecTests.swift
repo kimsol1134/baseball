@@ -97,6 +97,41 @@ final class ProCareerCodecTests: XCTestCase {
         XCTAssertNil(restored.gameResume?.runLedgerToken)
     }
 
+    /// **앨범은 저장을 왕복해야 앨범이다.** 재생이 저장에서 빠지면 다시 볼 수 없다.
+    func testReplaysSurviveTheSaveRoundTrip() throws {
+        let replay = AlbumReplay(
+            id: "pa-1-p7", season: 3, week: 8, outingNumber: 2, pitchNumber: 7,
+            pitchType: .slider, velocityTenthsKPH: 1_331, outcome: .swingingStrike,
+            result: .strikeout, perfectRelease: true, trajectory: [0, 1, 2, 3, 4, 5, 6, 7]
+        )
+        var state = ProCareerPersistedState.empty
+        state.result = try fixtureResult()
+        state.replays = [replay]
+
+        let restored = ProCareerPersistence.materialize(
+            ProCareerPersistence.record(
+                from: state,
+                schemaVersion: ProCareerPersistence.legacySchemaVersion,
+                syncRevision: 1
+            )
+        )
+        XCTAssertEqual(restored.replays, [replay])
+    }
+
+    /// 앨범이 없던 저장은 그대로 열린다. 새 필드는 optional이고 없으면 앨범이 빈 것뿐이다.
+    func testASaveWrittenBeforeTheAlbumStillOpens() throws {
+        var state = ProCareerPersistedState.empty
+        state.result = try fixtureResult()
+        let restored = ProCareerPersistence.materialize(
+            ProCareerPersistence.record(
+                from: state,
+                schemaVersion: ProCareerPersistence.legacySchemaVersion,
+                syncRevision: 1
+            )
+        )
+        XCTAssertNil(restored.replays)
+    }
+
     private func resume(runLedgerToken: String?) -> PitchResumeState {
         PitchResumeState(
             scenarioID: "pa-1", seed: "seed", batterIndex: 1, stageKind: "between",

@@ -79418,6 +79418,50 @@
       "status": "ui_verified"
     },
     {
+      "key": "record.album.empty",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "아직 앨범에 담긴 공이 없습니다. 삼진과 홈런, 그리고 정중앙을 맞힌 공이 남습니다.",
+      "en": "Nothing in the album yet. Strikeouts, home runs and pitches you released dead centre are kept.",
+      "ja": "まだアルバムに残った球はありません。奪三振と本塁打、そして真ん中で放した球が残ります。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.album.replay.accessibility",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%1$lld시즌 %2$@ %3$lld킬로미터",
+      "en": "Season %1$lld, %2$@, %3$lld kilometres",
+      "ja": "%1$lldシーズン %2$@ %3$lldキロ",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.album.replay.heading",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%1$lld시즌 %2$lld주차",
+      "en": "Season %1$lld, week %2$lld",
+      "ja": "%1$lldシーズン %2$lld週",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.album.title",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "다시 보는 공",
+      "en": "Pitches Worth Replaying",
+      "ja": "もう一度見る球",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "record.archive.last-player",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "%lld번째 선수가 남긴 것",

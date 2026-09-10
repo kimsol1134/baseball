@@ -30,21 +30,27 @@ extension MobileCareerStore {
                 : pendingInjuryEvent,
             acknowledgedID: acknowledgedInjuryEventID ?? existing.acknowledgedInjuryEventID
         )
-        let schemaVersion = ProCareerPersistence.schemaVersion(for: candidateState)
+        let candidateWithAlbum = foldingStagedReplays(into: candidateState)
+        let schemaVersion = ProCareerPersistence.schemaVersion(for: candidateWithAlbum)
         guard canWrite() else { return false }
         let candidateRevision = ProCareerPersistence.nextRevision(
             after: syncedRevision,
             atLeast: result.snapshot.revision
         )
         let record = ProCareerPersistence.record(
-            from: candidateState,
+            from: candidateWithAlbum,
             schemaVersion: schemaVersion,
             syncRevision: candidateRevision
         )
         guard let data = ProCareerPersistence.encode(record) else { return false }
         let didWrite = saveWriter?(data) ?? sync.write(data)
         guard didWrite else { return false }
-        updatePersisted { $0.syncedRevision = candidateRevision }
+        // 디스크가 받아들인 뒤에만 앨범을 커밋하고 대기열을 비운다. 실패하면 다음 저장에서
+        // 다시 시도되므로 이번 등판의 공이 조용히 사라지지 않는다.
+        var committed = candidateWithAlbum
+        committed.syncedRevision = candidateRevision
+        replacePersisted(committed)
+        stagedReplays = []
         return true
     }
 
@@ -216,6 +222,9 @@ extension MobileCareerStore {
            let resume = record.gameResume,
            PitchScenario.pro(state: restored.snapshot).id == resume.scenarioID {
             let session = PitchSession(state: restored.snapshot, seed: resume.seed)
+            session.replaySeason = restored.snapshot.season
+            session.replayWeek = restored.snapshot.week
+            session.replayOutingNumber = (restored.snapshot.gameLines?.count ?? 0) + 1
             session.start()
             session.restore(from: resume)
             attachCheckpoint(session)

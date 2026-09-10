@@ -1259,6 +1259,91 @@ struct CareerComparisonCard: View {
     }
 }
 
+/// 앨범에 남은 공을 다시 본다.
+///
+/// **읽기 전용이다.** 커널을 부르지 않고 저장된 궤적만 그리므로 난수도, 명령도, 보상도
+/// 움직이지 않는다 — 다시 보는 것으로 결과가 바뀌면 그건 앨범이 아니라 재시도다.
+struct AlbumReplayCard: View {
+    let replay: AlbumReplay
+    @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var progress: Double = 1
+
+    private var samples: [TrajectorySample] { TrajectorySample.decode(replay.trajectory) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(verbatim: copyResolver.resolve(
+                    .albumReplayHeading,
+                    arguments: [.integer(replay.season), .integer(replay.week)]
+                ))
+                .detailStyle(BaseballTheme.textTertiary)
+                .monospacedDigit()
+                Spacer()
+                if replay.perfectRelease {
+                    Image(systemName: "sparkle")
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.milestone)
+                        .accessibilityHidden(true)
+                }
+                Text(verbatim: copyResolver.resolve(replay.pitchType.nameCopyToken))
+                    .detailStyle(BaseballTheme.textSecondary)
+                Text(verbatim: "\(replay.velocityTenthsKPH / 10)")
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(BaseballTheme.textPrimary)
+            }
+
+            GeometryReader { proxy in
+                trace(in: proxy.size)
+                    .stroke(
+                        replay.perfectRelease ? BaseballTheme.milestone : BaseballTheme.action,
+                        style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
+                    )
+            }
+            .frame(height: 84)
+            .accessibilityHidden(true)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(copyResolver.resolve(
+            .albumReplayAccessibility,
+            arguments: [
+                .integer(replay.season),
+                .userText(copyResolver.resolve(replay.pitchType.nameCopyToken)),
+                .integer(replay.velocityTenthsKPH / 10),
+            ]
+        ))
+        .accessibilityIdentifier("album.replay.\(replay.id)")
+        .onAppear {
+            guard !reduceMotion else { progress = 1; return }
+            progress = 0
+            withAnimation(.easeIn(duration: 0.5)) { progress = 1 }
+        }
+    }
+
+    /// 저장된 표본을 옆에서 본 궤적으로 편다. 앞뒤 거리를 가로로, 높이를 세로로 둔다.
+    private func trace(in size: CGSize) -> Path {
+        Path { path in
+            let points = samples
+            guard points.count >= 2, let first = points.first, let last = points.last else { return }
+            let span = max(0.001, first.forwardMeters - last.forwardMeters)
+            let heights = points.map(\.heightMeters)
+            let lowest = heights.min() ?? 0
+            let highest = max(lowest + 0.001, heights.max() ?? 1)
+            let shown = max(2, Int(Double(points.count) * progress))
+            for (index, sample) in points.prefix(shown).enumerated() {
+                let x = size.width * (first.forwardMeters - sample.forwardMeters) / span
+                let y = size.height - size.height * (sample.heightMeters - lowest) / (highest - lowest)
+                if index == 0 {
+                    path.move(to: CGPoint(x: x, y: y))
+                } else {
+                    path.addLine(to: CGPoint(x: x, y: y))
+                }
+            }
+        }
+    }
+}
+
 /// 능력 네 축의 고정 색.
 ///
 /// **막대에는 쓰지 않는다.** `AbilityGaugeView`의 막대는 값의 좋고 나쁨으로 색을 정하고

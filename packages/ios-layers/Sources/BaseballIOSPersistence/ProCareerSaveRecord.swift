@@ -21,6 +21,8 @@ public struct ProCareerSaveRecord: Codable {
     /// recovery action replaces the transient `ProCareerResult`.
     public var pendingInjuryEvent: ProInjuryEventSnapshot? = nil
     public var acknowledgedInjuryEventID: String? = nil
+    /// 앨범의 재생. 없는 옛 저장은 nil이다.
+    public var replays: [AlbumReplay]? = nil
 
     public var effectiveRevision: UInt64 {
         max(syncRevision ?? 0, max(deletedRevision ?? 0, result?.snapshot.revision ?? 0))
@@ -35,7 +37,8 @@ public struct ProCareerSaveRecord: Codable {
         schemaVersion: Int? = nil,
         syncRevision: UInt64? = nil,
         pendingInjuryEvent: ProInjuryEventSnapshot? = nil,
-        acknowledgedInjuryEventID: String? = nil
+        acknowledgedInjuryEventID: String? = nil,
+        replays: [AlbumReplay]? = nil
     ) {
         self.result = result
         self.gameResume = gameResume
@@ -46,6 +49,7 @@ public struct ProCareerSaveRecord: Codable {
         self.syncRevision = syncRevision
         self.pendingInjuryEvent = pendingInjuryEvent
         self.acknowledgedInjuryEventID = acknowledgedInjuryEventID
+        self.replays = replays
     }
 }
 
