@@ -21,18 +21,17 @@ import org.junit.Test
 class SchoolChoicesUiTest {
     @get:Rule val compose = createComposeRule()
     @Test fun comparisonNeverEnrollsAndRemainsReadableWithLargeText() {
-        val kernel = HighSchoolPhase4Kernel()
-        val start = kernel.start(HighSchoolPhase4StartRequest("918220", "power_prospect", "school-ui", "2026-W37", "2026-09-08")).state
-        val schoolState = kernel.completePrologue("918220", kernel.beginTutorial(start).state).state
-        val state = GameAggregateState.initial("school-ui").copy(highSchool = schoolState)
-        val model = Phase8ScreenProjection.project(state, Phase8ScreenId.P005_SCHOOL_SELECTION)
+        val start = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "school-ui", "2026-W37", "2026-09-08"))
+        val schoolState = CareerFixtures.completePrologue("918220", CareerFixtures.beginTutorial(start))
+        val state = GameAggregateState.initial("school-ui").withCareers(highSchool = schoolState)
+        val model = ScreenProjection.project(state, ScreenId.P005_SCHOOL_SELECTION)
         val schools = SchoolChoicePresentation.schools(state)
-        var chosen: Phase8UiAction? = null
+        var chosen: ScreenUiAction? = null
         var scale by mutableFloatStateOf(1f)
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, scale)) {
                 BaseballMigrationTheme { Column(Modifier.width(340.dp).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Phase8SchoolChoices(state, model) { chosen = it }
+                    CareerSchoolChoices(state, model) { chosen = it }
                 } }
             }
         }
@@ -46,7 +45,7 @@ class SchoolChoicesUiTest {
                 for (row in schools) compose.onNodeWithTag("school.forecast.${row.id.wire}").performScrollTo().assertIsDisplayed()
                 compose.onAllNodesWithText(school.coachName, substring = true).assertCountEquals(0)
                 compose.onAllNodesWithText(school.catcherName, substring = true).assertCountEquals(0)
-                compose.runOnIdle { assertNull(chosen); assertNull(state.highSchool!!.run.school) }
+                compose.runOnIdle { assertNull(chosen); assertNull(CareerAccess.school(state)!!.run.school) }
                 compose.onNodeWithTag("school.comparison.close").assertIsDisplayed().performClick()
             }
         }

@@ -21,14 +21,17 @@ import com.solkim.baseball.android.LocalizedGameText as Text
 @Composable
 @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 internal fun CorePlayerHeader(state: GameAggregateState, compact: Boolean = false) {
-    val pro = state.pro.takeIf { state.stage in setOf(GameStage.PRO, GameStage.RETIREMENT) }
-    val run = state.highSchool?.run
-    val command = pro?.pitcher?.command ?: run?.pitcher?.command ?: return
-    val stamina = pro?.pitcher?.stamina ?: run?.pitcher?.stamina ?: return
+    val header = CareerUiRules.header(state) ?: return
+    CorePlayerHeader(state, header, compact, state.meta.seedChallenge != null, playerPortraitSeed(state))
+}
+
+@Composable
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
+internal fun CorePlayerHeader(state: GameAggregateState, header: CareerHeaderView, compact: Boolean, challengePlayer: Boolean, portraitSeed: String?) {
     val copy = rememberGameCopy()
-    val name = if (state.meta.seedChallenge != null) copy.resolve("android.challenge.player") else pro?.identityName ?: run?.identity?.name ?: return
-    val seed = playerPortraitSeed(state) ?: name
-    val stage = if (pro != null) PlayerStage.PRO else if (run?.chapter?.schoolYear == 1) PlayerStage.FRESHMAN else PlayerStage.ACE
+    val name = if (challengePlayer) copy.resolve("android.challenge.player") else header.name
+    val seed = portraitSeed ?: name
+    val stage = if (header.isPro) PlayerStage.PRO else if (header.freshman) PlayerStage.FRESHMAN else PlayerStage.ACE
     var details by remember { mutableStateOf(false) }
     if (compact) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -48,10 +51,10 @@ internal fun CorePlayerHeader(state: GameAggregateState, compact: Boolean = fals
             PlayerPortrait(seed = seed, stage = stage, width = if (compact) 48.dp else 72.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(name, verbatim = true, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text(copy.resolve("mobile.core.life", GameCopyArgument.Whole((run?.lifeNumber ?: 1).toLong())),
+                Text(copy.resolve("mobile.core.life", GameCopyArgument.Whole(header.lifeNumber.toLong())),
                     verbatim = true, color = BaseballColors.action)
-                Text(pro?.let { copy.resolve("mobile.core.pro-season", GameCopyArgument.Whole(it.season.toLong())) }
-                    ?: run?.chapter?.title.orEmpty(), style = MaterialTheme.typography.bodySmall)
+                Text(header.season?.let { copy.resolve("mobile.core.pro-season", GameCopyArgument.Whole(it.toLong())) }
+                    ?: header.chapterTitle, style = MaterialTheme.typography.bodySmall)
             }
         }
         AbilityCard(state, compact = false)

@@ -26,9 +26,9 @@ class Round2FlowUiTest {
             compose.setContent {
                 val config = android.content.res.Configuration(LocalConfiguration.current).apply { setLocale(java.util.Locale.forLanguageTag(language)) }
                 CompositionLocalProvider(LocalConfiguration provides config, LocalDensity provides Density(LocalDensity.current.density, scale)) {
-                    BaseballMigrationTheme { Phase8Shell(state, false, null, Phase8ScreenProjection.preferredScreen(state), Phase8CommandContext(), {}, { action ->
+                    BaseballMigrationTheme { CareerShell(state, false, null, ScreenProjection.preferredScreen(state), ScreenCommandContext(), {}, { action ->
                         if (action.actionId == "startDirect") {
-                            runBlocking { Phase8Controller(store).execute(action.screenId, action.actionId, action.capturedPayloads) }
+                            runBlocking { ScreenController(store).execute(action.screenId, action.actionId, action.capturedPayloads) }
                             state = store.current
                         } else chosen = action.actionId
                     }) }
@@ -36,7 +36,7 @@ class Round2FlowUiTest {
             }
             compose.onNodeWithTag("opening.proMode").performClick()
             compose.onNodeWithTag("opening.startPro").assertIsEnabled().performClick()
-            compose.runOnIdle { assertEquals("민서준", state.pro!!.identityName) }
+            compose.runOnIdle { assertEquals("민서준", CareerAccess.pro(state)!!.identityName) }
             for (locale in listOf("ko", "en", "ja")) for (font in listOf(1f, 1.3f, 1.5f)) {
                 compose.runOnIdle { language = locale; scale = font }
                 compose.onNodeWithTag("week.commit").assertIsDisplayed()
@@ -48,8 +48,8 @@ class Round2FlowUiTest {
     }
 
     @Test fun allSetupPresetsUseTheSameHundredPointScaleForTextAndAccessibility() {
-        val state = GameAggregateState.initial("round2-setup").copy(stage = GameStage.SETUP)
-        compose.setContent { BaseballMigrationTheme { Phase8Shell(state, false, null, Phase8ScreenId.P002_SETUP, Phase8CommandContext(), {}, {}) } }
+        val state = GameAggregateState.initial("round2-setup").withCareers(stage = GameStage.SETUP)
+        compose.setContent { BaseballMigrationTheme { CareerShell(state, false, null, ScreenId.P002_SETUP, ScreenCommandContext(), {}, {}) } }
         compose.onNodeWithTag("setup.next").performClick()
         for (preset in HighSchoolDisplayRules.presets) {
             compose.onNodeWithTag("setup.preset.${preset.id}").performScrollTo().performClick()

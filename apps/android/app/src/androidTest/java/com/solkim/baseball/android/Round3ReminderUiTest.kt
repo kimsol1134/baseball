@@ -27,9 +27,9 @@ class Round3ReminderUiTest {
         val app = context.applicationContext as BaseballApplication
         val store = app.gameStore
         assertEquals(PackageManager.PERMISSION_DENIED, context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS))
-        if (store.current.stage == GameStage.OPENING) Phase8Controller(store).execute(Phase8ScreenId.P001_OPENING, "startDirect")
-        assertNotNull(store.current.pro)
-        val originalPro = store.current.pro
+        if (store.current.stage == GameStage.OPENING) ScreenController(store).execute(ScreenId.P001_OPENING, "startDirect")
+        assertNotNull(CareerAccess.pro(store.current))
+        val originalPro = CareerAccess.pro(store.current)
         try {
         val device = UiDevice.getInstance(inst)
         device.wakeUp()
@@ -49,7 +49,7 @@ class Round3ReminderUiTest {
         device.wait(Until.findObject(By.res(java.util.regex.Pattern.compile(".*:id/permission_deny_button"))), 3000)?.click()
         assertTrue(device.wait(Until.hasObject(By.res("return.notice")), 8000))
         assertTrue(app.platform.stateStore.read().scheduledReminderTokenHashes.isEmpty())
-        assertEquals(originalPro, store.current.pro)
+        assertEquals(originalPro, CareerAccess.pro(store.current))
         device.pressBack()
         inst.uiAutomation.grantRuntimePermission(context.packageName, Manifest.permission.POST_NOTIFICATIONS)
         assertTrue(app.platform.notifications.scheduler.schedule(NativeReminderPlan(System.currentTimeMillis()+3_600_000,
@@ -76,7 +76,7 @@ class Round3ReminderUiTest {
         assertNotNull(notification)
         notification!!.click()
         assertTrue(device.wait(Until.hasObject(By.res("week.commit")), 10_000))
-        assertEquals(originalPro, store.current.pro)
+        assertEquals(originalPro, CareerAccess.pro(store.current))
         } finally {
             app.platform.notifications.scheduler.cancelAll()
             context.getSharedPreferences("return-reminder", android.content.Context.MODE_PRIVATE).edit().clear().putBoolean("dismissed", true).commit()

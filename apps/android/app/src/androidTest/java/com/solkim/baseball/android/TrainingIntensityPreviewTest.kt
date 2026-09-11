@@ -18,14 +18,13 @@ class TrainingIntensityPreviewTest {
     @get:Rule val compose = createComposeRule()
 
     @Test fun changingIntensityUpdatesTheVisibleChanceWithoutTraining() {
-        val kernel = HighSchoolPhase4Kernel()
-        val begun = kernel.start(HighSchoolPhase4StartRequest("918220", "power_prospect", "training-odds-ui", "2026-W36", "2026-09-05")).state
-        val ready = kernel.completePrologue("918220", kernel.beginTutorial(begun).state).state
-        val school = kernel.chooseSchool("918220", ready, HighSchoolSchoolId.CHEONGAM_DEVELOPMENT).state
-        val state = GameAggregateState.initial("training-odds-ui").copy(stage = GameStage.HIGH_SCHOOL, highSchool = school)
+        val begun = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "training-odds-ui", "2026-W36", "2026-09-05"))
+        val ready = CareerFixtures.completePrologue("918220", CareerFixtures.beginTutorial(begun))
+        val school = CareerFixtures.chooseSchool("918220", ready, HighSchoolSchoolId.CHEONGAM_DEVELOPMENT)
+        val state = GameAggregateState.initial("training-odds-ui").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = school)
         compose.setContent {
             BaseballMigrationTheme {
-                TrainingScreen(state, Phase8CommandContext(), false, null, PaddingValues(0.dp), 0, 0,
+                TrainingScreen(state, ScreenCommandContext(), false, null, PaddingValues(0.dp), 0, 0,
                     onDismiss = {}, onCommit = { error("A preview must not commit training") })
             }
         }

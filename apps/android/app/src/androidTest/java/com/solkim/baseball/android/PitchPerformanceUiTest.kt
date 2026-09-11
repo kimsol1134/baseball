@@ -26,12 +26,12 @@ class PitchPerformanceUiTest {
         context.getSharedPreferences("launch-qa", 0).edit().putInt("refresh-rate", 60).commit()
         runBlocking {
             if (store.current.pitch == null) {
-                val controller = Phase8Controller(store)
-                controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
-                controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
-                controller.execute(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-                val launch = requireNotNull(controller.execute(Phase8ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch").launch)
-                val pitching = Phase7VerticalController(store)
+                val controller = ScreenController(store)
+                controller.execute(ScreenId.P001_OPENING, "enterSetup")
+                controller.execute(ScreenId.P002_SETUP, "startHighSchool")
+                controller.execute(ScreenId.P003_PROLOGUE, "beginTutorial")
+                val launch = requireNotNull(controller.execute(ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch").launch)
+                val pitching = PitchSessionController(store)
                 val result = pitching.submitPitch(launch.sessionId, 0, PitchKind.SLIDER, PitchZone(1, 1), PitchDelivery(850, 900))
                 pitching.consumePresentation(launch.sessionId, result)
             }
@@ -44,10 +44,10 @@ class PitchPerformanceUiTest {
             SystemClock.sleep(2_200)
         }
         replay(); replay()
-        val before = store.current.highSchool
+        val before = CareerAccess.school(store.current)
         device.executeShellCommand("dumpsys gfxinfo ${context.packageName} reset")
         repeat(12) { replay() }
-        assertEquals(before, store.current.highSchool)
+        assertEquals(before, CareerAccess.school(store.current))
         File(context.cacheDir, "pitch-performance.txt").writeText(device.executeShellCommand("dumpsys gfxinfo ${context.packageName}"))
     }
 }

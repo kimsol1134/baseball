@@ -1,5 +1,7 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.CareerAccess
+
 import android.content.Intent
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -27,7 +29,7 @@ class PitchOutputDeviceTest {
         val device = UiDevice.getInstance(inst)
         context.startActivity(requireNotNull(context.packageManager.getLaunchIntentForPackage(context.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         assertTrue(device.wait(Until.hasObject(By.res("action.enterSetup")), 15_000))
-        val before = app.gameStore.current.highSchool
+        val before = CareerAccess.school(app.gameStore.current)
         inst.runOnMainSync { audio.stopMusic(); audio.preparePitchSounds() }
         val end = SystemClock.uptimeMillis() + 5_000
         while (!audio.isPitchAudioReady() && SystemClock.uptimeMillis() < end) SystemClock.sleep(40)
@@ -57,6 +59,6 @@ class PitchOutputDeviceTest {
         inst.runOnMainSync { audio.stopHeartbeat() }
         assertFalse(NativePitchHaptics.play(context, PitchHapticCue.GRIP, false))
         inst.runOnMainSync { audio.stopEffects() }
-        assertEquals(before, app.gameStore.current.highSchool)
+        assertEquals(before, CareerAccess.school(app.gameStore.current))
     }
 }

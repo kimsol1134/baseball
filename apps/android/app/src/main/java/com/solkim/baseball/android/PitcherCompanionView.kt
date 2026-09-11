@@ -19,20 +19,41 @@ import com.solkim.baseball.android.LocalizedGameText as Text
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 internal fun CompanionLauncher(state: GameAggregateState, showPortrait: Boolean = false) {
-    if (state.meta.seedChallenge != null || state.highSchool?.challenge?.active == true) return
+    if (state.meta.seedChallenge != null || CareerUiRules.challengeActive(state)) return
+    CompanionLauncher(
+        state = state,
+        companion = PitcherCompanionRules.current(state),
+        header = CareerUiRules.header(state),
+        aceYear = CareerUiRules.isAceYear(state),
+        portraitSeed = playerPortraitSeed(state),
+        playerName = CareerUiRules.playerName(state),
+        showPortrait = showPortrait,
+    )
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+internal fun CompanionLauncher(
+    state: GameAggregateState,
+    companion: PitcherCompanion,
+    header: CareerHeaderView?,
+    aceYear: Boolean,
+    portraitSeed: String?,
+    playerName: String?,
+    showPortrait: Boolean,
+) {
     var open by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
-    val c = PitcherCompanionRules.current(state)
+    val c = companion
     val copy = rememberGameCopy()
-    val pro = state.pro.takeIf { state.stage in setOf(GameStage.PRO, GameStage.RETIREMENT) }
     val name = c.nickname.ifEmpty { copy.legacy(PitchHudProjection.koreanLabel(PitchKind.entries.first { it.wire == c.representative })) }
     TextButton(onClick = { open = true }, modifier = Modifier.testTag("companion.open")) {
         if (showPortrait) {
-            PlayerPortrait(seed = playerPortraitSeed(state) ?: "pitcher", stage = if (pro != null) PlayerStage.PRO else if ((state.highSchool?.run?.chapter?.schoolYear ?: 1) >= 3) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 28.dp)
+            PlayerPortrait(seed = portraitSeed ?: "pitcher", stage = if (header?.isPro == true) PlayerStage.PRO else if (aceYear) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 28.dp)
             Spacer(Modifier.width(8.dp))
             Column {
-                Text("#${c.jersey} " + (pro?.identityName ?: state.highSchool?.run?.identity?.name.orEmpty()), verbatim = true)
+                Text("#${c.jersey} " + (playerName.orEmpty()), verbatim = true)
                 Text("${copy.legacy("대표 구종")} · $name", verbatim = true, color = BaseballColors.milestone, style = MaterialTheme.typography.labelSmall)
             }
         } else Text("선수 상세")
@@ -65,26 +86,51 @@ internal fun CompanionLauncher(state: GameAggregateState, showPortrait: Boolean 
 
 @Composable
 internal fun CompanionProfile(state: GameAggregateState, busy: Boolean, onChange: (String, String) -> Unit) {
-    val c = PitcherCompanionRules.current(state)
+    CompanionProfile(
+        companion = PitcherCompanionRules.current(state),
+        header = CareerUiRules.header(state),
+        aceYear = CareerUiRules.isAceYear(state),
+        portraitSeed = playerPortraitSeed(state),
+        startingRatings = CareerUiRules.startingRatings(state),
+        canChooseGoal = PitcherCompanionRules.canChooseGoal(state),
+        lineage = CareerUiRules.lineage(state),
+        previewGoal = { PitcherCompanionRules.apply(state, "goal", it) },
+        busy = busy,
+        onChange = onChange,
+    )
+}
+
+@Composable
+internal fun CompanionProfile(
+    companion: PitcherCompanion,
+    header: CareerHeaderView?,
+    aceYear: Boolean,
+    portraitSeed: String?,
+    startingRatings: List<Int>?,
+    canChooseGoal: Boolean,
+    lineage: LineageView?,
+    previewGoal: (String) -> PitcherCompanion,
+    busy: Boolean,
+    onChange: (String, String) -> Unit,
+) {
+    val c = companion
     val copy = rememberGameCopy()
-    val pro = state.pro.takeIf { state.stage in setOf(GameStage.PRO, GameStage.RETIREMENT) }
-    val run = state.highSchool?.run
     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        PlayerPortrait(modifier = Modifier.graphicsLayer { rotationZ = if ((pro?.fatigue ?: run?.fatigue ?: 0) >= 70) -3f else 0f }, seed = playerPortraitSeed(state) ?: "pitcher", stage = if (pro != null) PlayerStage.PRO else if ((run?.chapter?.schoolYear ?: 1) >= 3) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 68.dp)
+        PlayerPortrait(modifier = Modifier.graphicsLayer { rotationZ = if ((header?.fatigue ?: 0) >= 70) -3f else 0f }, seed = portraitSeed ?: "pitcher", stage = if (header?.isPro == true) PlayerStage.PRO else if (aceYear) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 68.dp)
         Column {
-            Text(pro?.identityName ?: run?.identity?.name.orEmpty(), verbatim = true, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(header?.name.orEmpty(), verbatim = true, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             if (c.careerPath.isNotEmpty()) Text(AceCareerPresentation.pathTitle(c.careerPath), style = MaterialTheme.typography.labelMedium)
             Text("#${c.jersey}", verbatim = true, style = MaterialTheme.typography.titleLarge, color = BaseballColors.milestone)
-            val fatigue = pro?.fatigue ?: run?.fatigue ?: 0
+            val fatigue = header?.fatigue ?: 0
             Text(if (fatigue >= 70) "잠깐 쉬고 다시 던지고 싶어요." else if (fatigue <= 20) "몸이 가벼워요. 다음 공이 기대돼요." else "한 구씩 제 공을 만들어갈게요.", style = MaterialTheme.typography.bodySmall)
         }
     }
-    val inheritedStart = state.highSchool?.startingPitcher
-    if (pro == null && (run?.lifeNumber ?: 1) > 1 && inheritedStart != null && c.previousStart.size == 4) {
+    val inheritedStart = startingRatings
+    if (header?.isPro != true && (header?.lifeNumber ?: 1) > 1 && inheritedStart != null && c.previousStart.size == 4) {
         val language = copy.language
         Text(when (language) { GameLanguage.ENGLISH -> "A stronger beginning"; GameLanguage.JAPANESE -> "前世より強いスタート"; else -> "지난 생보다 강한 출발" },
             verbatim = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("companion.rebirthGrowth"))
-        val currentStart = listOf(inheritedStart.stuff, inheritedStart.command, inheritedStart.movement, inheritedStart.stamina)
+        val currentStart = inheritedStart
         val labels = when(language) { GameLanguage.ENGLISH -> listOf("Stuff", "Command", "Movement", "Stamina"); GameLanguage.JAPANESE -> listOf("球威", "制球", "変化", "体力"); else -> listOf("구위", "제구", "무브먼트", "체력") }
         currentStart.indices.chunked(2).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -106,7 +152,7 @@ internal fun CompanionProfile(state: GameAggregateState, busy: Boolean, onChange
         Button(onClick = { onChange("jersey", jersey) }, enabled = !busy && jersey.toIntOrNull() in 1..99) { Text("저장") }
     }
     Text("대표 구종", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-    val profiles = pro?.pitcher?.pitchProfiles ?: run?.pitcher?.pitchProfiles.orEmpty()
+    val profiles = header?.pitchProfiles.orEmpty()
     AdaptiveActionRow(Modifier.fillMaxWidth()) {
         profiles.forEach { pitch ->
             FilterChip(selected = pitch.pitchType.wire == c.representative, onClick = { onChange("pitch", pitch.pitchType.wire) }, enabled = !busy,
@@ -131,16 +177,16 @@ internal fun CompanionProfile(state: GameAggregateState, busy: Boolean, onChange
         Button(onClick = { onChange("nickname", nickname) }, enabled = !busy && nickname != c.nickname, modifier = Modifier.testTag("companion.nickname.save")) { Text("별명 붙이기") }
         }
     } else Text("이 공으로 공식 경기 삼진을 잡으면 별명을 붙일 수 있어요.", style = MaterialTheme.typography.bodySmall)
-    if (c.goal.isNotEmpty() || PitcherCompanionRules.canChooseGoal(state)) {
+    if (c.goal.isNotEmpty() || canChooseGoal) {
     Text("이번 생의 작은 꿈", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
     if (c.goal.isNotEmpty()) {
         Text(copy.resolve("companion.goal.${c.goal}"), verbatim = true)
         Text("${(PitcherCompanionRules.progress(c) - c.goalBaseline).coerceAtLeast(0)} / ${c.goalTarget - c.goalBaseline}", verbatim = true, color = BaseballColors.action, modifier = Modifier.testTag("companion.goal.progress"))
         if (c.goalCompleted) Text("해냈어요. 이 순간을 기억할게요.", color = BaseballColors.milestone)
     }
-    if (PitcherCompanionRules.canChooseGoal(state) && (c.goal.isEmpty() || c.goalCompleted)) {
+    if (canChooseGoal && (c.goal.isEmpty() || c.goalCompleted)) {
         listOf("signature", "clean", "best").filter { goal -> c.memories.none { it.career == c.career && it.kind == "goal_$goal" } }.forEach { goal ->
-            val preview = PitcherCompanionRules.apply(state, "goal", goal)
+            val preview = previewGoal(goal)
             CompactChoiceCard(copy.resolve("companion.goal.$goal"),
                 copy.resolve("companion.goal.remaining", GameCopyArgument.Whole((preview.goalTarget - preview.goalBaseline).toLong())),
                 !busy, "companion.goal.$goal", actionLabel = "도전") { onChange("goal", goal) }
@@ -157,7 +203,7 @@ internal fun CompanionProfile(state: GameAggregateState, busy: Boolean, onChange
         c.memories.asReversed().filterNot { it.id == c.pinned }.drop(3).take(memoriesShown).forEach { CompanionMemory(it, false, busy, onChange) }
         if (c.memories.size > memoriesShown + 3) TextButton(onClick = { memoriesShown += 12 }) { Text("기억 더 보기") }
     }
-    CareerUiRules.lineage(state)?.let { mastery ->
+    lineage?.let { mastery ->
         run {
             Text("다음 생으로 이어지는 힘", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(SignatureLegacyDisplay.title(mastery.legacyId, copy).orEmpty(), verbatim = true)
@@ -185,9 +231,14 @@ private fun CompanionMemory(memory: PitchMemory, pinned: Boolean, busy: Boolean,
 
 @Composable
 internal fun CompanionReaction(state: GameAggregateState) {
-    val c = state.meta.companion ?: return
+    CompanionReaction(state.meta.companion, PitcherCompanionRules.career(state))
+}
+
+@Composable
+internal fun CompanionReaction(companion: PitcherCompanion?, careerId: String?) {
+    val c = companion ?: return
     val pinned = c.memories.firstOrNull { it.id == c.pinned }
-    val memory = pinned ?: c.memories.lastOrNull()?.takeIf { it.career == PitcherCompanionRules.career(state) } ?: return
+    val memory = pinned ?: c.memories.lastOrNull()?.takeIf { it.career == careerId } ?: return
     val copy = rememberGameCopy()
     Text(copy.resolve(if (pinned != null) "companion.memory.${memory.kind}" else "companion.reaction.${when { memory.kind.startsWith("goal_") -> "goal"; memory.kind.startsWith("signature_rank") -> "signature"; else -> memory.kind }}"),
         verbatim = true, color = BaseballColors.milestone, style = MaterialTheme.typography.bodySmall)

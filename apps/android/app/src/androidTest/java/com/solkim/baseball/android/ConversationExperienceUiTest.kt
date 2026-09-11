@@ -27,15 +27,14 @@ class ConversationExperienceUiTest {
     @get:Rule val compose = createComposeRule()
 
     private fun state(role: String): GameAggregateState {
-        val k = HighSchoolPhase4Kernel()
-        val start = k.start(HighSchoolPhase4StartRequest("918220", "power_prospect", "talk-ux", "2026-W37", "2026-09-09")).state
-        val school = k.chooseSchool("918220", k.completePrologue("918220", k.beginTutorial(start).state).state, HighSchoolSchoolId.HAEDONG_POWER).state
+        val start = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "talk-ux", "2026-W37", "2026-09-09"))
+        val school = CareerFixtures.chooseSchool("918220", CareerFixtures.completePrologue("918220", CareerFixtures.beginTutorial(start)), HighSchoolSchoolId.HAEDONG_POWER)
         val event = HighSchoolContentCatalog.events.first { it.id == when (role) {
             "coach" -> "evt-coach-role"; "catcher" -> "evt-catcher-sign"; else -> "evt-rival-message"
         } }
-        val run = HighSchoolKernel().resignShadowState(school.run.copy(phase = HighSchoolPhase.RELATIONSHIP,
+        val run = CareerFixtures.resignRun(school.run.copy(phase = HighSchoolPhase.RELATIONSHIP,
             currentRelationshipCategory = role, currentRelationshipTarget = HighSchoolRelationshipTarget.entries.first { it.wire == role }, currentRelationshipEvent = event))
-        return GameAggregateState.initial("talk-ux").copy(stage = GameStage.HIGH_SCHOOL, highSchool = k.commitShadowState(school.copy(run = run)))
+        return GameAggregateState.initial("talk-ux").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = CareerFixtures.commitShadow(school.copy(run = run)))
     }
 
     @Test fun everyActorAndLocaleKeepsChoicesReadableIncludingLargeText() {
@@ -47,7 +46,7 @@ class ConversationExperienceUiTest {
             val config = Configuration(LocalConfiguration.current).apply { setLocale(Locale.forLanguageTag(language)); fontScale = scale }
             CompositionLocalProvider(LocalConfiguration provides config, LocalDensity provides Density(LocalDensity.current.density, scale)) {
                 BaseballMigrationTheme { Box(Modifier.width(360.dp)) {
-                    val model = Phase8ScreenProjection.project(current, Phase8ScreenId.P007_RELATIONSHIP).localized(rememberGameCopy(), current)
+                    val model = ScreenProjection.project(current, ScreenId.P007_RELATIONSHIP).localized(rememberGameCopy(), current)
                     RelationshipConversationScreen(current, model, false, null) { calls++ }
                 } }
             }
@@ -79,7 +78,7 @@ class ConversationExperienceUiTest {
         var error by mutableStateOf<String?>(null)
         var calls = 0
         compose.setContent { BaseballMigrationTheme {
-            val model = Phase8ScreenProjection.project(current, Phase8ScreenId.P007_RELATIONSHIP).localized(rememberGameCopy(), current)
+            val model = ScreenProjection.project(current, ScreenId.P007_RELATIONSHIP).localized(rememberGameCopy(), current)
             RelationshipConversationScreen(current, model, false, error) { calls++ }
         } }
         val card = compose.onNodeWithTag("action.relationship:challenge").performScrollTo()
@@ -95,7 +94,7 @@ class ConversationExperienceUiTest {
     @Test fun normalLayoutShowsAllChoicesAndProducesReviewEvidence() {
         var current by mutableStateOf(state("coach"))
         compose.setContent { BaseballMigrationTheme {
-            val model = Phase8ScreenProjection.project(current, Phase8ScreenId.P007_RELATIONSHIP).localized(rememberGameCopy(), current)
+            val model = ScreenProjection.project(current, ScreenId.P007_RELATIONSHIP).localized(rememberGameCopy(), current)
             RelationshipConversationScreen(current, model, false, null) {}
         } }
         val inst = InstrumentationRegistry.getInstrumentation()
@@ -116,7 +115,7 @@ class ConversationExperienceUiTest {
         prefs.edit().remove("pending").commit()
         try {
             compose.setContent { BaseballMigrationTheme {
-                Phase8Shell(current, false, null, Phase8ScreenId.P007_RELATIONSHIP, Phase8CommandContext(), {}, { action ->
+                CareerShell(current, false, null, ScreenId.P007_RELATIONSHIP, ScreenCommandContext(), {}, { action ->
                     calls++
                     val before = current
                     val after = action.capturedPayloads.fold(before) { s, payload -> GameStateReducer.dispatch(s, payload.envelope).state }
@@ -138,23 +137,22 @@ class ConversationExperienceUiTest {
     }
 
     @Test fun professionalChoiceShowsRealCostsAndDispatchesOnce() {
-        val k = ProKernel()
-        val base = k.startDirect(ProStartDirectRequest("42", "power_prospect", "대화투수")).state
-        val type = com.solkim.baseball.core.pro.ProSeasonDecisionType.ROLE_MEETING
-        val decision = com.solkim.baseball.core.pro.ProSeasonDecision("season-${base.season}-week-${base.week}-${type.wire}", type, base.season, base.week,
-            "보직 대화", "다음 보직을 정한다.", List(3) { i -> com.solkim.baseball.core.pro.ProDecisionChoice("${type.wire}.$i", "선택 $i", "다음 등판을 준비한다.",
-                com.solkim.baseball.core.pro.ProDecisionEffect(fatigueDelta = 12, managerTrustDelta = -4)) })
+        val base = CareerFixtures.startDirectPro(ProStartDirectRequest("42", "power_prospect", "대화투수"))
+        val type = ProSeasonDecisionType.ROLE_MEETING
+        val decision = ProSeasonDecision("season-${base.season}-week-${base.week}-${type.wire}", type, base.season, base.week,
+            "보직 대화", "다음 보직을 정한다.", List(3) { i -> ProDecisionChoice("${type.wire}.$i", "선택 $i", "다음 등판을 준비한다.",
+                ProDecisionEffect(fatigueDelta = 12, managerTrustDelta = -4)) })
         val unsigned = base.copy(phase = ProCareerPhase.SEASON_DECISION, pendingDecision = decision, commitment = "")
-        val pro = unsigned.copy(commitment = k.commitment(unsigned))
-        val current = GameAggregateState.initial("pro-talk").copy(stage = GameStage.PRO, pro = pro)
+        val pro = unsigned.copy(commitment = CareerFixtures.proCommitment(unsigned))
+        val current = GameAggregateState.initial("pro-talk").withCareers(stage = GameStage.PRO, pro = pro)
         var calls = 0
         compose.setContent { BaseballMigrationTheme {
-            Phase8Shell(current, false, null, Phase8ScreenId.P019_PRO_SEASON, Phase8CommandContext(), {}, { calls++ })
+            CareerShell(current, false, null, ScreenId.P019_PRO_SEASON, ScreenCommandContext(), {}, { calls++ })
         } }
         compose.onNodeWithTag("conversation.line").assertIsDisplayed()
         compose.onNodeWithTag("action.seasonDecision:role_meeting.0").performClick()
         compose.onNodeWithTag("action.seasonDecision:role_meeting.1").assertIsNotEnabled()
         assertEquals(1, calls)
-        assertEquals(0, current.pro!!.decisionHistory.size)
+        assertEquals(0, CareerAccess.pro(current)!!.decisionHistory.size)
     }
 }

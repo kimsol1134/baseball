@@ -22,19 +22,17 @@ class CareerMeaningUiTest {
         androidx.test.uiautomator.UiDevice.getInstance(inst).takeScreenshot(java.io.File(inst.targetContext.cacheDir, "meaning-$name.png"))
     }
     private fun school(): HighSchoolPhase4State {
-        val k = HighSchoolPhase4Kernel()
-        val start = k.start(HighSchoolPhase4StartRequest("918220", "power_prospect", "meaning-ui", "2026-W37", "2026-09-08")).state
-        return k.chooseSchool("918220", k.completePrologue("918220", k.beginTutorial(start).state).state, HighSchoolSchoolId.HAEDONG_POWER).state
+        val start = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "meaning-ui", "2026-W37", "2026-09-08"))
+        return CareerFixtures.chooseSchool("918220", CareerFixtures.completePrologue("918220", CareerFixtures.beginTutorial(start)), HighSchoolSchoolId.HAEDONG_POWER)
     }
     @Test fun conversationResultPersistsUntilAcknowledgedWithoutReplayingTheChoice() {
-        val core = HighSchoolKernel()
         val school = school()
         val event = HighSchoolContentCatalog.events.first { it.id == "evt-coach-role" }
-        val run = core.resignShadowState(school.run.copy(phase = HighSchoolPhase.RELATIONSHIP,
+        val run = CareerFixtures.resignRun(school.run.copy(phase = HighSchoolPhase.RELATIONSHIP,
             currentRelationshipCategory = "coach", currentRelationshipTarget = HighSchoolRelationshipTarget.COACH, currentRelationshipEvent = event))
-        val next = core.resolveRelationship(FixtureRelationshipRequest("99881", run, HighSchoolRelationshipResponse.CHALLENGE)).snapshot
-        val before = GameAggregateState.initial("meaning-ui").copy(stage = GameStage.HIGH_SCHOOL, highSchool = school.copy(run = run))
-        val after = before.copy(highSchool = school.copy(run = next))
+        val next = CareerFixtures.resolveRelationship("99881", run, HighSchoolRelationshipResponse.CHALLENGE)
+        val before = GameAggregateState.initial("meaning-ui").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = school.copy(run = run))
+        val after = before.withCareers(highSchool = school.copy(run = next))
         val record = requireNotNull(conversationFeedbackRecord(before, after))
         assertEquals("다음 등판: 선발 테스트", record.getJSONArray("lines").getString(0))
         assertNull(conversationFeedbackRecord(after, after))
@@ -53,19 +51,19 @@ class CareerMeaningUiTest {
             compose.onNodeWithTag("conversation.continue").performClick()
             compose.onNodeWithTag("conversation.result").assertDoesNotExist()
             assertNull(prefs.getString("pending", null))
-            assertTrue(after.highSchool!!.run.development!!.starterTrialPending)
-            assertEquals(run.relationshipsCompleted + 1, after.highSchool!!.run.relationshipsCompleted)
+            assertTrue(CareerAccess.school(after)!!.run.development!!.starterTrialPending)
+            assertEquals(run.relationshipsCompleted + 1, CareerAccess.school(after)!!.run.relationshipsCompleted)
         } finally { prefs.edit().putString("pending", saved).commit() }
     }
     @Test fun draftedPlayerSeesContractAsPrimaryAndNoSeparateNewProShortcut() {
         val school = school()
-        val team = HighSchoolDraftTeamRules.bestTeam(school.run.pitcher)
-        val run = HighSchoolKernel().resignShadowState(school.run.copy(phase = HighSchoolPhase.COMPLETED,
+        val team = CareerFixtures.bestDraftTeam(school.run.pitcher)
+        val run = CareerFixtures.resignRun(school.run.copy(phase = HighSchoolPhase.COMPLETED,
             draftResult = HighSchoolDraftResult(com.solkim.baseball.application.HighSchoolDraftOutcome.DRAFTED, 72, "4라운드", team.id, team, 4, 32, 120000000)))
-        val hs = HighSchoolPhase4Kernel().commitShadowState(school.copy(run = run))
-        val state = GameAggregateState.initial("meaning-ui").copy(stage = GameStage.HIGH_SCHOOL, highSchool = hs)
+        val hs = CareerFixtures.commitShadow(school.copy(run = run))
+        val state = GameAggregateState.initial("meaning-ui").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = hs)
         compose.setContent { BaseballMigrationTheme {
-            Phase8Shell(state, false, null, Phase8ScreenId.P015_REBIRTH, Phase8CommandContext(), onNavigate = {}, onAction = {})
+            CareerShell(state, false, null, ScreenId.P015_REBIRTH, ScreenCommandContext(), onNavigate = {}, onAction = {})
         } }
         compose.onNodeWithText("지명 완료 · 입단 계약 전").assertIsDisplayed()
         compose.onNodeWithTag("action.startLinked").assertIsDisplayed().assertIsEnabled()
@@ -78,20 +76,20 @@ class CareerMeaningUiTest {
         var state by mutableStateOf(GameAggregateState.initial("meaning-new-pro"))
         var commits = 0
         compose.setContent { BaseballMigrationTheme {
-            Phase8Shell(state, false, null, Phase8ScreenId.P001_OPENING, Phase8CommandContext(), onNavigate = {}, onAction = { action ->
+            CareerShell(state, false, null, ScreenId.P001_OPENING, ScreenCommandContext(), onNavigate = {}, onAction = { action ->
                 commits++
                 action.capturedPayloads.forEach { state = GameStateReducer.dispatch(state, it.envelope).state }
             })
         } }
         compose.onNodeWithTag("opening.proMode").performClick()
         compose.onNodeWithTag("opening.startPro").assertIsNotEnabled()
-        assertNull(state.pro)
+        assertNull(CareerAccess.pro(state))
         compose.onNodeWithTag("opening.proName").performTextInput("테스트선수")
         assertEquals(0, commits)
         capture("new-pro")
         compose.onNodeWithTag("opening.startPro").assertIsEnabled().performClick()
         assertEquals(1, commits)
-        assertEquals("테스트선수", state.pro!!.identityName)
-        assertNull(state.highSchool)
+        assertEquals("테스트선수", CareerAccess.pro(state)!!.identityName)
+        assertNull(CareerAccess.school(state))
     }
 }

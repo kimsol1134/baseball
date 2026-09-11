@@ -13,14 +13,14 @@ import org.junit.Test
 class CareerMilestoneCelebrationTest {
     @get:Rule val compose = createComposeRule()
     @Test fun ordinaryChangesDoNotInterruptAndNewAwakeningIsCelebratedOnce() {
-        val school = HighSchoolPhase4Kernel().start(HighSchoolPhase4StartRequest("918220", "power_prospect", "celebrate", "2026-W36", "2026-09-05")).state
-        var state by mutableStateOf(GameAggregateState.initial("celebrate").copy(highSchool = school))
+        val school = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "celebrate", "2026-W36", "2026-09-05"))
+        var state by mutableStateOf(GameAggregateState.initial("celebrate").withCareers(highSchool = school))
         compose.setContent { BaseballMigrationTheme { CareerMilestoneCelebration(state) } }
         compose.onNodeWithTag("career.milestone").assertDoesNotExist()
-        compose.runOnIdle { state = state.copy(highSchool = school.copy(run = school.run.copy(revision = school.run.revision + 1UL))) }
+        compose.runOnIdle { state = state.withCareers(highSchool = school.copy(run = school.run.copy(revision = school.run.revision + 1UL))) }
         compose.onNodeWithTag("career.milestone").assertDoesNotExist()
         compose.runOnIdle {
-            state = state.copy(highSchool = school.copy(run = school.run.copy(revision = school.run.revision + 2UL,
+            state = state.withCareers(highSchool = school.copy(run = school.run.copy(revision = school.run.revision + 2UL,
                 selectedAwakenings = listOf(HighSchoolContentCatalog.awakeningNodes.first().id))))
         }
         compose.onNodeWithTag("career.milestone").assertIsDisplayed()
@@ -31,8 +31,8 @@ class CareerMilestoneCelebrationTest {
         androidx.test.uiautomator.UiDevice.getInstance(inst).takeScreenshot(java.io.File(inst.targetContext.cacheDir, "skill-celebration-art.png"))
         compose.onNodeWithTag("career.milestone.continue").performClick()
         compose.runOnIdle {
-            val current = state.highSchool!!
-            state = state.copy(highSchool = current.copy(run = current.run.copy(revision = current.run.revision + 1UL)))
+            val current = CareerAccess.school(state)!!
+            state = state.withCareers(highSchool = current.copy(run = current.run.copy(revision = current.run.revision + 1UL)))
         }
         compose.onNodeWithTag("career.milestone").assertDoesNotExist()
     }

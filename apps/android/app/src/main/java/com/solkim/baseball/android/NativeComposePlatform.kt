@@ -17,11 +17,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.solkim.baseball.application.CareerUiRules
 import com.solkim.baseball.application.GameAggregateState
-import com.solkim.baseball.application.Phase8ScreenId
-import com.solkim.baseball.application.Phase8ScreenModel
-import com.solkim.baseball.application.Phase8ScreenProjection
-import com.solkim.baseball.application.Phase9LifeCardProjection
+import com.solkim.baseball.application.ScreenId
+import com.solkim.baseball.application.ScreenModel
+import com.solkim.baseball.application.ScreenProjection
+import com.solkim.baseball.application.LifeCardProjection
 import com.solkim.baseball.platform.LifeCardSharePayload
 import com.solkim.baseball.platform.NotificationPermissionTruth
 import com.solkim.baseball.platform.PlatformAction
@@ -31,14 +32,14 @@ import com.solkim.baseball.platform.ReviewGateDecision
 import com.solkim.baseball.platform.ReviewReason
 import com.solkim.baseball.platform.ReminderOfferPolicy
 
-public data class Phase9PlatformUiState(
+public data class PlatformUiState(
     public val notificationTruth: NotificationPermissionTruth,
     public val reviewDecision: ReviewGateDecision?,
     public val notificationPermissionAsked: Boolean = false,
     public val reminderOfferDeclined: Boolean = false,
 )
 
-public data class Phase9UiAction(
+public data class PlatformUiAction(
     public val encodedPayload: String,
     public val payload: PlatformActionPayload,
     public val sharePayload: LifeCardSharePayload? = null,
@@ -46,18 +47,18 @@ public data class Phase9UiAction(
 )
 
 @Composable
-public fun Phase9PlatformSurface(
+public fun PlatformSurface(
     state: GameAggregateState,
-    model: Phase8ScreenModel,
-    platformState: Phase9PlatformUiState,
+    model: ScreenModel,
+    platformState: PlatformUiState,
     selectedLifeCardCareerId: String? = null,
     onSelectedLifeCardCareerIdChanged: (String) -> Unit = {},
-    onAction: (Phase9UiAction) -> Unit,
-    onViewportExposure: (Phase9ViewportExposure) -> Unit = {},
+    onAction: (PlatformUiAction) -> Unit,
+    onViewportExposure: (ViewportExposure) -> Unit = {},
 ) {
     when (model.id) {
-        Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> Phase9ReminderOfferSurface(state, model.id, platformState, onAction)
-        Phase8ScreenId.P028_LIFECARD -> Phase9ShareSurface(
+        ScreenId.P011_HIGH_SCHOOL_CAREER -> ReminderOfferSurface(state, model.id, platformState, onAction)
+        ScreenId.P028_LIFECARD -> ShareSurface(
             state,
             model,
             selectedLifeCardCareerId,
@@ -69,14 +70,14 @@ public fun Phase9PlatformSurface(
 }
 
 @Composable
-private fun Phase9ReminderOfferSurface(
+private fun ReminderOfferSurface(
     state: GameAggregateState,
-    screen: Phase8ScreenId,
-    platformState: Phase9PlatformUiState,
-    onAction: (Phase9UiAction) -> Unit,
+    screen: ScreenId,
+    platformState: PlatformUiState,
+    onAction: (PlatformUiAction) -> Unit,
 ) {
     if (!ReminderOfferPolicy.shouldShow(
-            completedGameCount = state.highSchool?.completedGameCounter ?: 0UL,
+            completedGameCount = CareerUiRules.completedGameCount(state),
             truth = platformState.notificationTruth,
             permissionAsked = platformState.notificationPermissionAsked,
             offerDeclined = platformState.reminderOfferDeclined,
@@ -99,15 +100,15 @@ private fun Phase9ReminderOfferSurface(
 }
 
 @Composable
-private fun Phase9ShareSurface(
+private fun ShareSurface(
     state: GameAggregateState,
-    model: Phase8ScreenModel,
+    model: ScreenModel,
     selectedLifeCardCareerId: String?,
     onSelectedLifeCardCareerIdChanged: (String) -> Unit,
-    onAction: (Phase9UiAction) -> Unit,
+    onAction: (PlatformUiAction) -> Unit,
 ) {
-    val selectedId = selectedLifeCardCareerId ?: state.highSchool?.archive?.lastOrNull()?.careerId
-    val card = Phase9LifeCardProjection.selected(state, selectedId)
+    val selectedId = selectedLifeCardCareerId ?: CareerUiRules.lastArchiveCareerId(state)
+    val card = LifeCardProjection.selected(state, selectedId)
     val sharePayload = card?.let {
         LifeCardSharePayload(
                         title = com.solkim.baseball.application.CareerShareCopy.LIFE_CARD_TITLE,
@@ -117,13 +118,13 @@ private fun Phase9ShareSurface(
             lifeNumber = it.lifeNumber,
         )
     }
-    val shareAllowed = sharePayload != null && state.highSchool?.challenge?.active != true
+    val shareAllowed = sharePayload != null && !CareerUiRules.challengeActive(state)
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("카드 공유", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text("한 생을 카드 한 장으로. 이미지와 글이 함께 나간다.", style = MaterialTheme.typography.bodyLarge)
             selectedId?.let { LifeCardVisual(state, it) }
-            state.highSchool?.archive.orEmpty().asReversed().forEach { record ->
+            CareerUiRules.archive(state).asReversed().forEach { record ->
                 SetupSelectionButton(
                     selected = record.careerId == selectedId,
                     onClick = { onSelectedLifeCardCareerIdChanged(record.careerId) },
@@ -143,11 +144,11 @@ private fun Phase9ShareSurface(
 
 internal fun capturePlatformAction(
     state: GameAggregateState,
-    screen: Phase8ScreenId,
+    screen: ScreenId,
     action: PlatformAction,
     sharePayload: LifeCardSharePayload? = null,
     reviewReason: ReviewReason? = null,
-): Phase9UiAction {
+): PlatformUiAction {
     val parameters = buildMap {
         sharePayload?.let {
             put("share", it.text)
@@ -163,5 +164,5 @@ internal fun capturePlatformAction(
         stateCommitment = state.commitment,
         parameterHash = PlatformActionCodec.parameterHash(parameters),
     )
-    return Phase9UiAction(PlatformActionCodec.encode(payload), payload, sharePayload, reviewReason)
+    return PlatformUiAction(PlatformActionCodec.encode(payload), payload, sharePayload, reviewReason)
 }

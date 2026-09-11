@@ -51,7 +51,7 @@ class Round4SurfaceUiTest {
         compose.setContent {
             val config = android.content.res.Configuration(LocalConfiguration.current).apply { fontScale=font; setLocale(java.util.Locale.forLanguageTag(language)) }
             CompositionLocalProvider(LocalConfiguration provides config, LocalDensity provides Density(LocalDensity.current.density,font)) {
-                BaseballMigrationTheme { Phase8Shell(state,false,message,Phase8ScreenId.P018_PRO_IMPORTANT_GAME,Phase8CommandContext(),{}, {}) }
+                BaseballMigrationTheme { CareerShell(state,false,message,ScreenId.P018_PRO_IMPORTANT_GAME,ScreenCommandContext(),{}, {}) }
             }
         }
         for (locale in listOf("ko","en","ja")) for (scale in listOf(1f,1.3f,1.5f)) for (error in listOf(null, "중단 처리를 마치지 못했어요. 아래에서 투구를 이어 하거나 저장된 결과를 확인해 주세요.")) {
@@ -64,13 +64,13 @@ class Round4SurfaceUiTest {
         capture("error-actions")
     }
     @Test fun finalDraftWordsAndFooterAreFullyReachable() {
-        val state = source().copy(stage=GameStage.BETWEEN_LIVES,pro=null,pitch=null)
+        val state = source().withCareers(stage=GameStage.BETWEEN_LIVES,pro=null,pitch=null)
         var font by mutableFloatStateOf(1f)
         var language by mutableStateOf("ko")
         compose.setContent {
             val config=android.content.res.Configuration(LocalConfiguration.current).apply { setLocale(java.util.Locale.forLanguageTag(language)) }
             CompositionLocalProvider(LocalConfiguration provides config, LocalDensity provides Density(LocalDensity.current.density,font)) {
-                BaseballMigrationTheme { Phase8Shell(state,false,null,Phase8ScreenId.P015_REBIRTH,Phase8CommandContext(),{}, {}) }
+                BaseballMigrationTheme { CareerShell(state,false,null,ScreenId.P015_REBIRTH,ScreenCommandContext(),{}, {}) }
             }
         }
         for (scale in listOf(1f,1.3f,1.5f)) {
@@ -97,8 +97,8 @@ class Round4SurfaceUiTest {
     }
     @Test fun navigationLabelsStayInsideTheirBarAcrossScreenChanges() {
         val state=source()
-        var screen by mutableStateOf(Phase8ScreenId.P027_SETTINGS)
-        compose.setContent { BaseballMigrationTheme { Phase8Shell(state,false,null,screen,Phase8CommandContext(),{screen=it}, {}) } }
+        var screen by mutableStateOf(ScreenId.P027_SETTINGS)
+        compose.setContent { BaseballMigrationTheme { CareerShell(state,false,null,screen,ScreenCommandContext(),{screen=it}, {}) } }
         repeat(3) {
             compose.onNodeWithTag("navigation.records").performClick()
             compose.onNodeWithTag("navigation.settings").performClick()
@@ -121,7 +121,7 @@ class Round4SurfaceUiTest {
         compose.setContent {
             val config=android.content.res.Configuration(LocalConfiguration.current).apply { setLocale(java.util.Locale.forLanguageTag(language)) }
             CompositionLocalProvider(LocalConfiguration provides config) { BaseballMigrationTheme {
-                Phase8Shell(state,false,null,Phase8ScreenId.P017_PRO_WEEK,Phase8CommandContext(),{}, {})
+                CareerShell(state,false,null,ScreenId.P017_PRO_WEEK,ScreenCommandContext(),{}, {})
             } }
         }
         compose.onNodeWithTag("week.promotion").performScrollTo().performClick()
@@ -137,7 +137,7 @@ class Round4SurfaceUiTest {
     }
     @Test fun singleEffectChoicesStillExposeTheirExplanationWithoutCommitting() {
         var commands=0
-        val action=Phase8ActionModel("defer","맞대결까지 보류한다","다음 맞대결에서 판단합니다.",true,effects=listOf(ChoiceEffect("피로",-1)))
+        val action=ScreenActionModel("defer","맞대결까지 보류한다","다음 맞대결에서 판단합니다.",true,effects=listOf(ChoiceEffect("피로",-1)))
         compose.setContent { BaseballMigrationTheme { Column {
             ConversationChoice(action,true,"r4") {commands++}
             ConversationChoice(action.copy(id="complete",description=""),true,"r4") {commands++}

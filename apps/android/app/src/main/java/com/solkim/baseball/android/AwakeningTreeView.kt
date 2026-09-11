@@ -32,19 +32,26 @@ import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.android.LocalizedGameText as Text
 
 @Composable
-internal fun AwakeningTreeView(state: GameAggregateState, model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit,
+internal fun AwakeningTreeView(state: GameAggregateState, model: ScreenModel, onAction: (ScreenUiAction) -> Unit,
                                modifier: Modifier = Modifier, busy: Boolean = false) {
-    val run = state.highSchool?.run ?: return
+    val view = AwakeningTreeModel.resolve(state) ?: return
+    AwakeningTreeView(view, model, onAction, modifier, busy)
+}
+
+@Composable
+internal fun AwakeningTreeView(view: AwakeningTreeModel, model: ScreenModel, onAction: (ScreenUiAction) -> Unit,
+                               modifier: Modifier = Modifier, busy: Boolean = false) {
+    val careerId = view.careerId
     val copy = rememberGameCopy()
-    val nodes = remember(run) { AwakeningTreePresentation.nodes(state) }
-    val owned = run.selectedAwakenings.map { it.wire }
+    val nodes = remember(careerId, view.revision) { view.nodes }
+    val owned = view.owned
     val preferred = nodes.firstOrNull { it.choice.available && it.parents.any(owned::contains) }
         ?: nodes.firstOrNull { it.choice.available } ?: nodes.first()
-    var branch by rememberSaveable(run.careerId) { mutableStateOf(preferred.branch) }
-    var selectedId by rememberSaveable(run.careerId) { mutableStateOf(preferred.choice.id) }
-    var details by rememberSaveable(run.careerId) { mutableStateOf(false) }
+    var branch by rememberSaveable(careerId) { mutableStateOf(preferred.branch) }
+    var selectedId by rememberSaveable(careerId) { mutableStateOf(preferred.choice.id) }
+    var details by rememberSaveable(careerId) { mutableStateOf(false) }
     val selected = nodes.firstOrNull { it.choice.id == selectedId } ?: preferred
-    val summary = AwakeningTreePresentation.summary(state, selected, copy)
+    val summary = view.summarize(selected, copy)
     val action = model.actions.firstOrNull { it.id == "awakening:${selected.choice.id}" && it.enabled }
     val canConfirm = selected.choice.available && !selected.choice.owned && owned.size < 3 && action != null && !busy
     val rowHeight = 88.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
@@ -168,7 +175,7 @@ internal fun AwakeningTreeView(state: GameAggregateState, model: Phase8ScreenMod
                 verbatim = true, style = MaterialTheme.typography.labelSmall, color = BaseballColors.textSecondary)
         }
         Button(onClick = {
-            if (canConfirm) onAction(Phase8UiAction(model.id, action.id, action.payloads))
+            if (canConfirm) onAction(ScreenUiAction(model.id, action.id, action.payloads))
         }, enabled = canConfirm, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("awakening.confirm")) {
             Text(copy.resolve(if (selected.choice.owned) "controls.awakening.learned" else "controls.awakening.learn"), verbatim = true)
         }

@@ -16,9 +16,14 @@ import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.android.LocalizedGameText as Text
 
 @Composable
-internal fun Phase8SchoolChoices(state: GameAggregateState, model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit) {
+internal fun CareerSchoolChoices(state: GameAggregateState, model: ScreenModel, onAction: (ScreenUiAction) -> Unit) {
+    CareerSchoolChoices(SchoolChoiceView.resolve(state), model, onAction)
+}
+
+@Composable
+internal fun CareerSchoolChoices(view: SchoolChoiceView, model: ScreenModel, onAction: (ScreenUiAction) -> Unit) {
     val copy = rememberGameCopy()
-    val schools = SchoolChoicePresentation.schools(state)
+    val schools = view.schools
     var comparing by remember { mutableStateOf<String?>(null) }
     Text("어떤 강점을 키울까요?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
     Text("다른 능력도 모두 훈련할 수 있어요.",
@@ -32,7 +37,7 @@ internal fun Phase8SchoolChoices(state: GameAggregateState, model: Phase8ScreenM
                 Text(SchoolChoicePresentation.fit(school), color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodySmall)
                 AdaptiveActionRow(Modifier.fillMaxWidth()) {
                     TextButton(onClick = { comparing = school.id.wire }, modifier = Modifier.testTag("school.compare.${school.id.wire}")) { Text("학교 비교") }
-                    Button(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) }, enabled = action.enabled,
+                    Button(onClick = { onAction(ScreenUiAction(model.id, action.id, action.payloads)) }, enabled = action.enabled,
                         modifier = Modifier.testTag("action.${action.id}")) { Text("이 학교 선택") }
                 }
             }
@@ -41,7 +46,7 @@ internal fun Phase8SchoolChoices(state: GameAggregateState, model: Phase8ScreenM
     val selected = schools.firstOrNull { it.id.wire == comparing }
     if (selected != null) {
         var goal by remember { mutableStateOf(SchoolDevelopmentGoal.STRENGTH) }
-        val comparisons = remember(state.highSchool?.run?.stateCommitment, goal) { SchoolChoicePresentation.compare(state, goal) }
+        val comparisons = if (goal == SchoolDevelopmentGoal.STRENGTH) view.strengthComparisons else view.weaknessComparisons
         val action = model.actions.first { it.id == "chooseSchool:${selected.id.wire}" }
         AlertDialog(onDismissRequest = { comparing = null }, containerColor = BaseballColors.surfaceRaised, modifier = Modifier.testTag("school.comparison"),
             title = { Text("학교 비교", style = MaterialTheme.typography.titleLarge) },
@@ -77,7 +82,7 @@ internal fun Phase8SchoolChoices(state: GameAggregateState, model: Phase8ScreenM
                 if (comparisons.none { it.recommended }) Text("능력과 성장 여유가 비슷하면 원하는 투구 스타일로 골라 주세요.", style = MaterialTheme.typography.bodySmall)
                 Text("앞으로 자주 할 훈련을 기준으로 고르세요.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
             } },
-            confirmButton = { TextButton(onClick = { comparing = null; onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
+            confirmButton = { TextButton(onClick = { comparing = null; onAction(ScreenUiAction(model.id, action.id, action.payloads)) },
                 enabled = action.enabled, modifier = Modifier.testTag("school.comparison.choose")) { Text("이 학교 선택") } },
             dismissButton = { TextButton(onClick = { comparing = null }, modifier = Modifier.testTag("school.comparison.close")) { Text("닫기") } })
     }

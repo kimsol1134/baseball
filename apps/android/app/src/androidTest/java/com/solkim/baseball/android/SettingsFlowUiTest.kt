@@ -22,15 +22,15 @@ class SettingsFlowUiTest {
         require(context.packageName == "com.solkim.baseball.android.reset.compose.qa")
         val app = context.applicationContext as BaseballApplication
         assertEquals(GameStage.OPENING, app.gameStore.current.stage)
-        val controller = Phase8Controller(app.gameStore)
+        val controller = ScreenController(app.gameStore)
         runBlocking {
-            controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
-            controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-            controller.execute(Phase8ScreenId.P005_SCHOOL_SELECTION, controller.projection(Phase8ScreenId.P005_SCHOOL_SELECTION).actions.first().id)
+            controller.execute(ScreenId.P001_OPENING, "enterSetup")
+            controller.execute(ScreenId.P002_SETUP, "startHighSchool")
+            controller.execute(ScreenId.P003_PROLOGUE, "beginTutorial")
+            controller.execute(ScreenId.P003_PROLOGUE, "completeTutorial")
+            controller.execute(ScreenId.P005_SCHOOL_SELECTION, controller.projection(ScreenId.P005_SCHOOL_SELECTION).actions.first().id)
         }
-        val career = app.gameStore.current.highSchool
+        val career = CareerAccess.school(app.gameStore.current)
         val language = GameLanguage.fromTag(context.resources.configuration.locales[0].toLanguageTag())
         val copy = GameCopy(language)
         val device = UiDevice.getInstance(inst)
@@ -126,13 +126,13 @@ class SettingsFlowUiTest {
         assertTrue(device.wait(Until.gone(By.res("backup.import")), 10_000))
         device.pressBack()
         assertTrue(device.wait(Until.hasObject(By.res("backup.import")), 10_000))
-        assertEquals(career, app.gameStore.current.highSchool)
+        assertEquals(career, CareerAccess.school(app.gameStore.current))
         capture("storage")
         val settings = app.gameStore.current.settings
         runBlocking {
             val reopened = KotlinGameStore.open(app.gameStore.current.installId,
                 CSharpLegacyGameStoreRepository(File(context.getExternalFilesDir(null), "save").toPath(), app.gameStore.current.installId), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
-            try { assertEquals(settings, reopened.current.settings); assertEquals(career, reopened.current.highSchool) } finally { reopened.close() }
+            try { assertEquals(settings, reopened.current.settings); assertEquals(career, CareerAccess.school(reopened.current)) } finally { reopened.close() }
         }
     }
 }

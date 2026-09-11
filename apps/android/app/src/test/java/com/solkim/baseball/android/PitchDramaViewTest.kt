@@ -23,7 +23,7 @@ class PitchDramaViewTest {
     fun plateFiguresConstantsAreValid() {
         assertTrue("batter aspect ratio must be positive", PlateFigures.BATTER_ASPECT > 0f)
         assertTrue("catcher aspect ratio must be positive", PlateFigures.CATCHER_ASPECT > 0f)
-        assertEquals(PlateFigures.ASSET_OPACITY, 0.13f, 0.001f)
+        assertEquals(0.5f, PlateFigures.ASSET_OPACITY, 0.001f)
     }
 
     @Test
@@ -97,15 +97,15 @@ class PitchDramaViewTest {
     }
 
     @Test
-    fun resultFreezeZoneAlphasMatchIosReadability() {
+    fun resultFreezeZoneAlphasMatchTheVisiblePlate() {
         assertEquals(0.85f, RESULT_ZONE_STROKE_ALPHA, 0.001f)
-        assertEquals(0.40f, RESULT_ZONE_GRID_ALPHA, 0.001f)
-        assertEquals(0.50f, LIVE_ZONE_STROKE_ALPHA, 0.001f)
-        assertEquals(0.16f, LIVE_ZONE_GRID_ALPHA, 0.001f)
+        assertEquals(0.80f, RESULT_ZONE_GRID_ALPHA, 0.001f)
+        assertEquals(0.85f, LIVE_ZONE_STROKE_ALPHA, 0.001f)
+        assertEquals(0.80f, LIVE_ZONE_GRID_ALPHA, 0.001f)
         assertEquals(0.85f, zoneStrokeAlpha(PitchOutcome.BALL, 1f, 0f), 0.001f)
-        assertEquals(0.40f, zoneGridAlpha(PitchOutcome.BALL, 1f), 0.001f)
-        assertEquals(0.50f, zoneStrokeAlpha(PitchOutcome.BALL, 0.1f, 0f), 0.001f)
-        assertEquals(0.16f, zoneGridAlpha(PitchOutcome.BALL, 0.1f), 0.001f)
+        assertEquals(0.80f, zoneGridAlpha(PitchOutcome.BALL, 1f), 0.001f)
+        assertEquals(0.85f, zoneStrokeAlpha(PitchOutcome.BALL, 0.1f, 0f), 0.001f)
+        assertEquals(0.80f, zoneGridAlpha(PitchOutcome.BALL, 0.1f), 0.001f)
         assertEquals(1.0f, zoneStrokeAlpha(PitchOutcome.CALLED_STRIKE, 0.1f, 1f), 0.001f)
     }
 

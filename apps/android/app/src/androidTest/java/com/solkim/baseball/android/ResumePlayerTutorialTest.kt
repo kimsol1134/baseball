@@ -1,5 +1,7 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.CareerAccess
+
 import android.content.Intent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -19,10 +21,10 @@ class ResumePlayerTutorialTest {
         val context = inst.targetContext
         require(context.packageName.endsWith(".compose.qa"))
         val app = context.applicationContext as BaseballApplication
-        val identity = requireNotNull(app.gameStore.current.highSchool).run.identity
-        val career = app.gameStore.current.highSchool!!.run.careerId
-        assertTrue(app.gameStore.current.highSchool!!.tutorial.started)
-        org.junit.Assume.assumeFalse("The player has already completed practice; do not replay their career.", app.gameStore.current.highSchool!!.tutorial.completed)
+        val identity = requireNotNull(CareerAccess.school(app.gameStore.current)).run.identity
+        val career = CareerAccess.school(app.gameStore.current)!!.run.careerId
+        assertTrue(CareerAccess.school(app.gameStore.current)!!.tutorial.started)
+        org.junit.Assume.assumeFalse("The player has already completed practice; do not replay their career.", CareerAccess.school(app.gameStore.current)!!.tutorial.completed)
         val device = UiDevice.getInstance(inst)
         context.startActivity(context.packageManager.getLaunchIntentForPackage(context.packageName)!!.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         fun tap(tag: String) {
@@ -40,9 +42,9 @@ class ResumePlayerTutorialTest {
         tap("pitch.continue")
         tap("action.completeTutorial")
         assertTrue(device.wait(Until.hasObject(By.res(java.util.regex.Pattern.compile("action.chooseSchool:.*"))), 20_000))
-        assertEquals(identity, app.gameStore.current.highSchool!!.run.identity)
-        assertEquals(career, app.gameStore.current.highSchool!!.run.careerId)
-        assertTrue(app.gameStore.current.highSchool!!.tutorial.completed)
+        assertEquals(identity, CareerAccess.school(app.gameStore.current)!!.run.identity)
+        assertEquals(career, CareerAccess.school(app.gameStore.current)!!.run.careerId)
+        assertTrue(CareerAccess.school(app.gameStore.current)!!.tutorial.completed)
         device.takeScreenshot(File(context.cacheDir, "player-resumed-school.png"))
     }
 }

@@ -32,12 +32,30 @@ private enum class SettingsPage(val key: String) {
 @Composable
 internal fun SettingsScreen(
     state: GameAggregateState,
-    model: Phase8ScreenModel,
+    model: ScreenModel,
     busy: Boolean,
     actionError: String?,
-    platformState: Phase9PlatformUiState,
-    onAction: (Phase8UiAction) -> Unit,
-    onPlatformAction: (Phase9UiAction) -> Unit,
+    platformState: PlatformUiState,
+    onAction: (ScreenUiAction) -> Unit,
+    onPlatformAction: (PlatformUiAction) -> Unit,
+    onExit: () -> Unit,
+    onRestored: (GameAggregateState) -> Unit,
+    bottomBar: @Composable () -> Unit,
+) {
+    SettingsScreen(state, state.settings, model, busy, actionError, platformState, onAction, onPlatformAction, onExit, onRestored, bottomBar)
+}
+
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
+@Composable
+internal fun SettingsScreen(
+    state: GameAggregateState,
+    settings: GameSettingsState,
+    model: ScreenModel,
+    busy: Boolean,
+    actionError: String?,
+    platformState: PlatformUiState,
+    onAction: (ScreenUiAction) -> Unit,
+    onPlatformAction: (PlatformUiAction) -> Unit,
     onExit: () -> Unit,
     onRestored: (GameAggregateState) -> Unit,
     bottomBar: @Composable () -> Unit,
@@ -66,7 +84,7 @@ internal fun SettingsScreen(
     }
     fun submit(id: String) {
         model.actions.firstOrNull { it.id == id && it.enabled }?.takeUnless { busy }?.let {
-            onAction(Phase8UiAction(model.id, it.id, it.payloads))
+            onAction(ScreenUiAction(model.id, it.id, it.payloads))
         }
     }
     BackHandler { back() }
@@ -97,11 +115,11 @@ internal fun SettingsScreen(
                     when (page) {
                         SettingsPage.ROOT -> {
                             SettingsGroup {
-                                SettingsSwitch(label("sound"), state.settings.soundEnabled, !busy, "settings.sound") { submit("toggleSound") }
+                                SettingsSwitch(label("sound"), settings.soundEnabled, !busy, "settings.sound") { submit("toggleSound") }
                                 HorizontalDivider()
-                                SettingsSwitch(label("music"), state.settings.musicEnabled, !busy, "settings.music") { submit("toggleMusic") }
+                                SettingsSwitch(label("music"), settings.musicEnabled, !busy, "settings.music") { submit("toggleMusic") }
                                 HorizontalDivider()
-                                SettingsSwitch(label("haptics"), state.settings.hapticsEnabled, !busy, "settings.haptics") { submit("toggleHaptics") }
+                                SettingsSwitch(label("haptics"), settings.hapticsEnabled, !busy, "settings.haptics") { submit("toggleHaptics") }
                             }
                             SettingsGroup {
                                 for ((index, target) in listOf(SettingsPage.CONTROLS, SettingsPage.NOTIFICATIONS, SettingsPage.STORAGE, SettingsPage.HELP).withIndex()) {
@@ -113,11 +131,11 @@ internal fun SettingsScreen(
                         SettingsPage.CONTROLS -> {
                             Text(label("manual-default"), verbatim = true, color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodyMedium)
                             SettingsGroup {
-                                SettingsSwitch(label("assist"), state.settings.autoReleaseEnabled, !busy, "settings.assist") { submit("toggleAutoRelease") }
+                                SettingsSwitch(label("assist"), settings.autoReleaseEnabled, !busy, "settings.assist") { submit("toggleAutoRelease") }
                                 HorizontalDivider()
-                                SettingsSwitch(label("contrast"), state.settings.highContrastEnabled, !busy, "settings.contrast") { submit("toggleContrast") }
+                                SettingsSwitch(label("contrast"), settings.highContrastEnabled, !busy, "settings.contrast") { submit("toggleContrast") }
                                 HorizontalDivider()
-                                SettingsSwitch(label("motion"), state.settings.reducedMotionEnabled, !busy, "settings.motion") { submit("toggleMotion") }
+                                SettingsSwitch(label("motion"), settings.reducedMotionEnabled, !busy, "settings.motion") { submit("toggleMotion") }
                             }
                             Text(label("system-font"), verbatim = true, color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodySmall)
                         }

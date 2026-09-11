@@ -13,13 +13,12 @@ import org.junit.Test
 class OutingBriefingUiTest {
     @get:Rule val compose = createComposeRule()
     @Test fun closerSeesNinthInningAndGoalWithoutExpandingTheStory() {
-        val k = ProKernel()
-        val base = k.startDirect(ProStartDirectRequest("918220", "power_prospect", "마무리투수")).state
+        val base = CareerFixtures.startDirectPro(ProStartDirectRequest("918220", "power_prospect", "마무리투수"))
         val pro = base.copy(phase = ProCareerPhase.IMPORTANT_GAME, role = ProRole.CLOSER, seasonTrigger = ProSeasonTrigger.OPENING_STATEMENT,
-            week = 1, seasonSegment = ProCatalog.segment(1)).let { it.copy(commitment = k.commitment(it)) }
-        val state = GameAggregateState.initial("briefing-ui").copy(stage = GameStage.PRO, pro = pro)
+            week = 1, seasonSegment = CareerFixtures.proSegment(1)).let { it.copy(commitment = CareerFixtures.proCommitment(it)) }
+        val state = GameAggregateState.initial("briefing-ui").withCareers(stage = GameStage.PRO, pro = pro)
         compose.setContent { BaseballMigrationTheme {
-            Phase8Shell(state, false, null, Phase8ScreenId.P018_PRO_IMPORTANT_GAME, Phase8CommandContext(), onNavigate = {}, onAction = {})
+            CareerShell(state, false, null, ScreenId.P018_PRO_IMPORTANT_GAME, ScreenCommandContext(), onNavigate = {}, onAction = {})
         } }
         compose.onNodeWithTag("outing.role").assertTextEquals("마무리 등판").assertIsDisplayed()
         compose.onNodeWithTag("outing.situation").assertIsDisplayed()

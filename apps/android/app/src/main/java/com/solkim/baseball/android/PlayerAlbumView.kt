@@ -20,7 +20,7 @@ import com.solkim.baseball.android.LocalizedGameText as Text
 internal fun PlayerAlbumView(state: GameAggregateState, showTitle: Boolean = true) {
     val pages = remember(state) { PlayerAlbum.pages(state) }
     var selection by remember { mutableStateOf<String?>(null) }
-    val activeScope = if (state.stage in setOf(GameStage.PRO, GameStage.RETIREMENT, GameStage.LEGACY) ) state.pro?.let { "pro:${it.careerId}:${it.season}" } else state.highSchool?.run?.let { "hs:${it.careerId}" }
+    val activeScope = CareerUiRules.albumScope(state)
     val page = pages.firstOrNull { it.scope.id == selection } ?: pages.firstOrNull { it.scope.id == activeScope } ?: pages.lastOrNull()
     val copy = rememberGameCopy()
     if (showTitle) Text("선수 앨범", style = MaterialTheme.typography.headlineSmall)
@@ -87,17 +87,17 @@ internal fun PlayerAlbumView(state: GameAggregateState, showTitle: Boolean = tru
         if (page.games > page.rows.size) Text("이전 경기의 개별 기록은 남아 있지 않아요.")
     }
     CareerDisclosure("환생 계보", "album.lineage") {
-        state.highSchool?.archive.orEmpty().forEach { life ->
+        CareerUiRules.archive(state).forEach { life ->
             Text("${life.lifeNumber} · ${life.playerName}", verbatim = true, style = MaterialTheme.typography.titleMedium)
             TextButton(onClick = { selection = "hs:${life.careerId}" }) { Text("앨범 열기") }
             life.selectedSignatureLegacyId?.let { Text(CareerUiRules.legacyTitle(it)) }
         }
         TextButton(onClick = {
-            val lives = state.highSchool?.archive.orEmpty()
+            val lives = CareerUiRules.archive(state)
             card = shareCard("환생 계보", stats, lives.takeLast(3).joinToString(" → ") { "${it.lifeNumber} · ${it.playerName}" })
         }) { Text("계보 카드") }
     }
-    val completedSchoolIds = state.highSchool?.archive.orEmpty().map { "hs:${it.careerId}" }
+    val completedSchoolIds = CareerUiRules.archive(state).map { "hs:${it.careerId}" }
     val previous = pages.filter { it.scope.id in completedSchoolIds && it.life < page.life }.maxByOrNull { it.life }
     if (page.scope.id in completedSchoolIds && previous != null && page.ratings.size == 4 && previous.ratings.size == 4) {
         CareerDisclosure("지난 생과 성장 비교", "album.compare") {

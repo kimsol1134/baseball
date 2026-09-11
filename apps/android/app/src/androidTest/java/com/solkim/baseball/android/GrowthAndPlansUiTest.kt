@@ -21,16 +21,15 @@ import org.junit.Test
 class GrowthAndPlansUiTest {
     @get:Rule val compose = createComposeRule()
     @Test fun planSelectionDoesNotTrainUntilExecuteAndCapturesMixedSteps() {
-        val k = HighSchoolPhase4Kernel()
         val school = (918220..918250).firstNotNullOf { seed ->
-            val begun = k.start(HighSchoolPhase4StartRequest("$seed", "power_prospect", "plan-ui", "2026-W36", "2026-09-05")).state
-            val ready = k.completePrologue("$seed", k.beginTutorial(begun).state).state
-            k.chooseSchool("$seed", ready, HighSchoolSchoolId.CHEONGAM_DEVELOPMENT).state.takeIf { it.run.schedule.trainingsByChapter.first() >= 3 }
+            val begun = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("$seed", "power_prospect", "plan-ui", "2026-W36", "2026-09-05"))
+            val ready = CareerFixtures.completePrologue("$seed", CareerFixtures.beginTutorial(begun))
+            CareerFixtures.chooseSchool("$seed", ready, HighSchoolSchoolId.CHEONGAM_DEVELOPMENT).takeIf { it.run.schedule.trainingsByChapter.first() >= 3 }
         }
-        val state = GameAggregateState.initial("plan-ui").copy(stage = GameStage.HIGH_SCHOOL, highSchool = school)
-        var captured: Phase8UiAction? = null
+        val state = GameAggregateState.initial("plan-ui").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = school)
+        var captured: ScreenUiAction? = null
         compose.setContent { BaseballMigrationTheme { Surface(color = BaseballColors.canvas) {
-            TrainingScreen(state, Phase8CommandContext(), false, null, PaddingValues(0.dp), 0, 0, onDismiss = {}, onCommit = { captured = it })
+            TrainingScreen(state, ScreenCommandContext(), false, null, PaddingValues(0.dp), 0, 0, onDismiss = {}, onCommit = { captured = it })
         } } }
         compose.onNodeWithTag("training.repeat").performClick()
         compose.onNodeWithTag("training.plan.control").performClick()

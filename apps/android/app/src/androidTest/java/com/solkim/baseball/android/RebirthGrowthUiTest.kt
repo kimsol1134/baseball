@@ -9,7 +9,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import com.solkim.baseball.application.*
-import com.solkim.baseball.application.fixtures.HighSchoolPhase4Kernel
+import com.solkim.baseball.application.fixtures.CareerFixtures
 import com.solkim.baseball.application.fixtures.HighSchoolPhase4StartRequest
 import com.solkim.baseball.design.BaseballMigrationTheme
 import org.junit.Rule
@@ -18,9 +18,9 @@ import org.junit.Test
 class RebirthGrowthUiTest {
     @get:Rule val compose = createComposeRule()
     @Test fun inheritedStartComparisonUsesTheActualSavedStartingStats() {
-        val school = HighSchoolPhase4Kernel().start(HighSchoolPhase4StartRequest("918220", "power_prospect", "growth-ui", "2026-W37", "2026-09-09", lifeNumber = 2)).state
+        val school = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "growth-ui", "2026-W37", "2026-09-09", lifeNumber = 2))
         val previous = listOf(30, 31, 32, 33)
-        val state = GameAggregateState.initial("growth-ui").copy(stage = GameStage.HIGH_SCHOOL, highSchool = school,
+        val state = GameAggregateState.initial("growth-ui").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = school,
             meta = GameMetaState(companion = PitcherCompanion(career = school.run.careerId, previousStart = previous)))
         compose.setContent { BaseballMigrationTheme { Surface { Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
             CompanionProfile(state, false) { _, _ -> }

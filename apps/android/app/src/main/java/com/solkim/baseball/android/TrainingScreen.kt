@@ -22,30 +22,40 @@ import com.solkim.baseball.android.LocalizedGameText as Text
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandContext, busy: Boolean,
+internal fun TrainingScreen(state: GameAggregateState, context: ScreenCommandContext, busy: Boolean,
                             error: String?, insets: PaddingValues, resultStart: Int, dismissedResult: Int,
-                            onDismiss: () -> Unit, onCommit: (Phase8UiAction) -> Unit, spotlight: Boolean = true,
+                            onDismiss: () -> Unit, onCommit: (ScreenUiAction) -> Unit, spotlight: Boolean = true,
                             feedbackState: GameAggregateState = state, playerContent: @Composable () -> Unit = {}, extraActions: @Composable () -> Unit = {}) {
-    val school = state.highSchool ?: return
-    val run = school.run
-    var focusWire by rememberSaveable(run.careerId) { mutableStateOf(TrainingPresentation.initialFocus(state).wire) }
-    var intensityWire by rememberSaveable(run.careerId) { mutableStateOf(TrainingPresentation.initialIntensity(state).wire) }
-    var targetWire by rememberSaveable(run.careerId) { mutableStateOf(TrainingPresentation.initialTarget(state)?.wire) }
+    val model = TrainingScreenModel.resolve(state) ?: return
+    TrainingScreen(model, context, busy, error, insets, resultStart, dismissedResult, onDismiss, onCommit,
+        TrainingResultView.resolve(feedbackState, resultStart), playerContent, extraActions)
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+internal fun TrainingScreen(model: TrainingScreenModel, context: ScreenCommandContext, busy: Boolean,
+                            error: String?, insets: PaddingValues, resultStart: Int, dismissedResult: Int,
+                            onDismiss: () -> Unit, onCommit: (ScreenUiAction) -> Unit,
+                            result: TrainingResultView, playerContent: @Composable () -> Unit = {}, extraActions: @Composable () -> Unit = {}) {
+    val run = model.run
+    var focusWire by rememberSaveable(run.careerId) { mutableStateOf(model.initialFocus.wire) }
+    var intensityWire by rememberSaveable(run.careerId) { mutableStateOf(model.initialIntensity.wire) }
+    var targetWire by rememberSaveable(run.careerId) { mutableStateOf(model.initialTarget?.wire) }
     var sheet by rememberSaveable(run.careerId) { mutableStateOf<String?>(null) }
     var selectedPlan by rememberSaveable(run.careerId) { mutableStateOf("balanced") }
-    val rehab = run.injuryRecovery > 0
+    val rehab = run.rehab
     val focus = if (rehab) TrainingFocus.RECOVERY else TrainingFocus.entries.single { it.wire == focusWire }
     val intensity = TrainingIntensity.entries.single { it.wire == intensityWire }
-    val targets = TrainingPresentation.targets(state)
+    val targets = model.targets
     val target = targets.firstOrNull { it.wire == targetWire } ?: targets.firstOrNull()
-    val recommended = TrainingPresentation.recommended(state)
+    val recommended = model.recommended
     val copy = rememberGameCopy()
-    val preview = TrainingPresentation.preview(state, focus, intensity)
-    val remaining = TrainingPresentation.remaining(state)
+    val preview = model.preview(focus, intensity)
+    val remaining = model.remaining
     val scroll = rememberScrollState()
     fun commit(repeat: Boolean) {
-        onCommit(Phase8UiAction(Phase8ScreenId.P006_TRAINING, "train:${focus.wire}",
-            TrainingPresentation.payloads(state, context, focus, intensity, target, repeat)))
+        onCommit(ScreenUiAction(ScreenId.P006_TRAINING, "train:${focus.wire}",
+            model.payloads(context, focus, intensity, target, repeat)))
     }
     Column(Modifier.fillMaxSize().padding(insets).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // Keep the current scroll and selections when a training receipt arrives.
@@ -57,11 +67,11 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                 GameCopyArgument.Whole(run.armRisk.toLong()), GameCopyArgument.Whole(remaining.toLong())), verbatim = true,
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (run.fatigue >= 70 || run.armRisk >= 55) BaseballColors.warning else BaseballColors.textSecondary)
-            run.development?.let { if (it.hasSupport(focus)) focus else it.supportFocus }?.let { support ->
+            run.displayedSupport(focus)?.let { support ->
                 Text(ChoiceEffect.trainingSupportLabel(support, copy), verbatim = true,
                     color = BaseballColors.milestone, style = MaterialTheme.typography.labelMedium, modifier = Modifier.testTag("training.conversationSupport"))
             }
-            if (run.development?.starterTrialPending == true) Text("다음 등판: 선발 테스트", color = BaseballColors.milestone, style = MaterialTheme.typography.labelMedium)
+            if (run.starterTrialPending) Text("다음 등판: 선발 테스트", color = BaseballColors.milestone, style = MaterialTheme.typography.labelMedium)
             if (rehab) Text("재활 중이다. 오늘은 회복만.", color = BaseballColors.warning)
             else if (recommended == TrainingFocus.RECOVERY) Text("코치: 몸이 무겁다. 오늘은 쉬자.", color = BaseballColors.warning)
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -112,11 +122,11 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     val outlook = when {
                         focus == TrainingFocus.RECOVERY || rehab -> "성장 대신 피로를 던다."
-                        else -> TrainingPresentation.growthOutlook(state, focus, preview, copy)
+                        else -> model.growthOutlook(focus, preview, copy)
                     }
                     StatChangeText(outlook, modifier = Modifier.testTag("training.outlook"), style = MaterialTheme.typography.bodyMedium)
                     if (focus == TrainingFocus.GAME_PLANNING) Text(TrainingPresentation.detail(focus), style = MaterialTheme.typography.bodySmall)
-                    TrainingPresentation.jackpotOutlook(state, focus, preview, copy)?.let { bonus ->
+                    model.jackpotOutlook(focus, preview, copy)?.let { bonus ->
                         StatChangeText(bonus, modifier = Modifier.testTag("training.jackpot"), style = MaterialTheme.typography.bodySmall,
                             color = BaseballColors.milestone, verbatim = true)
                     }
@@ -129,16 +139,16 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                 TextButton(onClick = { sheet = "training" }, modifier = Modifier.testTag("training.details")) {
                     Text(copy.resolve("mobile.polish.training-details"), verbatim = true)
                 }
-                if (TrainingPresentation.learningLines(state).isNotEmpty()) TextButton(onClick = { sheet = "learning" }, modifier = Modifier.testTag("training.learning")) {
+                if (model.learningLines.isNotEmpty()) TextButton(onClick = { sheet = "learning" }, modifier = Modifier.testTag("training.learning")) {
                     Text(copy.resolve("training.compact.learning"), verbatim = true)
                 }
             }
         }
-        if ((run.lastTraining?.number ?: 0) > dismissedResult) {
+        if (run.lastTrainingNumber > dismissedResult) {
             Surface(color = BaseballColors.actionSoft, shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth().testTag("training.result")) {
                 Row(Modifier.padding(start = 12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    val lines = TrainingPresentation.resultLines(feedbackState, resultStart)
+                    val lines = result.lines
                     StatChangeText(lines.drop(1).take(2).joinToString(" · "), modifier = Modifier.weight(1f).testTag("training.result.gains"),
                         style = MaterialTheme.typography.bodyMedium)
                     TextButton(onClick = { sheet = "result" }, modifier = Modifier.testTag("training.result.open")) {
@@ -150,7 +160,7 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = { commit(false) }, enabled = !busy, modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("training.commit")) { Text("훈련하기") }
             OutlinedButton(onClick = {
-                if (TrainingPlans.availableSteps(state, TrainingPlans.options.single { it.id == selectedPlan }) == 0) selectedPlan = "condition"
+                if (model.availablePlanSteps(TrainingPlans.options.single { it.id == selectedPlan }) == 0) selectedPlan = "condition"
                 sheet = "plans"
             }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp).testTag("training.repeat")) {
                 Text(copy.resolve("training.plan.open"), verbatim = true)
@@ -166,7 +176,7 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                     Text(copy.resolve("training.plan.title"), verbatim = true, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     if (!rehab) {
                         TrainingPlans.options.forEach { plan ->
-                            TrainingChoice(selectedPlan == plan.id, !busy && TrainingPlans.availableSteps(state, plan) > 0, Modifier.fillMaxWidth().testTag("training.plan.${plan.id}"),
+                            TrainingChoice(selectedPlan == plan.id, !busy && model.availablePlanSteps(plan) > 0, Modifier.fillMaxWidth().testTag("training.plan.${plan.id}"),
                                 onClick = { selectedPlan = plan.id }) {
                                 Text(copy.resolve("training.plan.${plan.id}"), verbatim = true, fontWeight = FontWeight.Bold)
                             }
@@ -174,20 +184,20 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                         val plan = TrainingPlans.options.single { it.id == selectedPlan }
                         Text(plan.steps.joinToString(" → ") { (step, _) -> copy.legacy(TrainingPlans.label(step)) },
                             verbatim = true, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("training.plan.steps"))
-                        Text(copy.resolve("training.plan.limit", GameCopyArgument.Whole(TrainingPlans.availableSteps(state, plan).toLong())),
+                        Text(copy.resolve("training.plan.limit", GameCopyArgument.Whole(model.availablePlanSteps(plan).toLong())),
                             verbatim = true, style = MaterialTheme.typography.bodySmall)
                         Text(copy.resolve("training.plan.intensities"), verbatim = true, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
                     }
                     OutlinedButton(onClick = { sheet = null; commit(true) }, enabled = !busy && remaining > 1, modifier = Modifier.testTag("training.plan.repeat")) {
-                        Text(copy.resolve("training.plan.repeat-count", GameCopyArgument.Whole(TrainingPresentation.repeatCount(state).toLong())), verbatim = true)
+                        Text(copy.resolve("training.plan.repeat-count", GameCopyArgument.Whole(model.repeatCount.toLong())), verbatim = true)
                     }
                     Text(copy.resolve("training.compact.repeat-help"), verbatim = true, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
                 }
-                "result" -> TrainingResultCard(feedbackState, resultStart, compact = false, onDismiss = { onDismiss(); sheet = null })
+                "result" -> TrainingResultCard(result, compact = false, onDismiss = { onDismiss(); sheet = null })
                 "learning" -> {
-                    TrainingPresentation.learningLines(state).forEach { Text(it) }
-                    run.pitchLearningProject?.takeIf { !it.completed }?.let { project ->
-                        Button(onClick = { focusWire = TrainingFocus.BREAKING_BALL.wire; targetWire = project.pitchType.wire; sheet = null },
+                    model.learningLines.forEach { Text(it) }
+                    run.learningPitch?.let { pitch ->
+                        Button(onClick = { focusWire = TrainingFocus.BREAKING_BALL.wire; targetWire = pitch.wire; sheet = null },
                             enabled = !busy && !rehab, modifier = Modifier.fillMaxWidth().testTag("training.learning.practice")) {
                             Text(copy.resolve("training.clear.select-practice"), verbatim = true)
                         }
@@ -197,8 +207,8 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
                     Text(TrainingPresentation.title(focus), style = MaterialTheme.typography.titleLarge)
                     Text(TrainingPresentation.detail(focus))
                     if (preview.schoolBonus) Text("학교 특기", color = BaseballColors.milestone)
-                    if (preview.opportunityBonus) run.trainingOpportunity?.reason?.let { Text(it) }
-                    if (focus == TrainingFocus.COMMAND || focus == TrainingFocus.GAME_PLANNING) ControlMilestoneGoal(run.pitcher.command)
+                    if (preview.opportunityBonus) run.opportunityReason?.let { Text(it) }
+                    if (focus == TrainingFocus.COMMAND || focus == TrainingFocus.GAME_PLANNING) ControlMilestoneGoal(run.command)
                     Text(copy.resolve("training.compact.repeat-help"), verbatim = true, color = BaseballColors.textSecondary)
                 }
             }
@@ -207,10 +217,10 @@ internal fun TrainingScreen(state: GameAggregateState, context: Phase8CommandCon
         if (sheet == "plans" && !rehab) {
             val plan = TrainingPlans.options.single { it.id == selectedPlan }
             Button(onClick = {
-                val payloads = TrainingPlans.payloads(state, context, selectedPlan)
+                val payloads = model.planPayloads(context, selectedPlan)
                 sheet = null
-                onCommit(Phase8UiAction(Phase8ScreenId.P006_TRAINING, payloads.first().actionId, payloads))
-            }, enabled = !busy && TrainingPlans.availableSteps(state, plan) > 0,
+                onCommit(ScreenUiAction(ScreenId.P006_TRAINING, payloads.first().actionId, payloads))
+            }, enabled = !busy && model.availablePlanSteps(plan) > 0,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).heightIn(min = 48.dp).testTag("training.plan.execute")) {
                 Text(copy.resolve("training.plan.execute"), verbatim = true)
             }
@@ -233,13 +243,18 @@ private fun TrainingChoice(selected: Boolean, enabled: Boolean, modifier: Modifi
 
 @Composable
 internal fun TrainingResultCard(state: GameAggregateState, afterNumber: Int, compact: Boolean, onDismiss: () -> Unit) {
-    val lines = TrainingPresentation.resultLines(state, afterNumber)
+    TrainingResultCard(TrainingResultView.resolve(state, afterNumber), compact, onDismiss)
+}
+
+@Composable
+internal fun TrainingResultCard(result: TrainingResultView, compact: Boolean, onDismiss: () -> Unit) {
+    val lines = result.lines
     if (lines.isEmpty()) return
     val copy = rememberGameCopy()
-    val receipt = state.meta.playerGrowth?.takeIf { it.careerId == state.highSchool?.run?.careerId && it.source == "training" }
-    var details by remember(receipt?.commandId, state.highSchool?.run?.lastTraining?.number) { mutableStateOf(false) }
-    val change = TrainingPresentation.fatigueChange(state, afterNumber)
-    val fatigue = state.highSchool?.run?.fatigue ?: 0
+    val receipt = result.receipt
+    var details by remember(receipt?.commandId, result.lastTrainingNumber) { mutableStateOf(false) }
+    val change = result.fatigueChange
+    val fatigue = result.fatigue
     Card(Modifier.fillMaxWidth().testTag("training.result"), colors = CardDefaults.cardColors(containerColor = BaseballColors.surfaceRaised)) {
         Column(Modifier.padding(if (compact) 10.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -250,8 +265,8 @@ internal fun TrainingResultCard(state: GameAggregateState, afterNumber: Int, com
             StatChangeText(GrowthFeedbackPresentation.condition(copy, fatigue, change), verbatim = true,
                 style = MaterialTheme.typography.bodyMedium, color = BaseballColors.textSecondary,
                 modifier = Modifier.testTag("training.result.gains"))
-            if (state.highSchool?.run?.lastTraining?.bloomed == true) Text("재능의 한계를 넘었어요!", color = BaseballColors.milestone)
-            TrainingPresentation.coachLine(state)?.let { Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("training.result.coach")) }
+            if (result.lastTrainingBloomed) Text("재능의 한계를 넘었어요!", color = BaseballColors.milestone)
+            result.coachLine?.let { Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("training.result.coach")) }
             TextButton(onClick = { details = !details }, modifier = Modifier.testTag("training.result.details")) { Text(copy.resolve("loop.growth.details"), verbatim = true) }
             if (details) {
                 lines.forEach { StatChangeText(it, style = MaterialTheme.typography.bodySmall) }

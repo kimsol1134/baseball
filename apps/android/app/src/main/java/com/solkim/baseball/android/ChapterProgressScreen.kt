@@ -14,19 +14,26 @@ import com.solkim.baseball.design.BaseballColors
 import com.solkim.baseball.android.LocalizedGameText as Text
 
 @Composable
-internal fun ChapterProgressScreen(state: GameAggregateState, model: Phase8ScreenModel, busy: Boolean, error: String?,
-                                   insets: PaddingValues, onAction: (Phase8UiAction) -> Unit, onNavigate: (Phase8ScreenId) -> Unit) {
-    val run = state.highSchool?.run ?: return
+internal fun ChapterProgressScreen(state: GameAggregateState, model: ScreenModel, busy: Boolean, error: String?,
+                                   insets: PaddingValues, onAction: (ScreenUiAction) -> Unit, onNavigate: (ScreenId) -> Unit) {
+    val view = ChapterProgressView.resolve(state) ?: return
+    ChapterProgressScreen(view, model, busy, error, insets, onAction, onNavigate)
+}
+
+@Composable
+internal fun ChapterProgressScreen(view: ChapterProgressView, model: ScreenModel, busy: Boolean, error: String?,
+                                   insets: PaddingValues, onAction: (ScreenUiAction) -> Unit, onNavigate: (ScreenId) -> Unit) {
     val copy = rememberGameCopy()
-    val training = ChapterProgressPresentation.training(state)
-    val games = ChapterProgressPresentation.games(state)
+    val training = view.training
+    val games = view.games
+    val trainingCount = view.trainingCount
     Column(Modifier.fillMaxSize().padding(insets).verticalScroll(rememberScrollState()).padding(20.dp).testTag("chapter.progress"),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (error != null) Text(error, color = MaterialTheme.colorScheme.error)
         Text(copy.resolve("chapter.compact.heading"), verbatim = true, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        if (run.chapterTrainingCount > 0) Card(colors = CardDefaults.cardColors(containerColor = BaseballColors.surfaceRaised)) {
+        if (trainingCount > 0) Card(colors = CardDefaults.cardColors(containerColor = BaseballColors.surfaceRaised)) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(copy.resolve("chapter.compact.training-count", GameCopyArgument.Whole(run.chapterTrainingCount.toLong())),
+                Text(copy.resolve("chapter.compact.training-count", GameCopyArgument.Whole(trainingCount.toLong())),
                     verbatim = true, style = MaterialTheme.typography.titleMedium, color = BaseballColors.action, modifier = Modifier.testTag("chapter.training"))
                 training.forEach { item ->
                     val label = GameCopyArgument.UserText(copy.legacy(TrainingPresentation.title(item.focus)))
@@ -54,17 +61,17 @@ internal fun ChapterProgressScreen(state: GameAggregateState, model: Phase8Scree
         Surface(color = BaseballColors.actionSoft, shape = MaterialTheme.shapes.medium) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(copy.resolve("chapter.compact.next"), verbatim = true, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(copy.resolve("chapter.compact.next-detail", GameCopyArgument.Whole(ChapterProgressPresentation.nextTrainings(state).toLong())), verbatim = true)
+                Text(copy.resolve("chapter.compact.next-detail", GameCopyArgument.Whole(view.nextTrainings.toLong())), verbatim = true)
             }
         }
         model.actions.firstOrNull { it.id == "claimChapterGame" && it.enabled }?.let { action ->
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(copy.resolve("chapter.compact.optional"), verbatim = true, color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodyMedium)
-                OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) }, enabled = !busy,
+                OutlinedButton(onClick = { onAction(ScreenUiAction(model.id, action.id, action.payloads)) }, enabled = !busy,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("action.claimChapterGame")) { Text("직접 등판") }
             }
         }
-        TextButton(onClick = { onNavigate(Phase8ScreenId.P011_HIGH_SCHOOL_CAREER) }, modifier = Modifier.testTag("chapter.allRecords")) {
+        TextButton(onClick = { onNavigate(ScreenId.P011_HIGH_SCHOOL_CAREER) }, modifier = Modifier.testTag("chapter.allRecords")) {
             Text(copy.resolve("chapter.compact.records"), verbatim = true)
         }
     }

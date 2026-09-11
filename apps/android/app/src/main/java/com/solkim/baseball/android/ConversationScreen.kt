@@ -69,25 +69,38 @@ internal fun ConversationEffects(effects: List<ChoiceEffect>, modifier: Modifier
 }
 
 @Composable
-internal fun RelationshipConversationScreen(state: GameAggregateState, model: Phase8ScreenModel, busy: Boolean,
-    actionError: String?, onAction: (Phase8UiAction) -> Unit) {
-    val run = state.highSchool?.run ?: return
+internal fun RelationshipConversationScreen(state: GameAggregateState, model: ScreenModel, busy: Boolean,
+    actionError: String?, onAction: (ScreenUiAction) -> Unit) {
     val copy = rememberGameCopy()
-    val eventKey = "${run.careerId}:${run.relationshipsCompleted}:${run.currentRelationshipEvent?.id}"
-    var submitted by remember(eventKey, state.revision) { mutableStateOf(false) }
+    val view = ConversationPresentation.schoolView(state, copy) ?: return
+    RelationshipConversationScreen(view, model, busy, actionError, onAction, state.revision, CareerMemoryPresentation.conversationRecall(state, copy))
+}
+
+@Composable
+internal fun RelationshipConversationScreen(
+    view: SchoolConversationView,
+    model: ScreenModel,
+    busy: Boolean,
+    actionError: String?,
+    onAction: (ScreenUiAction) -> Unit,
+    revision: ULong,
+    recall: String?,
+) {
+    val copy = rememberGameCopy()
+    val eventKey = view.eventKey
+    var submitted by remember(eventKey, revision) { mutableStateOf(false) }
     LaunchedEffect(actionError, busy) { if (actionError != null && !busy) submitted = false }
     val row = model.sections.firstOrNull()?.rows?.firstOrNull()
-    val seed = RelationshipNarrative.speaker(run)
-    val player = if (state.meta.seedChallenge != null) copy.resolve("android.challenge.player") else run.identity.name
-    ConversationStage(copy.legacy(seed), RelationshipNarrative.speakerRole(run), seed,
-        model.sections.firstOrNull()?.title.orEmpty(), copy.legacy(RelationshipNarrative.line(run)).replace("{player}", player)) {
+    val seed = view.speaker
+    ConversationStage(copy.legacy(seed), view.speakerRole, seed,
+        model.sections.firstOrNull()?.title.orEmpty(), copy.legacy(view.line).replace("{player}", view.playerName)) {
         if (actionError != null) Text(actionError, verbatim = true, color = BaseballColors.warning,
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive })
         model.actions.forEach { action ->
             ConversationChoice(action, !busy && !submitted, eventKey) {
                 if (!submitted && !busy) {
                     submitted = true
-                    onAction(Phase8UiAction(model.id, action.id, action.payloads))
+                    onAction(ScreenUiAction(model.id, action.id, action.payloads))
                 }
             }
         }
@@ -96,51 +109,64 @@ internal fun RelationshipConversationScreen(state: GameAggregateState, model: Ph
         CareerDisclosure(copy.resolve("conversation.scene"), "conversation.scene.$eventKey") {
             Text(row?.value.orEmpty(), verbatim = true, style = MaterialTheme.typography.bodyMedium)
         }
-        CareerMemoryPresentation.conversationRecall(state, copy)?.let { recall ->
-            CareerDisclosure(copy.resolve("conversation.history"), "conversation.history.$eventKey") { Text(recall, verbatim = true) }
+        recall?.let { memory ->
+            CareerDisclosure(copy.resolve("conversation.history"), "conversation.history.$eventKey") { Text(memory, verbatim = true) }
         }
     }
 }
 
 @Composable
-internal fun ProConversationScreen(state: GameAggregateState, model: Phase8ScreenModel, busy: Boolean,
-    actionError: String?, onAction: (Phase8UiAction) -> Unit) {
-    val pro = state.pro ?: return
-    val decision = pro.pendingDecision ?: return
-    val role = ProConversationPresentation.role(decision.type) ?: return
-    var selectedChoice by rememberSaveable(decision.id) { mutableStateOf<String?>(null) }
+internal fun ProConversationScreen(state: GameAggregateState, model: ScreenModel, busy: Boolean,
+    actionError: String?, onAction: (ScreenUiAction) -> Unit) {
+    val view = ProConversationPresentation.view(state) ?: return
     val copy = rememberGameCopy()
-    var submitted by remember(state.revision, decision.id) { mutableStateOf(false) }
+    ProConversationScreen(view, model, busy, actionError, onAction, state.revision, CareerMemoryPresentation.conversationRecall(state, copy))
+}
+
+@Composable
+internal fun ProConversationScreen(
+    view: ProConversationView,
+    model: ScreenModel,
+    busy: Boolean,
+    actionError: String?,
+    onAction: (ScreenUiAction) -> Unit,
+    revision: ULong,
+    recall: String?,
+) {
+    val role = ProConversationPresentation.role(view.type) ?: return
+    var selectedChoice by rememberSaveable(view.decisionId) { mutableStateOf<String?>(null) }
+    val copy = rememberGameCopy()
+    var submitted by remember(revision, view.decisionId) { mutableStateOf(false) }
     LaunchedEffect(actionError, busy) { if (actionError != null && !busy) submitted = false }
-    ConversationStage(copy.legacy(ProPeoplePresentation.name(pro.team.id, role)), role, ProPeoplePresentation.seed(pro.team.id, role),
-        copy.legacy(decision.title), if (copy.hasKey("conversation.pro.${decision.type.wire}")) copy.resolve("conversation.pro.${decision.type.wire}") else copy.legacy(decision.detail)) {
-        Text(copy.resolve(ProPeoplePresentation.styleKey(pro.team.id, role)), verbatim = true, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
+    ConversationStage(copy.legacy(ProPeoplePresentation.name(view.teamId, role)), role, ProPeoplePresentation.seed(view.teamId, role),
+        copy.legacy(view.title), if (copy.hasKey("conversation.pro.${view.type.wire}")) copy.resolve("conversation.pro.${view.type.wire}") else copy.legacy(view.detail)) {
+        Text(copy.resolve(ProPeoplePresentation.styleKey(view.teamId, role)), verbatim = true, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
         if (actionError != null) Text(actionError, verbatim = true, color = BaseballColors.warning)
         model.actions.filter { it.id.startsWith("seasonDecision:") }.forEach { action ->
-            ConversationChoice(action, !busy && !submitted, decision.id) {
+            ConversationChoice(action, !busy && !submitted, view.decisionId) {
                 if (!submitted && !busy) selectedChoice = action.id
             }
         }
         val chosen = model.actions.firstOrNull { it.id == selectedChoice }
         if (chosen != null) Text(chosen.label, verbatim = true, color = BaseballColors.action, modifier = Modifier.testTag("conversation.selected"))
-        Button(onClick = { if (chosen != null && !submitted && !busy) { submitted = true; onAction(Phase8UiAction(model.id, chosen.id, chosen.payloads)) } },
+        Button(onClick = { if (chosen != null && !submitted && !busy) { submitted = true; onAction(ScreenUiAction(model.id, chosen.id, chosen.payloads)) } },
             enabled = chosen?.enabled == true && !submitted && !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("conversation.confirm")) { Text("이 선택으로 진행하기") }
         if (busy || submitted) Text(copy.resolve("conversation.saving"), verbatim = true, color = BaseballColors.textSecondary)
-        CareerDisclosure(copy.resolve("conversation.scene"), "conversation.scene.${decision.id}") {
-            Text(copy.legacy(decision.detail), verbatim = true)
-            decision.choices.forEach { choice ->
+        CareerDisclosure(copy.resolve("conversation.scene"), "conversation.scene.${view.decisionId}") {
+            Text(copy.legacy(view.detail), verbatim = true)
+            view.choices.forEach { choice ->
                 Text(copy.legacy(choice.title), verbatim = true, fontWeight = FontWeight.SemiBold)
                 Text(copy.legacy(choice.detail), verbatim = true)
             }
         }
-        CareerMemoryPresentation.conversationRecall(state, copy)?.let { recall ->
-            CareerDisclosure(copy.resolve("conversation.history"), "conversation.history.${decision.id}") { Text(recall, verbatim = true) }
+        recall?.let { memory ->
+            CareerDisclosure(copy.resolve("conversation.history"), "conversation.history.${view.decisionId}") { Text(memory, verbatim = true) }
         }
     }
 }
 
 @Composable
-internal fun ConversationChoice(action: Phase8ActionModel, enabled: Boolean, eventKey: String, onSelect: () -> Unit) {
+internal fun ConversationChoice(action: ScreenActionModel, enabled: Boolean, eventKey: String, onSelect: () -> Unit) {
     val copy = rememberGameCopy()
     var details by rememberSaveable(eventKey, action.id) { mutableStateOf(false) }
     val highlighted = ChoiceEffect.highlighted(action.effects)

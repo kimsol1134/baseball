@@ -30,6 +30,11 @@ internal fun saveTrainingFeedback(context: Context, before: GameAggregateState, 
 
 @Composable
 internal fun TrainingFeedbackGate(state: GameAggregateState) {
+    TrainingFeedbackGate(CareerUiRules.highSchoolCareerId(state), CareerUiRules.totalTrainingsCompleted(state), state.settings.reducedMotionEnabled)
+}
+
+@Composable
+internal fun TrainingFeedbackGate(careerId: String?, trainingsCompleted: Int, reducedMotion: Boolean) {
     val context = LocalContext.current
     val prefs = remember(context) { context.getSharedPreferences("training.feedback", Context.MODE_PRIVATE) }
     var raw by remember(prefs) { mutableStateOf(prefs.getString("pending", null)) }
@@ -39,12 +44,12 @@ internal fun TrainingFeedbackGate(state: GameAggregateState) {
         onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
     }
     val record = remember(raw) { raw?.let { runCatching { JSONObject(it) }.getOrNull() } } ?: return
-    val run = state.highSchool?.run ?: return
+    if (careerId == null) return
     // A restored or reset career cannot inherit a receipt from a different life or future revision.
-    if (record.optString("career") != run.careerId || record.optInt("number") > run.totalTrainingsCompleted) return
+    if (record.optString("career") != careerId || record.optInt("number") > trainingsCompleted) return
     Dialog(onDismissRequest = {}, properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false, usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxWidth().padding(16.dp).heightIn(max = 680.dp), shape = MaterialTheme.shapes.extraLarge, color = BaseballColors.surface) {
-            TrainingFeedbackPanel(record, reducedMotion = state.settings.reducedMotionEnabled, onContinue = {
+            TrainingFeedbackPanel(record, reducedMotion = reducedMotion, onContinue = {
                 // Do not clear a newer result if the displayed receipt was replaced.
                 if (prefs.getString("pending", null) == raw) prefs.edit().remove("pending").apply()
             })

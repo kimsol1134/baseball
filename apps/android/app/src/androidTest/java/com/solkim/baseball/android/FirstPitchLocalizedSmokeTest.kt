@@ -9,6 +9,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import com.solkim.baseball.application.CareerAccess
 import com.solkim.baseball.application.GameStage
 import org.junit.Assert.*
 import org.junit.Test
@@ -79,7 +80,7 @@ class FirstPitchLocalizedSmokeTest {
         tap("setup.confirm")
         assertTrue("Introduction must wait on the actual mound", device.wait(Until.hasObject(By.res("pitch.practiceIntroduction.start")), 25_000))
         android.util.Log.i("BASEBALL_LAUNCH_QA", "setup_to_introduction_ms=${SystemClock.elapsedRealtime() - confirmStarted}")
-        assertNull(app.gameStore.current.highSchool?.lastPresentation)
+        assertNull(CareerAccess.school(app.gameStore.current)?.lastPresentation)
         tap("pitch.practiceIntroduction.start")
         assertTrue("First-pitch action should open the mound", device.wait(Until.hasObject(By.res("pitch.slider")), 20_000))
         if (InstrumentationRegistry.getArguments().getString("qaPreferenceFailure") == "true") {
@@ -157,10 +158,10 @@ class FirstPitchLocalizedSmokeTest {
         assertTrue("Saved result must be visible", device.wait(Until.hasObject(By.res("pitch.replay")), 20_000))
         capture("pitch")
         val state = app.gameStore.current
-        assertEquals("부산", state.highSchool?.run?.identity?.region)
+        assertEquals("부산", CareerAccess.school(state)?.run?.identity?.region)
         assertFalse(state.settings.autoReleaseEnabled)
         assertTrue("A real pitch must be committed", state.pitch?.resultHashes?.isNotEmpty() == true)
-        if (manualPlan) assertEquals(com.solkim.baseball.application.PitchKind.CURVEBALL, state.highSchool?.lastPresentation?.snapshot?.pitchType)
+        if (manualPlan) assertEquals(com.solkim.baseball.application.PitchKind.CURVEBALL, CareerAccess.school(state)?.lastPresentation?.snapshot?.pitchType)
         if (InstrumentationRegistry.getArguments().getString("qaNativeStore") == "true") {
             val nativeSave = File(context.getExternalFilesDir(null), "save/save.json")
             assertTrue("Native writer must create the production-format save", nativeSave.isFile)
@@ -175,6 +176,6 @@ class FirstPitchLocalizedSmokeTest {
         android.util.Log.i("BASEBALL_LAUNCH_QA", "first_slider elapsed_ms=${SystemClock.elapsedRealtime() - started} requested_hz=$requestedRate actual_hz=${display.mode.refreshRate} meter_interval_ms=$medianInterval meter_frames=${frameTimes.size} revision=${state.revision}")
         tap("pitch.practiceSchool")
         assertTrue("School choices must follow the first pitch", device.wait(Until.hasObject(By.res(java.util.regex.Pattern.compile("action.chooseSchool:.*"))), 20_000))
-        assertTrue(app.gameStore.current.highSchool?.tutorial?.completed == true)
+        assertTrue(CareerAccess.school(app.gameStore.current)?.tutorial?.completed == true)
     }
 }

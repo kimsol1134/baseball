@@ -26,10 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.InstrumentationRegistry
 import com.solkim.baseball.application.GameAggregateState
-import com.solkim.baseball.application.Phase8CommandContext
-import com.solkim.baseball.application.Phase8KoreaClock
-import com.solkim.baseball.application.Phase8ScreenId
-import com.solkim.baseball.application.Phase8ScreenProjection
+import com.solkim.baseball.application.ScreenCommandContext
+import com.solkim.baseball.application.KoreaClock
+import com.solkim.baseball.application.ScreenId
+import com.solkim.baseball.application.ScreenProjection
 import com.solkim.baseball.design.BaseballMigrationTheme
 import com.solkim.baseball.platform.NotificationPermissionTruth
 import com.solkim.baseball.platform.NativeNotificationPermission
@@ -44,11 +44,11 @@ import org.junit.runner.RunWith
 
 /** Native platform surfaces must expose real state and the exact payload captured at tap time. */
 @RunWith(AndroidJUnit4::class)
-class Phase9PlatformSemanticsTest {
+class PlatformSemanticsTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val context = Phase8CommandContext(Phase8KoreaClock { LocalDate.of(2026, 8, 14) })
+    private val context = ScreenCommandContext(KoreaClock { LocalDate.of(2026, 8, 14) })
 
     /**
      * The permission ask lives on the settings notification page. The reminder offer card is a second
@@ -57,9 +57,9 @@ class Phase9PlatformSemanticsTest {
      */
     @Test
     fun notificationPermissionActionCapturesCanonicalTypedPayload() {
-        val state = GameAggregateState.initial("phase9-platform-settings")
-        val model = Phase8ScreenProjection.project(state, Phase8ScreenId.P027_SETTINGS, context)
-        var captured by mutableStateOf<Phase9UiAction?>(null)
+        val state = GameAggregateState.initial("platform-settings")
+        val model = ScreenProjection.project(state, ScreenId.P027_SETTINGS, context)
+        var captured by mutableStateOf<PlatformUiAction?>(null)
         composeRule.setContent {
             BaseballMigrationTheme {
                 SettingsScreen(
@@ -67,7 +67,7 @@ class Phase9PlatformSemanticsTest {
                     model = model,
                     busy = false,
                     actionError = null,
-                    platformState = Phase9PlatformUiState(NotificationPermissionTruth.REQUESTABLE, null),
+                    platformState = PlatformUiState(NotificationPermissionTruth.REQUESTABLE, null),
                     onAction = {},
                     onPlatformAction = { captured = it },
                     onExit = {},
@@ -88,8 +88,8 @@ class Phase9PlatformSemanticsTest {
 
     @Test
     fun blockedNotificationUsesSettingsTruthAndRemainsReadableAtRequiredFontScales() {
-        val state = GameAggregateState.initial("phase9-platform-blocked")
-        val model = Phase8ScreenProjection.project(state, Phase8ScreenId.P027_SETTINGS, context)
+        val state = GameAggregateState.initial("platform-blocked")
+        val model = ScreenProjection.project(state, ScreenId.P027_SETTINGS, context)
         var fontScale by mutableStateOf(1.0f)
         composeRule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f, fontScale)) {
@@ -99,7 +99,7 @@ class Phase9PlatformSemanticsTest {
                         model = model,
                         busy = false,
                         actionError = null,
-                        platformState = Phase9PlatformUiState(NotificationPermissionTruth.BLOCKED, null),
+                        platformState = PlatformUiState(NotificationPermissionTruth.BLOCKED, null),
                         onAction = {},
                         onPlatformAction = {},
                         onExit = {},
@@ -131,18 +131,18 @@ class Phase9PlatformSemanticsTest {
 
     @Test
     fun productShellIncludesNativeSettingsSurface() {
-        val state = GameAggregateState.initial("phase9-shell-settings")
+        val state = GameAggregateState.initial("platform-shell-settings")
         composeRule.setContent {
             BaseballMigrationTheme {
-                Phase8Shell(
+                CareerShell(
                     state = state,
                     busy = false,
                     actionError = null,
-                    currentScreen = Phase8ScreenId.P027_SETTINGS,
+                    currentScreen = ScreenId.P027_SETTINGS,
                     commandContext = context,
                     onNavigate = {},
                     onAction = {},
-                    platformState = Phase9PlatformUiState(NotificationPermissionTruth.REQUESTABLE, null),
+                    platformState = PlatformUiState(NotificationPermissionTruth.REQUESTABLE, null),
                     onPlatformAction = {},
                 )
             }
@@ -154,7 +154,7 @@ class Phase9PlatformSemanticsTest {
 
     @Test
     fun viewportExposureWaitsForActualIntersectionBeforeEmitting() {
-        val exposures = mutableListOf<Phase9ViewportExposure>()
+        val exposures = mutableListOf<ViewportExposure>()
         composeRule.setContent {
             Box(Modifier.fillMaxSize()) {
                 Column(
@@ -165,8 +165,8 @@ class Phase9PlatformSemanticsTest {
                     // Keep this fixture below even the tallest API35 emulator viewport. The
                     // assertion is about intersection, not a device-specific fold height.
                     Spacer(Modifier.height(4000.dp))
-                    Phase9ViewportExposureBox(
-                        exposure = Phase9ViewportExposure(
+                    ViewportExposureBox(
+                        exposure = ViewportExposure(
                             eventName = "weekly_program_opened",
                             scope = "weekly:viewport-test",
                             properties = listOf("week_key" to "2026-W33", "source" to "records", "completed_tasks" to "0"),

@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.solkim.baseball.application.CareerUiRules
 import com.solkim.baseball.application.GameCopy
 import com.solkim.baseball.application.GameLanguage
 
@@ -33,12 +34,7 @@ internal fun Modifier.gameDescription(text: String): Modifier {
     val copy = rememberGameCopy()
     val app = LocalContext.current.applicationContext as? BaseballApplication
     val state = app?.gameStore?.current
-    val names = if (state?.meta?.seedChallenge != null) emptySet() else buildSet {
-        state?.highSchool?.run?.identity?.name?.let(::add)
-        state?.pro?.identityName?.let(::add)
-        state?.highSchool?.archive.orEmpty().forEach { add(it.playerName) }
-        state?.meta?.retiredProCareers.orEmpty().forEach { add(it.identityName) }
-    }
+    val names = state?.let(CareerUiRules::userDisplayNames).orEmpty()
     val description = copy.legacy(text, names)
     return semantics { contentDescription = description }
 }
@@ -69,12 +65,7 @@ internal fun LocalizedGameText(
     val app = LocalContext.current.applicationContext as? BaseballApplication
     val state = app?.gameStore?.current
     val userTexts = remember(state?.revision) {
-        if (state?.meta?.seedChallenge != null) emptySet() else buildSet {
-            state?.highSchool?.run?.identity?.name?.let(::add)
-            state?.pro?.identityName?.let(::add)
-            state?.highSchool?.archive.orEmpty().forEach { add(it.playerName) }
-            state?.meta?.retiredProCareers.orEmpty().forEach { add(it.identityName) }
-        }
+        state?.let(CareerUiRules::userDisplayNames).orEmpty()
     }
     androidx.compose.material3.Text(
         text = if (verbatim) text else copy.legacy(text, userTexts), modifier = modifier, color = color,

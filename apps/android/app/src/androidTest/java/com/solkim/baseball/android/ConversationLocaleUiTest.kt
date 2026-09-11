@@ -16,19 +16,18 @@ import org.junit.Test
 class ConversationLocaleUiTest {
     @get:Rule val compose = createComposeRule()
     @Test fun changingLanguageKeepsTheSameFaceAndDoesNotCommitTheChoice() {
-        val k = HighSchoolPhase4Kernel()
-        val base = k.start(HighSchoolPhase4StartRequest("918220", "power_prospect", "actor", "2026-W37", "2026-09-08")).state
-        val school = k.chooseSchool("918220", k.completePrologue("918220", k.beginTutorial(base).state).state, HighSchoolSchoolId.HAEDONG_POWER).state
-        val run = HighSchoolKernel().resignShadowState(school.run.copy(phase = HighSchoolPhase.RELATIONSHIP,
+        val base = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "actor", "2026-W37", "2026-09-08"))
+        val school = CareerFixtures.chooseSchool("918220", CareerFixtures.completePrologue("918220", CareerFixtures.beginTutorial(base)), HighSchoolSchoolId.HAEDONG_POWER)
+        val run = CareerFixtures.resignRun(school.run.copy(phase = HighSchoolPhase.RELATIONSHIP,
             currentRelationshipCategory = "coach", currentRelationshipTarget = HighSchoolRelationshipTarget.COACH,
             currentRelationshipEvent = HighSchoolContentCatalog.events.first { it.id == "evt-coach-role" }))
-        val state = GameAggregateState.initial("actor").copy(stage = GameStage.HIGH_SCHOOL, highSchool = k.commitShadowState(school.copy(run = run)))
+        val state = GameAggregateState.initial("actor").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = CareerFixtures.commitShadow(school.copy(run = run)))
         var language by mutableStateOf("ko")
         var actions = 0
-        var screen by mutableStateOf(Phase8ScreenId.P007_RELATIONSHIP)
+        var screen by mutableStateOf(ScreenId.P007_RELATIONSHIP)
         compose.setContent { val config = android.content.res.Configuration(LocalConfiguration.current).apply { setLocale(java.util.Locale.forLanguageTag(language)) }
             CompositionLocalProvider(LocalConfiguration provides config) { BaseballMigrationTheme {
-                Phase8Shell(state, false, null, screen, Phase8CommandContext(), onNavigate = { screen = it }, onAction = { actions++ })
+                CareerShell(state, false, null, screen, ScreenCommandContext(), onNavigate = { screen = it }, onAction = { actions++ })
             } }
         }
         val face = compose.onNodeWithTag("relationship.portrait").performScrollTo().captureToImage().asAndroidBitmap()

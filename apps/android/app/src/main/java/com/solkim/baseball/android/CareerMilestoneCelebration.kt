@@ -20,33 +20,32 @@ import com.solkim.baseball.android.LocalizedGameText as Text
 /** Only newly observed milestones interrupt play. Loading an old career does not replay praise. */
 @Composable
 internal fun CareerMilestoneCelebration(state: GameAggregateState, showTrainingBloom: Boolean = true) {
-    val school = state.highSchool ?: return
-    val run = school.run
+    val run = CareerUiRules.schoolFacts(state) ?: return
     val copy = rememberGameCopy()
     val wins = CareerUiRules.schoolWins(state)
-    var seenTraining by rememberSaveable(run.careerId) { mutableStateOf(run.totalTrainingsCompleted) }
-    var seenLearning by rememberSaveable(run.careerId) { mutableStateOf(run.pitchLearningProject?.completed == true) }
-    var seenAwakenings by rememberSaveable(run.careerId) { mutableStateOf(run.selectedAwakenings.size) }
+    var seenTraining by rememberSaveable(run.careerId) { mutableStateOf(run.trainings) }
+    var seenLearning by rememberSaveable(run.careerId) { mutableStateOf(run.learningCompleted) }
+    var seenAwakenings by rememberSaveable(run.careerId) { mutableStateOf(run.awakeningWires.size) }
     var seenWins by rememberSaveable(run.careerId) { mutableStateOf(wins) }
     var moment by rememberSaveable(run.careerId) { mutableStateOf<String?>(null) }
     var detail by rememberSaveable(run.careerId) { mutableStateOf<String?>(null) }
     var artBranch by rememberSaveable(run.careerId) { mutableStateOf("game") }
     LaunchedEffect(run.revision, wins) {
         when {
-            run.pitchLearningProject?.completed == true && !seenLearning -> {
+            run.learningCompleted && !seenLearning -> {
                 moment = "pitch"
                 artBranch = "breaking"
-                detail = TrainingPresentation.pitchLabel(run.pitchLearningProject!!.pitchType)
+                detail = run.learningPitch?.let(TrainingPresentation::pitchLabel)
             }
-            run.selectedAwakenings.size > seenAwakenings -> {
+            run.awakeningWires.size > seenAwakenings -> {
                 moment = "awakening"
-                artBranch = run.selectedAwakenings.last().wire
-                detail = HighSchoolDisplayRules.awakeningTitle(run.selectedAwakenings.last().wire)
+                artBranch = run.awakeningWires.last()
+                detail = HighSchoolDisplayRules.awakeningTitle(run.awakeningWires.last())
             }
             wins > 0 && seenWins == 0 -> { moment = "win"; detail = null }
-            showTrainingBloom && run.totalTrainingsCompleted > seenTraining && run.lastTraining?.bloomed == true -> {
+            showTrainingBloom && run.trainings > seenTraining && run.lastBloomed -> {
                 moment = "bloom"
-                artBranch = when (run.lastTraining?.focus) {
+                artBranch = when (run.lastFocus) {
                     TrainingFocus.VELOCITY, TrainingFocus.STAMINA -> "power"
                     TrainingFocus.COMMAND -> "command"
                     TrainingFocus.BREAKING_BALL -> "breaking"
@@ -55,9 +54,9 @@ internal fun CareerMilestoneCelebration(state: GameAggregateState, showTrainingB
                 detail = null
             }
         }
-        seenTraining = run.totalTrainingsCompleted
-        seenLearning = run.pitchLearningProject?.completed == true
-        seenAwakenings = run.selectedAwakenings.size
+        seenTraining = run.trainings
+        seenLearning = run.learningCompleted
+        seenAwakenings = run.awakeningWires.size
         seenWins = wins
     }
     moment?.let { kind ->
@@ -69,8 +68,8 @@ internal fun CareerMilestoneCelebration(state: GameAggregateState, showTrainingB
             },
             text = {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (kind == "win") PlayerPortrait(seed = playerPortraitSeed(state) ?: run.identity.name,
-                        stage = if (run.chapter.number >= 5) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 88.dp)
+                    if (kind == "win") PlayerPortrait(seed = playerPortraitSeed(state) ?: run.playerName,
+                        stage = if (run.chapterNumber >= 5) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 88.dp)
                     else SkillCelebrationArtwork(artBranch)
                     detail?.let { Text(it, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
                 }
@@ -85,7 +84,7 @@ internal fun CareerMilestoneCelebration(state: GameAggregateState, showTrainingB
 @Composable
 internal fun RecentGrowthNotice(state: GameAggregateState, enabled: Boolean) {
     val receipt = state.meta.playerGrowth
-    val career = state.highSchool?.run?.careerId ?: state.pro?.careerId
+    val career = CareerUiRules.highSchoolCareerId(state) ?: CareerUiRules.proCareerId(state)
     var consumed by rememberSaveable(career) { mutableStateOf(receipt?.commandId) }
     LaunchedEffect(receipt?.commandId, enabled) {
         if (receipt != null && receipt.commandId != consumed) {

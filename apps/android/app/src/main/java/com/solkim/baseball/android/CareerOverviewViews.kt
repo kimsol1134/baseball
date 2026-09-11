@@ -52,7 +52,7 @@ internal fun CareerStatTiles(stats: List<Pair<String, String>>) {
 }
 
 @Composable
-internal fun CareerFact(row: Phase8Row, tag: String, revealDetail: Boolean = false) {
+internal fun CareerFact(row: ScreenRow, tag: String, revealDetail: Boolean = false) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(3.dp)) {
         if (row.label.isNotBlank()) Text(row.label, style = MaterialTheme.typography.labelMedium, color = BaseballColors.textSecondary)
         Text(row.value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -64,7 +64,7 @@ internal fun CareerFact(row: Phase8Row, tag: String, revealDetail: Boolean = fal
 }
 
 @Composable
-internal fun CareerSection(section: Phase8Section, initialCount: Int = 1) {
+internal fun CareerSection(section: ScreenSection, initialCount: Int = 1) {
     Text(section.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
     val complete = initialCount >= section.rows.size
     section.rows.take(initialCount).forEachIndexed { index, row -> CareerFact(if (complete) row else row.copy(detail = ""), "career.${section.id}.$index", revealDetail = true) }
@@ -74,35 +74,35 @@ internal fun CareerSection(section: Phase8Section, initialCount: Int = 1) {
 }
 
 @Composable
-internal fun CompactLifeRecap(state: GameAggregateState, model: Phase8ScreenModel) {
+internal fun CompactLifeRecap(state: GameAggregateState, model: ScreenModel) {
     // Seed challenges have a separate score contract; show their supplied result intact.
     if (state.meta.seedChallenge != null) {
         model.sections.forEach { CareerSection(it, 3) }
         return
     }
-    val run = state.highSchool?.run ?: return
+    val run = CareerUiRules.schoolFacts(state) ?: return
     Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.testTag("recap.hero")) {
-        PlayerPortrait(seed = playerPortraitSeed(state) ?: run.identity.name, stage = PlayerStage.ACE, width = 76.dp)
+        PlayerPortrait(seed = playerPortraitSeed(state) ?: run.playerName, stage = PlayerStage.ACE, width = 76.dp)
         Column(Modifier.weight(1f)) {
-            Text(run.identity.name, verbatim = true, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            run.draftResult?.let { result ->
-                Text(if (result.outcome == HighSchoolDraftOutcome.DRAFTED) "프로 지명" else "고교 여정 완료",
+            Text(run.playerName, verbatim = true, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            run.drafted?.let { drafted ->
+                Text(if (drafted) "프로 지명" else "고교 여정 완료",
                     style = MaterialTheme.typography.titleMedium, color = BaseballColors.milestone)
-                if (result.outcome != HighSchoolDraftOutcome.DRAFTED) Text("드래프트 미지명", style = MaterialTheme.typography.labelMedium, color = BaseballColors.textSecondary)
+                if (!drafted) Text("드래프트 미지명", style = MaterialTheme.typography.labelMedium, color = BaseballColors.textSecondary)
             }
         }
     }
-    CareerStatTiles(listOf("경기" to run.performance.importantGamesCompleted.toString(),
-        "탈삼진" to run.performance.strikeouts.toString(), "퍼펙트 릴리스" to run.performance.perfectReleases.toString()))
-    if (run.selectedAwakenings.isNotEmpty()) {
+    CareerStatTiles(listOf("경기" to run.importantGames.toString(),
+        "탈삼진" to run.strikeouts.toString(), "퍼펙트 릴리스" to run.perfectReleases.toString()))
+    if (run.awakeningWires.isNotEmpty()) {
         Text(rememberGameCopy().resolve("awakening.tree.title"), verbatim = true, style = MaterialTheme.typography.labelLarge, color = BaseballColors.textSecondary)
-        run.selectedAwakenings.chunked(3).forEach { row ->
+        run.awakeningWires.chunked(3).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { skill ->
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        AwakeningGlyph(skill.wire, BaseballColors.action, Modifier.size(36.dp))
-                        Text(HighSchoolDisplayRules.awakeningTitle(skill.wire), style = MaterialTheme.typography.labelSmall)
+                        AwakeningGlyph(skill, BaseballColors.action, Modifier.size(36.dp))
+                        Text(HighSchoolDisplayRules.awakeningTitle(skill), style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
@@ -116,7 +116,7 @@ internal fun CompactLifeRecap(state: GameAggregateState, model: Phase8ScreenMode
 
 /** Reviewing a candidate is reversible; only the explicit confirmation invokes its command. */
 @Composable
-internal fun CareerLegacyPicker(model: Phase8ScreenModel, actions: List<Phase8ActionModel>, onAction: (Phase8UiAction) -> Unit) {
+internal fun CareerLegacyPicker(model: ScreenModel, actions: List<ScreenActionModel>, onAction: (ScreenUiAction) -> Unit) {
     var selectedId by remember(model.id, actions.map { it.id }) { mutableStateOf<String?>(null) }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
     Text("이어받을 능력", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -146,7 +146,7 @@ internal fun CareerLegacyPicker(model: Phase8ScreenModel, actions: List<Phase8Ac
         val evidence = model.sections.firstOrNull { it.id == "pro-legacy" }?.rows?.firstOrNull { it.label == selected.label }
         if (evidence != null) CareerDisclosure("이 능력을 남긴 기록", "legacy.evidence") { CareerFact(evidence, "legacy.evidence.detail") }
     }
-    Button(enabled = selected?.enabled == true, onClick = { selected?.let { onAction(Phase8UiAction(model.id, it.id, it.payloads)) } },
+    Button(enabled = selected?.enabled == true, onClick = { selected?.let { onAction(ScreenUiAction(model.id, it.id, it.payloads)) } },
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("legacy.confirm")) {
         Text("이 능력 이어받기")
     }
@@ -208,11 +208,11 @@ private fun CareerGameList(games: List<CareerGameCard>) {
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8ScreenModel, onAction: (Phase8UiAction) -> Unit) {
+internal fun CompactCareerOverview(state: GameAggregateState, model: ScreenModel, onAction: (ScreenUiAction) -> Unit) {
     val copy = rememberGameCopy()
     when (model.id) {
-        Phase8ScreenId.P011_HIGH_SCHOOL_CAREER -> {
-            var scope by remember(state.stage, state.highSchool?.run?.careerId, state.pro?.careerId) { mutableStateOf<String?>(null) }
+        ScreenId.P011_HIGH_SCHOOL_CAREER -> {
+            var scope by remember(state.stage, CareerUiRules.highSchoolCareerId(state), CareerUiRules.proCareerId(state)) { mutableStateOf<String?>(null) }
             val records = CareerRecordPresentation.resolve(state, scope)
             if (records != null) {
                 val scopes = CareerRecordPresentation.scopes(state)
@@ -238,8 +238,8 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
             }
 
         }
-        Phase8ScreenId.P024_WEEKLY -> {
-            val weekly = state.highSchool?.weekly
+        ScreenId.P024_WEEKLY -> {
+            val weekly = CareerUiRules.weekly(state)
             val tasks = weekly?.tasks.orEmpty()
             CareerStatTiles(listOf("완료" to "${tasks.count { it.completed }}/${tasks.size}", "도장" to "${weekly?.stamps?.size ?: 0}"))
             Text(WeeklyNotePolicy.explanation(state), style = MaterialTheme.typography.bodyMedium, color = BaseballColors.textSecondary, modifier = Modifier.testTag("weekly.requirement"))
@@ -251,10 +251,10 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
             }
             CareerDisclosure("지난 도장과 보상 안내", "weekly.details") { model.sections.forEach { CareerSection(it, it.rows.size) } }
         }
-        Phase8ScreenId.P026_ACHIEVEMENTS -> {
+        ScreenId.P026_ACHIEVEMENTS -> {
             val rows = model.sections.firstOrNull { it.id == "achievements" }?.rows.orEmpty()
-            val unlocked = state.highSchool?.achievements.orEmpty()
-            val pending = state.highSchool?.unacknowledgedAchievements.orEmpty()
+            val unlocked = CareerUiRules.achievements(state)
+            val pending = CareerUiRules.unacknowledgedAchievements(state)
             val ids = CareerUiRules.achievementIds(state)
             val items = ids.zip(rows).sortedBy { (id, _) -> if (id in pending) 0 else if (id in unlocked) 1 else 2 }
             var selectedId by remember { mutableStateOf<String?>(null) }
@@ -280,43 +280,40 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
                         Text(row.label, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text(row.detail, style = MaterialTheme.typography.bodyMedium)
                         model.actions.firstOrNull { it.enabled && it.id == "ack:$id" }?.let { action ->
-                            Button(onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)); selectedId = null }, modifier = Modifier.testTag("achievement.confirm")) { Text("확인") }
+                            Button(onClick = { onAction(ScreenUiAction(model.id, action.id, action.payloads)); selectedId = null }, modifier = Modifier.testTag("achievement.confirm")) { Text("확인") }
                         }
                     }
                 }
             }
         }
-        Phase8ScreenId.P028_LIFECARD -> {
-            val archive = state.highSchool?.archive.orEmpty().asReversed()
+        ScreenId.P028_LIFECARD -> {
+            val archive = CareerUiRules.archive(state).asReversed()
             if (archive.isEmpty()) Text("한 생을 마치면 카드가 남아요.", color = BaseballColors.textSecondary)
             archive.forEachIndexed { index, record ->
                 if (index == 0) LifeCardVisual(state, record.careerId)
                 else CareerDisclosure(record.playerName, "life.${record.careerId}") { LifeCardVisual(state, record.careerId) }
             }
         }
-        Phase8ScreenId.P029_RETURN_PLAN -> {
+        ScreenId.P029_RETURN_PLAN -> {
             model.sections.firstOrNull()?.rows?.firstOrNull()?.let { CareerFact(it, "return.destination") }
             // Notification timing must remain visible before choosing the reminder.
             model.sections.firstOrNull()?.rows?.lastOrNull()?.let { Text(it.value, style = MaterialTheme.typography.bodyMedium) }
         }
-        Phase8ScreenId.P022_PRO_LEGACY -> {
-            val pro = state.pro
-            val stats = pro?.let { p -> p.careerStats + listOf(p.currentStats).filter { current -> p.careerStats.none { it.season == current.season } } }.orEmpty()
-            CareerStatTiles(listOf("시즌" to "${stats.size}", "탈삼진" to "${stats.sumOf { it.strikeouts }}"))
+        ScreenId.P022_PRO_LEGACY -> {
+            val pro = ProfessionalStatusPresentation.season(state)
+            CareerStatTiles(listOf("시즌" to "${pro?.seasonCount ?: 0}", "탈삼진" to "${pro?.totalStrikeouts ?: 0}"))
             CareerLegacyPicker(model, model.actions.filter { it.id.startsWith("selectProLegacy:") && it.enabled }, onAction)
             model.sections.filter { it.id != "pro-legacy" }.forEach { section -> CareerDisclosure(section.title, "legacy.${section.id}") { CareerSection(section, section.rows.size) } }
         }
-        Phase8ScreenId.P019_PRO_SEASON -> {
-            val pro = state.pro
+        ScreenId.P019_PRO_SEASON -> {
+            val pro = ProfessionalStatusPresentation.season(state)
             val ordinary = model.sections.all { it.id in setOf("season-settlement", "pro-season", "pro-game-log") }
             if (ordinary && pro != null) {
-                val settlement = pro.journeyState?.lastSettlement
-                val stats = pro.careerStats.lastOrNull { it.season == settlement?.season }?.takeIf { model.sections.any { it.id == "season-settlement" } } ?: pro.currentStats
                 Text(model.sections.firstOrNull()?.title.orEmpty(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                CareerStatTiles(listOf("등판" to "${stats.games}", "이닝" to "${stats.inningsOuts / 3}.${stats.inningsOuts % 3}", "탈삼진" to "${stats.strikeouts}"))
+                CareerStatTiles(listOf("등판" to "${pro.games}", "이닝" to "${pro.inningsOuts / 3}.${pro.inningsOuts % 3}", "탈삼진" to "${pro.strikeouts}"))
                 model.sections.firstOrNull { it.id == "pro-season" }?.rows?.getOrNull(2)?.let { CareerFact(it, "season.team") }
-                if (pro.pendingDecision != null) CareerMemoryPresentation.conversationRecall(state, copy)?.let { Text(it, verbatim = true, color = BaseballColors.milestone) }
-                pro.pendingDecision?.let { decision -> CareerFact(Phase8Row(decision.title, decision.detail), "season.decision", revealDetail = true) }
+                if (pro.pendingTitle != null) CareerMemoryPresentation.conversationRecall(state, copy)?.let { Text(it, verbatim = true, color = BaseballColors.milestone) }
+                pro.pendingTitle?.let { title -> CareerFact(ScreenRow(title, pro.pendingDetail.orEmpty()), "season.decision", revealDetail = true) }
                 if (pro.awards.isNotEmpty()) Text("최근 수상", style = MaterialTheme.typography.labelMedium, color = BaseballColors.textSecondary)
                 pro.awards.takeLast(3).forEach { Text(it, style = MaterialTheme.typography.labelLarge, color = BaseballColors.milestone) }
                 CareerDisclosure("시즌 성적과 정산", "season.details") {
@@ -329,12 +326,12 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
                     section.rows.forEachIndexed { index, row -> CareerFact(row, "season.decision.${section.id}.$index", revealDetail = true) }
                 }
             }
-            val games = pro?.currentGameLines.orEmpty()
+            val games = pro?.weekLines.orEmpty()
             if (games.isNotEmpty()) CareerDisclosure("시즌 등판 기록", "season.games") {
-                CareerGameList(games.asReversed().map { CareerGameCard(copy.resolve("career.compact.week", GameCopyArgument.Whole(it.week.toLong())), it.outs, it.strikeouts, it.runsAllowed, it.walks, it.hits, it.perfectReleases, it.teamRuns, it.opponentRuns) })
+                CareerGameList(games.asReversed().map { CareerGameCard(copy.resolve("career.compact.week", GameCopyArgument.Whole(it.week.toLong())), it.outs, it.strikeouts, it.runs, it.walks, it.hits, it.perfectReleases, it.teamRuns, it.opponentRuns) })
             }
         }
-        Phase8ScreenId.P025_RECORDS_LEAGUE -> {
+        ScreenId.P025_RECORDS_LEAGUE -> {
             val records = CareerRecordPresentation.resolve(state)
             if (records == null || records.games == 0) {
                 Text("첫 등판 전", style = MaterialTheme.typography.titleLarge)
@@ -350,12 +347,11 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
             }
 
         }
-        Phase8ScreenId.P021_PRO_RETIREMENT -> {
+        ScreenId.P021_PRO_RETIREMENT -> {
             CareerMemorySummary(state)
-            val pro = state.pro
+            val pro = ProfessionalStatusPresentation.season(state)
             if (pro != null) {
-                val stats = pro.careerStats + listOf(pro.currentStats).filter { current -> pro.careerStats.none { it.season == current.season } }
-                CareerStatTiles(listOf("시즌" to "${stats.size}", "등판" to "${stats.sumOf { it.games }}", "탈삼진" to "${stats.sumOf { it.strikeouts }}"))
+                CareerStatTiles(listOf("시즌" to "${pro.seasonCount}", "등판" to "${pro.totalGames}", "탈삼진" to "${pro.totalStrikeouts}"))
             }
             model.sections.forEach { section ->
                 Text(section.rows.firstOrNull()?.label ?: section.title, style = MaterialTheme.typography.headlineSmall)
@@ -370,10 +366,10 @@ internal fun CompactCareerOverview(state: GameAggregateState, model: Phase8Scree
     }
 }
 
-internal val compactCareerScreens = setOf(Phase8ScreenId.P011_HIGH_SCHOOL_CAREER, Phase8ScreenId.P012_TOURNAMENT_LEAGUE,
-    Phase8ScreenId.P019_PRO_SEASON, Phase8ScreenId.P021_PRO_RETIREMENT, Phase8ScreenId.P022_PRO_LEGACY,
-    Phase8ScreenId.P024_WEEKLY, Phase8ScreenId.P025_RECORDS_LEAGUE, Phase8ScreenId.P026_ACHIEVEMENTS,
-    Phase8ScreenId.P028_LIFECARD, Phase8ScreenId.P029_RETURN_PLAN)
+internal val compactCareerScreens = setOf(ScreenId.P011_HIGH_SCHOOL_CAREER, ScreenId.P012_TOURNAMENT_LEAGUE,
+    ScreenId.P019_PRO_SEASON, ScreenId.P021_PRO_RETIREMENT, ScreenId.P022_PRO_LEGACY,
+    ScreenId.P024_WEEKLY, ScreenId.P025_RECORDS_LEAGUE, ScreenId.P026_ACHIEVEMENTS,
+    ScreenId.P028_LIFECARD, ScreenId.P029_RETURN_PLAN)
 
 @Composable
 internal fun CareerMemorySummary(state: GameAggregateState) {

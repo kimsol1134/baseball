@@ -19,12 +19,11 @@ import org.junit.Test
 class TrainingFeedbackFlowTest {
     @get:Rule val compose = createComposeRule()
     private fun transitions(focus: TrainingFocus = TrainingFocus.COMMAND): Pair<GameAggregateState, GameAggregateState> {
-        val k = HighSchoolPhase4Kernel()
-        val start = k.start(HighSchoolPhase4StartRequest("918220", "power_prospect", "feedback-fixture", "2026-W37", "2026-09-08")).state
-        val ready = k.completePrologue("918220", k.beginTutorial(start).state).state
-        val school = k.chooseSchool("918220", ready, HighSchoolSchoolId.HAEDONG_POWER).state
-        val before = GameAggregateState.initial("feedback-fixture").copy(stage = GameStage.HIGH_SCHOOL, highSchool = school)
-        val after = before.copy(highSchool = k.commitTraining("918220", school, focus, TrainingIntensity.STANDARD).state)
+        val start = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "feedback-fixture", "2026-W37", "2026-09-08"))
+        val ready = CareerFixtures.completePrologue("918220", CareerFixtures.beginTutorial(start))
+        val school = CareerFixtures.chooseSchool("918220", ready, HighSchoolSchoolId.HAEDONG_POWER)
+        val before = GameAggregateState.initial("feedback-fixture").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = school)
+        val after = before.withCareers(highSchool = CareerFixtures.commitTraining("918220", school, focus, TrainingIntensity.STANDARD))
         return before to after
     }
     @Test fun trainingResultIsVisibleEvenWhenTheNextScreenIsAConversation() {
@@ -32,7 +31,7 @@ class TrainingFeedbackFlowTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         saveTrainingFeedback(context, before, after)
         compose.setContent { BaseballMigrationTheme {
-            Phase8Shell(after, false, null, Phase8ScreenProjection.preferredScreen(after), Phase8CommandContext(), onNavigate = {}, onAction = {})
+            CareerShell(after, false, null, ScreenProjection.preferredScreen(after), ScreenCommandContext(), onNavigate = {}, onAction = {})
         } }
         compose.onNodeWithText("훈련 완료").assertIsDisplayed()
         compose.onNodeWithTag("training.growth.bar.1").assertExists()
@@ -41,9 +40,9 @@ class TrainingFeedbackFlowTest {
     @Test fun actualTrainingChangesAreShownUntilExplicitContinue() {
         val (before, after) = transitions()
         val record = requireNotNull(trainingFeedbackRecord(before, after))
-        assertEquals(before.highSchool!!.run.fatigue, record.getInt("fatigueBefore"))
-        assertEquals(after.highSchool!!.run.fatigue, record.getInt("fatigueAfter"))
-        assertEquals(after.highSchool!!.run.pitcher.command, record.getJSONArray("after").getInt(1))
+        assertEquals(CareerAccess.school(before)!!.run.fatigue, record.getInt("fatigueBefore"))
+        assertEquals(CareerAccess.school(after)!!.run.fatigue, record.getInt("fatigueAfter"))
+        assertEquals(CareerAccess.school(after)!!.run.pitcher.command, record.getJSONArray("after").getInt(1))
         var continued = 0
         compose.setContent { BaseballMigrationTheme { Surface { Box(Modifier.height(560.dp)) { TrainingFeedbackPanel(record) { continued++ } } } } }
         compose.onNodeWithTag("training.feedback.stat.1").assertExists()
@@ -72,7 +71,7 @@ class TrainingFeedbackFlowTest {
             compose.onNodeWithTag("training.feedback.continue").performClick()
             compose.onNodeWithTag("training.feedback").assertDoesNotExist()
             assertNull(prefs.getString("pending", null))
-            assertEquals(1, after.highSchool!!.run.totalTrainingsCompleted)
+            assertEquals(1, CareerAccess.school(after)!!.run.totalTrainingsCompleted)
         } finally { prefs.edit().putString("pending", saved).commit() }
     }
     @Test fun resultsWaitAndPracticeAdviceMatchesTheActualProblem() {

@@ -19,28 +19,28 @@ class ContinuousPitchUiTest {
         val context = inst.targetContext
         require(context.packageName == "com.solkim.baseball.android.reset.compose.qa")
         val app = context.applicationContext as BaseballApplication
-        val controller = Phase8Controller(app.gameStore)
+        val controller = ScreenController(app.gameStore)
         runBlocking {
-            controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
-            controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
+            controller.execute(ScreenId.P001_OPENING, "enterSetup")
+            controller.execute(ScreenId.P002_SETUP, "startHighSchool")
+            controller.execute(ScreenId.P003_PROLOGUE, "beginTutorial")
+            controller.execute(ScreenId.P003_PROLOGUE, "completeTutorial")
             repeat(40) {
                 val screen = controller.preferredScreen()
-                if (screen == Phase8ScreenId.P008_IMPORTANT_GAME) return@repeat
+                if (screen == ScreenId.P008_IMPORTANT_GAME) return@repeat
                 val action = controller.projection(screen).actions.first { it.enabled }
                 controller.execute(screen, action.id)
             }
-            assertEquals(Phase8ScreenId.P008_IMPORTANT_GAME, controller.preferredScreen())
-            val action = controller.projection(Phase8ScreenId.P008_IMPORTANT_GAME).actions.first { it.enabled && it.id == "openImportantGame" }
-            val launch = requireNotNull(controller.execute(Phase8ScreenId.P008_IMPORTANT_GAME, action.id).launch)
-            val pitching = Phase7VerticalController(app.gameStore)
+            assertEquals(ScreenId.P008_IMPORTANT_GAME, controller.preferredScreen())
+            val action = controller.projection(ScreenId.P008_IMPORTANT_GAME).actions.first { it.enabled && it.id == "openImportantGame" }
+            val launch = requireNotNull(controller.execute(ScreenId.P008_IMPORTANT_GAME, action.id).launch)
+            val pitching = PitchSessionController(app.gameStore)
             val result = pitching.submitPitch(launch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(0, 0), PitchDelivery(0, 0))
             pitching.consumePresentation(launch.sessionId, result)
             assertTrue("Fixture needs an unfinished outing", pitching.canContinueOfficialPitch())
-            val resume = controller.projection(Phase8ScreenId.P008_IMPORTANT_GAME).actions.single { it.id == "resumePitch" }
+            val resume = controller.projection(ScreenId.P008_IMPORTANT_GAME).actions.single { it.id == "resumePitch" }
             assertTrue("A saved result must offer a career continuation", resume.enabled)
-            val recovered = requireNotNull(controller.execute(Phase8ScreenId.P008_IMPORTANT_GAME, resume.id).launch)
+            val recovered = requireNotNull(controller.execute(ScreenId.P008_IMPORTANT_GAME, resume.id).launch)
             assertEquals(launch.sessionId, recovered.sessionId)
             context.startActivity(PitchActivity.intent(context, recovered.sessionId, app.gameStore.current.revision.toString()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
@@ -57,14 +57,14 @@ class ContinuousPitchUiTest {
             }
             error("Unstable pitch control: $tag")
         }
-        val before = requireNotNull(app.gameStore.current.highSchool?.activePitch).pitches
+        val before = requireNotNull(CareerAccess.school(app.gameStore.current)?.activePitch).pitches
         // Normal mode explicitly acknowledges a restored result before the next manual pitch.
         val next = requireNotNull(device.wait(Until.findObject(By.res("pitch.continue")), 20_000))
-        assertEquals(before, app.gameStore.current.highSchool?.activePitch?.pitches)
+        assertEquals(before, CareerAccess.school(app.gameStore.current)?.activePitch?.pitches)
         device.takeScreenshot(java.io.File(context.getExternalFilesDir(null), "qa-restored-result.png"))
         next.click()
         val pad = requireNotNull(device.wait(Until.findObject(By.res("pitch.slider")), 20_000))
-        assertEquals(before, app.gameStore.current.highSchool?.activePitch?.pitches)
+        assertEquals(before, CareerAccess.school(app.gameStore.current)?.activePitch?.pitches)
         assertFalse(app.gameStore.current.settings.autoReleaseEnabled)
         assertFalse(device.hasObject(By.res("pitch.continue")))
         val recommended = PitchHudProjection.model(app.gameStore.current).preparation.primaryRecommendation.call.zone
@@ -85,9 +85,9 @@ class ContinuousPitchUiTest {
         device.swipe(bounds.centerX(), bounds.centerY(), bounds.centerX() + 1, bounds.centerY(), 55)
         assertTrue(device.wait(Until.hasObject(By.res("pitch.replay")), 15_000) ||
             device.hasObject(By.res("pitch.slider")))
-        assertEquals(before + 1, app.gameStore.current.highSchool?.activePitch?.pitches)
+        assertEquals(before + 1, CareerAccess.school(app.gameStore.current)?.activePitch?.pitches)
         device.pressHome()
         android.os.SystemClock.sleep(1_000)
-        assertEquals(before + 1, app.gameStore.current.highSchool?.activePitch?.pitches)
+        assertEquals(before + 1, CareerAccess.school(app.gameStore.current)?.activePitch?.pitches)
     }
 }

@@ -30,7 +30,7 @@ import kotlinx.coroutines.withContext
 private val abilityColors = listOf(Color(0xFFFFAE70), Color(0xFF79BBFF), Color(0xFFC5A0FF), Color(0xFF67D6C6))
 
 @Composable
-internal fun RebirthAbilityPreview(state: GameAggregateState, action: Phase8ActionModel) {
+internal fun RebirthAbilityPreview(state: GameAggregateState, action: ScreenActionModel) {
     var preview by remember(state.revision, action.id) { mutableStateOf<RebirthStartPreview?>(null) }
     LaunchedEffect(state.revision, action.id) {
         preview = withContext(Dispatchers.Default) { RebirthStartPreview.resolve(state, action) }
@@ -133,11 +133,11 @@ internal fun AbilityDetails(state: GameAggregateState, initial: Int = 0, onClose
     var selected by remember(current.career) { mutableIntStateOf(initial) }
     var comparison by remember(current.career) { mutableIntStateOf(0) }
     val points = state.meta.abilityHistory.filter { it.career == current.career }
-    val hsStart = state.highSchool?.startingPitcher?.let { listOf(it.stuff, it.command, it.movement, it.stamina) }
+    val hsStart = CareerUiRules.startingRatings(state)
     val start = if (!current.pro) hsStart else points.firstOrNull { it.source == "start" }?.ratings
     val previousStart = state.meta.companion?.previousStart?.takeIf { !current.pro && it.size == 4 }
     val previousCareer = if (current.pro) state.meta.retiredProCareers.lastOrNull { it.careerId != current.career }?.careerId
-        else state.highSchool?.archive?.lastOrNull { it.lifeNumber < current.life }?.careerId
+        else CareerUiRules.archive(state).lastOrNull { it.lifeNumber < current.life }?.careerId
     val previousPoints = state.meta.abilityHistory.filter { it.career == previousCareer }
     val previousPeak = previousPoints.takeIf { it.isNotEmpty() }?.let { list -> (0..3).map { i -> list.maxOf { it.ratings[i] } } }
     val from = when(comparison) { 1 -> previousStart; 2 -> previousPeak; else -> start }
@@ -161,7 +161,7 @@ internal fun AbilityDetails(state: GameAggregateState, initial: Int = 0, onClose
                     Text(when(comparison) { 1 -> t("이전 생 시작 → 이번 생 시작", "Previous start → Current start", "前世の開始 → 今世の開始"); 2 -> t("저장된 전생 최고 → 현재", "Recorded previous peak → Now", "記録された前世の最高 → 現在"); else -> t("시작 능력 → 현재", "Starting ability → Now", "開始時の能力 → 現在") }, style = MaterialTheme.typography.labelSmall)
                     if (from == null) Text(t("이전 능력 기록이 없어요. 현재부터 기록해요.", "No earlier ability data. Recording begins now.", "以前の能力記録はありません。今から記録します。"), style = MaterialTheme.typography.bodySmall)
                     (0..3).forEach { index -> AbilityBar(index, to[index], from?.get(index), tag = "ability.compare.bar.$index", showPrevious = true, onClick = { selected = index }) }
-                    val fourSeam = if (current.pro) state.pro?.pitcher?.profile(PitchKind.FOUR_SEAM) else state.highSchool?.run?.pitcher?.pitchProfiles?.firstOrNull { it.pitchType == PitchKind.FOUR_SEAM }
+                    val fourSeam = CareerUiRules.fourSeam(state)
                     fourSeam?.let { Text(t("포심 기준 구속", "Four-seam base velocity", "フォーシーム基準球速") + " ${it.velocityTenthsKph / 10}.${it.velocityTenthsKph % 10} km/h", style = MaterialTheme.typography.labelMedium, color = BaseballColors.textSecondary) }
                     Text(abilityName(selected, language), color = abilityColors[selected], style = MaterialTheme.typography.titleLarge)
                     val explanations = when(language) {

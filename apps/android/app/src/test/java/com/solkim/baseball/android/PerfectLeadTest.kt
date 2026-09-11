@@ -1,9 +1,19 @@
 package com.solkim.baseball.android
 
-import com.solkim.baseball.core.pitch.PitchReleaseWindow
+import com.solkim.baseball.application.PitchReleaseWindow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+
+class SliderDefaultTest {
+    @Test
+    fun newGameKeepsHoldToReleaseSlider() {
+        org.junit.Assert.assertFalse(com.solkim.baseball.application.GameSettingsState().autoReleaseEnabled)
+        org.junit.Assert.assertFalse(
+            com.solkim.baseball.application.GameAggregateState.initial("slider-default").settings.autoReleaseEnabled,
+        )
+    }
+}
 
 class PerfectLeadTest {
     @Test

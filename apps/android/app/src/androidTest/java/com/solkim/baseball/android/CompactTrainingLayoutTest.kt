@@ -25,18 +25,17 @@ import java.util.Locale
 class CompactTrainingLayoutTest {
     @get:Rule val compose = createComposeRule()
     @Test fun choicesContainOneLineAcrossLanguagesAndLargeText() {
-        val kernel = HighSchoolPhase4Kernel()
-        val start = kernel.start(HighSchoolPhase4StartRequest("918220", "power_prospect", "training-layout", "2026-W37", "2026-09-08")).state
-        val ready = kernel.completePrologue("918220", kernel.beginTutorial(start).state).state
-        val school = kernel.chooseSchool("918220", ready, HighSchoolSchoolId.HAEDONG_POWER).state
-        val state = GameAggregateState.initial("training-layout").copy(stage = GameStage.HIGH_SCHOOL, highSchool = school)
+        val start = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "training-layout", "2026-W37", "2026-09-08"))
+        val ready = CareerFixtures.completePrologue("918220", CareerFixtures.beginTutorial(start))
+        val school = CareerFixtures.chooseSchool("918220", ready, HighSchoolSchoolId.HAEDONG_POWER)
+        val state = GameAggregateState.initial("training-layout").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = school)
         var language by mutableStateOf("ko")
         var font by mutableFloatStateOf(1f)
         compose.setContent {
             val configuration = Configuration(LocalConfiguration.current).apply { setLocales(LocaleList(Locale.forLanguageTag(language))) }
             CompositionLocalProvider(LocalConfiguration provides configuration, LocalDensity provides Density(LocalDensity.current.density, font)) {
                 BaseballMigrationTheme { Box(Modifier.width(328.dp)) {
-                    TrainingScreen(state, Phase8CommandContext(), false, null, PaddingValues(0.dp), 0, 0,
+                    TrainingScreen(state, ScreenCommandContext(), false, null, PaddingValues(0.dp), 0, 0,
                         onDismiss = {}, onCommit = { error("Preview must not start training") })
                 } }
             }
@@ -64,6 +63,6 @@ class CompactTrainingLayoutTest {
                 }
             }
         }
-        assertNull(state.highSchool!!.run.lastTraining)
+        assertNull(CareerAccess.school(state)!!.run.lastTraining)
     }
 }

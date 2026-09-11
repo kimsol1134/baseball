@@ -1,5 +1,7 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.CareerAccess
+
 import android.content.Intent
 import android.os.Build
 import android.os.PowerManager
@@ -50,7 +52,7 @@ class PitchSustainedRenderTest {
         assertTrue(device.wait(Until.hasObject(By.res("pitch.replay")), 20_000))
         val revision = app.gameStore.current.revision
         val receipts = app.gameStore.current.pitch?.resultHashes
-        val careerCommitment = app.gameStore.current.highSchool?.stateCommitment
+        val careerCommitment = CareerAccess.school(app.gameStore.current)?.stateCommitment
         val completedGames = app.gameStore.current.meta.completedGameCount
         var settledRevision: ULong? = null
         val power = context.getSystemService(PowerManager::class.java)
@@ -64,7 +66,7 @@ class PitchSustainedRenderTest {
                 assertNotNull("Replay must remain available", replay)
                 requireNotNull(replay).click()
                 SystemClock.sleep(4_000)
-                assertEquals("Replay must not change the career", careerCommitment, app.gameStore.current.highSchool?.stateCommitment)
+                assertEquals("Replay must not change the career", careerCommitment, CareerAccess.school(app.gameStore.current)?.stateCommitment)
                 assertEquals("Replay must not add a completed game", completedGames, app.gameStore.current.meta.completedGameCount)
                 assertEquals(receipts, app.gameStore.current.pitch?.resultHashes)
                 // The launcher may finish its screen-view receipt after opening the saved result.

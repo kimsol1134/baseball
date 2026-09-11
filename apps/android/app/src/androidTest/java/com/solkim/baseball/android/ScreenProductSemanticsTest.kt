@@ -18,9 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.solkim.baseball.application.GameAggregateState
 import com.solkim.baseball.application.GameStage
-import com.solkim.baseball.application.Phase8CommandContext
-import com.solkim.baseball.application.Phase8KoreaClock
-import com.solkim.baseball.application.Phase8ScreenId
+import com.solkim.baseball.application.withCareers
+import com.solkim.baseball.application.ScreenCommandContext
+import com.solkim.baseball.application.KoreaClock
+import com.solkim.baseball.application.ScreenId
 import com.solkim.baseball.design.BaseballMigrationTheme
 import java.time.LocalDate
 import org.junit.Rule
@@ -30,21 +31,21 @@ import org.junit.runner.RunWith
 
 /** Instrumented semantics/layout checks for the actual product shell, not a model-only math test. */
 @RunWith(AndroidJUnit4::class)
-class Phase8ProductSemanticsTest {
+class ScreenProductSemanticsTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val commandContext = Phase8CommandContext(Phase8KoreaClock { LocalDate.of(2026, 8, 14) })
+    private val commandContext = ScreenCommandContext(KoreaClock { LocalDate.of(2026, 8, 14) })
 
     @Test
     fun openingUsesProductCopyAndExcludesDiagnosticMatrixContent() {
         composeRule.setContent {
             BaseballMigrationTheme {
-                Phase8Shell(
-                    state = GameAggregateState.initial("phase8-ui-opening"),
+                CareerShell(
+                    state = GameAggregateState.initial("screen-opening"),
                     busy = false,
                     actionError = null,
-                    currentScreen = Phase8ScreenId.P001_OPENING,
+                    currentScreen = ScreenId.P001_OPENING,
                     commandContext = commandContext,
                     onNavigate = {},
                     onAction = {},
@@ -67,17 +68,17 @@ class Phase8ProductSemanticsTest {
 
     @Test
     fun setupFieldsAndActionsRemainReadableAtEveryRequiredFontScale() {
-        val initial = GameAggregateState.initial("phase8-ui-setup")
-        val setup = initial.copy(stage = GameStage.SETUP).let { it.copy(commitment = it.recomputeCommitment()) }
+        val initial = GameAggregateState.initial("screen-setup")
+        val setup = initial.withCareers(stage = GameStage.SETUP).committed()
         var fontScale by mutableStateOf(1.0f)
         composeRule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(density = 1.0f, fontScale = fontScale)) {
                 BaseballMigrationTheme {
-                    Phase8Shell(
+                    CareerShell(
                         state = setup,
                         busy = false,
                         actionError = null,
-                        currentScreen = Phase8ScreenId.P002_SETUP,
+                        currentScreen = ScreenId.P002_SETUP,
                         commandContext = commandContext,
                         onNavigate = {},
                         onAction = {},

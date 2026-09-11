@@ -42,9 +42,9 @@ class AceFlowUiTest {
     }
     @Test fun rebirthPathSelectionDoesNotStartUntilTheChosenPathIsConfirmed() {
         val state = GameAggregateState.initial("path-ui")
-        val id = Phase8ScreenId.P015_REBIRTH
-        val paths = listOf("endurance", "closer", "command").map { Phase8ActionModel("rebirthPath:$it", AceCareerPresentation.pathTitle(it), "새로운 구종과 성장 유형", true) }
-        val model = Phase8ScreenModel(id, "환생", "새로운 길", emptyList(), paths, Phase8Payloads.view(state, id))
+        val id = ScreenId.P015_REBIRTH
+        val paths = listOf("endurance", "closer", "command").map { ScreenActionModel("rebirthPath:$it", AceCareerPresentation.pathTitle(it), "새로운 구종과 성장 유형", true) }
+        val model = ScreenModel(id, "환생", "새로운 길", emptyList(), paths, ScreenPayloads.view(state, id))
         var selected: String? = null
         compose.setContent { BaseballMigrationTheme { Surface { Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
             RebirthPathPicker(state, model) { selected = it.actionId }

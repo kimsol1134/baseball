@@ -22,13 +22,13 @@ import org.junit.Assert.*
 class PitcherCompanionUiTest {
     @get:Rule val compose = createComposeRule()
     @Test fun goalAndPinnedMemoryAreChosenWithoutAdvancingTheCareer() {
-        val hs = HighSchoolPhase4Kernel().start(HighSchoolPhase4StartRequest("918220", "power_prospect", "companion-ui", "2026-W37", "2026-09-08")).state
+        val hs = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "companion-ui", "2026-W37", "2026-09-08"))
         val c = PitcherCompanion(career = hs.run.careerId, experience = listOf(SignatureExperience("four_seam", 4, 5, 1)),
             memories = listOf(PitchMemory("memory-one", hs.run.careerId, 1, "pitch_strikeout", "four_seam", 1)))
-        var state by mutableStateOf(GameAggregateState.initial("companion-ui").copy(stage = GameStage.HIGH_SCHOOL, highSchool = hs, meta = GameMetaState(companion = c)))
+        var state by mutableStateOf(GameAggregateState.initial("companion-ui").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = hs, meta = GameMetaState(companion = c)))
         compose.setContent { BaseballMigrationTheme { Surface {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                CompanionProfile(state, false) { operation, value -> state = state.copy(meta = state.meta.copy(companion = PitcherCompanionRules.apply(state, operation, value))) }
+                CompanionProfile(state, false) { operation, value -> state = state.withCareers(meta = state.meta.copy(companion = PitcherCompanionRules.apply(state, operation, value))) }
             }
         } } }
         val inst = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
@@ -41,7 +41,7 @@ class PitcherCompanionUiTest {
         compose.onNodeWithTag("companion.goal.progress").performScrollTo().assertTextEquals("0 / 1")
         compose.onNodeWithTag("companion.pin.memory-one").performScrollTo().performClick()
         assertEquals("memory-one", state.meta.companion!!.pinned)
-        assertEquals(hs, state.highSchool)
+        assertEquals(hs, CareerAccess.school(state))
     }
     @Test fun rebornComparisonRemainsUntilThePlayerThrows() {
         var pitches = 0
@@ -58,8 +58,8 @@ class PitcherCompanionUiTest {
     }
 
     @Test fun profileRemainsReadableAtLargeText() {
-        val hs = HighSchoolPhase4Kernel().start(HighSchoolPhase4StartRequest("918220", "power_prospect", "companion-font", "2026-W37", "2026-09-08")).state
-        val state = GameAggregateState.initial("companion-font").copy(stage = GameStage.HIGH_SCHOOL, highSchool = hs)
+        val hs = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "companion-font", "2026-W37", "2026-09-08"))
+        val state = GameAggregateState.initial("companion-font").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = hs)
         compose.setContent { CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.6f)) {
             BaseballMigrationTheme { Surface { Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 CompanionProfile(state, false) { _, _ -> }

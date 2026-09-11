@@ -19,10 +19,10 @@ import org.json.JSONObject
 import com.solkim.baseball.android.LocalizedGameText as Text
 
 @Composable
-internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel, busy: Boolean = false, onAction: (Phase8UiAction) -> Unit, selectedPlan: String? = null, onPlanSelected: ((String) -> Unit)? = null) {
+internal fun ProWeekPlanner(state: GameAggregateState, model: ScreenModel, busy: Boolean = false, onAction: (ScreenUiAction) -> Unit, selectedPlan: String? = null, onPlanSelected: ((String) -> Unit)? = null) {
     val order = listOf("develop_stuff", "refine_command", "develop_movement", "build_stamina", "recover", "earn_trust")
     val plans = model.actions.filter { it.id.startsWith("proPlan:") }.sortedBy { order.indexOf(it.id.substringAfter(':')) }
-    var selected by rememberSaveable(state.pro?.careerId) { mutableStateOf(plans.firstOrNull()?.id) }
+    var selected by rememberSaveable(CareerUiRules.proCareerId(state)) { mutableStateOf(plans.firstOrNull()?.id) }
     val action = plans.firstOrNull { it.id == (selectedPlan ?: selected) } ?: plans.firstOrNull() ?: return
     val preview = ProWeekPresentation.preview(state, action.id) ?: return
     AceCareerPresentation.leagueLine(state)?.let { Text(it, style = MaterialTheme.typography.labelMedium, modifier = Modifier.testTag("week.league")) }
@@ -30,14 +30,14 @@ internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel,
         Text(title, color = BaseballColors.milestone, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("week.aceGoal"))
         Text(progress, style = MaterialTheme.typography.bodySmall)
     }
-    state.pro?.takeIf { it.level == com.solkim.baseball.core.pro.ProLevel.MINOR }?.let { pro ->
+    if (CareerUiRules.isProMinor(state)) {
         CareerDisclosure("1군 승격 조건", "week.promotion") {
-            ProCallUpPresentation.lines(pro).forEachIndexed { index, line -> Text(line, modifier = Modifier.testTag("week.promotion.rule.$index")) }
+            ProCallUpPresentation.lines(state).forEachIndexed { index, line -> Text(line, modifier = Modifier.testTag("week.promotion.rule.$index")) }
         }
     }
     val desiredRole = AceCareerPresentation.preferredRole(state)
     model.actions.firstOrNull { it.id == "requestRole:$desiredRole" && it.enabled }?.let { role ->
-        OutlinedButton(onClick = { onAction(Phase8UiAction(model.id, role.id, role.payloads)) }, enabled = !busy, modifier = Modifier.testTag("week.pathRole")) { Text(role.label) }
+        OutlinedButton(onClick = { onAction(ScreenUiAction(model.id, role.id, role.payloads)) }, enabled = !busy, modifier = Modifier.testTag("week.pathRole")) { Text(role.label) }
     }
     Text(preview.title, style = MaterialTheme.typography.titleLarge)
     plans.chunked(3).forEach { row ->
@@ -52,7 +52,7 @@ internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel,
     Column(Modifier.fillMaxWidth().testTag("week.preview"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(preview.growth); Text(preview.schedule); Text(preview.condition, color = BaseballColors.textSecondary)
     }
-    if (onPlanSelected == null) Button(enabled = action.enabled && !busy, onClick = { onAction(Phase8UiAction(model.id, action.id, action.payloads)) },
+    if (onPlanSelected == null) Button(enabled = action.enabled && !busy, onClick = { onAction(ScreenUiAction(model.id, action.id, action.payloads)) },
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("week.commit")) { Text("이번 주 진행") }
     if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag("week.busy"))
     ProWeekPresentation.batchAction(state, model, action.id)?.let { batch ->
@@ -61,15 +61,15 @@ internal fun ProWeekPlanner(state: GameAggregateState, model: Phase8ScreenModel,
             Text(copy.resolve("week.batch.plan", GameCopyArgument.UserText(copy.legacy(ProWeekPresentation.title(action.id)))),
                 verbatim = true, modifier = Modifier.testTag("week.batch.plan"))
             Text("대화나 중요한 경기가 나오면 멈춰요.")
-            OutlinedButton(enabled = !busy, onClick = { onAction(Phase8UiAction(model.id, batch.id, batch.payloads)) }, modifier = Modifier.testTag("week.batch.commit")) { Text(batch.label) }
+            OutlinedButton(enabled = !busy, onClick = { onAction(ScreenUiAction(model.id, batch.id, batch.payloads)) }, modifier = Modifier.testTag("week.batch.commit")) { Text(batch.label) }
         }
     }
 }
 
 internal fun saveProWeekFeedback(context: Context, before: GameAggregateState, after: GameAggregateState) {
     val r = ProWeekPresentation.result(before, after) ?: return
-    val record = JSONObject().put("beforeRatings", JSONArray(before.pro!!.pitcher.let { listOf(it.stuff, it.command, it.movement, it.stamina) }))
-        .put("afterRatings", JSONArray(after.pro!!.pitcher.let { listOf(it.stuff, it.command, it.movement, it.stamina) }))
+    val record = JSONObject().put("beforeRatings", JSONArray(r.beforeRatings))
+        .put("afterRatings", JSONArray(r.afterRatings))
         .put("career", r.careerId).put("season", r.season).put("week", r.week).put("weeks", r.weeks)
         .put("growth", JSONArray(r.growth)).put("games", r.games).put("outs", r.outs).put("strikeouts", r.strikeouts).put("runs", r.runs)
         .put("fatigueBefore", r.fatigueBefore).put("fatigueAfter", r.fatigueAfter).put("injury", r.injuries).put("role", r.role).put("level", r.level)
@@ -87,8 +87,8 @@ internal fun ProWeekFeedbackGate(state: GameAggregateState) {
         onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
     }
     val r = remember(raw) { raw?.let { runCatching { JSONObject(it) }.getOrNull() } } ?: return
-    val pro = state.pro ?: return
-    if (r.optString("career") != pro.careerId || r.optInt("season") != pro.season || r.optInt("week") > pro.week) return
+    val careerId = CareerUiRules.proCareerId(state) ?: return
+    if (r.optString("career") != careerId || r.optInt("season") != CareerUiRules.proSeason(state) || r.optInt("week") > (CareerUiRules.proWeek(state) ?: 0)) return
     AlertDialog(onDismissRequest = {}, containerColor = BaseballColors.surfaceRaised, modifier = Modifier.testTag("week.result"),
         title = { Text("이번 주의 변화") }, text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {

@@ -24,7 +24,7 @@ class PlayerAlbumUiTest {
         val game = CareerGameView("pro:album:1:2:1", "1시즌 · 2주차 · 직접", 6, 4, 0, 0, 0, 2, 3, 1, true, "save", earnedRuns = 0)
         val pitch = AlbumPitch("saved-pitch", "four_seam", 1492, (0..24).flatMap { listOf(it, it*8, 18000-it*700, 1500-it*10) }, "saved-game", "swinging_strike", listOf(9, 2, 1, 1, 0))
         val page = PlayerAlbumPage(RecordScope("pro:album:1", "프로 1시즌", "앨범투수"), 1, 6, 0, 4, true, listOf(game), listOf(pitch), affiliation = "대구 포지")
-        return GameAggregateState.initial("album-test").copy(meta = GameMetaState(album = listOf(page))).committed()
+        return GameAggregateState.initial("album-test").withCareers(meta = GameMetaState(album = listOf(page))).committed()
     }
     @Test fun previewAndReplayNeverChangeTheCareer() {
         val state = state(); val original = state.recomputeCommitment()

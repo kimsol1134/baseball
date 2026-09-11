@@ -19,33 +19,12 @@ import com.solkim.baseball.android.LocalizedGameText as Text
 
 /** Only committed deltas are displayed. Closing this receipt never dispatches a career command. */
 internal fun conversationFeedbackRecord(before: GameAggregateState, after: GameAggregateState): JSONObject? {
-    val oldPro = before.pro
-    val nextPro = after.pro
-    if (oldPro != null && nextPro != null && oldPro.careerId == nextPro.careerId && nextPro.decisionHistory.size > oldPro.decisionHistory.size) {
-        val lines = ProConversationPresentation.effects(oldPro, nextPro).map { it.source }
-        val role = ProConversationPresentation.role(oldPro.pendingDecision?.type)
-        return JSONObject().put("kind", "pro").put("career", nextPro.careerId).put("number", nextPro.decisionHistory.size)
-            .put("speaker", role?.let { ProPeoplePresentation.name(oldPro.team.id, it) } ?: nextPro.decisionHistory.last().choiceTitle)
-            .put("portraitSeed", role?.let { ProPeoplePresentation.seed(oldPro.team.id, it) }.orEmpty())
-            .put("role", role.orEmpty()).put("scene", oldPro.pendingDecision?.title.orEmpty())
-            .put("choice", nextPro.decisionHistory.last().choiceTitle)
-            .put("reaction", when {
-                role == "coach" && nextPro.managerTrust < oldPro.managerTrust -> "conversation.reaction.coach.disagree"
-                role == "catcher" && nextPro.catcherTrust < oldPro.catcherTrust -> "conversation.reaction.catcher.disagree"
-                role != null -> "conversation.reaction.$role"
-                else -> "conversation.reaction.done"
-            })
-            .put("lines", JSONArray(lines.ifEmpty { listOf("선택한 계획으로 다음 일정을 준비해요.") }))
-    }
-    val old = before.highSchool?.run ?: return null
-    val next = after.highSchool?.run ?: return null
-    if (old.careerId != next.careerId || next.relationshipsCompleted <= old.relationshipsCompleted) return null
-    return JSONObject().put("kind", "school").put("career", next.careerId).put("number", next.relationshipsCompleted)
-        .put("speaker", RelationshipNarrative.speaker(old)).put("lines", JSONArray(ConversationPresentation.effects(old, next)))
-        .put("role", RelationshipNarrative.speakerRole(old).orEmpty())
-        .put("scene", old.currentRelationshipEvent?.title.orEmpty())
-        .put("reaction", ConversationPresentation.reactionKey(old, next))
-        .put("choice", next.lastRelationship?.response?.let { ConversationPresentation.title(old, it) }.orEmpty())
+    val feedback = ConversationPresentation.feedback(before, after) ?: return null
+    return JSONObject().put("kind", feedback.kind).put("career", feedback.career).put("number", feedback.number)
+        .put("speaker", feedback.speaker).put("portraitSeed", feedback.portraitSeed)
+        .put("role", feedback.role).put("scene", feedback.scene)
+        .put("choice", feedback.choice).put("reaction", feedback.reaction)
+        .put("lines", JSONArray(feedback.lines))
 }
 
 internal fun saveConversationFeedback(context: Context, before: GameAggregateState, after: GameAggregateState) {
@@ -54,7 +33,28 @@ internal fun saveConversationFeedback(context: Context, before: GameAggregateSta
 }
 
 @Composable
-internal fun ConversationFeedbackGate(state: GameAggregateState, onNavigate: (Phase8ScreenId) -> Unit = {}): Boolean {
+internal fun ConversationFeedbackGate(state: GameAggregateState, onNavigate: (ScreenId) -> Unit = {}): Boolean {
+    val proCareerId = CareerUiRules.proCareerId(state)
+    val schoolCareerId = CareerUiRules.highSchoolCareerId(state)
+    return ConversationFeedbackGate(
+        state = state,
+        schoolCareerId = schoolCareerId,
+        proCareerId = proCareerId,
+        relationshipsCompleted = CareerUiRules.relationshipsCompleted(state),
+        decisionHistorySize = CareerUiRules.decisionHistorySize(state),
+        onNavigate = onNavigate,
+    )
+}
+
+@Composable
+internal fun ConversationFeedbackGate(
+    state: GameAggregateState,
+    schoolCareerId: String?,
+    proCareerId: String?,
+    relationshipsCompleted: Int,
+    decisionHistorySize: Int,
+    onNavigate: (ScreenId) -> Unit = {},
+): Boolean {
     val context = LocalContext.current
     val copy = rememberGameCopy()
     val prefs = remember(context) { context.getSharedPreferences("conversation.feedback", Context.MODE_PRIVATE) }
@@ -66,8 +66,8 @@ internal fun ConversationFeedbackGate(state: GameAggregateState, onNavigate: (Ph
     }
     val record = remember(raw) { raw?.let { runCatching { JSONObject(it) }.getOrNull() } } ?: return false
     val pro = record.optString("kind") == "pro"
-    val career = if (pro) state.pro?.careerId else state.highSchool?.run?.careerId
-    val count = if (pro) state.pro?.decisionHistory?.size ?: 0 else state.highSchool?.run?.relationshipsCompleted ?: 0
+    val career = if (pro) proCareerId else schoolCareerId
+    val count = if (pro) decisionHistorySize else relationshipsCompleted
     if (record.optString("career") != career || record.optInt("number") != count) return false
     val lines = record.optJSONArray("lines") ?: return false
     val effects = List(lines.length()) { ChoiceEffect.fromSource(lines.optString(it)) }

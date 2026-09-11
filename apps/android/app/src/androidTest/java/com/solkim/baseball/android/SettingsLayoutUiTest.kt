@@ -31,8 +31,8 @@ class SettingsLayoutUiTest {
             val config = Configuration(LocalConfiguration.current).apply { setLocale(Locale.forLanguageTag(language)) }
             CompositionLocalProvider(LocalConfiguration provides config, LocalDensity provides Density(LocalDensity.current.density, 2f)) {
                 BaseballMigrationTheme {
-                    SettingsScreen(state, Phase8ScreenProjection.project(state, Phase8ScreenId.P027_SETTINGS, Phase8CommandContext()), false, null,
-                        Phase9PlatformUiState(NotificationPermissionTruth.BLOCKED, null), {}, {}, {}, {}, {})
+                    SettingsScreen(state, ScreenProjection.project(state, ScreenId.P027_SETTINGS, ScreenCommandContext()), false, null,
+                        PlatformUiState(NotificationPermissionTruth.BLOCKED, null), {}, {}, {}, {}, {})
                 }
             }
         }

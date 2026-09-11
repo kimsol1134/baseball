@@ -26,14 +26,13 @@ import java.io.File
 class CompactCareerUiTest {
     @get:Rule val compose = createComposeRule()
     private fun trainingFixture(): GameAggregateState {
-        val k = HighSchoolPhase4Kernel()
         val school = (918220..918240).firstNotNullOf { seed ->
-            val begun = k.start(HighSchoolPhase4StartRequest("$seed", "power_prospect", "compact-ui", "2026-W36", "2026-09-05")).state
-            val ready = k.completePrologue("$seed", k.beginTutorial(begun).state).state
-            k.chooseSchool("$seed", ready, HighSchoolSchoolId.CHEONGAM_DEVELOPMENT).state.takeIf { it.run.schedule.trainingsByChapter.first() >= 2 }
+            val begun = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("$seed", "power_prospect", "compact-ui", "2026-W36", "2026-09-05"))
+            val ready = CareerFixtures.completePrologue("$seed", CareerFixtures.beginTutorial(begun))
+            CareerFixtures.chooseSchool("$seed", ready, HighSchoolSchoolId.CHEONGAM_DEVELOPMENT).takeIf { it.run.schedule.trainingsByChapter.first() >= 2 }
         }
-        val state = GameAggregateState.initial("compact-ui").copy(stage = GameStage.HIGH_SCHOOL, highSchool = school)
-        return state.copy(commitment = state.recomputeCommitment())
+        val state = GameAggregateState.initial("compact-ui").withCareers(stage = GameStage.HIGH_SCHOOL, highSchool = school)
+        return state.committed()
     }
     private fun capture(name: String) {
         val inst = InstrumentationRegistry.getInstrumentation()
@@ -43,7 +42,7 @@ class CompactCareerUiTest {
     @Test fun normalTrainingNeedsNoScrollAndKeepsChoicesAfterCommit() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(trainingFixture())
         try {
-            val controller = Phase8Controller(store)
+            val controller = ScreenController(store)
             compose.setContent {
                 val state by store.state.collectAsState()
                 BaseballMigrationTheme {
@@ -66,7 +65,7 @@ class CompactCareerUiTest {
             compose.onNodeWithTag("training.focus.breaking_ball").assertIsSelected()
             compose.onNodeWithTag("training.intensity.light").assertIsSelected()
             compose.onNodeWithTag("training.result").assertIsDisplayed()
-            assertEquals(1, store.current.highSchool!!.run.totalTrainingsCompleted)
+            assertEquals(1, CareerAccess.school(store.current)!!.run.totalTrainingsCompleted)
             capture("compact-training-result.png")
         } finally { store.close() }
     }
@@ -77,11 +76,11 @@ class CompactCareerUiTest {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.6f)) {
                 BaseballMigrationTheme {
                     Box(Modifier.requiredSize(360.dp, 480.dp)) {
-                        TrainingScreen(state, Phase8CommandContext(), false, null, PaddingValues(0.dp), 0, 0,
+                        TrainingScreen(state, ScreenCommandContext(), false, null, PaddingValues(0.dp), 0, 0,
                             onDismiss = {}, onCommit = {
-                                val next = HighSchoolPhase4Kernel().commitTraining("918220", state.highSchool!!,
-                                    HighSchoolTrainingFocus.COMMAND, HighSchoolTrainingIntensity.INTENSIVE).state
-                                state = state.copy(highSchool = next)
+                                val next = CareerFixtures.commitTraining("918220", CareerAccess.school(state)!!,
+                                    HighSchoolTrainingFocus.COMMAND, HighSchoolTrainingIntensity.INTENSIVE)
+                                state = state.withCareers(highSchool = next)
                             })
                     }
                 }
@@ -104,17 +103,16 @@ class CompactCareerUiTest {
 
     @Test fun chapterGoesStraightToNextTrainingAndKeepsOptionalGame() {
         val base = trainingFixture()
-        val kernel = HighSchoolPhase4Kernel()
-        var school = base.highSchool!!
+        var school = CareerAccess.school(base)!!
         repeat(school.run.schedule.trainingsByChapter.first()) {
-            school = kernel.commitTraining("918220", school, HighSchoolTrainingFocus.VELOCITY, HighSchoolTrainingIntensity.LIGHT).state
+            school = CareerFixtures.commitTraining("918220", school, HighSchoolTrainingFocus.VELOCITY, HighSchoolTrainingIntensity.LIGHT)
         }
-        val run = HighSchoolKernel().resignShadowState(school.run.copy(phase = HighSchoolPhase.CHAPTER_REVIEW))
-        school = kernel.commitShadowState(school.copy(run = run))
-        val state = base.copy(highSchool = school).let { it.copy(commitment = it.recomputeCommitment()) }
-        var captured: Phase8UiAction? = null
+        val run = CareerFixtures.resignRun(school.run.copy(phase = HighSchoolPhase.CHAPTER_REVIEW))
+        school = CareerFixtures.commitShadow(school.copy(run = run))
+        val state = base.withCareers(highSchool = school).committed()
+        var captured: ScreenUiAction? = null
         compose.setContent { BaseballMigrationTheme {
-            Phase8Shell(state, false, null, Phase8ScreenId.P010_CHAPTER, Phase8CommandContext(), onNavigate = {}, onAction = { captured = it })
+            CareerShell(state, false, null, ScreenId.P010_CHAPTER, ScreenCommandContext(), onNavigate = {}, onAction = { captured = it })
         } }
         compose.waitUntil(10_000) {
             compose.onAllNodesWithTag("training.commit").fetchSemanticsNodes().any { !it.config.contains(SemanticsProperties.Disabled) }
@@ -131,7 +129,7 @@ class CompactCareerUiTest {
         compose.onNodeWithTag("action.claimChapterGame").performScrollTo().performClick()
         assertEquals("claimChapterGame", captured?.actionId)
         compose.onNodeWithTag("training.commit").performClick()
-        assertEquals(Phase8ScreenId.P010_CHAPTER, captured?.screenId)
+        assertEquals(ScreenId.P010_CHAPTER, captured?.screenId)
         assertEquals("advanceChapter", captured?.actionId)
         val commands = captured!!.capturedPayloads.map { (it.envelope.command as GameCommand.HighSchool).command }
         assertTrue(commands.first() is FixtureAdvanceChapter)

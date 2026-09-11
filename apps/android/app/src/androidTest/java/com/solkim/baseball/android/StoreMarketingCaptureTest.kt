@@ -8,10 +8,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
 import com.solkim.baseball.application.*
 import com.solkim.baseball.application.fixtures.portableCareerFixture
-import com.solkim.baseball.core.highschool.*
-import com.solkim.baseball.core.pro.ProKernel
-import com.solkim.baseball.core.pro.ProCatalog
-import com.solkim.baseball.core.pro.ProStartLinkedRequest
+import com.solkim.baseball.application.fixtures.*
+import com.solkim.baseball.application.fixtures.ProStartLinkedRequest
 import com.solkim.baseball.model.*
 import com.solkim.baseball.design.BaseballMigrationTheme
 import kotlinx.coroutines.runBlocking
@@ -24,67 +22,65 @@ class StoreMarketingCaptureTest {
     @get:Rule val compose=createComposeRule()
     private val inst get()=InstrumentationRegistry.getInstrumentation()
     private val device get()=UiDevice.getInstance(inst)
+    private val language get()=InstrumentationRegistry.getArguments().getString("storeLocale","ko").also { require(it in setOf("ko","en","ja")) }
     private fun source(file:String): JsonValue.Obj = (StrictJson.parseUtf8(inst.context.assets.open(file).use {it.readBytes()}) as JsonValue.Obj)["payload"] as JsonValue.Obj
     private fun capture(name:String) {
         compose.waitForIdle()
-        device.takeScreenshot(File(inst.targetContext.cacheDir,"store-$name.png"))
+        device.takeScreenshot(File(inst.targetContext.cacheDir,"store-$language-$name.png"))
     }
 
     @Test fun careerScreens() {
         val original=CSharpLegacyAggregateBridge.project(source("round3-linked-pro-return-stage.json"),0UL,"marketing")
-        val hk=HighSchoolPhase4Kernel()
-        val young=hk.chooseSchool("7819",hk.completePrologue("7819",hk.start(HighSchoolPhase4StartRequest("7819","power_prospect","marketing","2026-W37","2026-09-10")).state).state,HighSchoolSchoolId.HAEDONG_POWER).state
-        fun aggregate(hs:HighSchoolPhase4State,stage:GameStage=GameStage.HIGH_SCHOOL)=GameAggregateState.initial("marketing").copy(stage=stage,highSchool=hs,meta=GameAggregateState.initial("marketing").meta.copy(activeHighSchoolCareerId=hs.run.careerId))
+        val young=CareerFixtures.chooseSchool("7819",CareerFixtures.completePrologue("7819",CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("7819","power_prospect","marketing","2026-W37","2026-09-10"))),HighSchoolSchoolId.HAEDONG_POWER)
+        fun aggregate(hs:HighSchoolPhase4State,stage:GameStage=GameStage.HIGH_SCHOOL)=GameAggregateState.initial("marketing").withCareers(stage=stage,highSchool=hs,meta=GameAggregateState.initial("marketing").meta.copy(activeHighSchoolCareerId=hs.run.careerId))
         var state by mutableStateOf(aggregate(young))
-        var screen by mutableStateOf(Phase8ScreenId.P006_TRAINING)
-        compose.setContent { BaseballMigrationTheme { Phase8Shell(state,false,null,screen,Phase8CommandContext(),{screen=it},{}) } }
+        var screen by mutableStateOf(ScreenId.P006_TRAINING)
+        compose.setContent {
+            val config=android.content.res.Configuration(androidx.compose.ui.platform.LocalConfiguration.current).apply {setLocale(java.util.Locale.forLanguageTag(language))}
+            CompositionLocalProvider(androidx.compose.ui.platform.LocalConfiguration provides config) { BaseballMigrationTheme { CareerShell(state,false,null,screen,ScreenCommandContext(),{screen=it},{}) } }
+        }
         capture("training")
-        var relationship=young
-        while (relationship.run.phase==HighSchoolPhase.TRAINING) relationship=hk.commitTraining("7819",relationship,HighSchoolTrainingFocus.VELOCITY,HighSchoolTrainingIntensity.STANDARD).state
-        compose.runOnIdle {state=aggregate(relationship);screen=Phase8ScreenId.P007_RELATIONSHIP}
+        var talk=CareerFixtures.startDirectPro(ProStartDirectRequest("7819","power_prospect","민서준"))
+        var weeks=0
+        while(talk.phase!=ProCareerPhase.SEASON_DECISION && weeks++<30) {
+            if(talk.phase==ProCareerPhase.WEEKLY_PLAN) talk=CareerFixtures.planWeek(talk,"7819",ProWeekPlan.DEVELOP_STUFF)
+            else if(talk.phase==ProCareerPhase.IMPORTANT_GAME) {
+                talk=CareerFixtures.reserveProGame(talk,"7819")
+                var balls=0
+                while(talk.activePitch?.ended==false && balls++<150) talk=CareerFixtures.submitProPitch(talk,talk.activePitch!!.sessionId,
+                    PitchCall(PitchKind.FOUR_SEAM,PitchZone(1,1),ZoneIntent.STRIKE,PitchIntensity.NORMAL))
+                talk=CareerFixtures.finishProGame(talk)
+            } else error("conversation fixture phase: ${talk.phase}")
+        }
+        require(talk.pendingDecision!=null)
+        compose.runOnIdle {state=GameAggregateState.initial("marketing").withCareers(stage=GameStage.PRO,pro=talk);screen=ScreenId.P019_PRO_SEASON}
+        val decisionAction=ScreenProjection.project(state,screen).actions.first { it.id.startsWith("seasonDecision:") }
+        compose.onNodeWithTag("action.${decisionAction.id}").performScrollTo().performClick()
         capture("conversation")
-        val school=requireNotNull(original.highSchool)
-        compose.runOnIdle {state=original.copy(pro=null,pitch=null,stage=GameStage.BETWEEN_LIVES);screen=Phase8ScreenId.P015_REBIRTH}
+        val school=requireNotNull(CareerAccess.school(original))
+        compose.runOnIdle {state=original.withCareers(pro=null,pitch=null,stage=GameStage.BETWEEN_LIVES);screen=ScreenId.P015_REBIRTH}
         capture("draft")
-        val legacy=hk.prepareLegacy(school).state
-        compose.runOnIdle {state=aggregate(legacy);screen=Phase8ScreenId.P014_RUN_RECAP}
+        val legacy=CareerFixtures.prepareLegacy(school)
+        compose.runOnIdle {state=aggregate(legacy);screen=ScreenId.P014_RUN_RECAP}
+        val legacyAction=ScreenProjection.project(state,screen).actions.last {it.id.startsWith("selectLegacy:")}
+        compose.onNodeWithTag("legacy.option.${legacyAction.id}").performScrollTo().performClick()
+        compose.onNodeWithTag("legacy.confirm").performScrollTo()
         capture("legacy")
-        val pro=ProKernel().startLinked(ProStartLinkedRequest("7819",school.run.careerId,school.run.identity.name,school.run.pitcher,ProCatalog.teams.first().id,88,draftRound=4,overallPick=38,signingBonus=120_000_000)).state
-        compose.runOnIdle {state=GameAggregateState.initial("marketing").copy(stage=GameStage.PRO,pro=pro);screen=Phase8ScreenId.P016_PRO_CONTRACT}
-        val offer=Phase8ScreenProjection.project(state,screen).actions.first {it.id.startsWith("acceptOffer:")}
+        val hp=school.run.pitcher
+        val draft=requireNotNull(school.run.draftResult)
+        val pitcher=PitcherSnapshot(hp.id,hp.name,hp.stuff,hp.command,hp.movement,hp.stamina,pitchProfiles=hp.pitchProfiles,throwingHand=hp.throwingHand,mastery=hp.mastery)
+        val pro=CareerFixtures.startLinkedPro(ProStartLinkedRequest("7819",school.run.careerId,school.run.identity.name,pitcher,requireNotNull(draft.teamId),draft.evaluationScore,draftRound=draft.round,overallPick=draft.overallPick,signingBonus=draft.signingBonus?.toLong()))
+        compose.runOnIdle {state=GameAggregateState.initial("marketing").withCareers(stage=GameStage.PRO,pro=pro);screen=ScreenId.P016_PRO_CONTRACT}
+        val offer=ScreenProjection.project(state,screen).actions.first {it.id.startsWith("acceptOffer:")}
         compose.onNodeWithTag("contract.offer.${offer.id.split(':')[1]}").performScrollTo().performClick()
+        compose.onNodeWithTag("contract.goal.${offer.id}").performScrollTo().performClick()
         capture("contract")
         val week=CSharpLegacyAggregateBridge.project(source("round4-pro-week.json"),0UL,"marketing")
-        compose.runOnIdle {state=week;screen=Phase8ScreenId.P017_PRO_WEEK}
+        compose.runOnIdle {state=week;screen=ScreenId.P017_PRO_WEEK}
         capture("pro-week")
-        compose.runOnIdle {state=original;screen=Phase8ScreenId.P028_LIFECARD}
+        compose.runOnIdle {state=original;screen=ScreenId.P028_LIFECARD}
         capture("album")
-        File(inst.targetContext.cacheDir,"store-static-proof.json").writeText("""{"source":"shipping Compose views and kernel-created states","screens":7,"width":${device.displayWidth},"height":${device.displayHeight}}""")
+        File(inst.targetContext.cacheDir,"store-$language-static-proof.json").writeText("""{"source":"shipping Compose views and kernel-created states","screens":7,"width":${device.displayWidth},"height":${device.displayHeight}}""")
     }
 
-    @Test fun livePitch():Unit=runBlocking {
-        val context=inst.targetContext
-        require(context.packageName=="com.solkim.baseball.android.reset.compose.qa")
-        val store=(context.applicationContext as BaseballApplication).gameStore
-        while(store.busy.value) kotlinx.coroutines.delay(25)
-        store.importCareerBackup(portableCareerFixture(source("round3-linked-pro-return-stage.json")),store.current.revision)
-        val c=Phase7VerticalController(store)
-        val launch=c.resumePitch(requireNotNull(store.current.pitch).sessionId)
-        val activity=inst.startActivitySync(PitchActivity.intent(context,launch.sessionId,store.current.revision.toString()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as PitchActivity
-        val slider=requireNotNull(device.wait(Until.findObject(By.res("pitch.slider").pkg(context.packageName)),20_000))
-        device.waitForIdle()
-        device.takeScreenshot(File(context.cacheDir,"store-pitch.png"))
-        val recorder=device.executeShellCommand("sh -c 'screenrecord --bit-rate 12000000 --time-limit 15 /sdcard/baseball-store-pitch.mp4 >/dev/null 2>&1 & echo $!' ").trim()
-        kotlinx.coroutines.delay(900)
-        val start=android.os.SystemClock.elapsedRealtime()
-        val b=slider.visibleBounds
-        device.swipe(b.centerX(),b.centerY(),b.centerX()+1,b.centerY(),90)
-        require(device.wait(Until.hasObject(By.res("pitch.continue").pkg(context.packageName)),15_000))
-        device.takeScreenshot(File(context.cacheDir,"store-result.png"))
-        val resultMs=android.os.SystemClock.elapsedRealtime()-start
-        kotlinx.coroutines.delay(1800)
-        if(recorder.matches(Regex("[0-9]+"))) device.executeShellCommand("kill -INT $recorder")
-        File(context.cacheDir,"store-live-proof.json").writeText("""{"resultMs":$resultMs,"outcome":"${PitchLiveResult.outcome(store.current)}","width":${device.displayWidth},"height":${device.displayHeight}}""")
-        inst.runOnMainSync {activity.finish()}
-    }
 }

@@ -18,8 +18,8 @@ class OnboardingTransitionTest {
     @Test fun setupOpensMoundDirectlyAndRepeatedTapCannotSkipGuidance() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("intro-tap-qa"))
         try {
-            val controller = Phase8Controller(store)
-            controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
+            val controller = ScreenController(store)
+            controller.execute(ScreenId.P001_OPENING, "enterSetup")
             var state by mutableStateOf(store.current)
             var launches by mutableIntStateOf(0)
             var started by mutableStateOf(false)
@@ -29,7 +29,7 @@ class OnboardingTransitionTest {
                     PitchDeliveryControl(autoRelease = false, enabled = started, hapticsEnabled = false, soundEnabled = false,
                         onDeliver = { deliveries++ })
                     if (!started) FirstPracticeIntroduction { started = true }
-                } else Phase8Shell(state, false, null, Phase8ScreenProjection.preferredScreen(state), controller.context,
+                } else CareerShell(state, false, null, ScreenProjection.preferredScreen(state), controller.context,
                     onNavigate = {}, onAction = { action -> runBlocking {
                         val result = controller.executePlayerAction(action.screenId, action.actionId, action.capturedPayloads)
                         if (result.launch != null) launches++
@@ -50,7 +50,7 @@ class OnboardingTransitionTest {
             compose.waitForIdle()
             assertFalse(started)
             assertEquals(0, deliveries)
-            assertNull(state.highSchool!!.lastPresentation)
+            assertNull(CareerAccess.school(state)!!.lastPresentation)
             assertEquals(PitchCareerKind.TUTORIAL, state.pitch!!.careerKind)
             compose.onAllNodesWithText("첫 공").assertCountEquals(0)
             compose.onNodeWithTag("pitch.practiceIntroduction").assertIsDisplayed()

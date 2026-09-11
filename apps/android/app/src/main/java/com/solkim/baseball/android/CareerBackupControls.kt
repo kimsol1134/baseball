@@ -84,7 +84,7 @@ internal fun CareerBackupControls(state: GameAggregateState, busy: Boolean = fal
         Text(java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(lastBackup)), verbatim = true)
     }
     Text("자동 백업은 기기의 백업 설정과 암호화 지원에 따라 달라집니다. 이 앱에서는 자동 백업 완료 여부를 확인할 수 없어요. 기기 변경이나 앱 삭제 전에는 백업 저장으로 최신 기록을 보관해 주세요.")
-    OutlinedButton(onClick = { save.launch("baseball-career.json") }, enabled = !working && !busy && (state.highSchool != null || state.pro != null),
+    OutlinedButton(onClick = { save.launch("baseball-career.json") }, enabled = !working && !busy && CareerUiRules.hasCareer(state),
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("backup.export")) { Text(copy.resolve("controls.backup.save"), verbatim = true) }
     OutlinedButton(onClick = { open.launch(arrayOf("application/json", "application/octet-stream")) }, enabled = !working && !busy,
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("backup.import")) { Text("백업 불러오기") }
@@ -96,10 +96,10 @@ internal fun CareerBackupControls(state: GameAggregateState, busy: Boolean = fal
     if (pending != null && ready != null) AlertDialog(onDismissRequest = { pending = null; preview = null },
         title = { Text("이 기록으로 이어서 할까요?") },
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            val activePro = ready.pro?.takeIf { ready.stage in setOf(GameStage.PRO, GameStage.RETIREMENT, GameStage.LEGACY) }
-            Text(activePro?.identityName ?: ready.highSchool?.run?.identity?.name.orEmpty(), verbatim = true)
-            if (activePro != null) Text("${ready.highSchool?.run?.lifeNumber ?: 1}번째 생 · 프로 ${activePro.season}시즌")
-            else Text("${ready.highSchool?.run?.lifeNumber ?: 1}번째 생")
+            val header = CareerUiRules.header(ready)
+            Text(header?.name ?: CareerUiRules.playerName(ready).orEmpty(), verbatim = true)
+            if (header?.isPro == true) Text("${header.lifeNumber}번째 생 · 프로 ${header.season}시즌")
+            else Text("${CareerUiRules.lifeNumber(ready)}번째 생")
             Text("현재 진행 중인 기록이 이 파일의 기록으로 바뀝니다. 현재 기록을 남기려면 먼저 파일로 보관해 주세요.")
         } },
         confirmButton = { TextButton(enabled = !working && !busy, onClick = {

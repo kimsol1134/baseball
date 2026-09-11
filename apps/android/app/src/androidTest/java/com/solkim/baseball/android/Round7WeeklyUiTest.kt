@@ -42,12 +42,12 @@ class Round7WeeklyUiTest {
         val store=KotlinGameStore.open("round7-ui",CSharpLegacyGameStoreRepository(dir.toPath(),"round7-ui"),NativeAuthorityMode.NATIVE_AUTHORITATIVE)
         try {
             store.importCareerBackup(portableCareerFixture(weeklyNoteFixture(payload("high-school-terminal-v42"),1)),store.current.revision)
-            val c=Phase8Controller(store)
+            val c=ScreenController(store)
             var calls=0
             compose.setContent {
                 val state by store.state.collectAsState()
                 val busy by store.busy.collectAsState()
-                BaseballMigrationTheme { Phase8Shell(state,busy,null,Phase8ScreenId.P024_WEEKLY,Phase8CommandContext(),{}, { a ->
+                BaseballMigrationTheme { CareerShell(state,busy,null,ScreenId.P024_WEEKLY,ScreenCommandContext(),{}, { a ->
                     calls++
                     runBlocking { c.execute(a.screenId,a.actionId,a.capturedPayloads) }
                 }) }
@@ -60,13 +60,13 @@ class Round7WeeklyUiTest {
             assertEquals(0,calls)
             store.importCareerBackup(portableCareerFixture(weeklyNoteFixture(payload("high-school-terminal-v42"),2)),store.current.revision)
             compose.waitForIdle()
-            val before=store.current.highSchool!!.inheritance.soulPoints
+            val before=CareerAccess.school(store.current)!!.inheritance.soulPoints
             compose.onNodeWithTag("action.claimWeeklyReward").assertIsEnabled().performClick()
             compose.waitForIdle()
             compose.onNodeWithTag("action.claimWeeklyReward").performScrollTo().assertIsNotEnabled()
             assertEquals(1,calls)
-            assertEquals(before+15,store.current.highSchool!!.inheritance.soulPoints)
-            assertTrue(store.current.highSchool!!.weekly.rewardClaimed)
+            assertEquals(before+15,CareerAccess.school(store.current)!!.inheritance.soulPoints)
+            assertTrue(CareerAccess.school(store.current)!!.weekly.rewardClaimed)
             capture("weekly-claimed")
         } finally {store.close()}
     }
@@ -77,7 +77,7 @@ class Round7WeeklyUiTest {
         compose.setContent {
             val config=android.content.res.Configuration(LocalConfiguration.current).apply { setLocale(java.util.Locale.forLanguageTag(language)) }
             CompositionLocalProvider(LocalConfiguration provides config) { BaseballMigrationTheme {
-                Phase8Shell(state,false,null,Phase8ScreenId.P025_RECORDS_LEAGUE,Phase8CommandContext(),{}, {})
+                CareerShell(state,false,null,ScreenId.P025_RECORDS_LEAGUE,ScreenCommandContext(),{}, {})
             } }
         }
         for (locale in listOf("ko","en","ja")) {
@@ -104,7 +104,7 @@ class Round7WeeklyUiTest {
 
     @Test fun policyAndSupportBodiesOpenAndReturnToSettings() {
         val state=CSharpLegacyAggregateBridge.project(payload("round4-pro-week"),0UL,"fixture")
-        compose.setContent { BaseballMigrationTheme { Phase8Shell(state,false,null,Phase8ScreenId.P027_SETTINGS,Phase8CommandContext(),{}, {}) } }
+        compose.setContent { BaseballMigrationTheme { CareerShell(state,false,null,ScreenId.P027_SETTINGS,ScreenCommandContext(),{}, {}) } }
         compose.onNodeWithTag("settings.open.help").performScrollTo().performClick()
         compose.onNodeWithTag("settings.privacy.copy").performScrollTo().assertIsDisplayed()
         val device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())

@@ -7,6 +7,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import com.solkim.baseball.application.CareerAccess
 import com.solkim.baseball.application.GameStage
 import com.solkim.baseball.application.SeedChallengeCode
 import org.junit.Assert.*
@@ -34,16 +35,16 @@ class SeedChallengeUiTest {
             requireNotNull(node).click()
         }
         assertTrue(device.wait(Until.hasObject(By.res("challenge.code")), 20_000))
-        assertNull("A link alone must not start or overwrite a career", app.gameStore.current.highSchool)
+        assertNull("A link alone must not start or overwrite a career", CareerAccess.school(app.gameStore.current))
         tap("challenge.start")
         assertTrue(device.wait(Until.hasObject(By.res("challenge.exit")), 20_000))
         assertEquals(code, app.gameStore.current.meta.seedChallenge?.code)
-        assertTrue(app.gameStore.current.highSchool!!.challenge.active)
+        assertTrue(CareerAccess.school(app.gameStore.current)!!.challenge.active)
         assertFalse(app.gameStore.current.settings.autoReleaseEnabled)
         tap("challenge.exit")
         tap("challenge.confirm-exit")
         assertTrue(device.wait(Until.hasObject(By.res("action.enterSetup")), 20_000))
-        assertNull(app.gameStore.current.highSchool)
+        assertNull(CareerAccess.school(app.gameStore.current))
         assertNull(app.gameStore.current.meta.seedChallenge)
         assertEquals(GameStage.OPENING, app.gameStore.current.stage)
         assertEquals(0UL, app.gameStore.current.meta.completedGameCount)

@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import com.solkim.baseball.application.withCareers
 import com.solkim.baseball.design.BaseballMigrationTheme
 import org.junit.Assert.*
 import org.junit.Rule
@@ -84,12 +85,12 @@ class AdaptiveActionRowTest {
     }
     @Test fun actualSetupStartLabelFitsAndSelectionRemainsVisible() {
         val initial = com.solkim.baseball.application.GameAggregateState.initial("layout-qa")
-        val setup = initial.copy(stage = com.solkim.baseball.application.GameStage.SETUP).let { it.copy(commitment = it.recomputeCommitment()) }
+        val setup = initial.withCareers(stage = com.solkim.baseball.application.GameStage.SETUP).committed()
         compose.setContent {
             BaseballMigrationTheme {
                 androidx.compose.foundation.layout.Box(Modifier.width(360.dp)) {
-                    Phase8Shell(setup, false, null, com.solkim.baseball.application.Phase8ScreenId.P002_SETUP,
-                        com.solkim.baseball.application.Phase8CommandContext(com.solkim.baseball.application.Phase8KoreaClock { java.time.LocalDate.of(2026, 9, 7) }),
+                    CareerShell(setup, false, null, com.solkim.baseball.application.ScreenId.P002_SETUP,
+                        com.solkim.baseball.application.ScreenCommandContext(com.solkim.baseball.application.KoreaClock { java.time.LocalDate.of(2026, 9, 7) }),
                         onNavigate = {}, onAction = {})
                 }
             }

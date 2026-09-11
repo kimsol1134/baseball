@@ -41,13 +41,13 @@ internal fun FirstPracticeIntroduction(autoRelease: Boolean = false, onStart: ()
 /** Resume old saves/explicitly paused practice without bringing back the discarded instruction page. */
 @Composable
 @OptIn(ExperimentalComposeUiApi::class)
-internal fun PracticeEntryRecovery(state: GameAggregateState, model: Phase8ScreenModel, busy: Boolean, error: String?, onAction: (Phase8UiAction) -> Unit, onExitChallenge: (() -> Unit)? = null) {
-    var requested by remember(state.highSchool?.run?.careerId) { mutableStateOf(false) }
+internal fun PracticeEntryRecovery(state: GameAggregateState, model: ScreenModel, busy: Boolean, error: String?, onAction: (ScreenUiAction) -> Unit, onExitChallenge: (() -> Unit)? = null) {
+    var requested by remember(CareerUiRules.highSchoolCareerId(state)) { mutableStateOf(false) }
     val open = model.actions.firstOrNull { it.id == "openTutorialPitch" && it.enabled }
-    val fresh = state.pitch == null && state.highSchool?.lastPresentation == null
-    fun run(action: Phase8ActionModel) {
+    val fresh = state.pitch == null && !CareerUiRules.hasLastPresentation(state)
+    fun run(action: ScreenActionModel) {
         requested = true
-        onAction(Phase8UiAction(model.id, action.id, action.payloads))
+        onAction(ScreenUiAction(model.id, action.id, action.payloads))
     }
     LaunchedEffect(fresh, busy, error, requested) {
         if (fresh && !busy && error == null && !requested && open != null) run(open)

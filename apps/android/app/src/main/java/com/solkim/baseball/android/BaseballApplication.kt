@@ -1,6 +1,7 @@
 package com.solkim.baseball.android
 
 import android.app.Application
+import com.solkim.baseball.application.CareerUiRules
 import com.solkim.baseball.application.CSharpLegacyGameStoreRepository
 import com.solkim.baseball.application.FileShadowFixtureGameStoreRepository
 import com.solkim.baseball.application.AnalyticsReceiptProjection
@@ -8,8 +9,8 @@ import com.solkim.baseball.application.AnalyticsReceiptSink
 import com.solkim.baseball.application.ResetSideEffects
 import com.solkim.baseball.application.KotlinGameStore
 import com.solkim.baseball.application.NativeAuthorityMode
-import com.solkim.baseball.platform.NativePhase9Platform
-import com.solkim.baseball.platform.Phase9NativeSdkConfiguration
+import com.solkim.baseball.platform.NativePlatform
+import com.solkim.baseball.platform.NativeSdkConfiguration
 import com.solkim.baseball.platform.CrashContext
 import com.solkim.baseball.model.Hashing
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +20,7 @@ import kotlinx.coroutines.runBlocking
 public class BaseballApplication : Application() {
     public lateinit var gameStore: KotlinGameStore
         private set
-    public lateinit var platform: NativePhase9Platform
+    public lateinit var platform: NativePlatform
         private set
     private var crashUnityLoaded: Boolean = false
     private var crashStageReady: Boolean = false
@@ -35,13 +36,13 @@ public class BaseballApplication : Application() {
             BuildConfig.RELEASE_DISTRIBUTION == "production" -> "production"
             else -> "phase10-rehearsal"
         }
-        platform = NativePhase9Platform(
+        platform = NativePlatform(
             this,
-            Phase9NativeSdkConfiguration(
-                externalSdkEnabled = BuildConfig.PHASE9_EXTERNAL_SDKS_ENABLED,
-                amplitudeApiKey = BuildConfig.PHASE9_AMPLITUDE_API_KEY.takeIf(String::isNotBlank),
-                analyticsConsent = BuildConfig.PHASE9_EXTERNAL_SDKS_ENABLED,
-                diagnosticsConsent = BuildConfig.PHASE9_EXTERNAL_SDKS_ENABLED,
+            NativeSdkConfiguration(
+                externalSdkEnabled = BuildConfig.PLATFORM_EXTERNAL_SDKS_ENABLED,
+                amplitudeApiKey = BuildConfig.PLATFORM_AMPLITUDE_API_KEY.takeIf(String::isNotBlank),
+                analyticsConsent = BuildConfig.PLATFORM_EXTERNAL_SDKS_ENABLED,
+                diagnosticsConsent = BuildConfig.PLATFORM_EXTERNAL_SDKS_ENABLED,
                 distribution = distribution,
                 environment = environment,
             ),
@@ -51,10 +52,10 @@ public class BaseballApplication : Application() {
             // screen_view and other non-matrix command receipts remain local game receipts. The
             // native destinations receive only the frozen, privacy-validated product matrix.
             platform.analytics.publish(receipts.mapNotNull { receipt ->
-                if (receipt.eventName !in com.solkim.baseball.platform.Phase9AnalyticsSchema.eventNames ||
-                    receipt.eventName in com.solkim.baseball.platform.Phase9AnalyticsSchema.retiredEventNames ||
-                    receipt.eventName in com.solkim.baseball.platform.Phase9AnalyticsSchema.intentionalZeroCallerEventNames) return@mapNotNull null
-                com.solkim.baseball.platform.Phase9AnalyticsSchema.fromStrings(
+                if (receipt.eventName !in com.solkim.baseball.platform.AnalyticsSchema.eventNames ||
+                    receipt.eventName in com.solkim.baseball.platform.AnalyticsSchema.retiredEventNames ||
+                    receipt.eventName in com.solkim.baseball.platform.AnalyticsSchema.intentionalZeroCallerEventNames) return@mapNotNull null
+                com.solkim.baseball.platform.AnalyticsSchema.fromStrings(
                     receiptId = receipt.receiptId,
                     eventName = receipt.eventName,
                     properties = receipt.properties,
@@ -70,13 +71,13 @@ public class BaseballApplication : Application() {
                 directory = requireNotNull(getExternalFilesDir(null)).toPath().resolve("save"),
                 installId = installId,
                 allowDeviceRestore = true,
-                resetSideEffects = phase9ResetSideEffects(),
+                resetSideEffects = platformResetSideEffects(),
             )
         } else {
             val shadowDirectory = filesDir.toPath().resolve(
                 "compose-dev-shadow-${Hashing.sha256Hex("$installId|aggregate-shadow").take(32)}",
             )
-            FileShadowFixtureGameStoreRepository(shadowDirectory, resetSideEffects = phase9ResetSideEffects())
+            FileShadowFixtureGameStoreRepository(shadowDirectory, resetSideEffects = platformResetSideEffects())
         }
         gameStore = runBlocking(Dispatchers.IO) {
             KotlinGameStore.open(
@@ -103,9 +104,9 @@ public class BaseballApplication : Application() {
         platform.crashReporter.setContext(
             CrashContext(
                 distribution = if (BuildConfig.PHASE10_PRODUCTION_BUILD) BuildConfig.RELEASE_DISTRIBUTION else "development",
-                appSchema = "phase9",
+                appSchema = com.solkim.baseball.platform.PLATFORM_APP_SCHEMA,
                 phase = state.stage.wire,
-                life = state.highSchool?.run?.lifeNumber ?: 0,
+                life = CareerUiRules.lifeNumber(state),
                 qualityTier = qualityTier,
                 unityLoaded = unityLoaded,
                 stageReady = stageReady,
@@ -121,7 +122,7 @@ public class BaseballApplication : Application() {
         platform.crashReporter.recordException(IllegalStateException("unity_failure:$safe"))
     }
 
-    public fun phase9ResetSideEffects(): ResetSideEffects = object : ResetSideEffects {
+    public fun platformResetSideEffects(): ResetSideEffects = object : ResetSideEffects {
         override fun clearAnalytics() = platform.clearAnalytics()
         override fun clearReview() = platform.clearReview()
         override fun clearReminders() = platform.clearReminders()

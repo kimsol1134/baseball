@@ -15,11 +15,11 @@ import org.junit.Test
 class ProWeekUiTest {
     @get:Rule val compose = createComposeRule()
     @Test fun batchUsesTheVisibleRecoveryChoice() {
-        val pro = ProKernel().startDirect(ProStartDirectRequest("918220", "power_prospect", "회복투수")).state
-        val state = GameAggregateState.initial("batch-ui").copy(stage = GameStage.PRO, pro = pro)
-        var captured: Phase8UiAction? = null
+        val pro = CareerFixtures.startDirectPro(ProStartDirectRequest("918220", "power_prospect", "회복투수"))
+        val state = GameAggregateState.initial("batch-ui").withCareers(stage = GameStage.PRO, pro = pro)
+        var captured: ScreenUiAction? = null
         compose.setContent { BaseballMigrationTheme {
-            Phase8Shell(state, false, null, Phase8ScreenId.P017_PRO_WEEK, Phase8CommandContext(), onNavigate = {}, onAction = { captured = it })
+            CareerShell(state, false, null, ScreenId.P017_PRO_WEEK, ScreenCommandContext(), onNavigate = {}, onAction = { captured = it })
         } }
         compose.onNodeWithTag("week.select.proPlan:recover").performScrollTo().performClick()
         compose.onNodeWithTag("week.batch").performScrollTo().performClick()
@@ -31,9 +31,8 @@ class ProWeekUiTest {
         assertEquals("proAdvanceSegment", captured!!.actionId)
     }
     @Test fun selectionWaitsForCommitAndUnacknowledgedResultsSurviveRemount() {
-        val k = ProKernel()
-        val pro = k.startDirect(ProStartDirectRequest("918220", "power_prospect", "주간투수")).state
-        var state by mutableStateOf(GameAggregateState.initial("week-ui").copy(stage = GameStage.PRO, pro = pro))
+        val pro = CareerFixtures.startDirectPro(ProStartDirectRequest("918220", "power_prospect", "주간투수"))
+        var state by mutableStateOf(GameAggregateState.initial("week-ui").withCareers(stage = GameStage.PRO, pro = pro))
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val prefs = context.getSharedPreferences("pro.week.feedback", 0)
         val saved = prefs.getString("pending", null)
@@ -42,7 +41,7 @@ class ProWeekUiTest {
         try {
             prefs.edit().remove("pending").commit()
             compose.setContent { BaseballMigrationTheme { key(mount) {
-                Phase8Shell(state, false, null, Phase8ScreenId.P017_PRO_WEEK, Phase8CommandContext(), onNavigate = {}, onAction = { action ->
+                CareerShell(state, false, null, ScreenId.P017_PRO_WEEK, ScreenCommandContext(), onNavigate = {}, onAction = { action ->
                     val before = state
                     action.capturedPayloads.forEach { state = GameStateReducer.dispatch(state, it.envelope).state }
                     saveProWeekFeedback(context, before, state)
@@ -50,7 +49,7 @@ class ProWeekUiTest {
                 })
             } } }
             compose.onNodeWithTag("week.select.proPlan:refine_command").performScrollTo().performClick().assertIsSelected()
-            assertEquals(0, commits); assertEquals(0, state.pro!!.week)
+            assertEquals(0, commits); assertEquals(0, CareerAccess.pro(state)!!.week)
             compose.onNodeWithTag("week.commit").performScrollTo().performClick()
             compose.onNodeWithTag("week.result").assertIsDisplayed()
             compose.mainClock.advanceTimeBy(15_000)
@@ -58,7 +57,7 @@ class ProWeekUiTest {
             compose.onNodeWithTag("week.result").assertIsDisplayed()
             compose.onNodeWithTag("week.result.continue").performClick()
             compose.onNodeWithTag("week.result").assertDoesNotExist()
-            assertEquals(1, commits); assertEquals(1, state.pro!!.week)
+            assertEquals(1, commits); assertEquals(1, CareerAccess.pro(state)!!.week)
         } finally { prefs.edit().putString("pending", saved).commit() }
     }
 }

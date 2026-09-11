@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.solkim.baseball.application.*
-import com.solkim.baseball.application.fixtures.HighSchoolPhase4Kernel
+import com.solkim.baseball.application.fixtures.CareerFixtures
 import com.solkim.baseball.application.fixtures.HighSchoolPhase4StartRequest
 import com.solkim.baseball.design.BaseballMigrationTheme
 import org.junit.Assert.*
@@ -24,7 +24,7 @@ import java.io.File
 class AbilityVisualsUiTest {
     @get:Rule val compose = createComposeRule()
     private fun state(): GameAggregateState {
-        val hs = HighSchoolPhase4Kernel().start(HighSchoolPhase4StartRequest("918220", "power_prospect", "visual", "2026-W37", "2026-09-09", lifeNumber = 2)).state
+        val hs = CareerFixtures.startHighSchool(HighSchoolPhase4StartRequest("918220", "power_prospect", "visual", "2026-W37", "2026-09-09", lifeNumber = 2))
         val p = hs.startingPitcher
         val start = listOf(p.stuff, p.command, p.movement, p.stamina)
         val current = listOf(p.stuff + 3, p.command + 2, p.movement + 1, p.stamina)
@@ -32,7 +32,7 @@ class AbilityVisualsUiTest {
             AbilityHistoryPoint("prev-start", "previous", 1, false, 1, 0, "start", listOf(30, 30, 30, 30), List(4) { 0 }),
             AbilityHistoryPoint("start", hs.run.careerId, 2, false, 1, 0, "start", start, List(4) { 0 }),
             AbilityHistoryPoint("train", hs.run.careerId, 2, false, 1, 1, "training", current, List(4) { 0 }))
-        return GameAggregateState.initial("visual").copy(stage = GameStage.HIGH_SCHOOL,
+        return GameAggregateState.initial("visual").withCareers(stage = GameStage.HIGH_SCHOOL,
             highSchool = hs.copy(run = hs.run.copy(pitcher = hs.run.pitcher.copy(stuff = current[0], command = current[1], movement = current[2]))),
             meta = GameMetaState(abilityHistory = history, companion = PitcherCompanion(career = hs.run.careerId, previousStart = listOf(30, 30, 30, 30))))
     }
@@ -59,7 +59,7 @@ class AbilityVisualsUiTest {
         assertEquals(original, state.recomputeCommitment())
     }
     @Test fun largeTextAndReducedMotionKeepValuesReadable() {
-        val state = state().let { it.copy(settings = it.settings.copy(reducedMotionEnabled = true)) }
+        val state = state().let { it.withCareers(settings = it.settings.copy(reducedMotionEnabled = true)) }
         compose.setContent {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) { BaseballMigrationTheme { Surface {
