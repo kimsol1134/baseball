@@ -347,16 +347,15 @@ final class PresentationTests: XCTestCase {
         // 국면은 그대로다.)
         XCTAssertEqual(store.state?.phase, .seasonDecision)
 
-        // 커널까지 닿는 거절: 이미 적용한 결정을 한 번 더.
-        store.applySeasonDecision(decisionID: decision.id, choiceID: decision.choices[0].id)
-        store.acknowledgeSeasonDecisionReceipt()
-        let afterApply = try XCTUnwrap(store.result)
-        _ = store.perform(operation: "replay") {
+        // 커널까지 닿는 규칙 거절: 국면은 맞는데 그 결정에 없는 선택지다.
+        // (국면이 어긋난 경우는 규칙이 아니라 상태 충돌이라 다른 갈래로 간다.)
+        let pending = try XCTUnwrap(store.result)
+        _ = store.perform(operation: "bad-choice") {
             try store.engine.applySeasonDecision(.init(
-                seed: afterApply.nextSeed,
-                state: afterApply.snapshot,
+                seed: pending.nextSeed,
+                state: pending.snapshot,
                 decisionID: decision.id,
-                choiceID: decision.choices[0].id
+                choiceID: "no-such-choice"
             ))
         }
         let failure = try XCTUnwrap(store.lastActionFailure)

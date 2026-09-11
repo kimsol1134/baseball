@@ -21,6 +21,21 @@ final class CareerActionFailureTests: XCTestCase {
         }
     }
 
+    /// 국면이 어긋난 것은 규칙 거절이 아니라 **상태 충돌**이다. 플레이어가 할 수 없는 일을
+    /// 고른 것이 아니라 화면과 저장이 다른 곳을 보고 있다는 뜻이고, 이유만 알리고 넘어가면
+    /// 눌리지 않는 버튼만 남는다.
+    func testAPhaseMismatchIsAStateConflictNotARuleRejection() {
+        for reason in [
+            "expected important_game, got weekly_plan",
+            "expected season_decision, got weekly_plan",
+            "season decision phase and pending decision must match",
+        ] {
+            let failure = CareerActionFailureRules.classify(SimulationError.invalidProCareer(reason))
+            XCTAssertEqual(failure.kind, .staleState, reason)
+            XCTAssertFalse(failure.kind.isStorageFailure, reason)
+        }
+    }
+
     /// 커널 문장을 코드로 그대로 싣지 않는다 — 한국어 문장은 카디널리티가 무한하다.
     func testRuleCodesStayLowCardinality() {
         let codes = Set(

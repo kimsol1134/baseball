@@ -122,6 +122,15 @@ public enum CareerActionFailureRules {
         if reason.contains("stale") || reason.contains("revision") {
             return CareerActionFailure(kind: .staleState, code: "stale_revision")
         }
+        // **국면이 어긋난 것은 규칙 거절이 아니다.** 플레이어가 할 수 없는 일을 고른 것이
+        // 아니라 화면과 저장이 다른 곳을 보고 있다는 뜻이라, 이유만 알리고 넘어가면
+        // 눌리지 않는 버튼만 남는다. 상태 충돌로 올려 화면이 되돌아갈 길을 열어야 한다.
+        if reason.hasPrefix("expected "), reason.contains(", got ") {
+            return CareerActionFailure(kind: .staleState, code: "phase_mismatch")
+        }
+        if reason.contains("phase") {
+            return CareerActionFailure(kind: .staleState, code: "phase_mismatch")
+        }
         return CareerActionFailure(kind: .rule, code: ruleCode(simulation))
     }
 
