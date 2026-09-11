@@ -79,6 +79,8 @@ final class BalanceV3CompatibilityTests: XCTestCase {
         let weekly = try weeklyPlanState(engine: engine, seed: "731003")
         let importantV4 = try rewriting(weekly.snapshot, engine: engine) { object in
             object["phase"] = ProCareerPhase.importantGame.rawValue
+            // 수싸움 보상만 잰다. 프로 14의 라이브 믿음 감도와 섞이면 차이가 3이 아니다.
+            object["proRulesVersion"] = 13
         }
         let importantV3 = try rewriting(importantV4, engine: engine) { object in
             object["balanceVersion"] = 3

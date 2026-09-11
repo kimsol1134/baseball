@@ -1445,7 +1445,19 @@ public struct ProCareerEngine: Sendable {
         }
         let followUpRecords = unresolvedIndices.map { decisionHistory[$0] }
         let followUpReward = followUpRecords.count * (soundProcess ? 2 : -1)
-        let trust = clamp(params.state.managerTrust + report.strikeouts * 2 - report.walks * 2 - report.runsAllowed * 3 + (soundProcess ? 2 : 0) + sequenceTrustReward + followUpReward, 0, 100)
+        let trust = clamp(
+            params.state.managerTrust + Self.liveOutingTrustDelta(
+                strikeouts: report.strikeouts,
+                walks: report.walks,
+                runsAllowed: report.runsAllowed,
+                soundProcess: soundProcess,
+                sequenceReward: sequenceTrustReward,
+                followUpReward: followUpReward,
+                proRulesVersion: params.state.proRulesVersion
+            ),
+            0,
+            100
+        )
         // 실제로 잡은 아웃을 쓴다. 없으면 예전처럼 어림하되, 그건 옛 저장본 호환용 경로다.
         let directOuts = report.outs ?? max(3, report.pitches / 5)
         var gameLines = params.state.gameLines ?? []
@@ -1764,13 +1776,15 @@ public struct ProCareerEngine: Sendable {
         let followUpRecords = unresolvedIndices.map { decisionHistory[$0] }
         let followUpReward = followUpRecords.count * (soundProcess ? 2 : -1)
         let trust = clamp(
-            params.state.managerTrust
-                + report.strikeouts * 2
-                - report.walks * 2
-                - report.runsAllowed * 3
-                + (soundProcess ? 2 : 0)
-                + sequenceTrustReward
-                + followUpReward,
+            params.state.managerTrust + Self.liveOutingTrustDelta(
+                strikeouts: report.strikeouts,
+                walks: report.walks,
+                runsAllowed: report.runsAllowed,
+                soundProcess: soundProcess,
+                sequenceReward: sequenceTrustReward,
+                followUpReward: followUpReward,
+                proRulesVersion: params.state.proRulesVersion
+            ),
             0,
             100
         )
@@ -2241,11 +2255,6 @@ public struct ProCareerEngine: Sendable {
     /// Live schedule/fatigue/agency rules. New careers start here. Offseason may raise an
     /// in-progress save to this value without rewriting already stored season records.
     /// 새 커리어와 다음 명령이 기록하는 규칙 버전. 값의 뜻은 `ProGameplayRules`에 적었다.
-    ///
-    /// 아직 고정 참조(10)다. 11~13의 밸런스는 안드로이드에서 타순·피로·자책점 원장·교체
-    /// 규칙이 **함께** 맞춰진 값이라, 일부만 켜면 삼진과 실점이 현실 밴드를 벗어난다
-    /// (실측: 확률식과 타순만 옮겼을 때 K/9 3, R/9 10). 나머지가 이식되면 이 상수를
-    /// `ProGameplayRules.current`로 올린다.
     public static let currentRulesVersion = ProGameplayRules.current
     /// First version that owns the agency weekly-plan and important-game contracts.
     /// Must stay below `currentRulesVersion` so a version bump cannot turn agency off.
@@ -2353,6 +2362,29 @@ public struct ProCareerEngine: Sendable {
             inningsOuts: state.currentStats.inningsOuts,
             stabilizeCharges: stabilize
         )
+    }
+
+    /// 직접 던진 승부가 감독의 믿음을 얼마나 움직이는가.
+    ///
+    /// v13까지는 `K×2 − BB×2 − R×3`. v14는 곡선을 연결하면 같은 투구가 볼넷·실점을
+    /// 더 내기 때문에, 고교 8이 성적 항 계수를 3→6으로 연 것과 같이 감도를 두 배로 연다.
+    /// 수싸움·선택 회수는 이미 끝난 투구 위의 관계 보상이라 그대로 둔다.
+    public static func liveOutingTrustDelta(
+        strikeouts: Int,
+        walks: Int,
+        runsAllowed: Int,
+        soundProcess: Bool,
+        sequenceReward: Int,
+        followUpReward: Int,
+        proRulesVersion: Int?
+    ) -> Int {
+        let sensitivity = ProGameplayRules.usesLiveBalanceEvaluation(proRulesVersion) ? 2 : 1
+        return strikeouts * 2 * sensitivity
+            - walks * 2 * sensitivity
+            - runsAllowed * 3 * sensitivity
+            + (soundProcess ? 2 : 0)
+            + sequenceReward
+            + followUpReward
     }
 
     public static func liveBatterOffset(for state: ProCareerSnapshot, week: Int? = nil) -> Int {

@@ -17,7 +17,7 @@ final class LivePitchBalanceTests: XCTestCase {
                 "고교 v\(version)"
             )
         }
-        for version in 1...ProGameplayRules.current {
+        for version in 1...13 {
             XCTAssertEqual(
                 ProGameplayRules.livePitchBalance(version).arena, .legacy,
                 "프로 v\(version)"
@@ -28,12 +28,14 @@ final class LivePitchBalanceTests: XCTestCase {
         XCTAssertEqual(ProGameplayRules.livePitchBalance(nil).arena, .legacy)
     }
 
-    /// 고교 8이 연결을 연다. 프로는 아직이다.
-    func testTheConnectionIsOpenForSchoolAndStillClosedForPro() {
+    /// 고교 8·프로 14가 연결을 연다.
+    func testTheConnectionIsOpenForSchoolAndPro() {
         XCTAssertEqual(HighSchoolGameplayRules.livePitchBalance(8).arena, .school)
         XCTAssertEqual(HighSchoolGameplayRules.current, 9)
         XCTAssertEqual(ProGameplayRules.livePitchBalance(14).arena, .professional)
-        XCTAssertEqual(ProGameplayRules.livePitchBalance(ProGameplayRules.current).arena, .legacy)
+        XCTAssertTrue(ProGameplayRules.livePitchBalance(14).pitchCountFatigue)
+        XCTAssertEqual(ProGameplayRules.livePitchBalance(ProGameplayRules.current).arena, .professional)
+        XCTAssertEqual(ProGameplayRules.current, 14)
     }
 
     /// 연결과 평가는 **같은 버전에서** 움직여야 한다. 곡선만 바꾸고 문턱을 두면 지명이
@@ -45,6 +47,35 @@ final class LivePitchBalanceTests: XCTestCase {
         }
         XCTAssertEqual(HighSchoolGameplayRules.livePitchBalance(8).arena, .school)
         XCTAssertTrue(HighSchoolGameplayRules.usesLiveBalanceEvaluation(8))
+
+        for version in 1...13 {
+            XCTAssertEqual(ProGameplayRules.livePitchBalance(version).arena, .legacy, "프로 v\(version)")
+            XCTAssertFalse(ProGameplayRules.usesLiveBalanceEvaluation(version), "프로 v\(version)")
+        }
+        XCTAssertEqual(ProGameplayRules.livePitchBalance(14).arena, .professional)
+        XCTAssertTrue(ProGameplayRules.livePitchBalance(14).pitchCountFatigue)
+        XCTAssertTrue(ProGameplayRules.usesLiveBalanceEvaluation(14))
+    }
+
+    /// v14 감도는 성적 항만 두 배다. 수싸움·선택 회수는 이미 끝난 투구 위의 관계
+    /// 보상이라 v13과 같다.
+    func testProLiveTrustDoublesThePerformanceTermOnRulesFourteen() {
+        let sound = true
+        let sequence = 1
+        let followUp = 2
+        let v13 = ProCareerEngine.liveOutingTrustDelta(
+            strikeouts: 3, walks: 1, runsAllowed: 2,
+            soundProcess: sound, sequenceReward: sequence, followUpReward: followUp,
+            proRulesVersion: 13
+        )
+        let v14 = ProCareerEngine.liveOutingTrustDelta(
+            strikeouts: 3, walks: 1, runsAllowed: 2,
+            soundProcess: sound, sequenceReward: sequence, followUpReward: followUp,
+            proRulesVersion: 14
+        )
+        XCTAssertEqual(v13, 3 * 2 - 1 * 2 - 2 * 3 + 2 + 1 + 2)
+        XCTAssertEqual(v14, 3 * 4 - 1 * 4 - 2 * 6 + 2 + 1 + 2)
+        XCTAssertEqual(v14 - v13, (3 * 2 - 1 * 2 - 2 * 3))
     }
 
     /// 새 커리어가 실제로 v8을 달고 나오는가. 버전을 올렸는데 엔진이 다른 값을 찍으면
@@ -54,6 +85,8 @@ final class LivePitchBalanceTests: XCTestCase {
         let started = try engine.start(.init(seed: "918220", presetID: "power_prospect"))
         XCTAssertEqual(started.snapshot.balanceVersion, 9)
         XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: started.snapshot), 50)
+        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 14)
+        XCTAssertTrue(ProGameplayRules.usesLiveBalanceEvaluation(ProGameplayRules.current))
     }
 
     /// 같은 school 곡선인데 **자동 등판은 멀쩡하고 직접 등판은 무너지는가**(§2.5 Step 2).
@@ -113,9 +146,12 @@ final class LivePitchBalanceTests: XCTestCase {
                 + "(v8 중립 47% · 거의 완벽 60%, 목표 간격 25%p · 중립 15~30%)이다"
         )
         XCTAssertEqual(
-            ProGameplayRules.current, 13,
-            "프로 current를 올렸다면 §2.5 측정을 마쳤는지 확인하라 — 프로 직접 등판은 "
-                + "아직 legacy이고, 고교 8에서 쓴 방법을 그대로 써야 한다"
+            ProGameplayRules.current, 14,
+            "프로 current를 올렸다면 §2.5 측정을 마쳤는지 확인하라 — v14는 곡선과 "
+                + "직접 믿음 감도 2배를 한 버전에서 같이 옮긴다. 능력 문 위 신인 24시드: "
+                + "콜업 100%/100%, 선발 20%/29%, 믿음 중앙 78/87, "
+                + "선발 가능 믿음(≥74) 54%/83%(간격 29%p). 선발 문 74는 그 분포 안에 "
+                + "들어 숫자를 내리지 않았다"
         )
     }
 }

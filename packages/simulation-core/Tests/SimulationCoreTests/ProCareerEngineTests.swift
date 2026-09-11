@@ -934,8 +934,15 @@ final class ProCareerEngineTests: XCTestCase {
         let soundProcess = value.actualDamage <= value.expectedDamage + 150
             || value.recommendationAccepted * 2 >= value.pitches
         let expectedManager = min(100, max(0,
-            game.snapshot.managerTrust + value.strikeouts * 2 - value.walks * 2
-                - value.runsAllowed * 3 + (soundProcess ? 2 : 0)
+            game.snapshot.managerTrust + ProCareerEngine.liveOutingTrustDelta(
+                strikeouts: value.strikeouts,
+                walks: value.walks,
+                runsAllowed: value.runsAllowed,
+                soundProcess: soundProcess,
+                sequenceReward: 0,
+                followUpReward: 0,
+                proRulesVersion: game.snapshot.proRulesVersion
+            )
         ))
         let expectedCatcher = min(100, max(0, game.snapshot.catcherTrust + (soundProcess ? 2 : -1)))
         XCTAssertEqual(resolved.snapshot.managerTrust, expectedManager)
