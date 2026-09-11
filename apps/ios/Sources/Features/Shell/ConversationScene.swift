@@ -87,6 +87,7 @@ struct ConversationStage<Content: View>: View {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("conversation.stage")
     }
 }

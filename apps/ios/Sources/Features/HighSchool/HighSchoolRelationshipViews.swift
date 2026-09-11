@@ -81,6 +81,7 @@ struct RelationshipCard: View {
                 }
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hs.relationship")
         .onAppear {
             guard let event, event.category == "rebirth" else { return }
