@@ -69639,6 +69639,28 @@
       "status": "ui_verified"
     },
     {
+      "key": "pitch.call-stamp.ball",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "볼",
+      "en": "BALL",
+      "ja": "ボール",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "pitch.call-stamp.strike",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "스트라이크",
+      "en": "STRIKE",
+      "ja": "ストライク",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "pitch.catcher.accept",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "포수 사인 수락",

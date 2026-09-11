@@ -167,6 +167,49 @@ struct PitchDramaView: View {
         drawMitt(context: context, place: place, scale: scale)
         drawIncomingBall(context: context, place: place, scale: scale)
         drawImpact(context: context, place: place, scale: scale)
+        drawCallStamp(context: context, size: size, scale: scale)
+    }
+
+    /// 판정 도장. 심판이 콜을 외친 순간 화면에 찍힌다(Phase 4 장식).
+    ///
+    /// 스트라이크와 볼은 **결과가 아니라 판정**이다 — 공이 미트에 꽂히는 것만으로는
+    /// 어느 쪽인지 알 수 없고, 숫자 카운트는 눈이 늦게 읽는다. 도장은 그 한 글자를
+    /// 공이 멈추는 자리에 크게 찍어 준다.
+    ///
+    /// 콜 이후에만, 그리고 심판이 부르는 두 판정에만 찍는다. 친 공에는 찍지 않는다 —
+    /// 타구는 그 자체가 결과다.
+    private func drawCallStamp(context: GraphicsContext, size: CGSize, scale: Double) {
+        guard let label = callStampLabel, progress >= Self.contact else { return }
+        // 콜 직후 0.18 구간에서 크게 들어와 제자리에 앉는다.
+        let since = min(1, max(0, (progress - Self.contact) / 0.18))
+        let punch = 1.28 - 0.28 * since
+        let opacity = min(1, since * 2.4)
+        // 한국어 "스트라이크"는 다섯 자다. 글자 수에 맞춰 줄이지 않으면 도장이 화면
+        // 밖으로 넘친다 — 언어마다 길이가 다르므로 길이에서 크기를 정한다.
+        let base = 20.0 * scale * min(1, 5 / Double(max(2, label.count)))
+        var stamp = context.resolve(
+            Text(verbatim: label)
+                .font(.system(size: base, weight: .black, design: .rounded))
+        )
+        stamp.shading = .color(tone.opacity(0.88 * opacity))
+        // 존 위쪽 빈 자리. 존과 겹치면 코스를 읽는 눈을 방해한다.
+        let center = CGPoint(x: size.width / 2, y: size.height * 0.17)
+        context.drawLayer { layer in
+            layer.translateBy(x: center.x, y: center.y)
+            layer.scaleBy(x: punch, y: punch)
+            // 고무 도장처럼 살짝 기울여 찍는다. 반듯하면 라벨로 읽힌다.
+            layer.rotate(by: .degrees(-7))
+            layer.draw(stamp, at: .zero, anchor: .center)
+        }
+    }
+
+    /// 심판이 부르는 두 판정만. 그 밖은 nil이다.
+    private var callStampLabel: String? {
+        switch outcome {
+        case .calledStrike: copyResolver.resolve(PitchUICopyKey.callStampStrike)
+        case .ball: copyResolver.resolve(PitchUICopyKey.callStampBall)
+        default: nil
+        }
     }
 
     /// 타자·포수 실루엣. 존 그리드만 있으면 계측 그래픽이고, 사람의 윤곽이 서는
@@ -363,6 +406,57 @@ struct PitchDramaView: View {
             Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)),
             with: .color(BaseballTheme.fieldChalk)
         )
+        drawSeams(context: context, center: center, radius: radius, flight: flight)
+    }
+
+    /// 실밥 두 줄. **흰 원 하나는 아무리 빨라도 도는 것으로 읽히지 않는다** — 두 줄이
+    /// 돌아야 회전이 보이고, 회전이 보여야 커브와 포심이 눈으로 갈린다(Phase 4 장식).
+    ///
+    /// 각도는 커널이 준 브레이크·구속에서만 나온다. 난수도 시간도 쓰지 않으므로 같은 공은
+    /// 언제나 같은 회전으로 그려진다.
+    private func drawSeams(
+        context: GraphicsContext,
+        center: CGPoint,
+        radius: Double,
+        flight: Double
+    ) {
+        // 공이 아주 작을 때 실밥을 그리면 얼룩으로만 보인다.
+        guard radius >= 3.4 else { return }
+        let angle = PitchSpinPresentation.seamAngle(
+            horizontalBreakTenthsCM: execution.horizontalBreakTenthsCM,
+            verticalBreakTenthsCM: execution.verticalBreakTenthsCM,
+            velocityTenthsKPH: execution.velocityTenthsKPH,
+            flightProgress: flight
+        )
+        let width = max(0.9, radius * 0.24)
+        // 실밥은 공 위에 있다. 자르지 않으면 호의 끝이 원 밖으로 삐져나와 공에 가시가
+        // 돋은 것처럼 보인다.
+        let ball = Path(ellipseIn: CGRect(
+            x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2
+        ))
+        var context = context
+        context.clip(to: ball)
+        for side in [-1.0, 1.0] {
+            // 야구공의 두 솔기는 공을 가로지르는 얕은 호 두 개다. 원 안쪽으로 살짝
+            // 굽혀 그리면 구면 위의 곡선으로 읽힌다.
+            let offset = radius * 0.42 * side
+            var seam = Path()
+            let steps = 12
+            for step in 0...steps {
+                let t = Double(step) / Double(steps)
+                let along = (t - 0.5) * 2 * radius * 0.92
+                let across = offset + sin(t * .pi) * radius * 0.30 * side
+                let rotatedX = along * cos(angle) - across * sin(angle)
+                let rotatedY = along * sin(angle) + across * cos(angle)
+                let point = CGPoint(x: center.x + rotatedX, y: center.y + rotatedY)
+                if step == 0 { seam.move(to: point) } else { seam.addLine(to: point) }
+            }
+            context.stroke(
+                seam,
+                with: .color(BaseballTheme.negative.opacity(0.70)),
+                style: StrokeStyle(lineWidth: width, lineCap: .round)
+            )
+        }
     }
 
     /// 배트에 맞은 순간의 섬광. 컨택 품질이 좋을수록 크고 밝다.

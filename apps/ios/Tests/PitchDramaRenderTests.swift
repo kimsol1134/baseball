@@ -65,6 +65,20 @@ final class PitchDramaRenderTests: XCTestCase {
         }
     }
 
+    /// 판정 도장과 실밥(Phase 4 장식). 콜 뒤에 도장이 찍히고, 공이 돌아 보이는지 본다.
+    func testCalledStrikeStampAndSeams() {
+        for progress in [0.44, 0.50, 0.62, 1.0] {
+            let view = PitchDramaView(
+                execution: execution(),
+                outcome: .calledStrike,
+                battedBall: nil,
+                fielding: nil,
+                progress: progress
+            )
+            XCTAssertTrue(render(view, name: String(format: "stamp-%.2f", progress)))
+        }
+    }
+
     /// 홈런: 임팩트 섬광이 가장 크고 화면이 흔들린다.
     func testHomeRunFrames() {
         let batted = BattedBall(
