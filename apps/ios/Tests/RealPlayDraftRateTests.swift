@@ -22,6 +22,56 @@ final class RealPlayDraftRateTests: XCTestCase {
         let drafted: Bool
         let evaluation: Int
         let threshold: Int
+        /// 이 회차에서 **직접 던진** 경기들의 합. 지명 여부 하나로는 어느 축이 움직였는지
+        /// 알 수 없다 — 손잡이를 고르려면 이 표가 있어야 한다(§2.5 Step 1).
+        let pitching: PitchingTotals
+    }
+
+    /// 직접 던진 등판의 누적. 9이닝 환산은 `per9`가 한다.
+    struct PitchingTotals {
+        var games = 0
+        var outs = 0
+        var pitches = 0
+        var strikeouts = 0
+        var walks = 0
+        var hits = 0
+        var runsAllowed = 0
+
+        mutating func add(_ report: ImportantInningReport) {
+            games += 1
+            outs += report.outs ?? 0
+            pitches += report.pitches
+            strikeouts += report.strikeouts
+            walks += report.walks
+            hits += report.hits ?? 0
+            runsAllowed += report.runsAllowed
+        }
+
+        static func + (lhs: PitchingTotals, rhs: PitchingTotals) -> PitchingTotals {
+            PitchingTotals(
+                games: lhs.games + rhs.games, outs: lhs.outs + rhs.outs,
+                pitches: lhs.pitches + rhs.pitches, strikeouts: lhs.strikeouts + rhs.strikeouts,
+                walks: lhs.walks + rhs.walks, hits: lhs.hits + rhs.hits,
+                runsAllowed: lhs.runsAllowed + rhs.runsAllowed
+            )
+        }
+
+        /// 9이닝당. 아웃이 0이면 0을 돌려준다 — 나눌 수 없는 것을 무한대로 만들지 않는다.
+        func per9(_ value: Int) -> Double {
+            outs > 0 ? Double(value) * 27 / Double(outs) : 0
+        }
+
+        var whip: Double {
+            outs > 0 ? Double(walks + hits) * 3 / Double(outs) : 0
+        }
+
+        var line: String {
+            String(
+                format: "경기 %d · %.1f이닝 · K/9 %.2f · BB/9 %.2f · H/9 %.2f · R/9 %.2f · WHIP %.2f · 구/경기 %.0f",
+                games, Double(outs) / 3, per9(strikeouts), per9(walks), per9(hits),
+                per9(runsAllowed), whip, games > 0 ? Double(pitches) / Double(games) : 0
+            )
+        }
     }
 
     /// 어떻게 3년을 사는가. 대화는 언제나 듣고, 각성은 첫 번째를 찍는다 — 두 정책의
@@ -39,8 +89,12 @@ final class RealPlayDraftRateTests: XCTestCase {
         seed: String,
         presetID: String = "power_prospect",
         policy: PlayPolicy = .sensible,
-        harshness: DifficultyLevel = .standard
+        harshness: DifficultyLevel = .standard,
+        /// 라이브 확률식을 강제한다. nil이면 커리어 버전이 고른 값(오늘은 `.legacy`).
+        /// 두 곡선을 **같은 하네스로** 재기 위한 것이지 운영 경로를 바꾸지 않는다(§2.5).
+        forcedBalance: PitchBalanceRules? = nil
     ) throws -> RunOutcome? {
+        var pitching = PitchingTotals()
         let engine = HighSchoolCareerEngine()
         // 화면이 만드는 것과 **같은 선수**로 시작한다. `HighSchoolCareerStore.startCareer`는
         // 이름을 프리셋의 투수 이름으로, 던지는 손을 프리셋의 손으로 채운다. 코어 기본값
@@ -82,9 +136,9 @@ final class RealPlayDraftRateTests: XCTestCase {
                     .init(seed: result.nextSeed, state: state, response: .listen)
                 )
             case .importantGame:
-                let session = PitchSession(
-                    scenario: .highSchool(state: state), seed: result.nextSeed
-                )
+                var scenario = PitchScenario.highSchool(state: state)
+                if let forcedBalance { scenario.livePitchBalance = forcedBalance }
+                let session = PitchSession(scenario: scenario, seed: result.nextSeed)
                 session.start()
                 // 화면에서 한 구씩 누를 때와 같은 경로. 중립 릴리스라 손 실력은 0이다.
                 for _ in 0..<12 {
@@ -98,8 +152,10 @@ final class RealPlayDraftRateTests: XCTestCase {
                     break
                 }
                 let number = state.performance.importantGamesCompleted + 1
+                let report = session.report(scenarioNumber: number)
+                pitching.add(report)
                 result = try engine.recordImportantGame(
-                    .init(seed: result.nextSeed, state: state, report: session.report(scenarioNumber: number))
+                    .init(seed: result.nextSeed, state: state, report: report)
                 )
             case .awakening:
                 let option = try XCTUnwrap(state.awakeningOptions.first)
@@ -115,7 +171,8 @@ final class RealPlayDraftRateTests: XCTestCase {
                 return RunOutcome(
                     drafted: draft.outcome == .drafted,
                     evaluation: draft.evaluationScore,
-                    threshold: forecast.threshold
+                    threshold: forecast.threshold,
+                    pitching: pitching
                 )
             case .legacy, .completed:
                 return nil
@@ -165,6 +222,40 @@ final class RealPlayDraftRateTests: XCTestCase {
             rate, 0.85,
             "손을 전혀 안 맞혀도 대부분 지명됩니다 — 드래프트가 관문 구실을 못 합니다"
         )
+    }
+
+    /// **직접 던지는 공이 어느 곡선을 쓰느냐가 무엇을 바꾸는가**(§2.5 Step 1).
+    ///
+    /// 지명률 하나로는 손잡이를 고를 수 없다. 같은 하네스로 두 곡선을 돌려 K/9·BB/9·H/9·
+    /// R/9를 나란히 찍는다. 여기 나온 표가 Step 2(난이도 이중 계상 확인)의 입력이다.
+    ///
+    /// 이 검사는 밴드를 주장하지 않는다 — **재는 것이 일이다.** 밴드는 연결을 결정할 때
+    /// 측정값 위에서 정한다.
+    func testLiveCurveDiagnosticsForBothArenas() throws {
+        let seeds = (1...30).map(String.init)
+        for (name, balance) in [
+            ("legacy (배포 중)", PitchBalanceRules.legacy),
+            ("school (고교 7 규칙)", PitchBalanceRules.school),
+        ] {
+            var totals = PitchingTotals()
+            var drafted = 0
+            var evaluations: [Int] = []
+            for seed in seeds {
+                guard let outcome = try playOneCareer(
+                    seed: seed, policy: .sensible, forcedBalance: balance
+                ) else { continue }
+                totals = totals + outcome.pitching
+                evaluations.append(outcome.evaluation)
+                if outcome.drafted { drafted += 1 }
+            }
+            let sorted = evaluations.sorted()
+            print("[live-curve] \(name)")
+            print("[live-curve]   \(totals.line)")
+            print("[live-curve]   지명 \(drafted)/\(evaluations.count) · "
+                + "평가 \(sorted.first ?? 0)/\(sorted[max(0, sorted.count / 2)])/\(sorted.last ?? 0)")
+            XCTAssertGreaterThan(totals.games, 0, "\(name): 직접 던진 경기가 없습니다")
+            XCTAssertGreaterThan(totals.outs, 0, "\(name): 아웃이 하나도 기록되지 않았습니다")
+        }
     }
 
     /// UI 스모크와 같은 자동 진행에서 지명되는 시드를 찾아 준다.
