@@ -20,7 +20,7 @@ class PitchScoreboardProjectionTest {
     @Test
     fun tutorialMoundUsesFirstInningTiedEmptyBasesNotNinth() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("scoreboard-tutorial"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()

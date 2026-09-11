@@ -76,7 +76,7 @@ const platformGradle = read("apps/android/platform/build.gradle.kts");
 if (!platformGradle.includes("implementation(libs.okhttp)")) {
   errors.push("Amplitude legacy SDK requires the OkHttp runtime in the packaged app");
 }
-if (appGradle.includes("google-services.json") || appGradle.includes('phase9AmplitudeApiKey = "')) {
+if (appGradle.includes("google-services.json") || appGradle.includes('phase9AmplitudeApiKey = "') || appGradle.includes('platformAmplitudeApiKey = "')) {
   errors.push("production credentials are checked into the app build");
 }
 if (!applicationRoot.includes("BuildConfig.RELEASE_DISTRIBUTION")) {

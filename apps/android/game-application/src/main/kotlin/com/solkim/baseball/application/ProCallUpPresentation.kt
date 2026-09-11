@@ -3,6 +3,7 @@ package com.solkim.baseball.application
 import com.solkim.baseball.core.pro.*
 
 public object ProCallUpPresentation {
+    public fun lines(state: GameAggregateState): List<String> = state.pro?.let(::lines).orEmpty()
     public fun lines(pro: ProState): List<String> = listOf(
         "감독 신뢰 ${pro.managerTrust} / ${ProCallUpRules.TRUST_REQUIRED}",
         "종합 평가 ${AbilityDisplayScale.rating(ProCallUpRules.skill(pro.pitcher))} / ${AbilityDisplayScale.rating(ProCallUpRules.SKILL_REQUIRED)}",

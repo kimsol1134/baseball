@@ -21,7 +21,7 @@ class ChoiceEffectTest {
             currentRelationshipEvent = HighSchoolContentCatalog.events.first { it.id == "evt-coach-role" }))
         val state = GameAggregateState.initial("effect").copy(highSchool = k.commitShadowState(school.copy(run = run)), stage = GameStage.HIGH_SCHOOL)
         for (language in GameLanguage.entries) {
-            val model = Phase8ScreenProjection.project(state, Phase8ScreenId.P007_RELATIONSHIP).localized(GameCopy(language), state)
+            val model = ScreenProjection.project(state, ScreenId.P007_RELATIONSHIP).localized(GameCopy(language), state)
             for (action in model.actions) {
                 if (language != GameLanguage.KOREAN) assertFalse(Regex("[가-힣]").containsMatchIn(action.description), action.description)
                 action.effects.filter { !it.favorable }.forEach { effect -> assertTrue(action.description.contains("${if (effect.delta!! > 0) "+" else ""}${effect.delta}")) }

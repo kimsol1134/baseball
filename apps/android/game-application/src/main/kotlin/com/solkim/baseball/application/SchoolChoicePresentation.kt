@@ -43,3 +43,17 @@ public object SchoolChoicePresentation {
             school !in eligible, target != null && rating == target && school in eligible) }
     }
 }
+
+public data class SchoolChoiceView(
+    val schools: List<HighSchoolSchool>,
+    val strengthComparisons: List<SchoolFitComparison>,
+    val weaknessComparisons: List<SchoolFitComparison>,
+) {
+    public companion object {
+        public fun resolve(state: GameAggregateState): SchoolChoiceView = SchoolChoiceView(
+            schools = SchoolChoicePresentation.schools(state),
+            strengthComparisons = SchoolChoicePresentation.compare(state, SchoolDevelopmentGoal.STRENGTH),
+            weaknessComparisons = SchoolChoicePresentation.compare(state, SchoolDevelopmentGoal.WEAKNESS),
+        )
+    }
+}

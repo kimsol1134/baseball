@@ -11,7 +11,7 @@ class OutingBriefingTest {
             val pro = base.copy(phase = ProCareerPhase.IMPORTANT_GAME, week = 1, role = role, seasonSegment = ProCatalog.segment(1), seasonTrigger = trigger)
                 .let { it.copy(commitment = k.commitment(it)) }
             val state = GameAggregateState.initial("briefing").copy(stage = GameStage.PRO, pro = pro)
-            val context = Phase8CommandContext()
+            val context = ScreenCommandContext()
             val before = ProStateCodec.encode(pro)
             val preview = assertNotNull(OutingPresentation.briefing(state, context))
             val reserved = k.reserveImportantGame(pro, context.seed(state, "pro-important-game")).state

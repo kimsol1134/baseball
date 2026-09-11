@@ -16,13 +16,31 @@ const platformGradle = read("apps/android/platform/build.gradle.kts");
 const versionCatalog = read("apps/android/gradle/libs.versions.toml");
 const manifest = read("apps/android/app/src/main/AndroidManifest.xml");
 const lock = read("apps/android/app/gradle.lockfile");
-const phase8Model = read("apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/Phase8ScreenModels.kt");
-const phase8Ui = read("apps/android/app/src/main/java/com/solkim/baseball/android/Phase9ComposePlatform.kt");
-const phase8Screens = read("apps/android/app/src/main/java/com/solkim/baseball/android/Phase8Screens.kt");
-const mainActivity = read("apps/android/app/src/main/java/com/solkim/baseball/android/MainActivity.kt");
+const screenModel = [
+  read("apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/ScreenContract.kt"),
+  read("apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/ScreenProjection.kt"),
+  read("apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/ScreenCommands.kt"),
+].join("\n");
+const platformUi = read("apps/android/app/src/main/java/com/solkim/baseball/android/NativeComposePlatform.kt");
+const careerScreens = [
+  "CareerScreens.kt",
+  "CareerScreenContent.kt",
+  "CareerShellChrome.kt",
+  "CareerViewport.kt",
+  "CareerSetupViews.kt",
+  "CareerActionSupport.kt",
+].map((name) => read(`apps/android/app/src/main/java/com/solkim/baseball/android/${name}`)).join("\n");
+const mainActivity = [
+  "MainActivity.kt",
+  "MainActivityContent.kt",
+  "MainActivityPlatform.kt",
+].map((name) => read(`apps/android/app/src/main/java/com/solkim/baseball/android/${name}`)).join("\n");
 const applicationRoot = read("apps/android/app/src/main/java/com/solkim/baseball/android/BaseballApplication.kt");
-const analyticsProjector = read("apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/Phase9AnalyticsProjector.kt");
-const platformContracts = read("apps/android/platform/src/main/kotlin/com/solkim/baseball/platform/Phase9PlatformContracts.kt");
+const analyticsProjector = [
+  "AnalyticsProjector.kt",
+  "AnalyticsContract.kt",
+].map((name) => read(`apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/${name}`)).join("\n");
+const platformContracts = read("apps/android/platform/src/main/kotlin/com/solkim/baseball/platform/PlatformContracts.kt");
 const highSchoolPhase4Kernel = read("apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolPhase4Kernel.kt");
 const highSchoolPhase4Codec = read("apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolPhase4StateCodec.kt");
 const generatedUnityGradle = existsSync(resolve(root, "artifacts/android-compose/unity-export/current/unityLibrary/build.gradle"))
@@ -68,18 +86,18 @@ for (const forbiddenPermission of [
     errors.push(`final Compose manifest does not remove SDK permission: ${forbiddenPermission}`);
   }
 }
-if (appGradle.includes("google-services.json") || appGradle.includes("phase9AmplitudeApiKey = \"")) errors.push("production credentials are checked into the app build");
+if (appGradle.includes("google-services.json") || appGradle.includes('phase9AmplitudeApiKey = "') || appGradle.includes('platformAmplitudeApiKey = "')) errors.push("production credentials are checked into the app build");
 for (const forbiddenCopy of ["P-001", "nativeShadowReadOnly", "다음 업데이트에서 제공", "개발자 브라우저"]) {
-  if (phase8Ui.includes(forbiddenCopy)) errors.push(`product platform UI leaks internal copy: ${forbiddenCopy}`);
+  if (platformUi.includes(forbiddenCopy)) errors.push(`product platform UI leaks internal copy: ${forbiddenCopy}`);
 }
-if (phase8Model.includes("enableNotifications") || phase8Model.includes("다음 업데이트에서 제공")) errors.push("Phase 8 projection still exposes a fake platform action");
-if (phase8Model.includes("P-023") || phase8Ui.includes("P-023")) errors.push("retired P-023 is exposed in product platform sources");
-if (!phase8Ui.includes("PlatformActionCodec.decode") && !phase8Ui.includes("PlatformActionPayload")) errors.push("Compose platform actions do not carry typed captured payloads");
+if (screenModel.includes("enableNotifications") || screenModel.includes("다음 업데이트에서 제공")) errors.push("Phase 8 projection still exposes a fake platform action");
+if (screenModel.includes("P-023") || platformUi.includes("P-023")) errors.push("retired P-023 is exposed in product platform sources");
+if (!platformUi.includes("PlatformActionCodec.decode") && !platformUi.includes("PlatformActionPayload")) errors.push("Compose platform actions do not carry typed captured payloads");
 
 const semanticProductionSources = [
-  phase8Model,
-  phase8Ui,
-  phase8Screens,
+  screenModel,
+  platformUi,
+  careerScreens,
   mainActivity,
   applicationRoot,
   analyticsProjector,
@@ -144,27 +162,30 @@ if (highSchoolGameReportStart >= 0 && analyticsProjector.slice(highSchoolGameRep
   errors.push("game_finished fabricates optional batter fields");
 }
 
-const p030Model = phase8Model.match(/Phase8ScreenId\.P030_REVIEW -> \{([\s\S]*?)\n            \}\n        \}/)?.[1] ?? "";
+const p030Model = screenModel.match(/ScreenId\.P030_REVIEW -> \{([\s\S]*?)\n            \}\n        \}/)?.[1] ?? "";
 if (p030Model.includes("addAction(") || p030Model.includes("REQUEST_REVIEW")) {
   errors.push("P030 still exposes a generic/manual review product action");
 }
-const reviewSurfaceStart = phase8Ui.indexOf("private fun Phase9ReviewSurface");
-const reviewSurface = reviewSurfaceStart >= 0 ? phase8Ui.slice(reviewSurfaceStart) : "";
+const reviewSurfaceStart = Math.max(
+  platformUi.indexOf("private fun Phase9ReviewSurface"),
+  platformUi.indexOf("private fun ReviewSurface"),
+);
+const reviewSurface = reviewSurfaceStart >= 0 ? platformUi.slice(reviewSurfaceStart) : "";
 if (reviewSurface.includes("Button(") || reviewSurface.includes("REQUEST_REVIEW")) {
   errors.push("P030 Compose surface still contains a review button/caller");
 }
-if (!mainActivity.includes("Phase8ScreenId.P014_RUN_RECAP.wire") || !mainActivity.includes("Phase8ScreenId.P015_REBIRTH.wire") ||
+if (!mainActivity.includes("ScreenId.P014_RUN_RECAP.wire") || !mainActivity.includes("ScreenId.P015_REBIRTH.wire") ||
     !mainActivity.includes('"quickRebirth"') || !mainActivity.includes('"customizeRebirth"')) {
   errors.push("review caller is not limited to exact recap/rebirth product moments");
 }
 
-if (!phase8Screens.includes("selectedLifeCardId") || !phase8Screens.includes("Phase9LifeCardProjection.selected(state, selectedLifeCardCareerId)")) {
+if (!careerScreens.includes("selectedLifeCardId") || !careerScreens.includes("LifeCardProjection.selected(state, selectedLifeCardCareerId)")) {
   errors.push("LifeCard legacy viewport is not bound to the chooser-selected archive record");
 }
 if (!analyticsProjector.includes('"player_legacy_seen" to "visible finalized recap/archive/next-life frozen record intersection"')) {
   errors.push("player_legacy_seen source contract is not exact");
 }
-if (!phase8Ui.includes("ReminderOfferPolicy.shouldShow") || !phase8Ui.includes("offerDeclined")) {
+if (!platformUi.includes("ReminderOfferPolicy.shouldShow") || !platformUi.includes("offerDeclined")) {
   errors.push("reminder offer UI is not gated by durable product dismissal truth");
 }
 if (!mainActivity.includes('"after_first_game"') || !mainActivity.includes('"settings"') || !mainActivity.includes('"system"')) {

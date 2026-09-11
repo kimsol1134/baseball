@@ -6,7 +6,9 @@ import com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel
 import com.solkim.baseball.core.highschool.HighSchoolTutorialMound
 import com.solkim.baseball.core.highschool.currentBatter
 import com.solkim.baseball.core.highschool.toPitcherSnapshot
+import com.solkim.baseball.core.pitch.BaserunnerStateSnapshot
 import com.solkim.baseball.core.pitch.BatterSnapshot
+import com.solkim.baseball.core.pitch.MoundComposureInput
 import com.solkim.baseball.core.pitch.PitchCall
 import com.solkim.baseball.core.pitch.PitchIntensity
 import com.solkim.baseball.core.pitch.PitchKernel
@@ -28,6 +30,16 @@ public sealed interface PitchHudSelection {
         val intensity: PitchIntensity = PitchIntensity.NORMAL,
     ) : PitchHudSelection
 }
+
+public data class MoundScene(
+    val official: Boolean,
+    val runners: BaserunnerStateSnapshot,
+    val leverage: Int,
+    val balls: Int,
+    val strikes: Int,
+    val outs: Int,
+    val composure: MoundComposureInput,
+)
 
 public data class PitchHudModel(
     val repertoire: List<PitchKind>,
@@ -330,10 +342,78 @@ public object PitchHudProjection {
         PitchIntensity.MAX_EFFORT -> "전력"
     }
 
-    private fun leverage(state: GameAggregateState): Int = when (state.pitch?.careerKind) {
+    public fun leverage(state: GameAggregateState): Int = when (state.pitch?.careerKind) {
         PitchCareerKind.TUTORIAL -> 200
         PitchCareerKind.PRO -> state.pro?.activePitch?.context?.leverage ?: 500
         else -> state.highSchool?.activePitch?.context?.leverage ?: 500
+    }
+
+    public fun careerId(state: GameAggregateState): String? =
+        if (state.pitch?.careerKind == PitchCareerKind.PRO) state.pro?.careerId else state.highSchool?.run?.careerId
+
+    public fun startingPitcher(state: GameAggregateState): PitcherSnapshot? {
+        if (state.pitch?.careerKind == PitchCareerKind.PRO) return null
+        val pitcher = state.highSchool?.startingPitcher ?: return null
+        return PitcherSnapshot(
+            id = pitcher.id,
+            name = pitcher.name,
+            stuff = pitcher.stuff,
+            command = pitcher.command,
+            movement = pitcher.movement,
+            stamina = pitcher.stamina,
+            pitchProfiles = pitcher.pitchProfiles,
+            throwingHand = pitcher.throwingHand,
+            mastery = pitcher.mastery,
+        )
+    }
+
+    public fun careerRevision(state: GameAggregateState): ULong? =
+        if (state.pitch?.careerKind == PitchCareerKind.PRO) state.pro?.revision else state.highSchool?.run?.revision
+
+    public fun lastTutorialPitchNumber(state: GameAggregateState): Int = state.highSchool?.lastPresentation?.pitchNumber ?: 0
+
+    public fun rivalName(state: GameAggregateState): String? =
+        state.pro?.currentRival?.name ?: state.highSchool?.run?.rival?.name
+
+    public fun hasProActivePitch(state: GameAggregateState): Boolean = state.pro?.activePitch != null
+
+    public fun firstLifeWithoutPresentation(state: GameAggregateState): Boolean =
+        state.highSchool?.run?.lifeNumber == 1 && state.highSchool?.lastPresentation == null
+
+    public fun moundScene(state: GameAggregateState): MoundScene {
+        val pitch = state.pitch
+        val official = pitch != null && pitch.careerKind != PitchCareerKind.TUTORIAL && !pitch.challengeRun
+        val proSession = state.pro?.activePitch?.takeIf { pitch?.careerKind == PitchCareerKind.PRO }
+        val hsSession = state.highSchool?.activePitch?.takeIf { pitch?.careerKind == PitchCareerKind.HIGH_SCHOOL }
+        val runners = when {
+            proSession != null -> proSession.game.runners
+            hsSession != null -> BaserunnerStateSnapshot(
+                hsSession.game.firstOccupied,
+                hsSession.game.secondOccupied,
+                hsSession.game.thirdOccupied,
+                52,
+            )
+            else -> BaserunnerStateSnapshot.EMPTY
+        }
+        val contextBalls = proSession?.context?.balls ?: hsSession?.context?.balls ?: 0
+        val contextStrikes = proSession?.context?.strikes ?: hsSession?.context?.strikes ?: 0
+        val contextOuts = proSession?.context?.outs ?: hsSession?.context?.outs ?: 0
+        val command = if (pitch?.careerKind == PitchCareerKind.PRO) state.pro?.pitcher?.command else state.highSchool?.run?.pitcher?.command
+        val stamina = if (pitch?.careerKind == PitchCareerKind.PRO) state.pro?.pitcher?.stamina else state.highSchool?.run?.pitcher?.stamina
+        return MoundScene(
+            official = official,
+            runners = runners,
+            leverage = leverage(state),
+            balls = contextBalls,
+            strikes = contextStrikes,
+            outs = contextOuts,
+            composure = MoundComposureInput(
+                command = command ?: 0,
+                stamina = stamina ?: 0,
+                awakeningWires = state.highSchool?.run?.selectedAwakenings.orEmpty().map { it.wire },
+                memoryWires = emptyList(),
+            ),
+        )
     }
 
     public fun resolveCall(

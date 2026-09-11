@@ -17,7 +17,7 @@ public data class OutingBriefing(val title: String, val situation: String, val s
 }
 
 public object OutingPresentation {
-    public fun briefing(state: GameAggregateState, context: Phase8CommandContext = Phase8CommandContext()): OutingBriefing? {
+    public fun briefing(state: GameAggregateState, context: ScreenCommandContext = ScreenCommandContext()): OutingBriefing? {
         val pro = state.pro?.takeIf { (state.stage == GameStage.PRO || state.pitch?.careerKind == PitchCareerKind.PRO) && (it.phase == ProCareerPhase.IMPORTANT_GAME || it.activePitch != null) }
         val hs = state.highSchool?.takeIf { it.run.phase == HighSchoolPhase.IMPORTANT_GAME }
         val preview = when {
@@ -64,6 +64,39 @@ public object OutingPresentation {
             OutingGoalStatus.FAILED -> "목표는 놓쳤지만, 남은 아웃을 잡아보세요."
             OutingGoalStatus.UNFINISHED -> "다음 기회를 준비해요."
             OutingGoalStatus.PENDING -> "${outs.coerceAtMost(goal.targetOuts)}/${goal.targetOuts} 아웃"
+        }
+    }
+}
+
+public data class OutingLiveView(
+    val batterName: String,
+    val sessionPitches: Int,
+    val outs: Int,
+    val fatigue: Int,
+)
+
+public data class OutingBriefingModel(
+    val briefing: OutingBriefing?,
+    val portraitSeed: String?,
+    val isPro: Boolean,
+    val isAceYear: Boolean,
+    val live: OutingLiveView?,
+) {
+    public companion object {
+        public fun resolve(state: GameAggregateState, context: ScreenCommandContext): OutingBriefingModel {
+            val live = if (CareerUiRules.hasLiveOuting(state)) OutingLiveView(
+                batterName = PitchHudProjection.batter(state).name,
+                sessionPitches = PitchHudProjection.sessionPitches(state),
+                outs = CareerUiRules.liveOutingOuts(state),
+                fatigue = PitchHudProjection.fatigue(state),
+            ) else null
+            return OutingBriefingModel(
+                briefing = OutingPresentation.briefing(state, context),
+                portraitSeed = CareerUiRules.portraitSeed(state),
+                isPro = state.stage in setOf(GameStage.PRO, GameStage.RETIREMENT),
+                isAceYear = CareerUiRules.isAceYear(state),
+                live = live,
+            )
         }
     }
 }

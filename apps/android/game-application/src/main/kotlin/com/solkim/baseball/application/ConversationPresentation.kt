@@ -2,7 +2,79 @@ package com.solkim.baseball.application
 
 import com.solkim.baseball.core.highschool.*
 
+public data class ConversationFeedback(
+    val kind: String,
+    val career: String,
+    val number: Int,
+    val speaker: String,
+    val portraitSeed: String = "",
+    val role: String,
+    val scene: String,
+    val choice: String,
+    val reaction: String,
+    val lines: List<String>,
+)
+
+public data class SchoolConversationView(
+    val eventKey: String,
+    val speaker: String,
+    val speakerRole: String?,
+    val playerName: String,
+    val line: String,
+)
+
 public object ConversationPresentation {
+    public fun schoolView(state: GameAggregateState, copy: GameCopy): SchoolConversationView? {
+        val run = state.highSchool?.run ?: return null
+        val player = if (state.meta.seedChallenge != null) copy.resolve("android.challenge.player") else run.identity.name
+        return SchoolConversationView(
+            eventKey = "${run.careerId}:${run.relationshipsCompleted}:${run.currentRelationshipEvent?.id}",
+            speaker = RelationshipNarrative.speaker(run),
+            speakerRole = RelationshipNarrative.speakerRole(run),
+            playerName = player,
+            line = RelationshipNarrative.line(run),
+        )
+    }
+
+    public fun feedback(before: GameAggregateState, after: GameAggregateState): ConversationFeedback? {
+        val oldPro = before.pro
+        val nextPro = after.pro
+        if (oldPro != null && nextPro != null && oldPro.careerId == nextPro.careerId && nextPro.decisionHistory.size > oldPro.decisionHistory.size) {
+            val lines = ProConversationPresentation.effects(oldPro, nextPro).map { it.source }
+            val role = ProConversationPresentation.role(oldPro.pendingDecision?.type)
+            return ConversationFeedback(
+                kind = "pro",
+                career = nextPro.careerId,
+                number = nextPro.decisionHistory.size,
+                speaker = role?.let { ProPeoplePresentation.name(oldPro.team.id, it) } ?: nextPro.decisionHistory.last().choiceTitle,
+                portraitSeed = role?.let { ProPeoplePresentation.seed(oldPro.team.id, it) }.orEmpty(),
+                role = role.orEmpty(),
+                scene = oldPro.pendingDecision?.title.orEmpty(),
+                choice = nextPro.decisionHistory.last().choiceTitle,
+                reaction = when {
+                    role == "coach" && nextPro.managerTrust < oldPro.managerTrust -> "conversation.reaction.coach.disagree"
+                    role == "catcher" && nextPro.catcherTrust < oldPro.catcherTrust -> "conversation.reaction.catcher.disagree"
+                    role != null -> "conversation.reaction.$role"
+                    else -> "conversation.reaction.done"
+                },
+                lines = lines.ifEmpty { listOf("선택한 계획으로 다음 일정을 준비해요.") },
+            )
+        }
+        val old = before.highSchool?.run ?: return null
+        val next = after.highSchool?.run ?: return null
+        if (old.careerId != next.careerId || next.relationshipsCompleted <= old.relationshipsCompleted) return null
+        return ConversationFeedback(
+            kind = "school",
+            career = next.careerId,
+            number = next.relationshipsCompleted,
+            speaker = RelationshipNarrative.speaker(old),
+            role = RelationshipNarrative.speakerRole(old).orEmpty(),
+            scene = old.currentRelationshipEvent?.title.orEmpty(),
+            reaction = reactionKey(old, next),
+            choice = next.lastRelationship?.response?.let { title(old, it) }.orEmpty(),
+            lines = effects(old, next),
+        )
+    }
     private fun category(run: HighSchoolState): String = run.currentRelationshipCategory ?: run.currentRelationshipTarget?.wire ?: "coach"
     public fun line(run: HighSchoolState): String = compactLineKey(run)?.let {
         GameCopy(GameLanguage.KOREAN).resolve(it)

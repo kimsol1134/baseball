@@ -46,14 +46,14 @@ class AbilityHistoryTest {
         val repo = CSharpLegacyGameStoreRepository(directory, "history-native")
         var store = KotlinGameStore.open("history-native", repo, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
         try {
-            val controller = Phase8Controller(store)
-            controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
-            controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-            controller.execute(Phase8ScreenId.P005_SCHOOL_SELECTION, "chooseSchool:haedong_power")
+            val controller = ScreenController(store)
+            controller.execute(ScreenId.P001_OPENING, "enterSetup")
+            controller.execute(ScreenId.P002_SETUP, "startHighSchool")
+            controller.execute(ScreenId.P003_PROLOGUE, "beginTutorial")
+            controller.execute(ScreenId.P003_PROLOGUE, "completeTutorial")
+            controller.execute(ScreenId.P005_SCHOOL_SELECTION, "chooseSchool:haedong_power")
             val phase = store.current.highSchool!!
-            val envelope = GameCommandEnvelope("history-training", "phase8-ui", store.current.revision,
+            val envelope = GameCommandEnvelope("history-training", CareerWire.highSchoolSession(store.current), store.current.revision,
                 GameCommand.HighSchool(HighSchoolPhase4Command.Training("99881", HighSchoolTrainingFocus.COMMAND, HighSchoolTrainingIntensity.STANDARD)))
             store.dispatch(envelope)
             val history = store.current.meta.abilityHistory

@@ -21,7 +21,7 @@ import kotlinx.coroutines.runBlocking
 class PitchHudProjectionTest {
     @Test fun manualEffortIsNeverOverwrittenByMatchingCatcherPitchAndZone() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("manual-effort"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -36,7 +36,7 @@ class PitchHudProjectionTest {
     @Test
     fun tutorialHudProjectsIosOrderCopyAndSliderDefault() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("hud-tutorial-ios"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -74,7 +74,7 @@ class PitchHudProjectionTest {
     @Test
     fun officialHudProjectsMatchupLabelsAndPrimaryExplanation() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("hud-official-ios"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -143,7 +143,7 @@ class PitchHudProjectionTest {
     @Test
     fun primaryAndAlternativeRecommendationsRoundTripIntoSubmitCall() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("hud-signs"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -192,7 +192,7 @@ class PitchHudProjectionTest {
     @Test
     fun highSchoolMatchupUsesRunBatterSnapshotNotFallback() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("hud-batter"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -212,7 +212,7 @@ class PitchHudProjectionTest {
         Unit
     }
 
-    private suspend fun reachImportantGame(controller: Phase7VerticalController, store: KotlinGameStore) {
+    private suspend fun reachImportantGame(controller: PitchSessionController, store: KotlinGameStore) {
         var guard = 0
         while (store.current.highSchool?.run?.phase != com.solkim.baseball.core.highschool.HighSchoolPhase.IMPORTANT_GAME && guard++ < 120) {
             when (store.current.highSchool?.run?.phase) {

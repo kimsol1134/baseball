@@ -9,7 +9,7 @@ class Round5RetentionTest {
         try {
             val source = com.solkim.baseball.model.StrictJson.parseUtf8(javaClass.getResourceAsStream("/regression/round4-pro-week.json")!!.readBytes()) as com.solkim.baseball.model.JsonValue.Obj
             val payload = source["payload"] as com.solkim.baseball.model.JsonValue.Obj
-            val historical = (0..2000).map { CommandReceiptRetention.id(it.toULong(), "settings") } + "phase7-legacy"
+            val historical = (0..2000).map { CommandReceiptRetention.id(it.toULong(), "settings") } + "imported-opaque"
             val fixture = com.solkim.baseball.model.JsonValue.Obj(LinkedHashMap(payload.entries).apply {
                 put("revision", com.solkim.baseball.model.JsonValue.Num("3000"))
                 put("commandReceipts", com.solkim.baseball.model.JsonValue.Arr(historical.map(com.solkim.baseball.model.JsonValue::Str)))
@@ -23,7 +23,7 @@ class Round5RetentionTest {
             store = KotlinGameStore.open("r5", CSharpLegacyGameStoreRepository(dir, "r5"), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
             val saved = com.solkim.baseball.model.StrictJson.parseUtf8(java.nio.file.Files.readAllBytes(dir.resolve("save.json"))) as com.solkim.baseball.model.JsonValue.Obj
             val receipts = (saved["payload"] as com.solkim.baseball.model.JsonValue.Obj).stringArray("commandReceipts")
-            assertEquals(257, receipts.size); assertTrue("phase7-legacy" in receipts); assertEquals(pro, store.current.pro)
+            assertEquals(257, receipts.size); assertTrue("imported-opaque" in receipts); assertEquals(pro, store.current.pro)
             val revision = store.current.revision
             assertFails { store.dispatch(GameCommandEnvelope(historical.first(), "settings", revision, GameCommand.UpdateSettings(store.current.settings))) }
             assertEquals(revision, store.current.revision)
@@ -35,14 +35,31 @@ class Round5RetentionTest {
     }
     @Test fun receiptsKeepNewestRevisionsNotLexicallyLargestIdsAndPreserveOpaqueHistory() {
         val ids = (0..2000).map { CommandReceiptRetention.id(it.toULong(), "pitch") }
-        val retained = CommandReceiptRetention.retain(ids.shuffled() + listOf("phase7-old-hash", "manual-release:old"))
+        val retained = CommandReceiptRetention.retain(ids.shuffled() + listOf("imported-old-hash", "manual-release:old"))
         assertEquals(258, retained.size)
-        assertTrue("phase7-old-hash" in retained)
+        assertTrue("imported-old-hash" in retained)
         assertEquals((1745..2000).map { it.toULong() }.toSet(), retained.mapNotNull(CommandReceiptRetention::revision).toSet())
         assertEquals(retained, CommandReceiptRetention.retain(retained))
         assertFailsWith<IllegalArgumentException> { CommandReceiptRetention.validate(ids.first(), 2001UL) }
         assertFailsWith<IllegalArgumentException> { CommandReceiptRetention.validate("phase8-P-019-action-42-0", 2001UL) }
         CommandReceiptRetention.validate(ids.last(), 2000UL)
+        assertEquals(42UL, CommandReceiptRetention.revision(CareerWire.commandId("P-019", "action", 42UL, 0)))
+        assertEquals(42UL, CommandReceiptRetention.revision("career-P-019-action-42-0"))
+        assertEquals("career-P-019-action-42-0", CareerWire.migrateCommandId("phase8-P-019-action-42-0"))
+        assertEquals(42UL, CommandReceiptRetention.revision("phase8-P-019-action-42-0"))
+        CommandReceiptRetention.validate("career-P-019-action-42-0", 42UL)
+        assertFailsWith<IllegalArgumentException> { CommandReceiptRetention.validate("career-P-019-action-42-0", 2001UL) }
+        assertEquals(3, CareerWire.parsePitchIndex("pitch-index:3:abc"))
+        assertEquals(null, CareerWire.parsePitchIndex("phase7-index:3:abc"))
+        assertEquals("pitch-index:3:abc", CareerWire.migrateCheckpoint("phase7-index:3:abc"))
+        assertEquals(3, CareerWire.parsePitchIndex(CareerWire.migrateCheckpoint("phase7-index:3:abc")))
+        assertEquals("tutorial:career-1", CareerWire.tutorialSession("career-1"))
+        assertEquals(CareerWire.UI_SESSION, CareerWire.migrateSessionId("phase8-ui"))
+        assertEquals(CareerWire.UI_SESSION, CareerWire.migrateSessionId("phase7-shell"))
+        assertTrue(CareerWire.commandId("P-001", "startHighSchool", 0UL, 0).startsWith("career-"))
+        val fresh = GameAggregateState.initial("career-wire")
+        assertEquals(CareerWire.UI_SESSION, CareerWire.highSchoolSession(fresh))
+        assertEquals(CareerWire.UI_SESSION, CareerWire.proSession(fresh))
     }
 
     @Test fun replayBudgetPreservesOldReplaysAndEveryScorecard() {

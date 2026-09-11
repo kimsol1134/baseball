@@ -48,12 +48,12 @@ class Round4TransitionsTest {
                 assertEquals(PitchBoundary.SUSPENDED, store.current.pitch!!.boundary)
                 assertEquals(PitchBoundary.PLAYING, store.current.pitch!!.suspendedFrom)
                 val pro = store.current.pro
-                Phase7VerticalController(store).abandonPitch(store.current.pitch!!.sessionId)
+                PitchSessionController(store).abandonPitch(store.current.pitch!!.sessionId)
                 assertEquals(PitchBoundary.ABANDONED, store.current.pitch!!.boundary)
                 assertNull(store.current.pitch!!.suspendedFrom)
                 store.close()
                 store = KotlinGameStore.open("round4", CSharpLegacyGameStoreRepository(dir, "round4"), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
-                assertNotNull(Phase7VerticalController(store).continueOfficialPitch())
+                assertNotNull(PitchSessionController(store).continueOfficialPitch())
                 assertEquals(pro, store.current.pro)
                 assertEquals(PitchBoundary.PLAYING, store.current.pitch!!.boundary)
                 val bytes = Files.readAllBytes(dir.resolve("save.json"))
@@ -69,7 +69,7 @@ class Round4TransitionsTest {
             Files.write(dir.resolve("save.json"), javaClass.getResourceAsStream("/regression/high-school-terminal-v42.json")!!.use { it.readBytes() })
             var store = KotlinGameStore.open("round4-school", CSharpLegacyGameStoreRepository(dir, "round4-school", allowDeviceRestore = true), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
             try {
-                var c = Phase7VerticalController(store)
+                var c = PitchSessionController(store)
                 val id = store.current.pitch!!.sessionId
                 c.consumePresentation(id, c.preparePresentation(id, 0)); c.completePitchAndPostgame(id)
                 assertNotNull(c.continueOfficialPitch())
@@ -78,7 +78,7 @@ class Round4TransitionsTest {
                 c.abandonPitch(id)
                 store.close()
                 store = KotlinGameStore.open("round4-school", CSharpLegacyGameStoreRepository(dir, "round4-school"), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
-                c = Phase7VerticalController(store)
+                c = PitchSessionController(store)
                 assertNotNull(c.continueOfficialPitch())
                 assertEquals(before, store.current.highSchool)
             } finally { store.close() }
@@ -88,15 +88,15 @@ class Round4TransitionsTest {
     @Test fun reservedTutorialResumesAsInputWithoutRereserving() = runBlocking {
         val store=KotlinGameStore.fromShadowFixture(GameAggregateState.initial("r4-reserved"))
         try {
-            val c=Phase8Controller(store)
-            c.execute(Phase8ScreenId.P001_OPENING,"enterSetup")
-            c.execute(Phase8ScreenId.P002_SETUP,"startHighSchool")
-            c.execute(Phase8ScreenId.P003_PROLOGUE,"beginTutorial")
-            val reserve=c.projection(Phase8ScreenId.P004_PITCH_TUTORIAL).actions.first {it.id=="openTutorialPitch"}.payloads
+            val c=ScreenController(store)
+            c.execute(ScreenId.P001_OPENING,"enterSetup")
+            c.execute(ScreenId.P002_SETUP,"startHighSchool")
+            c.execute(ScreenId.P003_PROLOGUE,"beginTutorial")
+            val reserve=c.projection(ScreenId.P004_PITCH_TUTORIAL).actions.first {it.id=="openTutorialPitch"}.payloads
             store.dispatchBatch(reserve.filterNot {it.envelope.command is GameCommand.StartPitch}.map {it.envelope})
             assertEquals(PitchBoundary.RESERVED,store.current.pitch!!.boundary)
             val id=store.current.pitch!!.sessionId
-            val pitch=Phase7VerticalController(store)
+            val pitch=PitchSessionController(store)
             pitch.suspendPitch(id); pitch.resumePitch(id)
             assertEquals(PitchBoundary.PLAYING,store.current.pitch!!.boundary)
             assertEquals(id,store.current.pitch!!.sessionId)

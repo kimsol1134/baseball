@@ -4,9 +4,31 @@ import com.solkim.baseball.core.highschool.*
 
 public data class AwakeningTreeNode(val choice: AwakeningChoiceView, val branch: String, val parents: List<String>, val column: Float)
 public data class AwakeningSummary(val benefit: String, val cost: String?)
+public data class AwakeningTreeModel(
+    val careerId: String,
+    val revision: ULong,
+    val nodes: List<AwakeningTreeNode>,
+    val owned: List<String>,
+    val summarize: (AwakeningTreeNode, GameCopy) -> AwakeningSummary,
+) {
+    public companion object {
+        public fun resolve(state: GameAggregateState): AwakeningTreeModel? {
+            val careerId = AwakeningTreePresentation.careerId(state) ?: return null
+            return AwakeningTreeModel(
+                careerId = careerId,
+                revision = state.revision,
+                nodes = AwakeningTreePresentation.nodes(state),
+                owned = AwakeningTreePresentation.ownedWires(state),
+                summarize = { node, copy -> AwakeningTreePresentation.summary(state, node, copy) },
+            )
+        }
+    }
+}
 
 public object AwakeningTreePresentation {
     public val branches: List<String> = listOf("power", "command", "breaking", "game")
+    public fun careerId(state: GameAggregateState): String? = state.highSchool?.run?.careerId
+    public fun ownedWires(state: GameAggregateState): List<String> = state.highSchool?.run?.selectedAwakenings.orEmpty().map { it.wire }
     public fun nodes(state: GameAggregateState): List<AwakeningTreeNode> {
         val choices = CareerChoicePresentation.awakeningTree(state).associateBy { it.id }
         fun column(node: AwakeningNode): Float {

@@ -10,9 +10,9 @@ class FileShadowProgressResetTest {
     private fun command(store: KotlinGameStore, id: String, value: GameCommand) = GameCommandEnvelope(id, "reset-regression", store.current.revision, value)
     private suspend fun progressed(repo: FileShadowFixtureGameStoreRepository): KotlinGameStore {
         val store = KotlinGameStore.open("reset-regression", repo, NativeAuthorityMode.NATIVE_SHADOW_READ_ONLY)
-        val controller = Phase8Controller(store)
-        controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
-        controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
+        val controller = ScreenController(store)
+        controller.execute(ScreenId.P001_OPENING, "enterSetup")
+        controller.execute(ScreenId.P002_SETUP, "startHighSchool")
         store.dispatch(command(store, "assist-on", GameCommand.UpdateSettings(store.current.settings.copy(autoReleaseEnabled = true))))
         return store
     }
@@ -32,10 +32,10 @@ class FileShadowProgressResetTest {
             store.close()
             val reopened = KotlinGameStore.open(before.installId, FileShadowFixtureGameStoreRepository(directory), NativeAuthorityMode.NATIVE_SHADOW_READ_ONLY)
             assertFresh(reopened.current)
-            val controller = Phase8Controller(reopened)
-            controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
-            controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
-            assertNotNull(controller.execute(Phase8ScreenId.P003_PROLOGUE, "openTutorialPitch").launch)
+            val controller = ScreenController(reopened)
+            controller.execute(ScreenId.P001_OPENING, "enterSetup")
+            controller.execute(ScreenId.P002_SETUP, "startHighSchool")
+            assertNotNull(controller.execute(ScreenId.P003_PROLOGUE, "openTutorialPitch").launch)
             assertEquals(reopened.current, repo.load().envelope!!.payload)
             reopened.close()
         } finally { directory.toFile().deleteRecursively() }

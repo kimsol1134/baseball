@@ -20,7 +20,7 @@ class ProWeekPresentationTest {
     @Test fun everyBatchPreservesTheSelectedPlanAndTarget() {
         val pro = ProKernel().startDirect(ProStartDirectRequest("918220", "power_prospect", "계획투수")).state
         val state = GameAggregateState.initial("plans").copy(stage = GameStage.PRO, pro = pro)
-        val model = Phase8ScreenProjection.project(state, Phase8ScreenId.P017_PRO_WEEK)
+        val model = ScreenProjection.project(state, ScreenId.P017_PRO_WEEK)
         for (selected in model.actions.filter { it.id.startsWith("proPlan:") }) {
             val single = (selected.payloads.single().envelope.command as GameCommand.Pro).command as ProCommand.PlanWeek
             val batch = assertNotNull(ProWeekPresentation.batchAction(state, model, selected.id))
@@ -40,10 +40,10 @@ class ProWeekPresentationTest {
                 val id = "batch-${plan.wire}"
                 val store = KotlinGameStore.open(id, CSharpLegacyGameStoreRepository(root.resolve(plan.wire), id), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
                 try {
-                    val controller = Phase8Controller(store)
-                    controller.execute(Phase8ScreenId.P016_PRO_CONTRACT, "startDirect")
+                    val controller = ScreenController(store)
+                    controller.execute(ScreenId.P016_PRO_CONTRACT, "startDirect")
                     val before = store.current
-                    val model = controller.projection(Phase8ScreenId.P017_PRO_WEEK)
+                    val model = controller.projection(ScreenId.P017_PRO_WEEK)
                     val batch = assertNotNull(ProWeekPresentation.batchAction(before, model, "proPlan:${plan.wire}"))
                     val command = (batch.payloads.single().envelope.command as GameCommand.Pro).command as ProCommand.AdvanceSegment
                     val expected = ProKernel().advanceSegment(before.pro!!, command.seed, command.plan, command.targetPitch, command.maximumWeeks).state

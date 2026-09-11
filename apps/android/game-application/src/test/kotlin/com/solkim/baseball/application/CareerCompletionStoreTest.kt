@@ -20,8 +20,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /** File-backed Phase 8 career completion: 고교 보관 → 프로 연결 → 시즌 결산 저장 → 20시즌 은퇴. */
-class Phase8CareerCompletionStoreTest {
-    private val context = Phase8CommandContext(Phase8KoreaClock { LocalDate.of(2026, 8, 14) })
+class CareerCompletionStoreTest {
+    private val context = ScreenCommandContext(KoreaClock { LocalDate.of(2026, 8, 14) })
 
     @Test
     fun linkedProPitchLiveResultIgnoresLeftoverHighSchoolPresentation() = runBlocking {
@@ -31,19 +31,19 @@ class Phase8CareerCompletionStoreTest {
             assertNotNull(session.store.current.pro)
             val leftoverHsWire = requireNotNull(session.store.current.highSchool?.lastPresentation?.outcome)
             session.advanceProUntil(ProCareerPhase.IMPORTANT_GAME)
-            session.executeFirst(Phase8ScreenId.P018_PRO_IMPORTANT_GAME, "openProImportantGame")
+            session.executeFirst(ScreenId.P018_PRO_IMPORTANT_GAME, "openProImportantGame")
             val pitch = requireNotNull(session.store.current.pitch)
             assertEquals(PitchCareerKind.PRO, pitch.careerKind)
-            val request = session.phase7.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
+            val request = session.pitchSession.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
             val proOutcome = requireNotNull(session.store.current.pro?.activePitch?.log?.entries?.lastOrNull()?.outcome)
             assertEquals(proOutcome, PitchLiveResult.outcome(session.store.current))
             assertEquals(session.store.current.pro?.lastBattedBall, PitchLiveResult.battedBall(session.store.current))
             assertEquals(session.store.current.pro?.lastFielding, PitchLiveResult.fielding(session.store.current))
             assertEquals(leftoverHsWire, session.store.current.highSchool?.lastPresentation?.outcome)
-            session.phase7.consumePresentation(pitch.sessionId, request)
+            session.pitchSession.consumePresentation(pitch.sessionId, request)
             if (session.store.current.pro?.activePitch?.ended != true) {
-                session.phase7.completePitchAndPostgame(pitch.sessionId)
-                assertNotNull(session.phase7.continueOfficialPitch())
+                session.pitchSession.completePitchAndPostgame(pitch.sessionId)
+                assertNotNull(session.pitchSession.continueOfficialPitch())
                 assertEquals(leftoverHsWire, session.store.current.highSchool?.lastPresentation?.outcome)
                 assertEquals(null, session.store.current.pro?.lastPresentation)
                 assertEquals(null, session.store.current.pro?.lastBattedBall)
@@ -66,12 +66,12 @@ class Phase8CareerCompletionStoreTest {
     @Test
     fun newDirectCareerUsesCurrentRulesAndReviewSeasonRoundTripsOnFileStore() = runBlocking {
         withTempDirectory { directory ->
-            var session = openFileSession("phase8-v10-direct-review", directory)
-            session.executeFirst(Phase8ScreenId.P016_PRO_CONTRACT, "startDirect")
+            var session = openFileSession("career-v10-direct-review", directory)
+            session.executeFirst(ScreenId.P016_PRO_CONTRACT, "startDirect")
             assertEquals(ProCatalog.RULES_VERSION, session.store.current.pro?.proRulesVersion)
             assertFalse(session.store.current.settings.autoReleaseEnabled)
             session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
-            session.executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
+            session.executeFirst(ScreenId.P019_PRO_SEASON, "reviewSeason")
             session.finishSettlementIfOpen()
             session.finishNationalTeamIfOpen()
             session = session.reopenAndAssert(ProCareerPhase.OFFSEASON_DECISION, "v10-direct-review")
@@ -84,13 +84,13 @@ class Phase8CareerCompletionStoreTest {
     @Test
     fun reviewSeasonOnFileStoreReloadsOffseasonTwice() = runBlocking {
         withTempDirectory { directory ->
-            var session = openFileSession("phase8-review-save", directory)
+            var session = openFileSession("career-review-save", directory)
             session.completeHighSchoolAndEnterPro()
             assertEquals(ProCatalog.RULES_VERSION, session.store.current.pro?.proRulesVersion)
             repeat(2) { index ->
                 session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
                 assertEquals(index + 1, session.store.current.pro?.season)
-                session.executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
+                session.executeFirst(ScreenId.P019_PRO_SEASON, "reviewSeason")
                 session.finishSettlementIfOpen()
                 session.finishNationalTeamIfOpen()
                 assertCodecRoundTrip(session.store.current, "after-review-$index")
@@ -102,7 +102,7 @@ class Phase8CareerCompletionStoreTest {
                 assertEquals(expectedPhase, session.store.current.pro?.phase)
                 session = session.reopenAndAssert(expectedPhase, "review-$index")
                 if (expectedPhase == ProCareerPhase.OFFSEASON_DECISION) {
-                    session.executeFirst(Phase8ScreenId.P020_OFFSEASON, "offseason:continue")
+                    session.executeFirst(ScreenId.P020_OFFSEASON, "offseason:continue")
                     session.finishInvestmentIfOpen()
                 }
             }
@@ -115,13 +115,13 @@ class Phase8CareerCompletionStoreTest {
     fun nativeFileStoreWalksLinkedCareerToSeasonTwentyRetirement() = runBlocking {
         withTempDirectory { directory ->
             val audit = nativeAuditFile("native-linked-20-seasons.csv")
-            var session = openFileSession("phase8-twenty-season", directory, native = true)
+            var session = openFileSession("career-twenty-season", directory, native = true)
             session.completeHighSchoolAndEnterPro()
             while (true) {
                 session.advanceProUntil(ProCareerPhase.SEASON_REVIEW)
                 // Contract/season transitions inside the walk can advance the calendar.
                 val season = requireNotNull(session.store.current.pro).season
-                session.executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
+                session.executeFirst(ScreenId.P019_PRO_SEASON, "reviewSeason")
                 session.finishSettlementIfOpen()
                 session.finishNationalTeamIfOpen()
                 val expectedPhase = if (season >= ProCatalog.MAXIMUM_CAREER_SEASONS) {
@@ -133,19 +133,19 @@ class Phase8CareerCompletionStoreTest {
                 session = session.reopenAndAssert(expectedPhase, "season-$season")
                 nativeAuditRow(audit, session.store.current, "season-$season")
                 if (expectedPhase == ProCareerPhase.RETIREMENT_DECISION) break
-                session.executeFirst(Phase8ScreenId.P020_OFFSEASON, "offseason:continue")
+                session.executeFirst(ScreenId.P020_OFFSEASON, "offseason:continue")
                 session.finishInvestmentIfOpen()
             }
             assertEquals(ProCatalog.MAXIMUM_CAREER_SEASONS, session.store.current.pro?.season)
             assertEquals((1..ProCatalog.MAXIMUM_CAREER_SEASONS).toList(), session.store.current.pro!!.careerStats.map { it.season }.sorted())
             assertEquals(ProCareerPhase.RETIREMENT_DECISION, session.store.current.pro?.phase)
-            session.executeFirst(Phase8ScreenId.P021_PRO_RETIREMENT, "retire")
+            session.executeFirst(ScreenId.P021_PRO_RETIREMENT, "retire")
             assertTrue(
                 session.store.current.pro?.phase == ProCareerPhase.LEGACY_SELECTION ||
                     session.store.current.pro?.phase == ProCareerPhase.COMPLETED,
             )
             if (session.store.current.pro?.phase == ProCareerPhase.LEGACY_SELECTION) {
-                session.executeFirst(Phase8ScreenId.P022_PRO_LEGACY) { it.id.startsWith("selectProLegacy:") }
+                session.executeFirst(ScreenId.P022_PRO_LEGACY) { it.id.startsWith("selectProLegacy:") }
             }
             session = session.reopenAndAssert(ProCareerPhase.COMPLETED, "retired")
             assertEquals(ProCareerPhase.COMPLETED, session.store.current.pro?.phase)
@@ -159,18 +159,18 @@ class Phase8CareerCompletionStoreTest {
             val preservedAlbum = beforePreview.meta.album
             val preservedGrowth = beforePreview.meta.abilityHistory
             assertTrue(preservedGrowth.any { it.pro && it.source != "start" })
-            val quick = session.controller.projection(Phase8ScreenId.P015_REBIRTH).actions.single { it.id == "quickRebirth" }
+            val quick = session.controller.projection(ScreenId.P015_REBIRTH).actions.single { it.id == "quickRebirth" }
             val preview = assertNotNull(RebirthStartPreview.resolve(beforePreview, quick))
             assertEquals(preview, RebirthStartPreview.resolve(beforePreview, quick))
             assertEquals(beforePreview, session.store.current, "Preview must not spend soul or advance the saved RNG")
-            session.controller.execute(Phase8ScreenId.P015_REBIRTH, quick.id, quick.payloads)
+            session.controller.execute(ScreenId.P015_REBIRTH, quick.id, quick.payloads)
             val reborn = requireNotNull(session.store.current.highSchool).startingPitcher
             assertEquals(preview.next, listOf(reborn.stuff, reborn.command, reborn.movement, reborn.stamina))
             assertEquals(preview.nextLife, session.store.current.highSchool?.run?.lifeNumber)
             assertEquals(oldLife + 1, session.store.current.highSchool?.run?.lifeNumber)
-            assertEquals(Phase8ScreenId.P003_PROLOGUE, Phase8ScreenProjection.preferredScreen(session.store.current))
+            assertEquals(ScreenId.P003_PROLOGUE, ScreenProjection.preferredScreen(session.store.current))
             session = session.reopenAndAssert(ProCareerPhase.COMPLETED, "reborn-after-pro")
-            assertTrue(session.controller.projection(Phase8ScreenId.P016_PRO_CONTRACT).actions.none { it.id == "startDirect" },
+            assertTrue(session.controller.projection(ScreenId.P016_PRO_CONTRACT).actions.none { it.id == "startDirect" },
                 "A reborn high-school player must not jump into an unrelated new pro career")
             assertEquals(ProCareerPhase.COMPLETED, session.store.current.pro?.phase)
             assertEquals(retired.careerId, session.store.current.pro?.careerId)
@@ -192,16 +192,16 @@ class Phase8CareerCompletionStoreTest {
             val session = openFileSession(id, directory, native = true)
             try {
                 session.completeHighSchoolAndEnterPro(enterPro = false)
-                session.executeFirst(Phase8ScreenId.P015_REBIRTH, "quickRebirth")
+                session.executeFirst(ScreenId.P015_REBIRTH, "quickRebirth")
                 val before = session.store.current
                 val hs = requireNotNull(before.highSchool)
                 assertEquals(2, hs.run.lifeNumber)
                 assertFalse(before.settings.autoReleaseEnabled)
-                val actions = session.controller.projection(Phase8ScreenId.P003_PROLOGUE).actions
+                val actions = session.controller.projection(ScreenId.P003_PROLOGUE).actions
                 assertTrue(actions.single { it.id == "completeTutorial" }.enabled)
                 assertTrue(actions.single { it.id == "openTutorialPitch" }.enabled)
                 if (practice) {
-                    val launch = session.controller.execute(Phase8ScreenId.P003_PROLOGUE, "openTutorialPitch")
+                    val launch = session.controller.execute(ScreenId.P003_PROLOGUE, "openTutorialPitch")
                     assertNotNull(launch.launch)
                     assertEquals(hs.run.pitcher.command, PitchHudProjection.pitcher(session.store.current).command)
                     assertEquals(0, PitchHudProjection.fatigue(session.store.current))
@@ -211,7 +211,7 @@ class Phase8CareerCompletionStoreTest {
                     assertEquals(hs.run.performance, session.store.current.highSchool?.run?.performance)
                     assertEquals(before.meta.completedGameCount, session.store.current.meta.completedGameCount)
                 }
-                session.executeFirst(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
+                session.executeFirst(ScreenId.P003_PROLOGUE, "completeTutorial")
                 val after = session.store.current
                 assertEquals(HighSchoolPhase.SCHOOL_SELECTION, after.highSchool?.run?.phase)
                 assertEquals(hs.run.pitcher, after.highSchool?.run?.pitcher)
@@ -237,10 +237,10 @@ class Phase8CareerCompletionStoreTest {
                     nativeAuditRow(audit, before, "life-${index+1}-finished")
                     if (index < 2) {
                         val path = if (index == 0) "endurance" else "closer"
-                        val option = session.controller.projection(Phase8ScreenId.P015_REBIRTH).actions.single { it.id == "rebirthPath:$path" }
+                        val option = session.controller.projection(ScreenId.P015_REBIRTH).actions.single { it.id == "rebirthPath:$path" }
                         val preview = assertNotNull(RebirthStartPreview.resolve(before, option))
                         assertEquals(before, session.store.current)
-                        session.executeFirst(Phase8ScreenId.P015_REBIRTH, "rebirthPath:$path")
+                        session.executeFirst(ScreenId.P015_REBIRTH, "rebirthPath:$path")
                         val started = session.store.current.highSchool!!.startingPitcher
                         assertEquals(preview.next, listOf(started.stuff, started.command, started.movement, started.stamina))
                         assertEquals(path, session.store.current.meta.companion?.careerPath)
@@ -262,7 +262,7 @@ class Phase8CareerCompletionStoreTest {
                     }
                 }
                 assertEquals(3, session.store.current.highSchool!!.archive.size)
-                session.executeFirst(Phase8ScreenId.P015_REBIRTH, "rebirthPath:command")
+                session.executeFirst(ScreenId.P015_REBIRTH, "rebirthPath:command")
                 assertEquals("command", session.store.current.meta.companion?.careerPath)
                 assertEquals("precision_commander", session.store.current.highSchool?.run?.presetId)
                 assertEquals(HighSchoolPhase.SCHOOL_SELECTION, session.store.current.highSchool?.run?.phase)
@@ -291,8 +291,8 @@ class Phase8CareerCompletionStoreTest {
             installId = installId,
             repository = repository,
             store = store,
-            controller = Phase8Controller(store, context),
-            phase7 = Phase7VerticalController(store, "phase8-ui"),
+            controller = ScreenController(store, context),
+            pitchSession = PitchSessionController(store),
             mode = mode,
         )
     }
@@ -301,70 +301,70 @@ class Phase8CareerCompletionStoreTest {
         val installId: String,
         val repository: GameStoreRepository,
         var store: KotlinGameStore,
-        var controller: Phase8Controller,
-        var phase7: Phase7VerticalController,
+        var controller: ScreenController,
+        var pitchSession: PitchSessionController,
         val mode: NativeAuthorityMode,
     ) {
         suspend fun completeHighSchoolAndEnterPro(enterPro: Boolean = true) {
             assertFalse(store.current.settings.autoReleaseEnabled)
-            executeFirst(Phase8ScreenId.P001_OPENING)
+            executeFirst(ScreenId.P001_OPENING)
             // Persistence coverage uses a supported relaxed commander build to earn the draft;
             // an undrafted player must never be promoted by an unconditional link shortcut.
-            val setup = Phase8Payloads.startHighSchool(store.current, "민서준", "서울", "precision_commander", context,
+            val setup = ScreenPayloads.startHighSchool(store.current, "민서준", "서울", "precision_commander", context,
                 difficulty = com.solkim.baseball.core.highschool.HighSchoolDifficulty(careerHarshness = "relaxed"),
                 primaryPitch = PitchKind.FOUR_SEAM, learningPitch = PitchKind.CHANGEUP)
             val creation = setup as GameCommand.HighSchool
             val configured = creation.command as com.solkim.baseball.core.highschool.HighSchoolPhase4Command.StartConfigured
             val seeded = creation.copy(command = configured.copy(request = configured.request.copy(seed = "1161071901006642942")))
-            store.dispatch(GameCommandEnvelope("drafted-fixture-start", "phase8-ui", store.current.revision, seeded))
-            executeFirst(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-            executeFirst(Phase8ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
+            store.dispatch(GameCommandEnvelope("drafted-fixture-start", CareerWire.uiSession(store.current, seeded), store.current.revision, seeded))
+            executeFirst(ScreenId.P003_PROLOGUE, "beginTutorial")
+            executeFirst(ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
             finishTutorialPitch()
-            executeFirst(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-            executeFirst(Phase8ScreenId.P005_SCHOOL_SELECTION)
+            executeFirst(ScreenId.P003_PROLOGUE, "completeTutorial")
+            executeFirst(ScreenId.P005_SCHOOL_SELECTION)
             advanceHighSchoolUntil(HighSchoolPhase.DRAFT)
-            executeFirst(Phase8ScreenId.P013_DRAFT, "resolveDraft")
+            executeFirst(ScreenId.P013_DRAFT, "resolveDraft")
             if (store.current.highSchool?.run?.phase == HighSchoolPhase.LEGACY || store.current.highSchool?.run?.phase == HighSchoolPhase.COMPLETED) {
-                executeFirst(Phase8ScreenId.P014_RUN_RECAP, "prepareLegacy")
+                executeFirst(ScreenId.P014_RUN_RECAP, "prepareLegacy")
             }
-            executeFirst(Phase8ScreenId.P014_RUN_RECAP) { it.id.startsWith("selectLegacy:") }
-            assertEquals(Phase8ScreenId.P015_REBIRTH, controller.preferredScreen())
-            executeFirst(Phase8ScreenId.P015_REBIRTH, "finalizeArchive")
+            executeFirst(ScreenId.P014_RUN_RECAP) { it.id.startsWith("selectLegacy:") }
+            assertEquals(ScreenId.P015_REBIRTH, controller.preferredScreen())
+            executeFirst(ScreenId.P015_REBIRTH, "finalizeArchive")
             val earnedSchool = requireNotNull(store.current.highSchool)
             val earnedDraft = requireNotNull(earnedSchool.run.draftResult)
             assertEquals("drafted", earnedDraft.outcome.wire)
             if (!enterPro) return
-            executeFirst(Phase8ScreenId.P015_REBIRTH, "startLinked")
+            executeFirst(ScreenId.P015_REBIRTH, "startLinked")
             val linked = requireNotNull(store.current.pro)
             assertEquals(earnedDraft.teamId, linked.team.id)
             val rookie = requireNotNull(linked.journeyState?.pendingContractMarket).offers.single()
             assertEquals(earnedDraft.signingBonus?.toLong(), rookie.signingBonus)
             assertEquals(earnedSchool.startingPitcher.command, linked.highSchoolLegacyContext?.startingPitcher?.command)
             assertEquals(earnedSchool.run.pitcher.effectiveMastery.command, linked.pitcher.effectiveMastery.command)
-            executeFirst(Phase8ScreenId.P016_PRO_CONTRACT) { it.id.startsWith("acceptOffer:") || it.id == "signContract" }
-            assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
+            executeFirst(ScreenId.P016_PRO_CONTRACT) { it.id.startsWith("acceptOffer:") || it.id == "signContract" }
+            assertEquals(ScreenId.P017_PRO_WEEK, controller.preferredScreen())
             assertEquals(ProCareerPhase.WEEKLY_PLAN, store.current.pro?.phase)
             assertFalse(store.current.settings.autoReleaseEnabled)
         }
 
         suspend fun finishAnotherHighSchoolLife() {
-            if (store.current.highSchool?.run?.phase == HighSchoolPhase.PROLOGUE) executeFirst(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-            executeFirst(Phase8ScreenId.P005_SCHOOL_SELECTION)
+            if (store.current.highSchool?.run?.phase == HighSchoolPhase.PROLOGUE) executeFirst(ScreenId.P003_PROLOGUE, "completeTutorial")
+            executeFirst(ScreenId.P005_SCHOOL_SELECTION)
             advanceHighSchoolUntil(HighSchoolPhase.DRAFT)
-            executeFirst(Phase8ScreenId.P013_DRAFT, "resolveDraft")
-            executeFirst(Phase8ScreenId.P014_RUN_RECAP, "prepareLegacy")
-            executeFirst(Phase8ScreenId.P014_RUN_RECAP) { it.id.startsWith("selectLegacy:") }
-            executeFirst(Phase8ScreenId.P015_REBIRTH, "finalizeArchive")
+            executeFirst(ScreenId.P013_DRAFT, "resolveDraft")
+            executeFirst(ScreenId.P014_RUN_RECAP, "prepareLegacy")
+            executeFirst(ScreenId.P014_RUN_RECAP) { it.id.startsWith("selectLegacy:") }
+            executeFirst(ScreenId.P015_REBIRTH, "finalizeArchive")
         }
 
         suspend fun finishSettlementIfOpen() {
             if (store.current.pro?.phase != ProCareerPhase.SEASON_SETTLEMENT) return
-            executeFirst(Phase8ScreenId.P019_PRO_SEASON, "acknowledgeSettlement")
+            executeFirst(ScreenId.P019_PRO_SEASON, "acknowledgeSettlement")
         }
 
         suspend fun finishInvestmentIfOpen() {
             if (store.current.pro?.phase != ProCareerPhase.OFFSEASON_INVESTMENT) return
-            executeFirst(Phase8ScreenId.P020_OFFSEASON, "investment:none")
+            executeFirst(ScreenId.P020_OFFSEASON, "investment:none")
         }
 
         suspend fun finishNationalTeamIfOpen() {
@@ -372,11 +372,11 @@ class Phase8CareerCompletionStoreTest {
             while (true) {
                 assertTrue(++guard < 8, "national team did not drain; phase=${store.current.pro?.phase}")
                 when (store.current.pro?.phase) {
-                    ProCareerPhase.NATIONAL_TEAM_CALL -> executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:accept")
+                    ProCareerPhase.NATIONAL_TEAM_CALL -> executeFirst(ScreenId.P019_PRO_SEASON, "nationalTeam:accept")
                     ProCareerPhase.NATIONAL_TOURNAMENT -> {
                         val tournament = store.current.pro?.nationalTournament
                         if (tournament?.result != null) {
-                            executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:acknowledge")
+                            executeFirst(ScreenId.P019_PRO_SEASON, "nationalTeam:acknowledge")
                         } else {
                             resolveNationalFinalAutomatically()
                         }
@@ -391,7 +391,7 @@ class Phase8CareerCompletionStoreTest {
             store.dispatch(
                 GameCommandEnvelope(
                     commandId = "national-auto-final-${store.current.revision}",
-                    sessionId = "phase8-ui",
+                    sessionId = CareerWire.proSession(store.current),
                     expectedRevision = store.current.revision,
                     command = GameCommand.Pro(ProCommand.ResolveNationalFinalAutomatically(seed)),
                 ),
@@ -407,29 +407,29 @@ class Phase8CareerCompletionStoreTest {
                 )
                 when (store.current.pro?.phase) {
                     ProCareerPhase.CONTRACT_OFFER -> {
-                        val model = controller.projection(Phase8ScreenId.P016_PRO_CONTRACT)
+                        val model = controller.projection(ScreenId.P016_PRO_CONTRACT)
                         val accept = model.actions.firstOrNull { it.id.startsWith("acceptOffer:") && it.enabled }
-                        if (accept != null) executeFirst(Phase8ScreenId.P016_PRO_CONTRACT, accept.id)
-                        else executeFirst(Phase8ScreenId.P016_PRO_CONTRACT, "signContract")
+                        if (accept != null) executeFirst(ScreenId.P016_PRO_CONTRACT, accept.id)
+                        else executeFirst(ScreenId.P016_PRO_CONTRACT, "signContract")
                     }
-                    ProCareerPhase.WEEKLY_PLAN -> executeFirst(Phase8ScreenId.P017_PRO_WEEK, "proAdvanceSegment")
-                    ProCareerPhase.SEASON_DECISION -> executeFirst(Phase8ScreenId.P019_PRO_SEASON) { it.id.startsWith("seasonDecision:") }
-                    ProCareerPhase.SEASON_SETTLEMENT -> executeFirst(Phase8ScreenId.P019_PRO_SEASON, "acknowledgeSettlement")
-                    ProCareerPhase.NATIONAL_TEAM_CALL -> executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:accept")
+                    ProCareerPhase.WEEKLY_PLAN -> executeFirst(ScreenId.P017_PRO_WEEK, "proAdvanceSegment")
+                    ProCareerPhase.SEASON_DECISION -> executeFirst(ScreenId.P019_PRO_SEASON) { it.id.startsWith("seasonDecision:") }
+                    ProCareerPhase.SEASON_SETTLEMENT -> executeFirst(ScreenId.P019_PRO_SEASON, "acknowledgeSettlement")
+                    ProCareerPhase.NATIONAL_TEAM_CALL -> executeFirst(ScreenId.P019_PRO_SEASON, "nationalTeam:accept")
                     ProCareerPhase.NATIONAL_TOURNAMENT -> {
                         val tournament = store.current.pro?.nationalTournament
                         if (tournament?.result != null) {
-                            executeFirst(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:acknowledge")
+                            executeFirst(ScreenId.P019_PRO_SEASON, "nationalTeam:acknowledge")
                         } else {
                             resolveNationalFinalAutomatically()
                         }
                     }
                     ProCareerPhase.IMPORTANT_GAME -> finishProImportantGame()
-                    ProCareerPhase.SEASON_REVIEW -> if (target == ProCareerPhase.SEASON_REVIEW) return else executeFirst(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
-                    ProCareerPhase.OFFSEASON_DECISION -> executeFirst(Phase8ScreenId.P020_OFFSEASON, "offseason:continue")
-                    ProCareerPhase.OFFSEASON_INVESTMENT -> executeFirst(Phase8ScreenId.P020_OFFSEASON, "investment:none")
-                    ProCareerPhase.RETIREMENT_DECISION -> executeFirst(Phase8ScreenId.P021_PRO_RETIREMENT, "retire")
-                    ProCareerPhase.LEGACY_SELECTION -> executeFirst(Phase8ScreenId.P022_PRO_LEGACY) { it.id.startsWith("selectProLegacy:") }
+                    ProCareerPhase.SEASON_REVIEW -> if (target == ProCareerPhase.SEASON_REVIEW) return else executeFirst(ScreenId.P019_PRO_SEASON, "reviewSeason")
+                    ProCareerPhase.OFFSEASON_DECISION -> executeFirst(ScreenId.P020_OFFSEASON, "offseason:continue")
+                    ProCareerPhase.OFFSEASON_INVESTMENT -> executeFirst(ScreenId.P020_OFFSEASON, "investment:none")
+                    ProCareerPhase.RETIREMENT_DECISION -> executeFirst(ScreenId.P021_PRO_RETIREMENT, "retire")
+                    ProCareerPhase.LEGACY_SELECTION -> executeFirst(ScreenId.P022_PRO_LEGACY) { it.id.startsWith("selectProLegacy:") }
                     ProCareerPhase.COMPLETED -> return
                     null -> error("pro walk missing pro state")
                 }
@@ -451,13 +451,13 @@ class Phase8CareerCompletionStoreTest {
             assertEquals(payload, next.current, "$label reopen must preserve the entire state")
             assertEquals(expectedPhase, next.current.pro?.phase, "$label reopened phase")
             assertFalse(next.current.settings.autoReleaseEnabled)
-            return CareerSession(installId, repository, next, Phase8Controller(next, context), Phase7VerticalController(next, "phase8-ui"), mode)
+            return CareerSession(installId, repository, next, ScreenController(next, context), PitchSessionController(next), mode)
         }
 
         suspend fun executeFirst(
-            screen: Phase8ScreenId,
+            screen: ScreenId,
             actionId: String? = null,
-            predicate: ((Phase8ActionModel) -> Boolean)? = null,
+            predicate: ((ScreenActionModel) -> Boolean)? = null,
         ) {
             val model = controller.projection(screen)
             val action = model.actions.firstOrNull { it.enabled && (actionId == null || it.id == actionId) && (predicate?.invoke(it) ?: true) }
@@ -473,7 +473,7 @@ class Phase8CareerCompletionStoreTest {
             }
         }
 
-        private fun diagnoseFailedAction(action: Phase8ActionModel, error: Exception): Nothing {
+        private fun diagnoseFailedAction(action: ScreenActionModel, error: Exception): Nothing {
             if (mode == NativeAuthorityMode.NATIVE_AUTHORITATIVE) {
                 throw AssertionError("Native action ${action.id} failed at season=${store.current.pro?.season}, phase=${store.current.pro?.phase}", error)
             }
@@ -508,9 +508,9 @@ class Phase8CareerCompletionStoreTest {
 
         suspend fun finishTutorialPitch() {
             val pitch = requireNotNull(store.current.pitch)
-            val request = phase7.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
-            phase7.consumePresentation(pitch.sessionId, request)
-            phase7.completePitchAndPostgame(pitch.sessionId)
+            val request = pitchSession.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
+            pitchSession.consumePresentation(pitch.sessionId, request)
+            pitchSession.completePitchAndPostgame(pitch.sessionId)
             assertEquals(PitchBoundary.COMPLETED, store.current.pitch?.boundary)
         }
 
@@ -519,13 +519,13 @@ class Phase8CareerCompletionStoreTest {
             while (store.current.highSchool?.run?.phase != target) {
                 assertTrue(++guard < 260, "high-school fixture did not reach $target; phase=${store.current.highSchool?.run?.phase}")
                 when (store.current.highSchool?.run?.phase) {
-                    HighSchoolPhase.SCHOOL_SELECTION -> executeFirst(Phase8ScreenId.P005_SCHOOL_SELECTION)
-                    HighSchoolPhase.TRAINING -> executeFirst(Phase8ScreenId.P006_TRAINING)
-                    HighSchoolPhase.RELATIONSHIP -> executeFirst(Phase8ScreenId.P007_RELATIONSHIP)
+                    HighSchoolPhase.SCHOOL_SELECTION -> executeFirst(ScreenId.P005_SCHOOL_SELECTION)
+                    HighSchoolPhase.TRAINING -> executeFirst(ScreenId.P006_TRAINING)
+                    HighSchoolPhase.RELATIONSHIP -> executeFirst(ScreenId.P007_RELATIONSHIP)
                     HighSchoolPhase.IMPORTANT_GAME -> finishHighSchoolImportantGame()
-                    HighSchoolPhase.AWAKENING -> executeFirst(Phase8ScreenId.P009_AWAKENING)
-                    HighSchoolPhase.CHAPTER_REVIEW -> executeFirst(Phase8ScreenId.P010_CHAPTER)
-                    HighSchoolPhase.PROLOGUE -> executeFirst(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
+                    HighSchoolPhase.AWAKENING -> executeFirst(ScreenId.P009_AWAKENING)
+                    HighSchoolPhase.CHAPTER_REVIEW -> executeFirst(ScreenId.P010_CHAPTER)
+                    HighSchoolPhase.PROLOGUE -> executeFirst(ScreenId.P003_PROLOGUE, "completeTutorial")
                     else -> error("unexpected high-school fixture phase ${store.current.highSchool?.run?.phase}")
                 }
             }
@@ -538,13 +538,13 @@ class Phase8CareerCompletionStoreTest {
             while (firstPitch || store.current.highSchool?.activePitch != null) {
                 val boundary = store.current.pitch?.boundary
                 if (boundary == null || boundary == PitchBoundary.COMPLETED || boundary == PitchBoundary.ABANDONED) {
-                    executeFirst(Phase8ScreenId.P008_IMPORTANT_GAME, if (firstPitch) "openImportantGame" else "nextImportantPitch")
+                    executeFirst(ScreenId.P008_IMPORTANT_GAME, if (firstPitch) "openImportantGame" else "nextImportantPitch")
                     firstPitch = false
                 }
                 val pitch = requireNotNull(store.current.pitch)
-                val request = phase7.submitPitch(pitch.sessionId, PitchHudSelection.Primary, PitchDelivery(1_000, 1_000))
-                phase7.consumePresentation(pitch.sessionId, request)
-                phase7.completePitchAndPostgame(pitch.sessionId)
+                val request = pitchSession.submitPitch(pitch.sessionId, PitchHudSelection.Primary, PitchDelivery(1_000, 1_000))
+                pitchSession.consumePresentation(pitch.sessionId, request)
+                pitchSession.completePitchAndPostgame(pitch.sessionId)
                 pitchCount += 1
                 assertTrue(pitchCount < 80, "important game fixture did not terminate")
             }
@@ -557,14 +557,14 @@ class Phase8CareerCompletionStoreTest {
             var pitchCount = 0
             while (store.current.pro?.phase == ProCareerPhase.IMPORTANT_GAME) {
                 assertTrue(++pitchCount < 200, "pro important game did not terminate")
-                val model = controller.projection(Phase8ScreenId.P018_PRO_IMPORTANT_GAME)
+                val model = controller.projection(ScreenId.P018_PRO_IMPORTANT_GAME)
                 when {
                     model.actions.any { it.id == "openProImportantGame" && it.enabled } ->
-                        executeFirst(Phase8ScreenId.P018_PRO_IMPORTANT_GAME, "openProImportantGame")
+                        executeFirst(ScreenId.P018_PRO_IMPORTANT_GAME, "openProImportantGame")
                     model.actions.any { it.id == "nextProPitch" && it.enabled } ->
-                        executeFirst(Phase8ScreenId.P018_PRO_IMPORTANT_GAME, "nextProPitch")
+                        executeFirst(ScreenId.P018_PRO_IMPORTANT_GAME, "nextProPitch")
                     model.actions.any { it.id == "finishProGame" && it.enabled } && store.current.pro?.activePitch?.ended == true -> {
-                        executeFirst(Phase8ScreenId.P018_PRO_IMPORTANT_GAME, "finishProGame")
+                        executeFirst(ScreenId.P018_PRO_IMPORTANT_GAME, "finishProGame")
                         completedGames += 1UL
                     }
                     store.current.pitch?.boundary == PitchBoundary.PLAYING -> throwCurrentPitch()
@@ -580,10 +580,10 @@ class Phase8CareerCompletionStoreTest {
 
         private suspend fun throwCurrentPitch() {
             val pitch = requireNotNull(store.current.pitch)
-            val request = phase7.submitPitch(pitch.sessionId, pitch.pitchIndex % 4, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
-            phase7.consumePresentation(pitch.sessionId, request)
+            val request = pitchSession.submitPitch(pitch.sessionId, pitch.pitchIndex % 4, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
+            pitchSession.consumePresentation(pitch.sessionId, request)
             if (store.current.pro?.activePitch?.ended != true) {
-                phase7.completePitchAndPostgame(pitch.sessionId)
+                pitchSession.completePitchAndPostgame(pitch.sessionId)
             }
         }
     }
@@ -603,7 +603,7 @@ class Phase8CareerCompletionStoreTest {
     }
 
     private suspend fun withTempDirectory(block: suspend (Path) -> Unit) {
-        val directory = Files.createTempDirectory("baseball-phase8-career-")
+        val directory = Files.createTempDirectory("baseball-career-")
         try {
             block(directory)
         } finally {

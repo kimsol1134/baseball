@@ -37,7 +37,7 @@ public object TrainingPlans {
 
     public fun availableSteps(state: GameAggregateState, plan: TrainingPlan): Int = safeSteps(state, plan).size
 
-    public fun payloads(state: GameAggregateState, context: Phase8CommandContext, planId: String): List<Phase8CommandPayload> {
+    public fun payloads(state: GameAggregateState, context: ScreenCommandContext, planId: String): List<ScreenCommandPayload> {
         val plan = options.single { it.id == planId }
         val run = requireNotNull(state.highSchool).run
         require(run.phase == HighSchoolPhase.TRAINING && run.injuryRecovery == 0) { "training.plan_unavailable" }
@@ -45,6 +45,6 @@ public object TrainingPlans {
         require(steps.isNotEmpty()) { "training.plan_needs_rest" }
         val command = HighSchoolPhase4Command.TrainingBlock(context.seed(state, "training-plan:${plan.id}"), steps, stopForSafety = true)
         // Reuse the existing first-focus action authorization; the captured batch owns the whole plan.
-        return Phase8Payloads.batch(state, Phase8ScreenId.P006_TRAINING, "train:${plan.steps.first().first.wire}", listOf(GameCommand.HighSchool(command)))
+        return ScreenPayloads.batch(state, ScreenId.P006_TRAINING, "train:${plan.steps.first().first.wire}", listOf(GameCommand.HighSchool(command)))
     }
 }

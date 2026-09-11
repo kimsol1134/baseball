@@ -63,10 +63,10 @@ class NativeProgressResetTest {
     }
 
     private suspend fun seedCareer(store: KotlinGameStore) {
-        val controller = Phase8Controller(store)
-        controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
-        controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
-        controller.execute(Phase8ScreenId.P027_SETTINGS, "toggleSound")
+        val controller = ScreenController(store)
+        controller.execute(ScreenId.P001_OPENING, "enterSetup")
+        controller.execute(ScreenId.P002_SETUP, "startHighSchool")
+        controller.execute(ScreenId.P027_SETTINGS, "toggleSound")
         assertNotNull(store.current.highSchool)
         assertFalse(store.current.settings.soundEnabled)
     }

@@ -13,10 +13,11 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
 import java.security.SecureRandom
 
-public const val PHASE9_PLATFORM_SCHEMA: String = "baseball-platform-state-v1"
-public const val PHASE9_PLATFORM_SCHEMA_VERSION: Int = 1
-public const val PHASE9_ANALYTICS_SCHEMA_VERSION: Int = 1
-public const val PHASE9_ANALYTICS_OUTBOX_LIMIT: Int = 128
+public const val PLATFORM_APP_SCHEMA: String = "platform"
+public const val PLATFORM_STATE_SCHEMA: String = "baseball-platform-state-v1"
+public const val PLATFORM_STATE_SCHEMA_VERSION: Int = 1
+public const val PLATFORM_ANALYTICS_SCHEMA_VERSION: Int = 1
+public const val PLATFORM_ANALYTICS_OUTBOX_LIMIT: Int = 128
 private const val AGGREGATE_ANALYTICS_BASELINE_MARKER: String = "platform-baseline:aggregate-v1"
 
 /** Product analytics property values are deliberately narrower than either SDK's API. */
@@ -59,7 +60,7 @@ public data class AnalyticsContext(
         "distribution" to PlatformProperty.Text(distribution),
         "environment" to PlatformProperty.Text(environment),
         "platform" to PlatformProperty.Text(platform),
-        "event_schema_version" to PlatformProperty.Whole(PHASE9_ANALYTICS_SCHEMA_VERSION.toLong()),
+        "event_schema_version" to PlatformProperty.Whole(PLATFORM_ANALYTICS_SCHEMA_VERSION.toLong()),
         "ingestion_origin" to PlatformProperty.Text(ingestionOrigin),
     )
 }
@@ -69,7 +70,7 @@ public data class AnalyticsContext(
  * properties fail closed; the two retired Daily events remain names-only compatibility records
  * and are never emitted by product callers.
  */
-public object Phase9AnalyticsSchema {
+public object AnalyticsSchema {
     private enum class PropertyKind { TEXT, FLAG, WHOLE, DECIMAL }
     private val commonGameFinished = setOf(
         "mode", "sequence_mastery_count", "sequence_tags", "recommendation_acceptance_rate",
@@ -296,9 +297,9 @@ public data class ReviewAttempt(
     public val attemptedAtUtcMillis: Long,
 )
 
-public data class Phase9PlatformState(
-    public val schema: String = PHASE9_PLATFORM_SCHEMA,
-    public val schemaVersion: Int = PHASE9_PLATFORM_SCHEMA_VERSION,
+public data class PlatformState(
+    public val schema: String = PLATFORM_STATE_SCHEMA,
+    public val schemaVersion: Int = PLATFORM_STATE_SCHEMA_VERSION,
     public val scopedEpoch: Long = 0L,
     public val analyticsOnceReceiptIds: List<String> = emptyList(),
     public val analyticsOutbox: List<AnalyticsOutboxRecord> = emptyList(),
@@ -314,11 +315,11 @@ public data class Phase9PlatformState(
     public val shareCacheEpoch: Long = 0L,
 ) {
     public fun validate() {
-        require(schema == PHASE9_PLATFORM_SCHEMA && schemaVersion == PHASE9_PLATFORM_SCHEMA_VERSION) { "platform.schema" }
+        require(schema == PLATFORM_STATE_SCHEMA && schemaVersion == PLATFORM_STATE_SCHEMA_VERSION) { "platform.schema" }
         require(scopedEpoch >= 0L && shareCacheEpoch >= 0L) { "platform.epoch" }
         listOf(analyticsOnceReceiptIds, knownAggregateReceiptIds, scheduledReminderTokenHashes, notificationAnalyticsTokenHashes, notificationNavigationTokenHashes)
             .forEach { values -> require(values.distinct().size == values.size && values.all { it.isNotBlank() }) { "platform.receipts" } }
-        require(analyticsOutbox.size <= PHASE9_ANALYTICS_OUTBOX_LIMIT) { "platform.outbox_limit" }
+        require(analyticsOutbox.size <= PLATFORM_ANALYTICS_OUTBOX_LIMIT) { "platform.outbox_limit" }
         require(analyticsOutbox.map { it.event.receiptId }.distinct().size == analyticsOutbox.size) { "platform.outbox_duplicate" }
         require(reviewAttempts.map { it.reason }.distinct().size == reviewAttempts.size) { "platform.review_duplicate" }
         require(reviewAttempts.all { it.reason.isNotBlank() && it.attemptedAtUtcMillis >= 0L }) { "platform.review_attempt" }
@@ -326,9 +327,9 @@ public data class Phase9PlatformState(
 }
 
 public interface PlatformStateStore {
-    public fun read(): Phase9PlatformState
-    public fun write(state: Phase9PlatformState)
-    public fun update(transform: (Phase9PlatformState) -> Phase9PlatformState): Phase9PlatformState
+    public fun read(): PlatformState
+    public fun write(state: PlatformState)
+    public fun update(transform: (PlatformState) -> PlatformState): PlatformState
     public fun clearAnalytics()
     public fun clearReview()
     public fun clearReminders()
@@ -336,11 +337,11 @@ public interface PlatformStateStore {
     public fun clearShareCache()
 }
 
-public class InMemoryPlatformStateStore(initial: Phase9PlatformState = Phase9PlatformState()) : PlatformStateStore {
+public class InMemoryPlatformStateStore(initial: PlatformState = PlatformState()) : PlatformStateStore {
     private var current = initial.also { it.validate() }
-    @Synchronized override fun read(): Phase9PlatformState = current
-    @Synchronized override fun write(state: Phase9PlatformState) { state.validate(); current = state }
-    @Synchronized override fun update(transform: (Phase9PlatformState) -> Phase9PlatformState): Phase9PlatformState {
+    @Synchronized override fun read(): PlatformState = current
+    @Synchronized override fun write(state: PlatformState) { state.validate(); current = state }
+    @Synchronized override fun update(transform: (PlatformState) -> PlatformState): PlatformState {
         val next = transform(current).also { it.validate() }
         current = next
         return next
@@ -352,8 +353,8 @@ public class InMemoryPlatformStateStore(initial: Phase9PlatformState = Phase9Pla
     override fun clearShareCache() { update { it.copy(shareCacheEpoch = it.shareCacheEpoch + 1L) } }
 }
 
-public object Phase9PlatformStateCodec {
-    public fun encode(state: Phase9PlatformState): ByteArray {
+public object PlatformStateCodec {
+    public fun encode(state: PlatformState): ByteArray {
         state.validate()
         val root = JsonValue.Obj(linkedMapOf(
             "schema" to JsonValue.Str(state.schema),
@@ -373,13 +374,13 @@ public object Phase9PlatformStateCodec {
         return StrictJson.canonical(root).toByteArray(Charsets.UTF_8)
     }
 
-    public fun decode(bytes: ByteArray): Phase9PlatformState {
+    public fun decode(bytes: ByteArray): PlatformState {
         val root = StrictJson.parseUtf8(bytes) as? JsonValue.Obj ?: error("platform.root")
         val required = setOf("schema", "schemaVersion", "scopedEpoch", "analyticsOnceReceiptIds", "analyticsOutbox", "knownAggregateReceiptIds", "scheduledReminderTokenHashes", "notificationAnalyticsTokenHashes", "notificationNavigationTokenHashes", "reviewAttempts", "shareCacheEpoch")
         val legacyCurrent = required + "notificationPermissionAsked"
         val current = legacyCurrent + "reminderOfferDeclined"
         require(root.entries.keys == current || root.entries.keys == legacyCurrent || root.entries.keys == required) { "platform.fields" }
-        val state = Phase9PlatformState(
+        val state = PlatformState(
             schema = root.string("schema"),
             schemaVersion = root.integer("schemaVersion"),
             scopedEpoch = root.long("scopedEpoch"),
@@ -454,15 +455,15 @@ public class FilePlatformStateStore(
     private val temp = directory.resolve("platform-state-v1.json.tmp")
     private val lock = Any()
 
-    override fun read(): Phase9PlatformState = synchronized(lock) {
-        if (!Files.exists(path, LinkOption.NOFOLLOW_LINKS)) return@synchronized Phase9PlatformState()
-        Phase9PlatformStateCodec.decode(Files.readAllBytes(path))
+    override fun read(): PlatformState = synchronized(lock) {
+        if (!Files.exists(path, LinkOption.NOFOLLOW_LINKS)) return@synchronized PlatformState()
+        PlatformStateCodec.decode(Files.readAllBytes(path))
     }
 
-    override fun write(state: Phase9PlatformState) = synchronized(lock) {
+    override fun write(state: PlatformState) = synchronized(lock) {
         state.validate()
         Files.createDirectories(directory)
-        writeAndSync(temp, Phase9PlatformStateCodec.encode(state))
+        writeAndSync(temp, PlatformStateCodec.encode(state))
         try {
             Files.move(temp, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
         } catch (_: AtomicMoveNotSupportedException) {
@@ -471,7 +472,7 @@ public class FilePlatformStateStore(
         // The file is the durable boundary. Directory fsync is best effort because Android's
         // filesystem providers do not all expose a forceable directory channel.
         runCatching { FileChannel.open(directory, StandardOpenOption.READ).use { it.force(true) } }
-        check(Phase9PlatformStateCodec.decode(Files.readAllBytes(path)) == state) { "platform.read_back" }
+        check(PlatformStateCodec.decode(Files.readAllBytes(path)) == state) { "platform.read_back" }
     }
 
     private fun writeAndSync(target: Path, bytes: ByteArray) {
@@ -482,7 +483,7 @@ public class FilePlatformStateStore(
         }
     }
 
-    override fun update(transform: (Phase9PlatformState) -> Phase9PlatformState): Phase9PlatformState = synchronized(lock) {
+    override fun update(transform: (PlatformState) -> PlatformState): PlatformState = synchronized(lock) {
         val next = transform(read()).also { it.validate() }
         write(next)
         next
@@ -522,19 +523,19 @@ public class InstallScopedPlatformStateStore(
 
     private fun delegate(epoch: Long = readEpoch()): FilePlatformStateStore = FilePlatformStateStore(namespacePath(epoch))
 
-    override fun read(): Phase9PlatformState = synchronized(lock) {
+    override fun read(): PlatformState = synchronized(lock) {
         val epoch = readEpoch()
         val state = delegate(epoch).read()
         if (state.scopedEpoch == epoch) state else state.copy(scopedEpoch = epoch)
     }
 
-    override fun write(state: Phase9PlatformState) = synchronized(lock) {
+    override fun write(state: PlatformState) = synchronized(lock) {
         val epoch = readEpoch()
         require(state.scopedEpoch == epoch) { "platform.epoch_mismatch" }
         delegate(epoch).write(state)
     }
 
-    override fun update(transform: (Phase9PlatformState) -> Phase9PlatformState): Phase9PlatformState = synchronized(lock) {
+    override fun update(transform: (PlatformState) -> PlatformState): PlatformState = synchronized(lock) {
         val epoch = readEpoch()
         val next = transform(delegate(epoch).read()).copy(scopedEpoch = epoch)
         delegate(epoch).write(next)
@@ -565,7 +566,7 @@ public class InstallScopedPlatformStateStore(
         synchronized(lock) {
             val next = readEpoch() + 1L
             writeEpoch(next)
-            delegate(next).write(Phase9PlatformState(scopedEpoch = next))
+            delegate(next).write(PlatformState(scopedEpoch = next))
         }
     }
 
@@ -615,11 +616,11 @@ public class NativeAnalyticsService(
         synchronized(lock) {
             receipts.distinctBy { it.receiptId }.forEach { receipt ->
                 val valid = try {
-                    NativeAnalyticsEvent(receipt.receiptId, receipt.eventName, Phase9AnalyticsSchema.validate(receipt.eventName, receipt.properties))
+                    NativeAnalyticsEvent(receipt.receiptId, receipt.eventName, AnalyticsSchema.validate(receipt.eventName, receipt.properties))
                 } catch (_: IllegalArgumentException) {
                     return@forEach
                 }
-                if (valid.eventName in Phase9AnalyticsSchema.retiredEventNames) return@forEach
+                if (valid.eventName in AnalyticsSchema.retiredEventNames) return@forEach
                 val current = stateStore.read()
                 if (valid.receiptId in current.analyticsOnceReceiptIds) return@forEach
                 // The aggregate store may already contain receipts from before this process
@@ -631,7 +632,7 @@ public class NativeAnalyticsService(
                     stateStore.update { state ->
                         if (state.analyticsOutbox.any { it.event.receiptId == valid.receiptId }) state
                         else state.copy(
-                            analyticsOutbox = (state.analyticsOutbox + AnalyticsOutboxRecord(valid)).takeLast(PHASE9_ANALYTICS_OUTBOX_LIMIT),
+                            analyticsOutbox = (state.analyticsOutbox + AnalyticsOutboxRecord(valid)).takeLast(PLATFORM_ANALYTICS_OUTBOX_LIMIT),
                             knownAggregateReceiptIds = (state.knownAggregateReceiptIds + valid.receiptId).distinct(),
                         )
                     }

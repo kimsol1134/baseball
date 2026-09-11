@@ -37,13 +37,15 @@ public object CSharpLegacyAggregateBridge {
         val pro = CSharpLegacyProBridge.project(payload.objectOrNull("pro"))
         val completedPitch = when (val field = payload.objectOrNull("meta")?.get("nativeTerminalPitch")) {
             null, JsonValue.Null -> null
-            is JsonValue.Obj -> GameAggregateCodec.decodePitch(field).also {
-                it.validate()
-                require(it.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)) { "native.terminal_pitch_boundary" }
+            is JsonValue.Obj -> GameAggregateCodec.decodePitch(field).let { decoded ->
+                decoded.copy(checkpoint = CareerWire.migrateCheckpoint(decoded.checkpoint)).also {
+                    it.validate()
+                    require(it.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)) { "native.terminal_pitch_boundary" }
+                }
             }
             else -> throw GameCommandException("native.terminal_pitch_shape")
         }
-        val activePitch = projectPitch(payload.objectOrNull("pitchResume"))
+        val activePitch = CSharpLegacyPitch.projectPitch(payload.objectOrNull("pitchResume"))
         require(activePitch == null || completedPitch == null) { "native.pitch_owner_conflict" }
         val pitch = activePitch ?: completedPitch
         val savedStage = GameStage.entries.firstOrNull { it.wire == payload.string("stage") }
@@ -66,7 +68,10 @@ public object CSharpLegacyAggregateBridge {
                 lifeArchiveCareerIds = highSchool?.archive?.map { it.careerId }.orEmpty(),
                 retiredProCareers = ProRetirementCodec.decode(payload.objectOrNull("meta")?.get("retiredProCareers")),
                 standaloneSoulBalance = ProRetirementCodec.balance(payload.objectOrNull("meta")?.get("standaloneSoulBalance")),
-                seedChallenge = SeedChallengeCodec.decode(payload.objectOrNull("meta")?.get("seedChallenge")),
+                seedChallenge = SeedChallengeCodec.decode(payload.objectOrNull("meta")?.get("seedChallenge"))?.let { session ->
+                    val migrated = session.returnPitch?.copy(checkpoint = CareerWire.migrateCheckpoint(session.returnPitch.checkpoint))
+                    if (migrated == session.returnPitch) session else session.copy(returnPitch = migrated)
+                },
                 playerGrowth = PlayerGrowthReceipt.decode(payload.objectOrNull("meta")?.get("playerGrowth")),
                 abilityHistory = AbilityHistory.decode(payload.objectOrNull("meta")?.get("abilityHistory")),
                 companion = PitcherCompanionCodec.decode(payload.objectOrNull("meta")?.get("companion")),
@@ -74,7 +79,7 @@ public object CSharpLegacyAggregateBridge {
             ),
             pitch = pitch,
             settings = payload.objectOrNull("settings")?.toSettings() ?: GameSettingsState(),
-            analytics = projectAnalytics(payload.objectOrNull("analyticsReceipts")),
+            analytics = CSharpLegacyPitch.projectAnalytics(payload.objectOrNull("analyticsReceipts")),
             deleted = payload.boolOrDefault("deleted", false),
             commitment = payloadSha256,
         )
@@ -112,55 +117,63 @@ public object CSharpLegacyAggregateBridge {
                 applied.first
             }
             is GameCommand.ReservePitch -> {
-                eventName = "pitch.reserved"
-                applyPitch(payload, reservePitch(projected, command).pitch)
+                val reduced = PitchCommands.reserve(projected, command)
+                eventName = reduced.eventName
+                CSharpLegacyPitch.applyPitch(payload, reduced.state.pitch)
             }
             is GameCommand.StartPitch -> {
-                eventName = "pitch.playing"
-                applyPitch(payload, startPitch(projected, command).pitch)
+                val reduced = PitchCommands.start(projected, command)
+                eventName = reduced.eventName
+                CSharpLegacyPitch.applyPitch(payload, reduced.state.pitch)
             }
             is GameCommand.CommitPitch -> {
-                eventName = "pitch.committed"
-                applyPitch(payload, commitPitch(projected, command).pitch)
+                val reduced = PitchCommands.commit(projected, command)
+                eventName = reduced.eventName
+                CSharpLegacyPitch.applyPitch(payload, reduced.state.pitch)
             }
             is GameCommand.ConsumePitch -> {
-                eventName = "pitch.consumed"
-                applyPitch(payload, consumePitch(projected, command).pitch)
+                val reduced = PitchCommands.consume(projected, command)
+                eventName = reduced.eventName
+                CSharpLegacyPitch.applyPitch(payload, reduced.state.pitch)
             }
             is GameCommand.MarkPitchTerminal -> {
-                eventName = "pitch.terminal"
-                applyPitch(payload, terminalPitch(projected, command).pitch)
+                val reduced = PitchCommands.terminal(projected, command)
+                eventName = reduced.eventName
+                CSharpLegacyPitch.applyPitch(payload, reduced.state.pitch)
             }
             is GameCommand.CompletePitch -> {
-                eventName = "pitch.completed"
-                val completed = completePitch(projected, command)
-                withRetirementState(applyPitch(payload, completed.pitch, clearResume = true), completed)
+                val reduced = PitchCommands.complete(projected, command)
+                eventName = reduced.eventName
+                withRetirementState(CSharpLegacyPitch.applyPitch(payload, reduced.state.pitch, clearResume = true), reduced.state)
             }
             is GameCommand.SuspendPitch -> {
-                eventName = "pitch.suspended"
-                applyPitch(payload, suspendPitch(projected, command).pitch)
+                val reduced = PitchCommands.suspend(projected, command)
+                eventName = reduced.eventName
+                CSharpLegacyPitch.applyPitch(payload, reduced.state.pitch)
             }
             is GameCommand.ResumePitch -> {
-                eventName = "pitch.resumed"
-                applyPitch(payload, resumePitch(projected, command).pitch)
+                val reduced = PitchCommands.resume(projected, command)
+                eventName = reduced.eventName
+                CSharpLegacyPitch.applyPitch(payload, reduced.state.pitch)
             }
             is GameCommand.AbandonPitch -> {
-                eventName = "pitch.abandoned"
-                applyPitch(payload, abandonPitch(projected, command).pitch, clearResume = true)
+                val reduced = PitchCommands.abandon(projected, command)
+                eventName = reduced.eventName
+                CSharpLegacyPitch.applyPitch(payload, reduced.state.pitch, clearResume = true)
             }
             is GameCommand.ClearPitchPresentation -> {
-                eventName = "pitch.presentation_cleared"
-                clearPresentation(payload, projected, command)
+                val reduced = PitchCommands.clearPresentation(projected, command)
+                eventName = reduced.eventName
+                CSharpLegacyPitch.writeClearedPresentation(payload, projected, reduced.state, command)
             }
             is GameCommand.SetPitchHoldCall -> {
-                eventName = "pitch.hold_call"
-                val pitch = projected.pitch ?: error("pitch.hold_call_missing")
-                require(pitch.sessionId == command.sessionId) { "pitch.hold_call_session" }
-                applyPitch(payload, pitch.copy(holdCall = command.holdCall))
+                val reduced = PitchCommands.holdCall(projected, command)
+                eventName = reduced.eventName
+                CSharpLegacyPitch.applyPitch(payload, reduced.state.pitch)
             }
             is GameCommand.RecordAnalytics -> {
                 eventName = "analytics.recorded"
-                recordAnalytics(payload, projected, command)
+                CSharpLegacyPitch.recordAnalytics(payload, projected, command)
             }
         }
         return ApplyResult(next.withCommandReceipt(envelope.commandId), eventName)
@@ -217,7 +230,7 @@ public object CSharpLegacyAggregateBridge {
             meta = base.meta.copy(completedGameCount = GameCompletionRules.afterHighSchool(base, next), standaloneSoulBalance = if (isStart) 0 else base.meta.standaloneSoulBalance))
         val result = SeedChallengeRules.finish(base, command, updated)
         val output = payload.withHighSchool(readModel.takeIf { result.highSchool != null }, result.stage)
-        val pitchAdjusted = if (command is HighSchoolPhase4Command.StartSeedChallenge || command == HighSchoolPhase4Command.EndChallenge) applyPitch(output, result.pitch) else output
+        val pitchAdjusted = if (command is HighSchoolPhase4Command.StartSeedChallenge || command == HighSchoolPhase4Command.EndChallenge) CSharpLegacyPitch.applyPitch(output, result.pitch) else output
         return withRetirementState(pitchAdjusted, result) to "highSchool.${commandName(command)}"
     }
 
@@ -266,7 +279,7 @@ public object CSharpLegacyAggregateBridge {
         }
         val changed = ProRetirementLedger.settle(base.copy(pro = next, stage = stage))
         val output = payload.withPro(readModel, changed.stage)
-        return withRetirementState(if (restarting) applyPitch(output, null) else output, changed) to "pro.${commandName(command)}"
+        return withRetirementState(if (restarting) CSharpLegacyPitch.applyPitch(output, null) else output, changed) to "pro.${commandName(command)}"
     }
 
     private fun withRetirementState(payload: JsonValue.Obj, state: GameAggregateState): JsonValue.Obj {
@@ -315,7 +328,7 @@ public object CSharpLegacyAggregateBridge {
         )
     }
 
-    private fun readExtras(installId: String, highSchool: JsonValue.Obj?, nextSeed: String): CSharpHighSchoolSnapshotWire.ReadExtras =
+    internal fun readExtras(installId: String, highSchool: JsonValue.Obj?, nextSeed: String): CSharpHighSchoolSnapshotWire.ReadExtras =
         CSharpHighSchoolSnapshotWire.ReadExtras(
             installId = installId,
             nextSeed = nextSeed,
@@ -327,7 +340,7 @@ public object CSharpLegacyAggregateBridge {
             pledgeId = highSchool?.stringOrNull("pledgeId"),
         )
 
-    private fun overlayHighSchool(
+    internal fun overlayHighSchool(
         previous: JsonValue.Obj?,
         state: HighSchoolPhase4State,
         extras: CSharpHighSchoolSnapshotWire.ReadExtras,
@@ -401,269 +414,6 @@ public object CSharpLegacyAggregateBridge {
         return JsonValue.Obj(next)
     }
 
-    private fun reservePitch(state: GameAggregateState, command: GameCommand.ReservePitch): GameAggregateState {
-        require(state.pitch == null || state.pitch.boundary == PitchBoundary.COMPLETED || state.pitch.boundary == PitchBoundary.ABANDONED) { "pitch.reserve_active" }
-        require(!state.deleted) { "pitch.reserve_deleted" }
-        when (command.careerKind) {
-            PitchCareerKind.HIGH_SCHOOL -> {
-                val highSchool = state.highSchool
-                require(highSchool != null && highSchool.run.careerId == command.careerId) { "pitch.reserve_highSchool_career" }
-                require(highSchool.run.phase != HighSchoolPhase.COMPLETED) { "pitch.reserve_highSchool_inactive" }
-            }
-            PitchCareerKind.PRO -> {
-                val pro = state.pro
-                require(pro != null && pro.careerId == command.careerId) { "pitch.reserve_pro_career" }
-                require(pro.phase != ProCareerPhase.COMPLETED) { "pitch.reserve_pro_inactive" }
-            }
-            PitchCareerKind.TUTORIAL -> state.requireActiveTutorialPitch(
-                careerId = command.careerId,
-                boundary = PitchBoundary.RESERVED,
-                challengeRun = command.challengeRun,
-                errorPrefix = "pitch.reserve_tutorial",
-            )
-        }
-        return state.copy(
-            pitch = PitchDurableState(command.sessionId, command.careerKind, command.careerId, command.gameId, command.seed, PitchBoundary.RESERVED, challengeRun = command.challengeRun),
-        )
-    }
-
-    private fun startPitch(state: GameAggregateState, command: GameCommand.StartPitch): GameAggregateState {
-        val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary == PitchBoundary.RESERVED) { "pitch.start_boundary" }
-        return state.copy(pitch = pitch.copy(boundary = PitchBoundary.PLAYING))
-    }
-
-    private fun commitPitch(state: GameAggregateState, command: GameCommand.CommitPitch): GameAggregateState {
-        val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary == PitchBoundary.PLAYING) { "pitch.commit_boundary" }
-        require(command.pitchId.isNotBlank() && command.resultHash.isNotBlank()) { "pitch.commit_payload" }
-        require(command.pitchId !in pitch.committedPitchIds) { "pitch.commit_duplicate" }
-        return state.copy(
-            pitch = pitch.copy(
-                boundary = PitchBoundary.COMMITTED,
-                pitchIndex = pitch.pitchIndex + 1,
-                committedPitchIds = pitch.committedPitchIds + command.pitchId,
-                resultHashes = pitch.resultHashes + command.resultHash,
-                checkpoint = command.checkpoint ?: pitch.checkpoint,
-            ),
-        )
-    }
-
-    private fun consumePitch(state: GameAggregateState, command: GameCommand.ConsumePitch): GameAggregateState {
-        val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary == PitchBoundary.COMMITTED) { "pitch.consume_boundary" }
-        require(command.pitchId in pitch.committedPitchIds && command.pitchId !in pitch.consumedPitchIds) { "pitch.consume_payload" }
-        return state.copy(pitch = pitch.copy(boundary = PitchBoundary.CONSUMED, consumedPitchIds = pitch.consumedPitchIds + command.pitchId))
-    }
-
-    private fun terminalPitch(state: GameAggregateState, command: GameCommand.MarkPitchTerminal): GameAggregateState {
-        val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary == PitchBoundary.CONSUMED) { "pitch.terminal_boundary" }
-        require(command.pitchId in pitch.consumedPitchIds && command.terminalHash.isNotBlank()) { "pitch.terminal_payload" }
-        val resultHashes = pitch.resultHashes.toMutableList()
-        resultHashes[pitch.consumedPitchIds.indexOf(command.pitchId)] = command.terminalHash
-        return state.copy(pitch = pitch.copy(boundary = PitchBoundary.TERMINAL, terminalPitchId = command.pitchId, resultHashes = resultHashes))
-    }
-
-    private fun completePitch(state: GameAggregateState, command: GameCommand.CompletePitch): GameAggregateState =
-        GameCompletionRules.completePitch(state, command.sessionId)
-
-    private fun suspendPitch(state: GameAggregateState, command: GameCommand.SuspendPitch): GameAggregateState {
-        val pitch = requirePitch(state, command.sessionId)
-        return state.copy(pitch = PitchStateTransitions.suspend(pitch, command.checkpoint))
-    }
-
-    private fun resumePitch(state: GameAggregateState, command: GameCommand.ResumePitch): GameAggregateState {
-        val pitch = requirePitch(state, command.sessionId)
-        return state.copy(pitch = PitchStateTransitions.resume(pitch))
-    }
-
-    private fun abandonPitch(state: GameAggregateState, command: GameCommand.AbandonPitch): GameAggregateState {
-        val pitch = requirePitch(state, command.sessionId)
-        return state.copy(pitch = PitchStateTransitions.abandon(pitch, command.reason))
-    }
-
-    private fun clearPresentation(
-        payload: JsonValue.Obj,
-        state: GameAggregateState,
-        command: GameCommand.ClearPitchPresentation,
-    ): JsonValue.Obj {
-        val pitch = requirePitch(state, command.sessionId)
-        require(pitch.boundary == PitchBoundary.COMPLETED || pitch.boundary == PitchBoundary.ABANDONED) { "pitch.clear_boundary" }
-        if (pitch.careerKind == PitchCareerKind.PRO) {
-            val pro = requireNotNull(state.pro) { "phase7.pro_missing" }
-            val cleared = pro.copy(lastPresentation = null, lastBattedBall = null, lastFielding = null, commitment = "")
-            val resigned = cleared.copy(commitment = com.solkim.baseball.core.pro.ProKernel().commitment(cleared))
-            val previous = payload.objectOrNull("pro")
-            return payload.withPro(CSharpLegacyProBridge.encodeReadModel(resigned, previous?.stringOrNull("nextSeed") ?: pro.seed, previous), state.stage)
-        }
-        val highSchool = state.highSchool
-        if (highSchool?.lastPresentation != null) {
-            val resigned = HighSchoolPhase4Kernel().commitShadowState(highSchool.copy(lastPresentation = null))
-            val previous = payload.objectOrNull("highSchool")
-            val previousSnapshot = previous?.stringOrNull("coreStateJson")?.let { raw ->
-                runCatching { StrictJson.parseUtf8(raw.toByteArray()) as? JsonValue.Obj }.getOrNull()
-            }
-            val coreJson = CSharpHighSchoolSnapshotWire.encodeUtf8(resigned.run, previousSnapshot)
-            val extras = readExtras(payload.string("installId"), previous, previous?.stringOrNull("nextSeed") ?: "0")
-            return payload.withHighSchool(overlayHighSchool(previous, resigned, extras, coreJson), GameStage.entries.first { it.wire == payload.string("stage") })
-        }
-        return payload
-    }
-
-    private fun recordAnalytics(
-        payload: JsonValue.Obj,
-        state: GameAggregateState,
-        command: GameCommand.RecordAnalytics,
-    ): JsonValue.Obj {
-        require(!state.analytics.contains(command.receiptId)) { "analytics.receipt_duplicate" }
-        Phase9AnalyticsContract.validateManual(command.eventName, command.properties)
-        val scope = csharpScope(command.receiptId)
-        val analytics = payload.objectOrNull("analyticsReceipts") ?: JsonValue.Obj(linkedMapOf(
-            "schemaVersion" to JsonValue.Num("1"),
-            "records" to JsonValue.Arr(emptyList()),
-        ))
-        val records = (analytics["records"] as? JsonValue.Arr)?.values.orEmpty().toMutableList()
-        val exists = records.any { item ->
-            (item as? JsonValue.Obj)?.stringOrNull("scopeId") == scope
-        }
-        if (!exists) {
-            records += JsonValue.Obj(linkedMapOf(
-                "scopeId" to JsonValue.Str(scope),
-                "recordedAtUnixSeconds" to JsonValue.Num((System.currentTimeMillis() / 1000L).toString()),
-                "retention" to JsonValue.Str("lifetime"),
-            ))
-        }
-        val next = LinkedHashMap(payload.entries)
-        next["analyticsReceipts"] = JsonValue.Obj(linkedMapOf(
-            "schemaVersion" to JsonValue.Num("1"),
-            "records" to JsonValue.Arr(records),
-        ))
-        return JsonValue.Obj(next)
-    }
-
-    private fun applyPitch(payload: JsonValue.Obj, pitch: PitchDurableState?, clearResume: Boolean = false): JsonValue.Obj {
-        val next = LinkedHashMap(payload.entries)
-        // C# resume state must be cleared after completion, while Compose needs the
-        // durable result to route the tutorial and continue the same multi-pitch game.
-        val meta = LinkedHashMap(payload.objectOrNull("meta")?.entries ?: emptyMap())
-        val terminal = pitch?.takeIf {
-            it.boundary in setOf(PitchBoundary.COMPLETED, PitchBoundary.ABANDONED)
-        }?.let(GameAggregateCodec::encodePitch)
-        if (terminal != null) meta["nativeTerminalPitch"] = terminal else meta.remove("nativeTerminalPitch")
-        next["meta"] = JsonValue.Obj(meta)
-        if (pitch == null || clearResume || pitch.boundary == PitchBoundary.COMPLETED || pitch.boundary == PitchBoundary.ABANDONED) {
-            next["pitchResume"] = JsonValue.Null
-            next["pendingPitchCompletion"] = JsonValue.Null
-        } else {
-            next["pitchResume"] = writePitchResume(pitch)
-            next["pendingPitchCompletion"] = JsonValue.Null
-        }
-        return JsonValue.Obj(next)
-    }
-
-    private fun writePitchResume(pitch: PitchDurableState): JsonValue.Obj = JsonValue.Obj(linkedMapOf(
-        "gameId" to JsonValue.Str(pitch.gameId),
-        "careerKind" to JsonValue.Str(pitch.careerKind.wire),
-        "careerId" to JsonValue.Str(pitch.careerId),
-        "scenarioId" to JsonValue.Str(pitch.gameId),
-        "sessionSeed" to JsonValue.Str(pitch.seed),
-        "maximumBatters" to JsonValue.Num("1"),
-        "completedBatters" to JsonValue.Num("0"),
-        "checkpointJson" to JsonValue.Str(encodeNativePitch(pitch)),
-        "awaitingCompletion" to JsonValue.Bool(false),
-    ))
-
-    private fun projectPitch(resume: JsonValue.Obj?): PitchDurableState? {
-        if (resume == null) return null
-        val checkpoint = resume.stringOrNull("checkpointJson")
-        if (!checkpoint.isNullOrBlank()) {
-            decodeNativePitch(checkpoint)?.let { return it }
-        }
-        val kind = PitchCareerKind.entries.firstOrNull { it.wire == resume.stringOrNull("careerKind") } ?: return null
-        return PitchDurableState(
-            sessionId = resume.stringOrNull("gameId") ?: return null,
-            careerKind = kind,
-            careerId = resume.stringOrNull("careerId") ?: return null,
-            gameId = resume.stringOrNull("gameId") ?: return null,
-            seed = resume.stringOrNull("sessionSeed") ?: return null,
-            boundary = PitchBoundary.PLAYING,
-        )
-    }
-
-    private fun encodeNativePitch(pitch: PitchDurableState): String = StrictJson.canonical(
-        JsonValue.Obj(linkedMapOf(
-            "nativePitch" to JsonValue.Obj(linkedMapOf(
-                "sessionId" to JsonValue.Str(pitch.sessionId),
-                "careerKind" to JsonValue.Str(pitch.careerKind.wire),
-                "careerId" to JsonValue.Str(pitch.careerId),
-                "gameId" to JsonValue.Str(pitch.gameId),
-                "seed" to JsonValue.Str(pitch.seed),
-                "boundary" to JsonValue.Str(pitch.boundary.wire),
-                "challengeRun" to JsonValue.Bool(pitch.challengeRun),
-                "pitchIndex" to JsonValue.Num(pitch.pitchIndex.toString()),
-                "committedPitchIds" to JsonValue.Arr(pitch.committedPitchIds.map(JsonValue::Str)),
-                "consumedPitchIds" to JsonValue.Arr(pitch.consumedPitchIds.map(JsonValue::Str)),
-                "terminalPitchId" to (pitch.terminalPitchId?.let(JsonValue::Str) ?: JsonValue.Null),
-                "resultHashes" to JsonValue.Arr(pitch.resultHashes.map(JsonValue::Str)),
-                "checkpoint" to (pitch.checkpoint?.let(JsonValue::Str) ?: JsonValue.Null),
-                "suspendedFrom" to (pitch.suspendedFrom?.wire?.let(JsonValue::Str) ?: JsonValue.Null),
-                "abandonedReason" to (pitch.abandonedReason?.let(JsonValue::Str) ?: JsonValue.Null),
-            )),
-        )),
-    )
-
-    private fun decodeNativePitch(raw: String): PitchDurableState? {
-        val root = runCatching { StrictJson.parseUtf8(raw.toByteArray()) as? JsonValue.Obj }.getOrNull() ?: return null
-        val native = root.objectOrNull("nativePitch") ?: return null
-        val kind = PitchCareerKind.entries.firstOrNull { it.wire == native.stringOrNull("careerKind") } ?: return null
-        val boundary = PitchBoundary.entries.firstOrNull { it.wire == native.stringOrNull("boundary") } ?: return null
-        return PitchDurableState(
-            sessionId = native.stringOrNull("sessionId") ?: return null,
-            careerKind = kind,
-            careerId = native.stringOrNull("careerId") ?: return null,
-            gameId = native.stringOrNull("gameId") ?: return null,
-            seed = native.stringOrNull("seed") ?: return null,
-            boundary = boundary,
-            challengeRun = native.boolOrDefault("challengeRun", false),
-            pitchIndex = native.intOrDefault("pitchIndex", 0),
-            committedPitchIds = native.stringArray("committedPitchIds"),
-            consumedPitchIds = native.stringArray("consumedPitchIds"),
-            terminalPitchId = native.stringOrNull("terminalPitchId"),
-            resultHashes = native.stringArray("resultHashes"),
-            checkpoint = native.stringOrNull("checkpoint"),
-            suspendedFrom = native.stringOrNull("suspendedFrom")?.let { wire -> PitchBoundary.entries.firstOrNull { it.wire == wire } },
-            abandonedReason = native.stringOrNull("abandonedReason"),
-        )
-    }
-
-    private fun projectAnalytics(value: JsonValue.Obj?): AnalyticsReceiptState {
-        val records = (value?.get("records") as? JsonValue.Arr)?.values.orEmpty().mapNotNull { item ->
-            val record = item as? JsonValue.Obj ?: return@mapNotNull null
-            val scope = record.stringOrNull("scopeId") ?: return@mapNotNull null
-            AnalyticsReceipt(
-                receiptId = scope.removePrefix("once:"),
-                eventName = scope.removePrefix("once:"),
-                revision = 1UL,
-                commitment = "",
-            )
-        }
-        return AnalyticsReceiptState(records)
-    }
-
-    private fun csharpScope(receiptId: String): String {
-        val normalized = receiptId.lowercase()
-        val scoped = if (normalized.startsWith("once:")) normalized else "once:$normalized"
-        require(scoped.length <= 96 && scoped.matches(Regex("once:[a-z0-9:_.-]+"))) { "analytics.scope_invalid" }
-        return scoped
-    }
-
-    private fun requirePitch(state: GameAggregateState, sessionId: String): PitchDurableState {
-        val pitch = state.pitch ?: throw GameCommandException("pitch.missing")
-        require(pitch.sessionId == sessionId) { "pitch.session_mismatch" }
-        return pitch
-    }
-
     private fun commandSeed(command: HighSchoolPhase4Command, fallback: String): String = when (command) {
         is HighSchoolPhase4Command.Start -> command.request.seed
         is HighSchoolPhase4Command.StartConfigured -> command.request.seed
@@ -687,82 +437,4 @@ public object CSharpLegacyAggregateBridge {
 
     private fun pascalName(wire: String): String =
         wire.split('_').joinToString("") { part -> part.replaceFirstChar { it.uppercase() } }
-
-    private fun JsonValue.Obj.withSettings(settings: GameSettingsState): JsonValue.Obj {
-        val next = LinkedHashMap(entries)
-        next["settings"] = JsonValue.Obj(linkedMapOf(
-            "schemaVersion" to JsonValue.Num("1"),
-            "autoReleaseEnabled" to JsonValue.Bool(settings.autoReleaseEnabled),
-            "soundEnabled" to JsonValue.Bool(settings.soundEnabled),
-            "musicEnabled" to JsonValue.Bool(settings.musicEnabled),
-            "hapticsEnabled" to JsonValue.Bool(settings.hapticsEnabled),
-            "notificationsEnabled" to JsonValue.Bool(settings.notificationsEnabled),
-            "highContrastEnabled" to JsonValue.Bool(settings.highContrastEnabled),
-            "reducedMotionEnabled" to JsonValue.Bool(settings.reducedMotionEnabled),
-        ))
-        return JsonValue.Obj(next)
-    }
-
-    private fun JsonValue.Obj.withStage(stage: GameStage): JsonValue.Obj {
-        val next = LinkedHashMap(entries)
-        next["stage"] = JsonValue.Str(stage.wire)
-        return JsonValue.Obj(next)
-    }
-
-    private fun JsonValue.Obj.withHighSchool(highSchool: JsonValue.Obj?, stage: GameStage): JsonValue.Obj {
-        val next = LinkedHashMap(entries)
-        next["highSchool"] = highSchool ?: JsonValue.Null
-        next["stage"] = JsonValue.Str(stage.wire)
-        return JsonValue.Obj(next)
-    }
-
-    private fun JsonValue.Obj.withPro(pro: JsonValue.Obj, stage: GameStage): JsonValue.Obj {
-        val next = LinkedHashMap(entries)
-        next["pro"] = pro
-        next["stage"] = JsonValue.Str(stage.wire)
-        return JsonValue.Obj(next)
-    }
-
-    private fun JsonValue.Obj.withCommandReceipt(commandId: String): JsonValue.Obj {
-        val next = LinkedHashMap(entries)
-        val revision = ulongOrDefault("revision", 0UL) + 1UL
-        next["revision"] = JsonValue.Num(revision.toString())
-        val receipts = stringArray("commandReceipts").toMutableSet()
-        receipts += commandId
-        next["commandReceipts"] = JsonValue.Arr(CommandReceiptRetention.retain(receipts.toList()).map(JsonValue::Str))
-        return JsonValue.Obj(next)
-    }
-
-    private fun JsonValue.Obj.toSettings(): GameSettingsState = GameSettingsState(
-        autoReleaseEnabled = boolOrDefault("autoReleaseEnabled", false),
-        soundEnabled = boolOrDefault("soundEnabled", true),
-        musicEnabled = boolOrDefault("musicEnabled", true),
-        hapticsEnabled = boolOrDefault("hapticsEnabled", true),
-        notificationsEnabled = boolOrDefault("notificationsEnabled", false),
-        highContrastEnabled = boolOrDefault("highContrastEnabled", false),
-        reducedMotionEnabled = boolOrDefault("reducedMotionEnabled", false),
-    )
-
-    private fun JsonValue.Obj.canonicalPlaceholder(): String = "legacy"
 }
-
-internal fun JsonValue.Obj.objectOrNull(name: String): JsonValue.Obj? = this[name] as? JsonValue.Obj
-internal fun JsonValue.Obj.string(name: String): String =
-    (this[name] as? JsonValue.Str)?.value ?: throw IllegalStateException("game.store.${name}_missing")
-internal fun JsonValue.Obj.stringOrNull(name: String): String? = when (val value = this[name]) {
-    null, JsonValue.Null -> null
-    is JsonValue.Str -> value.value
-    else -> null
-}
-internal fun JsonValue.Obj.intOrDefault(name: String, default: Int): Int =
-    (this[name] as? JsonValue.Num)?.raw?.toIntOrNull() ?: default
-internal fun JsonValue.Obj.ulongOrDefault(name: String, default: ULong): ULong =
-    when (val value = this[name]) {
-        is JsonValue.Num -> value.raw.toULongOrNull() ?: default
-        is JsonValue.Str -> value.value.toULongOrNull() ?: default
-        else -> default
-    }
-internal fun JsonValue.Obj.boolOrDefault(name: String, default: Boolean): Boolean =
-    (this[name] as? JsonValue.Bool)?.value ?: default
-internal fun JsonValue.Obj.stringArray(name: String): List<String> =
-    (this[name] as? JsonValue.Arr)?.values?.mapNotNull { (it as? JsonValue.Str)?.value } ?: emptyList()

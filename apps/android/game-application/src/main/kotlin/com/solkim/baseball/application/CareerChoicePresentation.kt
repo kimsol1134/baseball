@@ -79,7 +79,7 @@ public object CareerChoicePresentation {
         HighSchoolAwakening.SCOUT_COMPOSURE -> "코치: 압박이 커져도 투구가 흔들리지 않더라. 그 침착함을 기억해."
     }
 
-    public fun conclusion(run: HighSchoolState): List<Phase8Section> {
+    public fun conclusion(run: HighSchoolState): List<ScreenSection> {
         val draft = run.draftResult ?: return emptyList()
         val assessment = HighSchoolKernel().draftAssessment(run)
         val gap = draft.evaluationScore - assessment.second
@@ -96,15 +96,15 @@ public object CareerChoicePresentation {
         }
         val verdict = if (gap >= 0) "기준보다 ${gap}점 위. 이름이 불렸다." else "${-gap}점이 모자랐다."
         return listOf(
-            Phase8Section("draft-reasons", "스카우트의 계산", listOf(
-                Phase8Row("지명 기준 ${assessment.second}점", verdict, assessment.third.joinToString(" · ")),
-                Phase8Row("다음 생의 준비", advice),
+            ScreenSection("draft-reasons", "스카우트의 계산", listOf(
+                ScreenRow("지명 기준 ${assessment.second}점", verdict, assessment.third.joinToString(" · ")),
+                ScreenRow("다음 생의 준비", advice),
             )),
-            Phase8Section("life-story", "이번 생에 남긴 것", listOf(
-                Phase8Row("나의 강점", strongest, "가장 높이 키운 능력이에요."),
-                Phase8Row("쌓아 온 훈련", "${run.totalTrainingsCompleted}회", "한 번씩 쌓은 훈련이 지금의 선수를 만들었어요."),
-                Phase8Row("마운드의 기록", "${run.performance.strikeouts}삼진 · ${run.performance.walks}볼넷", "직접 치른 승부처의 기록이에요."),
-                Phase8Row("나만의 각성", run.selectedAwakenings.joinToString(" · ") { HighSchoolDisplayRules.awakeningTitle(it.wire) }.ifBlank { "아직 없음" }),
+            ScreenSection("life-story", "이번 생에 남긴 것", listOf(
+                ScreenRow("나의 강점", strongest, "가장 높이 키운 능력이에요."),
+                ScreenRow("쌓아 온 훈련", "${run.totalTrainingsCompleted}회", "한 번씩 쌓은 훈련이 지금의 선수를 만들었어요."),
+                ScreenRow("마운드의 기록", "${run.performance.strikeouts}삼진 · ${run.performance.walks}볼넷", "직접 치른 승부처의 기록이에요."),
+                ScreenRow("나만의 각성", run.selectedAwakenings.joinToString(" · ") { HighSchoolDisplayRules.awakeningTitle(it.wire) }.ifBlank { "아직 없음" }),
             )),
         )
     }

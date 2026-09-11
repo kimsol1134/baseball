@@ -32,30 +32,30 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Phase 8 coverage uses reachable, signed aggregate fixtures instead of an invalid matrix seed. */
-class Phase8ScreenProjectionTest {
-    private val context = Phase8CommandContext(Phase8KoreaClock { LocalDate.of(2026, 8, 14) })
+class ScreenProjectionTest {
+    private val context = ScreenCommandContext(KoreaClock { LocalDate.of(2026, 8, 14) })
 
     @Test
     fun productCoverageExcludesRetiredDailyAndFailsClosedForOffStateScreens() {
         val initial = GameAggregateState.initial("phase8-contract")
-        assertEquals(29, Phase8ScreenId.ordered.size)
-        assertFalse(Phase8ScreenId.ordered.any { it.wire == "P-023" })
-        assertEquals(Phase8ScreenId.P001_OPENING, Phase8ScreenProjection.normalizeLegacyRoute("daily", initial))
-        assertEquals(Phase8ScreenId.P001_OPENING, Phase8ScreenProjection.normalizeLegacyRoute("P-023", initial))
-        assertEquals(Phase8ScreenId.P001_OPENING, Phase8ScreenProjection.normalizeLegacyRoute("daily_inning", initial))
+        assertEquals(29, ScreenId.ordered.size)
+        assertFalse(ScreenId.ordered.any { it.wire == "P-023" })
+        assertEquals(ScreenId.P001_OPENING, ScreenProjection.normalizeLegacyRoute("daily", initial))
+        assertEquals(ScreenId.P001_OPENING, ScreenProjection.normalizeLegacyRoute("P-023", initial))
+        assertEquals(ScreenId.P001_OPENING, ScreenProjection.normalizeLegacyRoute("daily_inning", initial))
         assertFailsWith<IllegalArgumentException> {
-            Phase8ScreenProjection.project(initial, Phase8ScreenId.P005_SCHOOL_SELECTION, context)
+            ScreenProjection.project(initial, ScreenId.P005_SCHOOL_SELECTION, context)
         }
-        assertEquals(Phase8ScreenId.P001_OPENING, Phase8ScreenProjection.preferredScreen(initial))
+        assertEquals(ScreenId.P001_OPENING, ScreenProjection.preferredScreen(initial))
     }
 
     @Test
     fun openingProjectsReincarnationSliderCopyAndDefaultThrowIsNotAutoRelease() {
         val initial = GameAggregateState.initial("opening-slider")
         assertFalse(initial.settings.autoReleaseEnabled)
-        assertEquals(Phase8ScreenId.P001_OPENING, Phase8ScreenProjection.preferredScreen(initial))
-        val model = Phase8ScreenProjection.project(initial, Phase8ScreenId.P001_OPENING, context)
-        Phase8AccessibilityContract.validate(model)
+        assertEquals(ScreenId.P001_OPENING, ScreenProjection.preferredScreen(initial))
+        val model = ScreenProjection.project(initial, ScreenId.P001_OPENING, context)
+        ScreenAccessibilityContract.validate(model)
         val copy = buildString {
             append(model.title)
             append(' ')
@@ -86,13 +86,13 @@ class Phase8ScreenProjectionTest {
     @Test
     fun achievementsShowPlayerGoalsAndPreserveEarnedLegacyAwards() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("achievements-catalog"))
-        val controller = Phase8Controller(store, context)
-        executeFirst(controller, Phase8ScreenId.P001_OPENING)
-        executeFirst(controller, Phase8ScreenId.P002_SETUP)
+        val controller = ScreenController(store, context)
+        executeFirst(controller, ScreenId.P001_OPENING)
+        executeFirst(controller, ScreenId.P002_SETUP)
         val highSchool = requireNotNull(store.current.highSchool)
         assertTrue(highSchool.achievements.isEmpty())
-        val locked = controller.projection(Phase8ScreenId.P026_ACHIEVEMENTS)
-        Phase8AccessibilityContract.validate(locked)
+        val locked = controller.projection(ScreenId.P026_ACHIEVEMENTS)
+        ScreenAccessibilityContract.validate(locked)
         val lockedRows = locked.sections.single { it.id == "achievements" }.rows
         assertEquals(12, lockedRows.size)
         lockedRows.forEach { row ->
@@ -108,8 +108,8 @@ class Phase8ScreenProjectionTest {
             ),
         ).committed()
         unlockedState.validate()
-        val unlocked = Phase8ScreenProjection.project(unlockedState, Phase8ScreenId.P026_ACHIEVEMENTS, context)
-        Phase8AccessibilityContract.validate(unlocked)
+        val unlocked = ScreenProjection.project(unlockedState, ScreenId.P026_ACHIEVEMENTS, context)
+        ScreenAccessibilityContract.validate(unlocked)
         val unlockedRows = unlocked.sections.single { it.id == "achievements" }.rows
         assertEquals(13, unlockedRows.size)
         assertEquals("확인함", unlockedRows.single { it.label == "첫 탈삼진" }.value)
@@ -121,12 +121,12 @@ class Phase8ScreenProjectionTest {
 
     @Test
     fun glossaryHasTwentyNineTermsAndContractMarketProjectsRenewalOffers() {
-        val settings = Phase8ScreenProjection.project(
+        val settings = ScreenProjection.project(
             GameAggregateState.initial("phase8-glossary"),
-            Phase8ScreenId.P027_SETTINGS,
+            ScreenId.P027_SETTINGS,
             context,
         )
-        Phase8AccessibilityContract.validate(settings)
+        ScreenAccessibilityContract.validate(settings)
         assertEquals(29, BaseballGlossary.terms.size)
         assertEquals(29, settings.sections.single { it.id == "glossary" }.rows.size)
 
@@ -161,12 +161,12 @@ class Phase8ScreenProjectionTest {
                 commitment = "",
             ),
         )
-        val model = Phase8ScreenProjection.project(
+        val model = ScreenProjection.project(
             aggregateWithPro("phase8-contract-market", offering),
-            Phase8ScreenId.P016_PRO_CONTRACT,
+            ScreenId.P016_PRO_CONTRACT,
             context,
         )
-        Phase8AccessibilityContract.validate(model)
+        ScreenAccessibilityContract.validate(model)
         assertEquals(6, model.actions.count { it.id.startsWith("acceptOffer:") && it.enabled })
         assertTrue(model.sections.any { it.title.contains("재계약") })
         assertTrue(model.sections.flatMap { it.rows }.any { it.detail.contains("장기 재계약") || it.detail.contains("증명 계약") })
@@ -178,16 +178,16 @@ class Phase8ScreenProjectionTest {
     @Test
     fun realHighSchoolJourneyProjectsEveryHighSchoolAndMetaScreenWithCapturedCommands() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase8-high-school"))
-        val controller = Phase8Controller(store, context)
-        val covered = linkedMapOf<Phase8ScreenId, Phase8ScreenModel>()
+        val controller = ScreenController(store, context)
+        val covered = linkedMapOf<ScreenId, ScreenModel>()
 
-        fun capture(id: Phase8ScreenId) {
+        fun capture(id: ScreenId) {
             assertTrue(
-                Phase8ScreenProjection.isReachable(store.current, id),
+                ScreenProjection.isReachable(store.current, id),
                 "${id.wire} not reachable at phase=${store.current.highSchool?.run?.phase}, pitch=${store.current.pitch?.careerKind}/${store.current.pitch?.boundary}",
             )
             val model = controller.projection(id)
-            Phase8AccessibilityContract.validate(model)
+            ScreenAccessibilityContract.validate(model)
             assertEquals(
                 model.viewPayload.envelope,
                 GameCommandCodec.decode(model.viewPayload.encoded),
@@ -195,7 +195,7 @@ class Phase8ScreenProjectionTest {
             )
             covered[id] = model
             model.actions.filter { it.enabled }.forEach { action ->
-                if (id == Phase8ScreenId.P029_RETURN_PLAN && action.id in setOf("prepareReturnPlan", "dismissReturnPlan")) {
+                if (id == ScreenId.P029_RETURN_PLAN && action.id in setOf("prepareReturnPlan", "dismissReturnPlan")) {
                     // Scheduling is a platform permission/alarm action; it must not mutate career state.
                     assertTrue(action.payloads.isEmpty())
                 } else assertTrue(action.payloads.isNotEmpty(), "enabled action has no captured payload: ${id.wire}/${action.id}")
@@ -205,77 +205,77 @@ class Phase8ScreenProjectionTest {
             }
         }
 
-        capture(Phase8ScreenId.P001_OPENING)
-        executeFirst(controller, Phase8ScreenId.P001_OPENING)
-        capture(Phase8ScreenId.P002_SETUP)
-        executeFirst(controller, Phase8ScreenId.P002_SETUP)
-        capture(Phase8ScreenId.P003_PROLOGUE)
-        executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-        capture(Phase8ScreenId.P004_PITCH_TUTORIAL)
-        executeFirst(controller, Phase8ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
+        capture(ScreenId.P001_OPENING)
+        executeFirst(controller, ScreenId.P001_OPENING)
+        capture(ScreenId.P002_SETUP)
+        executeFirst(controller, ScreenId.P002_SETUP)
+        capture(ScreenId.P003_PROLOGUE)
+        executeFirst(controller, ScreenId.P003_PROLOGUE, "beginTutorial")
+        capture(ScreenId.P004_PITCH_TUTORIAL)
+        executeFirst(controller, ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
         finishTutorialPitch(store)
-        executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
+        executeFirst(controller, ScreenId.P003_PROLOGUE, "completeTutorial")
         assertEquals(0UL, store.current.meta.completedGameCount, "non-challenge tutorial completion must not count as an official game")
         assertEquals(1, store.current.analytics.receipts.count { it.eventName == "first_pitch" })
-        capture(Phase8ScreenId.P005_SCHOOL_SELECTION)
-        executeFirst(controller, Phase8ScreenId.P005_SCHOOL_SELECTION)
+        capture(ScreenId.P005_SCHOOL_SELECTION)
+        executeFirst(controller, ScreenId.P005_SCHOOL_SELECTION)
 
         // The first meaningful aggregate state makes all read-only career/meta destinations
         // reachable; they are projected here before the vertical advances further.
         listOf(
-            Phase8ScreenId.P011_HIGH_SCHOOL_CAREER,
-            Phase8ScreenId.P012_TOURNAMENT_LEAGUE,
-            Phase8ScreenId.P024_WEEKLY,
-            Phase8ScreenId.P025_RECORDS_LEAGUE,
-            Phase8ScreenId.P026_ACHIEVEMENTS,
-            Phase8ScreenId.P027_SETTINGS,
-            Phase8ScreenId.P028_LIFECARD,
-            Phase8ScreenId.P029_RETURN_PLAN,
-            Phase8ScreenId.P016_PRO_CONTRACT,
+            ScreenId.P011_HIGH_SCHOOL_CAREER,
+            ScreenId.P012_TOURNAMENT_LEAGUE,
+            ScreenId.P024_WEEKLY,
+            ScreenId.P025_RECORDS_LEAGUE,
+            ScreenId.P026_ACHIEVEMENTS,
+            ScreenId.P027_SETTINGS,
+            ScreenId.P028_LIFECARD,
+            ScreenId.P029_RETURN_PLAN,
+            ScreenId.P016_PRO_CONTRACT,
         ).forEach(::capture)
 
-        val phase7 = Phase7VerticalController(store, "phase8-ui")
-        capture(Phase8ScreenId.P006_TRAINING)
+        val pitchSession = PitchSessionController(store)
+        capture(ScreenId.P006_TRAINING)
         while (store.current.highSchool?.run?.phase == HighSchoolPhase.TRAINING) {
-            executeFirst(controller, Phase8ScreenId.P006_TRAINING)
+            executeFirst(controller, ScreenId.P006_TRAINING)
         }
-        capture(Phase8ScreenId.P007_RELATIONSHIP)
-        executeFirst(controller, Phase8ScreenId.P007_RELATIONSHIP)
-        advanceHighSchoolUntil(store, controller, phase7, HighSchoolPhase.AWAKENING) {
-            capture(Phase8ScreenId.P008_IMPORTANT_GAME)
+        capture(ScreenId.P007_RELATIONSHIP)
+        executeFirst(controller, ScreenId.P007_RELATIONSHIP)
+        advanceHighSchoolUntil(store, controller, pitchSession, HighSchoolPhase.AWAKENING) {
+            capture(ScreenId.P008_IMPORTANT_GAME)
         }
-        capture(Phase8ScreenId.P009_AWAKENING)
-        executeFirst(controller, Phase8ScreenId.P009_AWAKENING)
-        advanceHighSchoolUntil(store, controller, phase7, HighSchoolPhase.CHAPTER_REVIEW)
-        capture(Phase8ScreenId.P010_CHAPTER)
-        executeFirst(controller, Phase8ScreenId.P010_CHAPTER)
-        advanceHighSchoolUntil(store, controller, phase7, HighSchoolPhase.DRAFT)
+        capture(ScreenId.P009_AWAKENING)
+        executeFirst(controller, ScreenId.P009_AWAKENING)
+        advanceHighSchoolUntil(store, controller, pitchSession, HighSchoolPhase.CHAPTER_REVIEW)
+        capture(ScreenId.P010_CHAPTER)
+        executeFirst(controller, ScreenId.P010_CHAPTER)
+        advanceHighSchoolUntil(store, controller, pitchSession, HighSchoolPhase.DRAFT)
 
-        capture(Phase8ScreenId.P013_DRAFT)
-        executeFirst(controller, Phase8ScreenId.P013_DRAFT, "resolveDraft")
+        capture(ScreenId.P013_DRAFT)
+        executeFirst(controller, ScreenId.P013_DRAFT, "resolveDraft")
         assertNotNull(store.current.highSchool?.run?.draftResult)
-        capture(Phase8ScreenId.P030_REVIEW)
-        assertTrue(controller.projection(Phase8ScreenId.P030_REVIEW).actions.isEmpty())
+        capture(ScreenId.P030_REVIEW)
+        assertTrue(controller.projection(ScreenId.P030_REVIEW).actions.isEmpty())
 
         if (store.current.highSchool?.run?.phase == HighSchoolPhase.LEGACY || store.current.highSchool?.run?.phase == HighSchoolPhase.COMPLETED) {
-            executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP, "prepareLegacy")
+            executeFirst(controller, ScreenId.P014_RUN_RECAP, "prepareLegacy")
         }
-        capture(Phase8ScreenId.P014_RUN_RECAP)
+        capture(ScreenId.P014_RUN_RECAP)
         // A draft result alone is not a review caller. The exact rendered confirmation CTA must
         // commit its durable moment receipt before P030 exposes a native review reason.
-        assertEquals(null, Phase8ScreenProjection.reviewTrigger(store.current))
-        val reviewModel = controller.projection(Phase8ScreenId.P014_RUN_RECAP)
+        assertEquals(null, ScreenProjection.reviewTrigger(store.current))
+        val reviewModel = controller.projection(ScreenId.P014_RUN_RECAP)
         val reviewMoment = reviewModel.actions.firstOrNull { it.id == "confirmDraftResult" || it.id == "confirmRecap" }
         if (reviewMoment != null) {
-            executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP, reviewMoment.id)
+            executeFirst(controller, ScreenId.P014_RUN_RECAP, reviewMoment.id)
             val expectedReview = if (reviewMoment.id == "confirmDraftResult") "drafted-reveal-confirmed" else "good-recap"
-            assertEquals(expectedReview, Phase8ScreenProjection.reviewTrigger(store.current))
+            assertEquals(expectedReview, ScreenProjection.reviewTrigger(store.current))
         }
-        executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP) { it.id.startsWith("selectLegacy:") }
-        capture(Phase8ScreenId.P014_RUN_RECAP)
-        executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP, "finalizeArchive")
-        capture(Phase8ScreenId.P015_REBIRTH)
-        val frozen = requireNotNull(Phase9LifeCardProjection.selected(store.current))
+        executeFirst(controller, ScreenId.P014_RUN_RECAP) { it.id.startsWith("selectLegacy:") }
+        capture(ScreenId.P014_RUN_RECAP)
+        executeFirst(controller, ScreenId.P014_RUN_RECAP, "finalizeArchive")
+        capture(ScreenId.P015_REBIRTH)
+        val frozen = requireNotNull(LifeCardProjection.selected(store.current))
         val archived = requireNotNull(store.current.highSchool?.archive?.lastOrNull())
         assertTrue(frozen.lines.any { it.contains(archived.playerName) })
         assertTrue(frozen.lines.any { it.contains(archived.importantGames.toString()) })
@@ -286,29 +286,29 @@ class Phase8ScreenProjectionTest {
         assertTrue(frozen.text.contains(archived.soulEarned.toString()))
 
         val expected = setOf(
-            Phase8ScreenId.P001_OPENING,
-            Phase8ScreenId.P002_SETUP,
-            Phase8ScreenId.P003_PROLOGUE,
-            Phase8ScreenId.P004_PITCH_TUTORIAL,
-            Phase8ScreenId.P005_SCHOOL_SELECTION,
-            Phase8ScreenId.P006_TRAINING,
-            Phase8ScreenId.P007_RELATIONSHIP,
-            Phase8ScreenId.P008_IMPORTANT_GAME,
-            Phase8ScreenId.P009_AWAKENING,
-            Phase8ScreenId.P010_CHAPTER,
-            Phase8ScreenId.P011_HIGH_SCHOOL_CAREER,
-            Phase8ScreenId.P012_TOURNAMENT_LEAGUE,
-            Phase8ScreenId.P013_DRAFT,
-            Phase8ScreenId.P014_RUN_RECAP,
-            Phase8ScreenId.P015_REBIRTH,
-            Phase8ScreenId.P016_PRO_CONTRACT,
-            Phase8ScreenId.P024_WEEKLY,
-            Phase8ScreenId.P025_RECORDS_LEAGUE,
-            Phase8ScreenId.P026_ACHIEVEMENTS,
-            Phase8ScreenId.P027_SETTINGS,
-            Phase8ScreenId.P028_LIFECARD,
-            Phase8ScreenId.P029_RETURN_PLAN,
-            Phase8ScreenId.P030_REVIEW,
+            ScreenId.P001_OPENING,
+            ScreenId.P002_SETUP,
+            ScreenId.P003_PROLOGUE,
+            ScreenId.P004_PITCH_TUTORIAL,
+            ScreenId.P005_SCHOOL_SELECTION,
+            ScreenId.P006_TRAINING,
+            ScreenId.P007_RELATIONSHIP,
+            ScreenId.P008_IMPORTANT_GAME,
+            ScreenId.P009_AWAKENING,
+            ScreenId.P010_CHAPTER,
+            ScreenId.P011_HIGH_SCHOOL_CAREER,
+            ScreenId.P012_TOURNAMENT_LEAGUE,
+            ScreenId.P013_DRAFT,
+            ScreenId.P014_RUN_RECAP,
+            ScreenId.P015_REBIRTH,
+            ScreenId.P016_PRO_CONTRACT,
+            ScreenId.P024_WEEKLY,
+            ScreenId.P025_RECORDS_LEAGUE,
+            ScreenId.P026_ACHIEVEMENTS,
+            ScreenId.P027_SETTINGS,
+            ScreenId.P028_LIFECARD,
+            ScreenId.P029_RETURN_PLAN,
+            ScreenId.P030_REVIEW,
         )
         assertTrue(expected.all { it in covered }, "missing valid high-school coverage: ${expected - covered.keys}")
         assertTrue(store.current.meta.completedGameCount > 0UL, "the later official important game should count once")
@@ -317,13 +317,13 @@ class Phase8ScreenProjectionTest {
     @Test
     fun realProFixturesCoverContractWeekImportantSeasonOffseasonRetirementLegacyAndRecords() = runBlocking {
         val initialStore = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase8-pro-actions"))
-        val controller = Phase8Controller(initialStore, context)
-        val contract = controller.projection(Phase8ScreenId.P016_PRO_CONTRACT)
+        val controller = ScreenController(initialStore, context)
+        val contract = controller.projection(ScreenId.P016_PRO_CONTRACT)
         assertTrue(contract.actions.single { it.id == "startDirect" }.payloads.isNotEmpty())
-        controller.execute(Phase8ScreenId.P016_PRO_CONTRACT, "startDirect", contract.actions.single { it.id == "startDirect" }.payloads)
-        assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
+        controller.execute(ScreenId.P016_PRO_CONTRACT, "startDirect", contract.actions.single { it.id == "startDirect" }.payloads)
+        assertEquals(ScreenId.P017_PRO_WEEK, controller.preferredScreen())
         assertEquals(ProCatalog.RULES_VERSION, initialStore.current.pro?.proRulesVersion)
-        val weekly = controller.projection(Phase8ScreenId.P017_PRO_WEEK)
+        val weekly = controller.projection(ScreenId.P017_PRO_WEEK)
         assertEquals(6, weekly.actions.count { it.id.startsWith("proPlan:") })
         assertEquals("강속구 불펜", weekly.actions.single { it.id == "proPlan:develop_stuff" }.label)
         assertEquals("결정구 완성", weekly.actions.single { it.id == "proPlan:develop_movement" }.label)
@@ -331,7 +331,7 @@ class Phase8ScreenProjectionTest {
         assertTrue(weekly.actions.single { it.id == "proAdvanceSegment" }.label.contains("맡긴다"))
         assertTrue(weekly.actions.first { it.enabled }.id.startsWith("proPlan:"))
         assertTrue(weekly.actions.single { it.id == "proPlan:develop_stuff" }.description.contains("부상"))
-        val signedContract = controller.projection(Phase8ScreenId.P016_PRO_CONTRACT)
+        val signedContract = controller.projection(ScreenId.P016_PRO_CONTRACT)
         val contractLabels = signedContract.sections.flatMap { it.rows }.map { it.label }
         assertTrue("계약 기간" in contractLabels)
         assertTrue("연봉" in contractLabels)
@@ -346,15 +346,15 @@ class Phase8ScreenProjectionTest {
         val kernel = ProKernel()
         val base = requireNotNull(initialStore.current.pro)
         val fixtures = mapOf(
-            Phase8ScreenId.P018_PRO_IMPORTANT_GAME to signedPro(kernel, base.copy(phase = ProCareerPhase.IMPORTANT_GAME)),
-            Phase8ScreenId.P019_PRO_SEASON to signedPro(kernel, base.copy(phase = ProCareerPhase.SEASON_REVIEW)),
-            Phase8ScreenId.P020_OFFSEASON to signedPro(kernel, base.copy(phase = ProCareerPhase.OFFSEASON_DECISION)),
-            Phase8ScreenId.P021_PRO_RETIREMENT to signedPro(kernel, base.copy(phase = ProCareerPhase.RETIREMENT_DECISION)),
-            Phase8ScreenId.P022_PRO_LEGACY to linkedLegacyFixture(kernel),
+            ScreenId.P018_PRO_IMPORTANT_GAME to signedPro(kernel, base.copy(phase = ProCareerPhase.IMPORTANT_GAME)),
+            ScreenId.P019_PRO_SEASON to signedPro(kernel, base.copy(phase = ProCareerPhase.SEASON_REVIEW)),
+            ScreenId.P020_OFFSEASON to signedPro(kernel, base.copy(phase = ProCareerPhase.OFFSEASON_DECISION)),
+            ScreenId.P021_PRO_RETIREMENT to signedPro(kernel, base.copy(phase = ProCareerPhase.RETIREMENT_DECISION)),
+            ScreenId.P022_PRO_LEGACY to linkedLegacyFixture(kernel),
         )
-        val offseasonModel = Phase8ScreenProjection.project(
-            aggregateWithPro("fixture-offseason-copy", fixtures.getValue(Phase8ScreenId.P020_OFFSEASON)),
-            Phase8ScreenId.P020_OFFSEASON,
+        val offseasonModel = ScreenProjection.project(
+            aggregateWithPro("fixture-offseason-copy", fixtures.getValue(ScreenId.P020_OFFSEASON)),
+            ScreenId.P020_OFFSEASON,
             context,
         )
         assertEquals("계속하기", offseasonModel.actions.single { it.id == "offseason:continue" }.label)
@@ -366,9 +366,9 @@ class Phase8ScreenProjectionTest {
 
         fixtures.forEach { (id, pro) ->
             val state = aggregateWithPro("fixture-${id.wire}", pro)
-            assertTrue(Phase8ScreenProjection.isReachable(state, id), "${id.wire} fixture is unreachable")
-            val model = Phase8ScreenProjection.project(state, id, context)
-            Phase8AccessibilityContract.validate(model)
+            assertTrue(ScreenProjection.isReachable(state, id), "${id.wire} fixture is unreachable")
+            val model = ScreenProjection.project(state, id, context)
+            ScreenAccessibilityContract.validate(model)
             model.actions.filter { it.enabled }.forEach { action ->
                 assertTrue(action.payloads.isNotEmpty(), "enabled Pro action has no payload: ${id.wire}/${action.id}")
                 action.payloads.forEach { payload ->
@@ -377,21 +377,21 @@ class Phase8ScreenProjectionTest {
             }
         }
 
-        val records = Phase8ScreenProjection.project(
+        val records = ScreenProjection.project(
             aggregateWithPro("fixture-records", signedPro(kernel, base.copy(phase = ProCareerPhase.COMPLETED))),
-            Phase8ScreenId.P025_RECORDS_LEAGUE,
+            ScreenId.P025_RECORDS_LEAGUE,
             context,
         )
-        Phase8AccessibilityContract.validate(records)
+        ScreenAccessibilityContract.validate(records)
     }
 
     @Test
     fun nationalTeamCallAndGroupStageProjectThreeGamesOnP019() = runBlocking {
         val kernel = ProKernel()
         val startedStore = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase8-national"))
-        val startedController = Phase8Controller(startedStore, context)
-        val start = startedController.projection(Phase8ScreenId.P016_PRO_CONTRACT).actions.single { it.id == "startDirect" }
-        startedController.execute(Phase8ScreenId.P016_PRO_CONTRACT, start.id, start.payloads)
+        val startedController = ScreenController(startedStore, context)
+        val start = startedController.projection(ScreenId.P016_PRO_CONTRACT).actions.single { it.id == "startDirect" }
+        startedController.execute(ScreenId.P016_PRO_CONTRACT, start.id, start.payloads)
         val base = requireNotNull(startedStore.current.pro)
         val journey = requireNotNull(base.journeyState)
         val callState = signedPro(
@@ -409,12 +409,12 @@ class Phase8ScreenProjectionTest {
         )
         val reviewed = kernel.reviewSeason(callState, callState.seed)
         assertEquals(ProCareerPhase.SEASON_SETTLEMENT, reviewed.state.phase)
-        val settlementModel = Phase8ScreenProjection.project(
+        val settlementModel = ScreenProjection.project(
             aggregateWithPro("phase8-national-settlement", reviewed.state),
-            Phase8ScreenId.P019_PRO_SEASON,
+            ScreenId.P019_PRO_SEASON,
             context,
         )
-        Phase8AccessibilityContract.validate(settlementModel)
+        ScreenAccessibilityContract.validate(settlementModel)
         assertEquals("올해를 덮는다", settlementModel.actions.single { it.id == "acknowledgeSettlement" }.label)
         val called = kernel.acknowledgeSeasonSettlement(
             reviewed.state,
@@ -422,8 +422,8 @@ class Phase8ScreenProjectionTest {
             requireNotNull(reviewed.state.journeyState?.lastSettlement).id,
         )
         val callFixture = aggregateWithPro("phase8-national-call", called.state)
-        val callModel = Phase8ScreenProjection.project(callFixture, Phase8ScreenId.P019_PRO_SEASON, context)
-        Phase8AccessibilityContract.validate(callModel)
+        val callModel = ScreenProjection.project(callFixture, ScreenId.P019_PRO_SEASON, context)
+        ScreenAccessibilityContract.validate(callModel)
         assertEquals("소집을 수락한다", callModel.actions.single { it.id == "nationalTeam:accept" }.label)
         assertEquals("이번엔 사양한다", callModel.actions.single { it.id == "nationalTeam:decline" }.label)
         assertTrue(callModel.actions.single { it.id == "nationalTeam:accept" }.enabled)
@@ -434,17 +434,17 @@ class Phase8ScreenProjectionTest {
         }
 
         val tournamentStore = KotlinGameStore.fromShadowFixture(callFixture)
-        val tournamentController = Phase8Controller(tournamentStore, context)
-        assertEquals(Phase8ScreenId.P019_PRO_SEASON, tournamentController.preferredScreen())
+        val tournamentController = ScreenController(tournamentStore, context)
+        assertEquals(ScreenId.P019_PRO_SEASON, tournamentController.preferredScreen())
         tournamentController.execute(
-            Phase8ScreenId.P019_PRO_SEASON,
+            ScreenId.P019_PRO_SEASON,
             "nationalTeam:accept",
             callModel.actions.single { it.id == "nationalTeam:accept" }.payloads,
         )
         val tournament = requireNotNull(tournamentStore.current.pro?.nationalTournament)
         assertEquals(3, tournament.groupGames.size)
-        val groupModel = tournamentController.projection(Phase8ScreenId.P019_PRO_SEASON)
-        Phase8AccessibilityContract.validate(groupModel)
+        val groupModel = tournamentController.projection(ScreenId.P019_PRO_SEASON)
+        ScreenAccessibilityContract.validate(groupModel)
         assertEquals(3, groupModel.sections.single { it.id == "national-group" }.rows.count { it.detail.startsWith("조별") })
         if (tournament.stage == com.solkim.baseball.core.pro.ProNationalTournamentStage.AWAITING_FINAL) {
             assertTrue(groupModel.actions.any { it.id == "nationalTeam:startFinal" && it.enabled })
@@ -458,23 +458,23 @@ class Phase8ScreenProjectionTest {
     fun preferredRouteRestartDuplicateAndStaleBoundariesUseCommittedState() = runBlocking {
         val repository = InMemoryShadowFixtureGameStoreRepository(GameAggregateState.initial("phase8-restart"))
         var store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase8-restart"), repository)
-        var controller = Phase8Controller(store, context)
-        val opening = controller.projection(Phase8ScreenId.P001_OPENING)
+        var controller = ScreenController(store, context)
+        val opening = controller.projection(ScreenId.P001_OPENING)
         val enter = opening.actions.single { it.id == "enterSetup" }
         val captured = enter.payloads
-        controller.execute(Phase8ScreenId.P001_OPENING, enter.id, captured)
-        assertEquals(Phase8ScreenId.P002_SETUP, controller.preferredScreen())
+        controller.execute(ScreenId.P001_OPENING, enter.id, captured)
+        assertEquals(ScreenId.P002_SETUP, controller.preferredScreen())
 
         store.close()
         store = KotlinGameStore.open("phase8-restart", repository, NativeAuthorityMode.NATIVE_SHADOW_READ_ONLY)
-        controller = Phase8Controller(store, context)
-        assertEquals(Phase8ScreenId.P002_SETUP, controller.preferredScreen())
-        val start = controller.projection(Phase8ScreenId.P002_SETUP).actions.single { it.id == "startHighSchool" }
+        controller = ScreenController(store, context)
+        assertEquals(ScreenId.P002_SETUP, controller.preferredScreen())
+        val start = controller.projection(ScreenId.P002_SETUP).actions.single { it.id == "startHighSchool" }
         val startPayload = start.payloads.single()
-        controller.execute(Phase8ScreenId.P002_SETUP, start.id, start.payloads)
+        controller.execute(ScreenId.P002_SETUP, start.id, start.payloads)
         val duplicate = store.dispatch(startPayload.envelope)
         assertTrue(duplicate.duplicate)
-        assertEquals(Phase8ScreenId.P003_PROLOGUE, controller.preferredScreen())
+        assertEquals(ScreenId.P003_PROLOGUE, controller.preferredScreen())
         assertFailsWith<GameCommandException> {
             store.dispatch(startPayload.envelope.copy(commandId = "stale-after-restart"))
         }
@@ -499,23 +499,23 @@ class Phase8ScreenProjectionTest {
             store.dispatch(
                 GameCommandEnvelope(
                     commandId = "save-intent-$index",
-                    sessionId = "phase8-ui",
+                    sessionId = CareerWire.UI_SESSION,
                     expectedRevision = current.revision,
                     command = GameCommand.HighSchool(HighSchoolPhase4Command.SaveNextRunIntent(intent)),
                 ),
             )
 
-            val model = controller.projection(Phase8ScreenId.P015_REBIRTH)
+            val model = controller.projection(ScreenId.P015_REBIRTH)
             val action = model.actions.single { it.id == actionId }
-            controller.execute(Phase8ScreenId.P015_REBIRTH, action.id, action.payloads)
+            controller.execute(ScreenId.P015_REBIRTH, action.id, action.payloads)
 
             if (actionId == "customizeRebirth") {
                 assertEquals(GameStage.SETUP, store.current.stage)
                 assertEquals(run.careerId, store.current.highSchool?.run?.careerId)
-                assertEquals(Phase8ScreenId.P002_SETUP, Phase8ScreenProjection.preferredScreen(store.current))
+                assertEquals(ScreenId.P002_SETUP, ScreenProjection.preferredScreen(store.current))
                 assertTrue(store.current.analytics.receipts.none { it.eventName == "rebirth_started" })
-                val setup = controller.projection(Phase8ScreenId.P002_SETUP).actions.single { it.id == "startHighSchool" }
-                controller.execute(Phase8ScreenId.P002_SETUP, setup.id, setup.payloads)
+                val setup = controller.projection(ScreenId.P002_SETUP).actions.single { it.id == "startHighSchool" }
+                controller.execute(ScreenId.P002_SETUP, setup.id, setup.payloads)
             }
 
             val after = store.current
@@ -546,19 +546,19 @@ class Phase8ScreenProjectionTest {
         val (store, controller) = completedHighSchoolFixture("phase8-legacy-exposure")
         val current = store.current
         val currentRecord = requireNotNull(current.highSchool?.archive?.last())
-        val recap = Phase9PlayerLegacyExposurePolicy.resolve(current, Phase9PlayerLegacyExposureSurface.RECAP)
+        val recap = PlayerLegacyExposurePolicy.resolve(current, PlayerLegacyExposureSurface.RECAP)
         assertEquals("recap", recap?.source)
         assertEquals(currentRecord.careerId, recap?.scope?.removePrefix("recap:"))
-        assertEquals(null, Phase9PlayerLegacyExposurePolicy.resolve(current, Phase9PlayerLegacyExposureSurface.NEXT_LIFE))
+        assertEquals(null, PlayerLegacyExposurePolicy.resolve(current, PlayerLegacyExposureSurface.NEXT_LIFE))
         val preArchiveRecap = current.copy(
             highSchool = requireNotNull(current.highSchool).copy(
                 run = requireNotNull(current.highSchool).run.copy(phase = HighSchoolPhase.LEGACY),
             ),
         )
-        assertEquals(null, Phase9PlayerLegacyExposurePolicy.resolve(preArchiveRecap, Phase9PlayerLegacyExposureSurface.RECAP))
+        assertEquals(null, PlayerLegacyExposurePolicy.resolve(preArchiveRecap, PlayerLegacyExposureSurface.RECAP))
         assertEquals(
             "archive",
-            Phase9PlayerLegacyExposurePolicy.resolve(current, Phase9PlayerLegacyExposureSurface.ARCHIVE, currentRecord.careerId)?.source,
+            PlayerLegacyExposurePolicy.resolve(current, PlayerLegacyExposureSurface.ARCHIVE, currentRecord.careerId)?.source,
         )
         val otherRecord = currentRecord.copy(
             careerId = "${currentRecord.careerId}-older",
@@ -567,15 +567,15 @@ class Phase8ScreenProjectionTest {
         val multipleArchive = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel()
             .commitShadowState(requireNotNull(current.highSchool).copy(archive = listOf(otherRecord, currentRecord)))
         val multipleArchiveState = current.copy(highSchool = multipleArchive).committed()
-        assertEquals(otherRecord.careerId, Phase9LifeCardProjection.selected(multipleArchiveState, otherRecord.careerId)?.careerId)
-        assertEquals(currentRecord.careerId, Phase9LifeCardProjection.selected(multipleArchiveState, currentRecord.careerId)?.careerId)
+        assertEquals(otherRecord.careerId, LifeCardProjection.selected(multipleArchiveState, otherRecord.careerId)?.careerId)
+        assertEquals(currentRecord.careerId, LifeCardProjection.selected(multipleArchiveState, currentRecord.careerId)?.careerId)
         assertEquals(
             null,
-            Phase9PlayerLegacyExposurePolicy.resolve(current, Phase9PlayerLegacyExposureSurface.ARCHIVE, "wrong-life"),
+            PlayerLegacyExposurePolicy.resolve(current, PlayerLegacyExposureSurface.ARCHIVE, "wrong-life"),
         )
 
         val restarted = GameAggregateCodec.decodePayload(GameAggregateCodec.encodePayload(current))
-        assertEquals(recap, Phase9PlayerLegacyExposurePolicy.resolve(restarted, Phase9PlayerLegacyExposureSurface.RECAP))
+        assertEquals(recap, PlayerLegacyExposurePolicy.resolve(restarted, PlayerLegacyExposureSurface.RECAP))
 
         val challenge = requireNotNull(current.highSchool).let { highSchool ->
             val challengeState = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel().startChallenge(highSchool).state
@@ -584,35 +584,35 @@ class Phase8ScreenProjectionTest {
                 stage = GameStage.HIGH_SCHOOL,
             ).committed()
         }
-        assertEquals(null, Phase9PlayerLegacyExposurePolicy.resolve(challenge, Phase9PlayerLegacyExposureSurface.RECAP))
-        assertEquals(null, Phase9PlayerLegacyExposurePolicy.resolve(challenge, Phase9PlayerLegacyExposureSurface.NEXT_LIFE))
+        assertEquals(null, PlayerLegacyExposurePolicy.resolve(challenge, PlayerLegacyExposureSurface.RECAP))
+        assertEquals(null, PlayerLegacyExposurePolicy.resolve(challenge, PlayerLegacyExposureSurface.NEXT_LIFE))
         assertTrue(
-            Phase9AnalyticsProjector.project(
+            AnalyticsProjector.project(
                 challenge,
                 challenge,
                 GameCommandEnvelope(
                     commandId = "challenge-tutorial",
-                    sessionId = "phase8-ui",
+                    sessionId = CareerWire.UI_SESSION,
                     expectedRevision = challenge.revision,
                     command = GameCommand.HighSchool(HighSchoolPhase4Command.CompleteTutorial("challenge")),
                 ),
             ).none { it.eventName == "first_pitch" },
         )
 
-        val quick = controller.projection(Phase8ScreenId.P015_REBIRTH).actions.single { it.id == "quickRebirth" }
-        controller.execute(Phase8ScreenId.P015_REBIRTH, quick.id, quick.payloads)
+        val quick = controller.projection(ScreenId.P015_REBIRTH).actions.single { it.id == "quickRebirth" }
+        controller.execute(ScreenId.P015_REBIRTH, quick.id, quick.payloads)
         val nextLife = store.current
-        val nextLifeExposure = Phase9PlayerLegacyExposurePolicy.resolve(nextLife, Phase9PlayerLegacyExposureSurface.NEXT_LIFE)
+        val nextLifeExposure = PlayerLegacyExposurePolicy.resolve(nextLife, PlayerLegacyExposureSurface.NEXT_LIFE)
         assertEquals("next_life", nextLifeExposure?.source)
         assertEquals(currentRecord.careerId, nextLifeExposure?.scope?.split(":")?.getOrNull(1))
-        assertEquals(null, Phase9PlayerLegacyExposurePolicy.resolve(nextLife, Phase9PlayerLegacyExposureSurface.RECAP))
+        assertEquals(null, PlayerLegacyExposurePolicy.resolve(nextLife, PlayerLegacyExposureSurface.RECAP))
     }
 
     private suspend fun executeFirst(
-        controller: Phase8Controller,
-        screen: Phase8ScreenId,
+        controller: ScreenController,
+        screen: ScreenId,
         actionId: String? = null,
-        predicate: ((Phase8ActionModel) -> Boolean)? = null,
+        predicate: ((ScreenActionModel) -> Boolean)? = null,
     ) {
         val model = controller.projection(screen)
         val action = model.actions.first { it.enabled && (actionId == null || it.id == actionId) && (predicate?.invoke(it) ?: true) }
@@ -622,14 +622,14 @@ class Phase8ScreenProjectionTest {
     @Test
     fun preferredNextLifeSurfacePreservesArchiveAndOffersOnlyEarnedLinkedEntry() = runBlocking {
         val (store, controller) = completedHighSchoolFixture("phase8-ending-entry", archive = false)
-        assertEquals(Phase8ScreenId.P015_REBIRTH, controller.preferredScreen())
+        assertEquals(ScreenId.P015_REBIRTH, controller.preferredScreen())
         assertFalse(store.current.settings.autoReleaseEnabled)
         val highSchool = requireNotNull(store.current.highSchool)
         assertEquals(HighSchoolPhase.COMPLETED, highSchool.run.phase)
         assertNotNull(highSchool.selectedSignatureLegacyId)
         assertTrue(highSchool.archive.none { it.careerId == highSchool.run.careerId })
 
-        val beforeArchive = controller.projection(Phase8ScreenId.P015_REBIRTH)
+        val beforeArchive = controller.projection(ScreenId.P015_REBIRTH)
         assertTrue(beforeArchive.actions.single { it.id == "finalizeArchive" }.enabled)
         assertFalse(beforeArchive.actions.single { it.id == "quickRebirth" }.enabled)
         assertFalse(beforeArchive.actions.single { it.id == "customizeRebirth" }.enabled)
@@ -637,27 +637,27 @@ class Phase8ScreenProjectionTest {
         assertEquals(drafted, beforeArchive.actions.any { it.id == "startLinked" && it.enabled })
         assertTrue(beforeArchive.actions.none { it.id == "startDirect" })
 
-        executeFirst(controller, Phase8ScreenId.P015_REBIRTH, "finalizeArchive")
-        assertEquals(Phase8ScreenId.P015_REBIRTH, controller.preferredScreen())
+        executeFirst(controller, ScreenId.P015_REBIRTH, "finalizeArchive")
+        assertEquals(ScreenId.P015_REBIRTH, controller.preferredScreen())
         val archived = requireNotNull(store.current.highSchool)
         assertTrue(archived.archive.any { it.careerId == archived.run.careerId })
-        val afterArchive = controller.projection(Phase8ScreenId.P015_REBIRTH)
+        val afterArchive = controller.projection(ScreenId.P015_REBIRTH)
         assertFalse(afterArchive.actions.single { it.id == "finalizeArchive" }.enabled)
         assertTrue(afterArchive.actions.single { it.id == "quickRebirth" }.enabled)
         assertEquals(drafted, afterArchive.actions.any { it.id == "startLinked" && it.enabled })
         assertTrue(afterArchive.actions.none { it.id == "startDirect" })
 
         if (drafted) {
-            executeFirst(controller, Phase8ScreenId.P015_REBIRTH, "startLinked")
-            assertEquals(Phase8ScreenId.P016_PRO_CONTRACT, controller.preferredScreen())
+            executeFirst(controller, ScreenId.P015_REBIRTH, "startLinked")
+            assertEquals(ScreenId.P016_PRO_CONTRACT, controller.preferredScreen())
             assertNotNull(store.current.pro)
-            if (store.current.pro?.phase == ProCareerPhase.CONTRACT_OFFER) executeFirst(controller, Phase8ScreenId.P016_PRO_CONTRACT) { it.id.startsWith("acceptOffer:") || it.id == "signContract" }
-            assertEquals(Phase8ScreenId.P017_PRO_WEEK, controller.preferredScreen())
+            if (store.current.pro?.phase == ProCareerPhase.CONTRACT_OFFER) executeFirst(controller, ScreenId.P016_PRO_CONTRACT) { it.id.startsWith("acceptOffer:") || it.id == "signContract" }
+            assertEquals(ScreenId.P017_PRO_WEEK, controller.preferredScreen())
             assertEquals(ProCareerPhase.WEEKLY_PLAN, store.current.pro?.phase)
         } else {
-            executeFirst(controller, Phase8ScreenId.P015_REBIRTH, "quickRebirth")
+            executeFirst(controller, ScreenId.P015_REBIRTH, "quickRebirth")
             assertNull(store.current.pro)
-            assertEquals(Phase8ScreenId.P003_PROLOGUE, controller.preferredScreen())
+            assertEquals(ScreenId.P003_PROLOGUE, controller.preferredScreen())
         }
         assertFalse(store.current.settings.autoReleaseEnabled)
     }
@@ -665,68 +665,68 @@ class Phase8ScreenProjectionTest {
     @Test
     fun chapterReviewOffersOneClaimedRegularGameThatRecordsAndReplacesAnAutomaticLine() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase8-chapter-game"))
-        val controller = Phase8Controller(store, context)
-        executeFirst(controller, Phase8ScreenId.P001_OPENING)
-        executeFirst(controller, Phase8ScreenId.P002_SETUP)
-        executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-        executeFirst(controller, Phase8ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
+        val controller = ScreenController(store, context)
+        executeFirst(controller, ScreenId.P001_OPENING)
+        executeFirst(controller, ScreenId.P002_SETUP)
+        executeFirst(controller, ScreenId.P003_PROLOGUE, "beginTutorial")
+        executeFirst(controller, ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
         finishTutorialPitch(store)
-        executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-        executeFirst(controller, Phase8ScreenId.P005_SCHOOL_SELECTION)
-        val phase7 = Phase7VerticalController(store, "phase8-ui")
-        advanceHighSchoolUntil(store, controller, phase7, HighSchoolPhase.CHAPTER_REVIEW)
+        executeFirst(controller, ScreenId.P003_PROLOGUE, "completeTutorial")
+        executeFirst(controller, ScreenId.P005_SCHOOL_SELECTION)
+        val pitchSession = PitchSessionController(store)
+        advanceHighSchoolUntil(store, controller, pitchSession, HighSchoolPhase.CHAPTER_REVIEW)
 
-        val review = controller.projection(Phase8ScreenId.P010_CHAPTER)
+        val review = controller.projection(ScreenId.P010_CHAPTER)
         assertTrue(review.sections.first { it.id == "chapter" }.rows.none { it.label == "정규 경기" })
         assertEquals("다음 훈련 준비", review.actions.single { it.id == "advanceChapter" }.label)
         assertTrue(review.actions.single { it.id == "claimChapterGame" }.enabled)
         val automaticBefore = requireNotNull(store.current.highSchool).run.automaticGames
         val gamesBefore = requireNotNull(store.current.highSchool).run.performance.importantGamesCompleted
 
-        executeFirst(controller, Phase8ScreenId.P010_CHAPTER, "claimChapterGame")
+        executeFirst(controller, ScreenId.P010_CHAPTER, "claimChapterGame")
         val claimed = requireNotNull(store.current.highSchool).run
         assertEquals(HighSchoolPhase.IMPORTANT_GAME, claimed.phase)
         assertTrue(claimed.chapterGameClaimed)
         assertTrue(requireNotNull(claimed.currentGameScenarioId).startsWith("regular-"))
-        assertEquals(Phase8ScreenId.P008_IMPORTANT_GAME, controller.preferredScreen())
+        assertEquals(ScreenId.P008_IMPORTANT_GAME, controller.preferredScreen())
 
-        finishImportantGame(store, controller, phase7)
+        finishImportantGame(store, controller, pitchSession)
         val played = requireNotNull(store.current.highSchool)
         assertEquals(HighSchoolPhase.CHAPTER_REVIEW, played.run.phase)
         assertEquals(gamesBefore + 1, played.run.performance.importantGamesCompleted)
         assertTrue(played.run.performance.perfectReleases > 0, "1000 releases are perfect")
         assertTrue(played.seasonLog.last().regular)
 
-        val after = controller.projection(Phase8ScreenId.P010_CHAPTER)
+        val after = controller.projection(ScreenId.P010_CHAPTER)
         val result = after.sections.first { it.id == "chapter" }.rows.first { it.label == "정규 경기" }
         assertTrue(result.value.contains("이닝"), "result row shows the outing: ${result.value}")
         assertFalse(after.actions.single { it.id == "claimChapterGame" }.enabled)
 
-        executeFirst(controller, Phase8ScreenId.P010_CHAPTER, "advanceChapter")
+        executeFirst(controller, ScreenId.P010_CHAPTER, "advanceChapter")
         val advanced = requireNotNull(store.current.highSchool).run
         assertEquals(automaticBefore + 1, advanced.automaticGames, "the claimed game replaces one automatic line")
         assertFalse(advanced.chapterGameClaimed)
     }
 
-    private suspend fun completedHighSchoolFixture(installId: String, archive: Boolean = true): Pair<KotlinGameStore, Phase8Controller> {
+    private suspend fun completedHighSchoolFixture(installId: String, archive: Boolean = true): Pair<KotlinGameStore, ScreenController> {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial(installId))
-        val controller = Phase8Controller(store, context)
-        executeFirst(controller, Phase8ScreenId.P001_OPENING)
-        executeFirst(controller, Phase8ScreenId.P002_SETUP)
-        executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-        executeFirst(controller, Phase8ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
+        val controller = ScreenController(store, context)
+        executeFirst(controller, ScreenId.P001_OPENING)
+        executeFirst(controller, ScreenId.P002_SETUP)
+        executeFirst(controller, ScreenId.P003_PROLOGUE, "beginTutorial")
+        executeFirst(controller, ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
         finishTutorialPitch(store)
-        executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-        executeFirst(controller, Phase8ScreenId.P005_SCHOOL_SELECTION)
-        val phase7 = Phase7VerticalController(store, "phase8-ui")
-        advanceHighSchoolUntil(store, controller, phase7, HighSchoolPhase.DRAFT)
-        executeFirst(controller, Phase8ScreenId.P013_DRAFT, "resolveDraft")
+        executeFirst(controller, ScreenId.P003_PROLOGUE, "completeTutorial")
+        executeFirst(controller, ScreenId.P005_SCHOOL_SELECTION)
+        val pitchSession = PitchSessionController(store)
+        advanceHighSchoolUntil(store, controller, pitchSession, HighSchoolPhase.DRAFT)
+        executeFirst(controller, ScreenId.P013_DRAFT, "resolveDraft")
         if (store.current.highSchool?.run?.phase == HighSchoolPhase.LEGACY || store.current.highSchool?.run?.phase == HighSchoolPhase.COMPLETED) {
-            executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP, "prepareLegacy")
+            executeFirst(controller, ScreenId.P014_RUN_RECAP, "prepareLegacy")
         }
-        executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP) { it.id.startsWith("selectLegacy:") }
+        executeFirst(controller, ScreenId.P014_RUN_RECAP) { it.id.startsWith("selectLegacy:") }
         if (archive) {
-            executeFirst(controller, Phase8ScreenId.P014_RUN_RECAP, "finalizeArchive")
+            executeFirst(controller, ScreenId.P014_RUN_RECAP, "finalizeArchive")
         }
         return store to controller
     }
@@ -735,32 +735,32 @@ class Phase8ScreenProjectionTest {
     fun savedImportantPitchResultsResumeWithoutDuplicatingCareerStats() = runBlocking {
         for (boundary in listOf(PitchBoundary.COMMITTED, PitchBoundary.CONSUMED, PitchBoundary.TERMINAL)) {
             val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("resume-$boundary"))
-            val controller = Phase8Controller(store, context)
-            executeFirst(controller, Phase8ScreenId.P001_OPENING)
-            executeFirst(controller, Phase8ScreenId.P002_SETUP)
-            executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-            executeFirst(controller, Phase8ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
+            val controller = ScreenController(store, context)
+            executeFirst(controller, ScreenId.P001_OPENING)
+            executeFirst(controller, ScreenId.P002_SETUP)
+            executeFirst(controller, ScreenId.P003_PROLOGUE, "beginTutorial")
+            executeFirst(controller, ScreenId.P004_PITCH_TUTORIAL, "openTutorialPitch")
             finishTutorialPitch(store)
-            executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-            val phase7 = Phase7VerticalController(store, "recovery")
-            advanceHighSchoolUntil(store, controller, phase7, HighSchoolPhase.IMPORTANT_GAME)
-            executeFirst(controller, Phase8ScreenId.P008_IMPORTANT_GAME, "openImportantGame")
+            executeFirst(controller, ScreenId.P003_PROLOGUE, "completeTutorial")
+            val pitchSession = PitchSessionController(store, "recovery")
+            advanceHighSchoolUntil(store, controller, pitchSession, HighSchoolPhase.IMPORTANT_GAME)
+            executeFirst(controller, ScreenId.P008_IMPORTANT_GAME, "openImportantGame")
             val pitch = requireNotNull(store.current.pitch)
-            val result = phase7.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
+            val result = pitchSession.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
             if (boundary == PitchBoundary.CONSUMED) {
                 val envelope = GameCommandEnvelope("consume-recovery", pitch.sessionId, store.current.revision, GameCommand.ConsumePitch(pitch.sessionId, result.pitchId))
                 store.dispatch(envelope)
             }
-            if (boundary == PitchBoundary.TERMINAL) phase7.consumePresentation(pitch.sessionId, result)
+            if (boundary == PitchBoundary.TERMINAL) pitchSession.consumePresentation(pitch.sessionId, result)
             assertEquals(boundary, store.current.pitch?.boundary)
             val restored = KotlinGameStore.fromShadowFixture(store.current)
-            val resumed = Phase8Controller(restored, context)
+            val resumed = ScreenController(restored, context)
             val before = restored.current.highSchool?.run?.performance
-            val action = resumed.projection(Phase8ScreenId.P008_IMPORTANT_GAME).actions.single { it.id == "resumePitch" }
+            val action = resumed.projection(ScreenId.P008_IMPORTANT_GAME).actions.single { it.id == "resumePitch" }
             assertTrue(action.enabled)
             assertEquals("투구 결과 확인하기", action.label)
-            executeFirst(resumed, Phase8ScreenId.P008_IMPORTANT_GAME, "resumePitch")
-            val recovered = Phase7VerticalController(restored, "recovery-restored")
+            executeFirst(resumed, ScreenId.P008_IMPORTANT_GAME, "resumePitch")
+            val recovered = PitchSessionController(restored, "recovery-restored")
             val saved = recovered.preparePresentation(pitch.sessionId, 0)
             assertEquals(result.pitchId, saved.pitchId)
             recovered.consumePresentation(pitch.sessionId, saved)
@@ -770,7 +770,7 @@ class Phase8ScreenProjectionTest {
             assertEquals(PitchBoundary.COMPLETED, restored.current.pitch?.boundary)
             if (restored.current.highSchool?.activePitch != null) {
                 assertEquals(before, restored.current.highSchool?.run?.performance)
-                executeFirst(resumed, Phase8ScreenId.P008_IMPORTANT_GAME, "nextImportantPitch")
+                executeFirst(resumed, ScreenId.P008_IMPORTANT_GAME, "nextImportantPitch")
                 assertEquals(PitchBoundary.PLAYING, restored.current.pitch?.boundary)
             } else assertTrue(restored.current.highSchool?.run?.phase != HighSchoolPhase.IMPORTANT_GAME)
         }
@@ -778,17 +778,17 @@ class Phase8ScreenProjectionTest {
 
     private suspend fun finishTutorialPitch(store: KotlinGameStore) {
         val pitch = requireNotNull(store.current.pitch)
-        val phase7 = Phase7VerticalController(store, "phase8-ui")
-        val request = phase7.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
-        phase7.consumePresentation(pitch.sessionId, request)
-        phase7.completePitchAndPostgame(pitch.sessionId)
+        val pitchSession = PitchSessionController(store)
+        val request = pitchSession.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
+        pitchSession.consumePresentation(pitch.sessionId, request)
+        pitchSession.completePitchAndPostgame(pitch.sessionId)
         assertEquals(PitchBoundary.COMPLETED, store.current.pitch?.boundary)
     }
 
     private suspend fun advanceHighSchoolUntil(
         store: KotlinGameStore,
-        controller: Phase8Controller,
-        phase7: Phase7VerticalController,
+        controller: ScreenController,
+        pitchSession: PitchSessionController,
         target: HighSchoolPhase,
         onImportantGame: suspend () -> Unit = {},
     ) {
@@ -796,16 +796,16 @@ class Phase8ScreenProjectionTest {
         while (store.current.highSchool?.run?.phase != target) {
             assertTrue(++guard < 260, "high-school fixture did not reach $target; phase=${store.current.highSchool?.run?.phase}, chapter=${store.current.highSchool?.run?.chapter?.number}, pitch=${store.current.pitch?.boundary}")
             when (store.current.highSchool?.run?.phase) {
-                HighSchoolPhase.SCHOOL_SELECTION -> executeFirst(controller, Phase8ScreenId.P005_SCHOOL_SELECTION)
-                HighSchoolPhase.TRAINING -> executeFirst(controller, Phase8ScreenId.P006_TRAINING)
-                HighSchoolPhase.RELATIONSHIP -> executeFirst(controller, Phase8ScreenId.P007_RELATIONSHIP)
+                HighSchoolPhase.SCHOOL_SELECTION -> executeFirst(controller, ScreenId.P005_SCHOOL_SELECTION)
+                HighSchoolPhase.TRAINING -> executeFirst(controller, ScreenId.P006_TRAINING)
+                HighSchoolPhase.RELATIONSHIP -> executeFirst(controller, ScreenId.P007_RELATIONSHIP)
                 HighSchoolPhase.IMPORTANT_GAME -> {
                     onImportantGame()
-                    finishImportantGame(store, controller, phase7)
+                    finishImportantGame(store, controller, pitchSession)
                 }
-                HighSchoolPhase.AWAKENING -> executeFirst(controller, Phase8ScreenId.P009_AWAKENING)
-                HighSchoolPhase.CHAPTER_REVIEW -> executeFirst(controller, Phase8ScreenId.P010_CHAPTER)
-                HighSchoolPhase.PROLOGUE -> executeFirst(controller, Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
+                HighSchoolPhase.AWAKENING -> executeFirst(controller, ScreenId.P009_AWAKENING)
+                HighSchoolPhase.CHAPTER_REVIEW -> executeFirst(controller, ScreenId.P010_CHAPTER)
+                HighSchoolPhase.PROLOGUE -> executeFirst(controller, ScreenId.P003_PROLOGUE, "completeTutorial")
                 else -> error("unexpected high-school fixture phase ${store.current.highSchool?.run?.phase}")
             }
         }
@@ -813,8 +813,8 @@ class Phase8ScreenProjectionTest {
 
     private suspend fun finishImportantGame(
         store: KotlinGameStore,
-        controller: Phase8Controller,
-        phase7: Phase7VerticalController,
+        controller: ScreenController,
+        pitchSession: PitchSessionController,
     ) {
         var firstPitch = true
         var pitchCount = 0
@@ -822,13 +822,13 @@ class Phase8ScreenProjectionTest {
             val boundary = store.current.pitch?.boundary
             if (boundary == null || boundary == PitchBoundary.COMPLETED || boundary == PitchBoundary.ABANDONED) {
                 val id = if (firstPitch) "openImportantGame" else "nextImportantPitch"
-                executeFirst(controller, Phase8ScreenId.P008_IMPORTANT_GAME, id)
+                executeFirst(controller, ScreenId.P008_IMPORTANT_GAME, id)
                 firstPitch = false
             }
             val pitch = requireNotNull(store.current.pitch)
-            val request = phase7.submitPitch(pitch.sessionId, pitchCount % 4, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
-            phase7.consumePresentation(pitch.sessionId, request)
-            phase7.completePitchAndPostgame(pitch.sessionId)
+            val request = pitchSession.submitPitch(pitch.sessionId, pitchCount % 4, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
+            pitchSession.consumePresentation(pitch.sessionId, request)
+            pitchSession.completePitchAndPostgame(pitch.sessionId)
             pitchCount += 1
             assertTrue(pitchCount < 80, "important game fixture did not terminate")
         }

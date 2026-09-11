@@ -8,8 +8,46 @@ public typealias TrainingFocus = HighSchoolTrainingFocus
 public typealias TrainingIntensity = HighSchoolTrainingIntensity
 public typealias TrainingPreview = HighSchoolTrainingPreview
 
+public data class TrainingSurface(
+    val careerId: String,
+    val fatigue: Int,
+    val armRisk: Int,
+    val injuryRecovery: Int,
+    val lastTrainingNumber: Int,
+    val lastTrainingBloomed: Boolean,
+    val starterTrialPending: Boolean,
+    val supportFocus: TrainingFocus?,
+    val supportQueue: Set<TrainingFocus>,
+    val learningPitch: PitchKind?,
+    val opportunityReason: String?,
+    val command: Int,
+) {
+    val rehab: Boolean get() = injuryRecovery > 0
+    public fun hasSupport(focus: TrainingFocus): Boolean = supportFocus == focus || focus in supportQueue
+    public fun displayedSupport(focus: TrainingFocus): TrainingFocus? = if (hasSupport(focus)) focus else supportFocus
+}
+
 /** Training display and command creation share the authoritative rules; UI never rolls a result. */
 public object TrainingPresentation {
+    public fun surface(state: GameAggregateState): TrainingSurface? {
+        val run = state.highSchool?.run ?: return null
+        val development = run.development
+        return TrainingSurface(
+            careerId = run.careerId,
+            fatigue = run.fatigue,
+            armRisk = run.armRisk,
+            injuryRecovery = run.injuryRecovery,
+            lastTrainingNumber = run.lastTraining?.number ?: 0,
+            lastTrainingBloomed = run.lastTraining?.bloomed == true,
+            starterTrialPending = development?.starterTrialPending == true,
+            supportFocus = development?.supportFocus,
+            supportQueue = development?.supportQueue.orEmpty().toSet(),
+            learningPitch = run.pitchLearningProject?.takeIf { !it.completed }?.pitchType,
+            opportunityReason = run.trainingOpportunity?.reason,
+            command = run.pitcher.command,
+        )
+    }
+
     public fun remaining(state: GameAggregateState): Int {
         val run = state.highSchool?.run ?: return 0
         if (run.phase != HighSchoolPhase.TRAINING) return 0
@@ -127,8 +165,8 @@ public object TrainingPresentation {
         else copy.resolve("training.intensity.jackpot-range", chance, ability, GameCopyArgument.Whole(minimum.toLong()), GameCopyArgument.Whole(maximum.toLong()))
     }
 
-    public fun payloads(state: GameAggregateState, context: Phase8CommandContext, focus: TrainingFocus,
-                        intensity: TrainingIntensity, target: PitchKind?, repeat: Boolean): List<Phase8CommandPayload> {
+    public fun payloads(state: GameAggregateState, context: ScreenCommandContext, focus: TrainingFocus,
+                        intensity: TrainingIntensity, target: PitchKind?, repeat: Boolean): List<ScreenCommandPayload> {
         val run = requireNotNull(state.highSchool).run
         require(run.phase == HighSchoolPhase.TRAINING) { "training.phase" }
         val effective = if (run.injuryRecovery > 0) TrainingFocus.RECOVERY else focus
@@ -137,7 +175,7 @@ public object TrainingPresentation {
         val seed = context.seed(state, "training:${effective.wire}")
         val command = if (repeat) HighSchoolPhase4Command.TrainingBlock(seed, List(repeatCount(state)) { effective to intensity }, pitch, stopForSafety = true)
             else HighSchoolPhase4Command.Training(seed, effective, intensity, pitch)
-        return Phase8Payloads.batch(state, Phase8ScreenId.P006_TRAINING, "train:${effective.wire}", listOf(GameCommand.HighSchool(command)))
+        return ScreenPayloads.batch(state, ScreenId.P006_TRAINING, "train:${effective.wire}", listOf(GameCommand.HighSchool(command)))
     }
     /** One line from the coach after training. Speaks to the player; never restates the numbers. */
     public fun coachLine(state: GameAggregateState): String? {
@@ -176,5 +214,72 @@ public object TrainingPresentation {
             listOf("피로 ${if (fatigue >= 0) "+" else ""}$fatigue") +
             listOfNotNull("재능의 한계를 넘었어요!".takeIf { last.bloomed },
                 last.masteryAfter?.let { "숙련 +${it - (last.masteryBefore ?: it)}" })
+    }
+}
+
+public data class TrainingResultView(
+    val lines: List<String>,
+    val receipt: PlayerGrowthReceipt?,
+    val lastTrainingNumber: Int,
+    val lastTrainingBloomed: Boolean,
+    val fatigueChange: Int,
+    val fatigue: Int,
+    val coachLine: String?,
+) {
+    public companion object {
+        public fun resolve(state: GameAggregateState, afterNumber: Int): TrainingResultView = TrainingResultView(
+            lines = TrainingPresentation.resultLines(state, afterNumber),
+            receipt = state.meta.playerGrowth?.takeIf {
+                it.careerId == CareerUiRules.highSchoolCareerId(state) && it.source == "training"
+            },
+            lastTrainingNumber = CareerUiRules.lastTrainingNumber(state),
+            lastTrainingBloomed = TrainingPresentation.surface(state)?.lastTrainingBloomed == true,
+            fatigueChange = TrainingPresentation.fatigueChange(state, afterNumber),
+            fatigue = CareerUiRules.currentFatigue(state),
+            coachLine = TrainingPresentation.coachLine(state),
+        )
+    }
+}
+
+public data class TrainingScreenModel(
+    val run: TrainingSurface,
+    val remaining: Int,
+    val repeatCount: Int,
+    val targets: List<PitchKind>,
+    val recommended: TrainingFocus,
+    val initialFocus: TrainingFocus,
+    val initialIntensity: TrainingIntensity,
+    val initialTarget: PitchKind?,
+    val learningLines: List<String>,
+    val preview: (TrainingFocus, TrainingIntensity) -> TrainingPreview,
+    val growthOutlook: (TrainingFocus, TrainingPreview, GameCopy) -> String,
+    val jackpotOutlook: (TrainingFocus, TrainingPreview, GameCopy) -> String?,
+    val payloads: (ScreenCommandContext, TrainingFocus, TrainingIntensity, PitchKind?, Boolean) -> List<ScreenCommandPayload>,
+    val availablePlanSteps: (TrainingPlan) -> Int,
+    val planPayloads: (ScreenCommandContext, String) -> List<ScreenCommandPayload>,
+) {
+    public companion object {
+        public fun resolve(state: GameAggregateState): TrainingScreenModel? {
+            val run = TrainingPresentation.surface(state) ?: return null
+            return TrainingScreenModel(
+                run = run,
+                remaining = TrainingPresentation.remaining(state),
+                repeatCount = TrainingPresentation.repeatCount(state),
+                targets = TrainingPresentation.targets(state),
+                recommended = TrainingPresentation.recommended(state),
+                initialFocus = TrainingPresentation.initialFocus(state),
+                initialIntensity = TrainingPresentation.initialIntensity(state),
+                initialTarget = TrainingPresentation.initialTarget(state),
+                learningLines = TrainingPresentation.learningLines(state),
+                preview = { focus, intensity -> TrainingPresentation.preview(state, focus, intensity) },
+                growthOutlook = { focus, preview, copy -> TrainingPresentation.growthOutlook(state, focus, preview, copy) },
+                jackpotOutlook = { focus, preview, copy -> TrainingPresentation.jackpotOutlook(state, focus, preview, copy) },
+                payloads = { context, focus, intensity, target, repeat ->
+                    TrainingPresentation.payloads(state, context, focus, intensity, target, repeat)
+                },
+                availablePlanSteps = { plan -> TrainingPlans.availableSteps(state, plan) },
+                planPayloads = { context, planId -> TrainingPlans.payloads(state, context, planId) },
+            )
+        }
     }
 }

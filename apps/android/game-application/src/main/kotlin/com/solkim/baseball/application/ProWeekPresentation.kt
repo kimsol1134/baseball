@@ -5,7 +5,7 @@ import com.solkim.baseball.core.pro.*
 public data class ProWeekPreview(val title: String, val growth: String, val schedule: String, val condition: String)
 public data class ProWeekResult(val careerId: String, val season: Int, val week: Int, val weeks: Int, val growth: List<String>,
     val games: Int, val outs: Int, val strikeouts: Int, val runs: Int, val fatigueBefore: Int, val fatigueAfter: Int, val injuries: Int,
-    val role: String, val level: String)
+    val role: String, val level: String, val beforeRatings: List<Int>, val afterRatings: List<Int>)
 public object ProWeekPresentation {
     public fun title(id: String): String = when (id.substringAfter(':')) {
         "develop_stuff" -> "구위"; "refine_command" -> "제구"; "develop_movement" -> "변화구"
@@ -22,11 +22,11 @@ public object ProWeekPresentation {
             "예상 피로 ${forecast.fatigueMinimum}~${forecast.fatigueMaximum} · 현재 ${pro.fatigue}")
     }
     /** Captures the selected single-week plan into the same authorized batch action. */
-    public fun batchAction(state: GameAggregateState, model: Phase8ScreenModel, selectedId: String): Phase8ActionModel? {
+    public fun batchAction(state: GameAggregateState, model: ScreenModel, selectedId: String): ScreenActionModel? {
         val batch = model.actions.firstOrNull { it.id == "proAdvanceSegment" && it.enabled } ?: return null
         val selected = model.actions.firstOrNull { it.id == selectedId && it.enabled } ?: return null
         val command = (selected.payloads.singleOrNull()?.envelope?.command as? GameCommand.Pro)?.command as? ProCommand.PlanWeek ?: return null
-        return batch.copy(label = "이 계획으로 진행", payloads = Phase8Payloads.batch(state, model.id, batch.id,
+        return batch.copy(label = "이 계획으로 진행", payloads = ScreenPayloads.batch(state, model.id, batch.id,
             listOf(GameCommand.Pro(ProCommand.AdvanceSegment(command.seed, command.plan, command.targetPitch)))))
     }
     public fun result(before: GameAggregateState, after: GameAggregateState): ProWeekResult? {
@@ -49,6 +49,6 @@ public object ProWeekPresentation {
         val historic = rows.filter { it != pending && it.completeGame == true }.map { if (it.runsAllowed == 0 && it.opponentRuns == 0 && it.teamRuns > 0) "완봉승 · 9이닝 무실점" else "완투 · 마지막 아웃까지 책임졌습니다" }.distinct()
         return ProWeekResult(next.careerId, next.season, next.week, next.week - old.week, historic + growth,
             rows.size, rows.sumOf { it.outs }, rows.sumOf { it.strikeouts }, rows.sumOf { it.runsAllowed }, old.fatigue, next.fatigue, next.injuryWeeks,
-            next.role.label, if (next.level == ProLevel.MAJOR) "1군" else "2군")
+            next.role.label, if (next.level == ProLevel.MAJOR) "1군" else "2군", a, b)
     }
 }

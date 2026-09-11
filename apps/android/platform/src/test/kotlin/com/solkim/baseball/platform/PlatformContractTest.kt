@@ -11,11 +11,11 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-public class Phase9PlatformContractTest {
+public class PlatformContractTest {
     @Test
     public fun analyticsSchemaAcceptsMatrixEventsAndRejectsPrivacyOrRetiredPayloads() {
-        assertTrue(Phase9AnalyticsSchema.eventNames.contains("game_finished"))
-        val properties = Phase9AnalyticsSchema.validate(
+        assertTrue(AnalyticsSchema.eventNames.contains("game_finished"))
+        val properties = AnalyticsSchema.validate(
             "game_finished",
             mapOf(
                 "mode" to PlatformProperty.Text("high_school"),
@@ -25,45 +25,45 @@ public class Phase9PlatformContractTest {
         )
         assertEquals(2, properties.size)
         assertThrows(IllegalArgumentException::class.java) {
-            Phase9AnalyticsSchema.validate("game_finished", mapOf("player_name" to PlatformProperty.Text("민수")))
+            AnalyticsSchema.validate("game_finished", mapOf("player_name" to PlatformProperty.Text("민수")))
         }
         assertThrows(IllegalArgumentException::class.java) {
-            Phase9AnalyticsSchema.validate("daily_inning_opened", emptyMap())
+            AnalyticsSchema.validate("daily_inning_opened", emptyMap())
         }
         assertThrows(IllegalArgumentException::class.java) {
-            Phase9AnalyticsSchema.validate("screen_view", emptyMap())
+            AnalyticsSchema.validate("screen_view", emptyMap())
         }
         assertThrows(IllegalArgumentException::class.java) {
-            Phase9AnalyticsSchema.validate(
+            AnalyticsSchema.validate(
                 "reminder_changed",
                 mapOf("enabled" to PlatformProperty.Text("true"), "source" to PlatformProperty.Text("system")),
             )
         }
-        Phase9AnalyticsSchema.intentionalZeroCallerEventNames.forEach { eventName ->
+        AnalyticsSchema.intentionalZeroCallerEventNames.forEach { eventName ->
             assertThrows("zero-caller event must stay native-silent: $eventName", IllegalArgumentException::class.java) {
-                Phase9AnalyticsSchema.validate(eventName, emptyMap())
+                AnalyticsSchema.validate(eventName, emptyMap())
             }
         }
     }
 
     @Test
     public fun analyticsBoundaryWalksEveryNonZeroMatrixEventAndRejectsUnknownCallers() {
-        val activeEvents = Phase9AnalyticsSchema.eventNames -
-            Phase9AnalyticsSchema.retiredEventNames -
-            Phase9AnalyticsSchema.intentionalZeroCallerEventNames
+        val activeEvents = AnalyticsSchema.eventNames -
+            AnalyticsSchema.retiredEventNames -
+            AnalyticsSchema.intentionalZeroCallerEventNames
         assertTrue(activeEvents.isNotEmpty())
         activeEvents.forEach { eventName ->
-            assertEquals(emptyMap<String, PlatformProperty>(), Phase9AnalyticsSchema.validate(eventName, emptyMap()))
-            assertEquals(eventName, Phase9AnalyticsSchema.fromStrings("matrix-$eventName", eventName, emptyList()).eventName)
+            assertEquals(emptyMap<String, PlatformProperty>(), AnalyticsSchema.validate(eventName, emptyMap()))
+            assertEquals(eventName, AnalyticsSchema.fromStrings("matrix-$eventName", eventName, emptyList()).eventName)
         }
         assertThrows(IllegalArgumentException::class.java) {
-            Phase9AnalyticsSchema.fromStrings("unknown-caller", "unknown_matrix_event", emptyList())
+            AnalyticsSchema.fromStrings("unknown-caller", "unknown_matrix_event", emptyList())
         }
     }
 
     @Test
     public fun analyticsStringBoundaryUsesEventKeyKindsAndExactTextDomains() {
-        val event = Phase9AnalyticsSchema.fromStrings(
+        val event = AnalyticsSchema.fromStrings(
             receiptId = "schema-roundtrip",
             eventName = "run_pledge_selected",
             properties = listOf("pledge_id" to "true", "recommended" to "true", "life_number" to "123"),
@@ -74,28 +74,28 @@ public class Phase9PlatformContractTest {
         assertTrue(event.properties.getValue("life_number") is PlatformProperty.Whole)
 
         assertThrows(IllegalArgumentException::class.java) {
-            Phase9AnalyticsSchema.fromStrings("bad-flag", "run_pledge_selected", listOf("recommended" to "True"))
+            AnalyticsSchema.fromStrings("bad-flag", "run_pledge_selected", listOf("recommended" to "True"))
         }
         assertThrows(IllegalArgumentException::class.java) {
-            Phase9AnalyticsSchema.fromStrings("bad-whole", "run_pledge_selected", listOf("life_number" to "1.0"))
+            AnalyticsSchema.fromStrings("bad-whole", "run_pledge_selected", listOf("life_number" to "1.0"))
         }
         assertThrows(IllegalArgumentException::class.java) {
-            Phase9AnalyticsSchema.fromStrings("bad-enum", "reminder_changed", listOf("enabled" to "true", "source" to "permission_result"))
+            AnalyticsSchema.fromStrings("bad-enum", "reminder_changed", listOf("enabled" to "true", "source" to "permission_result"))
         }
-        val opened = Phase9AnalyticsSchema.fromStrings(
+        val opened = AnalyticsSchema.fromStrings(
             "notification-open",
             "reminder_opened",
             listOf("destination" to "high-school", "reason" to "return_plan", "plan_receipt" to "plan-1"),
         )
         assertEquals("high-school", (opened.properties.getValue("destination") as PlatformProperty.Text).value)
         assertThrows(IllegalArgumentException::class.java) {
-            Phase9AnalyticsSchema.fromStrings("bad-destination", "reminder_opened", listOf("destination" to "high_school"))
+            AnalyticsSchema.fromStrings("bad-destination", "reminder_opened", listOf("destination" to "high_school"))
         }
     }
 
     @Test
     public fun platformStateCodecIsCanonicalAndRejectsUnknownOrTamperedFields() {
-        val state = Phase9PlatformState(
+        val state = PlatformState(
             scopedEpoch = 2,
             analyticsOnceReceiptIds = listOf("r1"),
             scheduledReminderTokenHashes = listOf("scheduled-token"),
@@ -103,18 +103,18 @@ public class Phase9PlatformContractTest {
             reminderOfferDeclined = true,
             reviewAttempts = listOf(ReviewAttempt("good-recap", 100L)),
         )
-        val bytes = Phase9PlatformStateCodec.encode(state)
-        assertEquals(state, Phase9PlatformStateCodec.decode(bytes))
+        val bytes = PlatformStateCodec.encode(state)
+        assertEquals(state, PlatformStateCodec.decode(bytes))
         assertThrows(IllegalArgumentException::class.java) {
-            Phase9PlatformStateCodec.decode(bytes + byteArrayOf(0x20))
+            PlatformStateCodec.decode(bytes + byteArrayOf(0x20))
         }
         val unknown = String(bytes, Charsets.UTF_8).replace("\"shareCacheEpoch\":0", "\"unexpected\":1,\"shareCacheEpoch\":0")
-        assertThrows(IllegalArgumentException::class.java) { Phase9PlatformStateCodec.decode(unknown.toByteArray()) }
+        assertThrows(IllegalArgumentException::class.java) { PlatformStateCodec.decode(unknown.toByteArray()) }
     }
 
     @Test
     public fun fileStateSurvivesRestartAndResetClearsEachScopedDomain() {
-        val directory = Files.createTempDirectory("phase9-platform-state")
+        val directory = Files.createTempDirectory("platform-state")
         try {
             val first = FilePlatformStateStore(directory)
             first.update { it.copy(analyticsOnceReceiptIds = listOf("receipt"), notificationAnalyticsTokenHashes = listOf("token"), reminderOfferDeclined = true, reviewAttempts = listOf(ReviewAttempt("third-life", 7L))) }
@@ -142,7 +142,7 @@ public class Phase9PlatformContractTest {
 
     @Test
     public fun installIdentityIsDurableValidatedAndScopedWithoutRawIdKeys() {
-        val directory = Files.createTempDirectory("phase9-install")
+        val directory = Files.createTempDirectory("platform-install")
         try {
             val first = FileInstallIdentity(directory) { "0123456789abcdef0123456789abcdef" }
             val id = first.getOrCreate()
@@ -161,7 +161,7 @@ public class Phase9PlatformContractTest {
         val store = InMemoryPlatformStateStore()
         val failing = RecordingDestination("firebase", fail = true)
         val working = RecordingDestination("amplitude", fail = false)
-        val service = NativeAnalyticsService(store, listOf(failing, working), AnalyticsContext("development", "phase9", "settings"))
+        val service = NativeAnalyticsService(store, listOf(failing, working), AnalyticsContext("development", PLATFORM_APP_SCHEMA, "settings"))
         val event = NativeAnalyticsEvent("receipt-1", "reminder_changed", mapOf("enabled" to PlatformProperty.Flag(true), "source" to PlatformProperty.Text("settings")))
         service.publish(listOf(event))
         assertEquals(1, working.events.size)
@@ -178,7 +178,7 @@ public class Phase9PlatformContractTest {
     public fun analyticsPlatformStoreWriteFailureLeavesReceiptRetryableUntilStoreRecovers() {
         val store = FaultingPlatformStateStore()
         val destination = RecordingDestination("firebase", fail = false)
-        val service = NativeAnalyticsService(store, listOf(destination), AnalyticsContext("development", "phase9", "settings"))
+        val service = NativeAnalyticsService(store, listOf(destination), AnalyticsContext("development", PLATFORM_APP_SCHEMA, "settings"))
         val event = NativeAnalyticsEvent(
             "write-failure-receipt",
             "reminder_changed",
@@ -195,16 +195,16 @@ public class Phase9PlatformContractTest {
 
     @Test
     public fun disabledExternalSdkModeKeepsReceiptsLocalAndRetryable() {
-        assertFalse(Phase9NativeSdkConfiguration().externalSdkEnabled)
+        assertFalse(NativeSdkConfiguration().externalSdkEnabled)
         assertThrows(IllegalArgumentException::class.java) {
-            Phase9NativeSdkConfiguration(externalSdkEnabled = true)
+            NativeSdkConfiguration(externalSdkEnabled = true)
         }
         val store = InMemoryPlatformStateStore()
-        val service = NativeAnalyticsService(store, emptyList(), AnalyticsContext("development", "phase9", "settings"))
+        val service = NativeAnalyticsService(store, emptyList(), AnalyticsContext("development", PLATFORM_APP_SCHEMA, "settings"))
         val event = NativeAnalyticsEvent("local-receipt", "reminder_changed", mapOf("enabled" to PlatformProperty.Flag(false), "source" to PlatformProperty.Text("settings")))
         service.publish(listOf(event, event))
         assertEquals(listOf("local-receipt"), service.pendingOutbox().map { it.event.receiptId })
-        NativeAnalyticsService(store, emptyList(), AnalyticsContext("development", "phase9", "restart")).retryOutbox()
+        NativeAnalyticsService(store, emptyList(), AnalyticsContext("development", PLATFORM_APP_SCHEMA, "restart")).retryOutbox()
         assertEquals(listOf("local-receipt"), store.read().analyticsOutbox.map { it.event.receiptId })
     }
 
@@ -212,7 +212,7 @@ public class Phase9PlatformContractTest {
     public fun aggregateBaselinePreventsHistoricReceiptReplayAfterRestart() {
         val store = InMemoryPlatformStateStore()
         val destination = RecordingDestination("firebase", fail = false)
-        val service = NativeAnalyticsService(store, listOf(destination), AnalyticsContext("development", "phase9", "settings"))
+        val service = NativeAnalyticsService(store, listOf(destination), AnalyticsContext("development", PLATFORM_APP_SCHEMA, "settings"))
         service.establishAggregateBaseline(listOf("historic"))
         service.publish(
             listOf(
@@ -230,7 +230,7 @@ public class Phase9PlatformContractTest {
 
     @Test
     public fun notificationOpenReceiptSeparatesAnalyticsFromNavigationAcrossRestart() {
-        val directory = Files.createTempDirectory("phase9-notification")
+        val directory = Files.createTempDirectory("platform-notification")
         try {
             val store = FilePlatformStateStore(directory)
             val normalized = NotificationIntentNormalizer.normalize(
@@ -431,7 +431,7 @@ public class Phase9PlatformContractTest {
         assertEquals("archive:career-one:share", LifeCardShareReceiptScope.forPayload(first))
         assertEquals("archive:career-two:share", LifeCardShareReceiptScope.forPayload(second))
 
-        val directory = Files.createTempDirectory("phase9-share-race")
+        val directory = Files.createTempDirectory("share-race")
         try {
             val store = FilePlatformStateStore(directory)
             store.update { it.copy(shareCacheEpoch = 4L) }
@@ -446,7 +446,7 @@ public class Phase9PlatformContractTest {
 
     @Test
     public fun notificationPermissionAskedSurvivesRestartAndResetClearsOnlyOnReset() {
-        val directory = Files.createTempDirectory("phase9-notification-permission")
+        val directory = Files.createTempDirectory("platform-notification-permission")
         try {
             val first = FilePlatformStateStore(directory)
             first.update { it.copy(notificationPermissionAsked = true) }
@@ -464,7 +464,7 @@ public class Phase9PlatformContractTest {
     @Test
     public fun externalRevokeClearsOnlyPendingSchedulesAndPreservesAskedAndOpenReceipts() {
         val store = InMemoryPlatformStateStore(
-            Phase9PlatformState(
+            PlatformState(
                 scheduledReminderTokenHashes = listOf("scheduled"),
                 notificationPermissionAsked = true,
                 notificationAnalyticsTokenHashes = listOf("analytics"),
@@ -481,7 +481,7 @@ public class Phase9PlatformContractTest {
 
     @Test
     public fun crashContextIsAllowlistedAndDynamicFieldsAreValidated() {
-        val initial = CrashContext("development", "phase9", "opening", 0, "high", false, false)
+        val initial = CrashContext("development", PLATFORM_APP_SCHEMA, "opening", 0, "high", false, false)
         assertEquals(false, initial.unityLoaded)
         assertEquals(true, initial.copy(phase = "high_school", life = 3, qualityTier = "low", unityLoaded = true, stageReady = true).stageReady)
         assertThrows(IllegalArgumentException::class.java) { initial.copy(qualityTier = "ultra") }
@@ -490,7 +490,7 @@ public class Phase9PlatformContractTest {
 
     @Test
     public fun canonicalRootIdentityAndHashedEpochNamespaceSurviveRestartAndReplacement() {
-        val root = Files.createTempDirectory("phase9-canonical-root")
+        val root = Files.createTempDirectory("platform-canonical-root")
         try {
             val identity = FileInstallIdentity(root) { "0123456789abcdef0123456789abcdef" }
             val installId = identity.getOrCreate()
@@ -537,12 +537,12 @@ public class Phase9PlatformContractTest {
         val delegate = InMemoryPlatformStateStore()
         var failWrites: Boolean = true
 
-        override fun read(): Phase9PlatformState = delegate.read()
-        override fun write(state: Phase9PlatformState) {
+        override fun read(): PlatformState = delegate.read()
+        override fun write(state: PlatformState) {
             if (failWrites) error("platform.write.failed")
             delegate.write(state)
         }
-        override fun update(transform: (Phase9PlatformState) -> Phase9PlatformState): Phase9PlatformState {
+        override fun update(transform: (PlatformState) -> PlatformState): PlatformState {
             if (failWrites) error("platform.update.failed")
             return delegate.update(transform)
         }

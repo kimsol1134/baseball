@@ -28,13 +28,13 @@ class CareerMeaningApplicationTest {
                 draftResult = HighSchoolDraftResult(outcome, 72, "4라운드", team.id, team, 4, 32, 120000000)))
             val hs = kernel.commitShadowState(original.copy(run = run))
             val state = GameAggregateState.initial("draft-state").copy(stage = GameStage.HIGH_SCHOOL, highSchool = hs)
-            val screen = Phase8ScreenProjection.project(state, Phase8ScreenId.P015_REBIRTH)
+            val screen = ScreenProjection.project(state, ScreenId.P015_REBIRTH)
             assertTrue(screen.actions.none { it.id == "startDirect" })
             assertEquals(outcome == HighSchoolDraftOutcome.DRAFTED, screen.actions.any { it.id == "startLinked" && it.enabled })
             val status = ProfessionalStatusPresentation.section(state).rows.joinToString { it.value }
             assertTrue(status.contains(if (outcome == HighSchoolDraftOutcome.DRAFTED) "입단 계약 전" else "미지명"))
         }
-        val opening = Phase8ScreenProjection.project(GameAggregateState.initial("new-pro"), Phase8ScreenId.P001_OPENING)
+        val opening = ScreenProjection.project(GameAggregateState.initial("new-pro"), ScreenId.P001_OPENING)
         assertTrue(opening.actions.single { it.id == "startDirect" }.label.contains("새로"))
     }
     @Test fun conversationPreviewMatchesTheCommittedChanges() {
@@ -58,21 +58,21 @@ class CareerMeaningApplicationTest {
         val repository = CSharpLegacyGameStoreRepository(directory, "meaning-native")
         var store = KotlinGameStore.open("meaning-native", repository, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
         try {
-            var controller = Phase8Controller(store)
-            controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
-            controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-            controller.execute(Phase8ScreenId.P005_SCHOOL_SELECTION, "chooseSchool:haedong_power")
-            val phase7 = Phase7VerticalController(store)
-            phase7.commitTraining()
+            var controller = ScreenController(store)
+            controller.execute(ScreenId.P001_OPENING, "enterSetup")
+            controller.execute(ScreenId.P002_SETUP, "startHighSchool")
+            controller.execute(ScreenId.P003_PROLOGUE, "beginTutorial")
+            controller.execute(ScreenId.P003_PROLOGUE, "completeTutorial")
+            controller.execute(ScreenId.P005_SCHOOL_SELECTION, "chooseSchool:haedong_power")
+            val pitchSession = PitchSessionController(store)
+            pitchSession.commitTraining()
             val development = assertNotNull(store.current.highSchool!!.run.development)
             store.close(); store = KotlinGameStore.open("meaning-native", repository, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
             assertEquals(development, store.current.highSchool!!.run.development)
-            controller = Phase8Controller(store)
+            controller = ScreenController(store)
             var guard = 0
             while (store.current.highSchool!!.run.phase != HighSchoolPhase.IMPORTANT_GAME && guard++ < 100) {
-                val c = Phase7VerticalController(store)
+                val c = PitchSessionController(store)
                 when (store.current.highSchool!!.run.phase) {
                     HighSchoolPhase.TRAINING -> c.commitTraining()
                     HighSchoolPhase.RELATIONSHIP -> c.resolveRelationship()
@@ -82,7 +82,7 @@ class CareerMeaningApplicationTest {
                 }
             }
             assertTrue(guard < 100)
-            controller.execute(Phase8ScreenId.P008_IMPORTANT_GAME, "openImportantGame")
+            controller.execute(ScreenId.P008_IMPORTANT_GAME, "openImportantGame")
             val assignment = assertNotNull(store.current.highSchool!!.activePitch!!.assignment)
             store.close(); store = KotlinGameStore.open("meaning-native", repository, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
             assertEquals(assignment, store.current.highSchool!!.activePitch!!.assignment)

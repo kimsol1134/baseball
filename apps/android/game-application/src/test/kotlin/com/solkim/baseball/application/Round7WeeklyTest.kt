@@ -20,8 +20,8 @@ class Round7WeeklyTest {
             try {
                 store.importCareerBackup(portableCareerFixture(weeklyNoteFixture(payload("high-school-terminal-v42"),completed)),store.current.revision)
                 val before = store.current
-                val controller = Phase8Controller(store)
-                val action = controller.projection(Phase8ScreenId.P024_WEEKLY).actions.single { it.id=="claimWeeklyReward" }
+                val controller = ScreenController(store)
+                val action = controller.projection(ScreenId.P024_WEEKLY).actions.single { it.id=="claimWeeklyReward" }
                 assertEquals(completed>=2,action.enabled)
                 assertEquals(completed>=2,WeeklyNotePolicy.canClaim(before))
                 assertTrue(action.description.contains("2"))
@@ -36,7 +36,7 @@ class Round7WeeklyTest {
                     assertEquals(before,store.current)
                     assertContentEquals(bytes,Files.readAllBytes(dir.resolve("save.json")))
                 } else {
-                    controller.execute(Phase8ScreenId.P024_WEEKLY,"claimWeeklyReward",action.payloads)
+                    controller.execute(ScreenId.P024_WEEKLY,"claimWeeklyReward",action.payloads)
                     assertEquals(before.highSchool!!.inheritance.soulPoints+HighSchoolWeeklyRules.REWARD_SOUL_POINTS,store.current.highSchool!!.inheritance.soulPoints)
                     assertTrue(store.current.highSchool!!.weekly.rewardClaimed)
                     assertEquals(1,store.current.highSchool!!.weekly.stamps.count { it.weekKey==before.highSchool!!.weekly.weekKey })
@@ -64,7 +64,7 @@ class Round7WeeklyTest {
             store.importCareerBackup(portableCareerFixture(weeklyNoteFixture(payload("round4-pro-week"),3)),store.current.revision)
             val before=store.current
             assertEquals(GameStage.PRO,before.stage)
-            assertFalse(Phase8ScreenProjection.isReachable(before,Phase8ScreenId.P024_WEEKLY))
+            assertFalse(ScreenProjection.isReachable(before,ScreenId.P024_WEEKLY))
             assertFalse(WeeklyNotePolicy.canClaim(before))
             assertEquals("weekly.career_unavailable",assertFails { store.dispatch(claim(before)) }.message)
             assertEquals("weekly.career_unavailable",assertFails { GameStateReducer.dispatch(before,claim(before)) }.message)

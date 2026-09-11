@@ -1,7 +1,7 @@
 package com.solkim.baseball.application
 
 /** Translate visible copy while retaining all command IDs, captured payloads and save values. */
-public fun Phase8ScreenModel.localized(copy: GameCopy, state: GameAggregateState): Phase8ScreenModel {
+public fun ScreenModel.localized(copy: GameCopy, state: GameAggregateState): ScreenModel {
     val userTexts = if (state.meta.seedChallenge != null) emptySet() else buildSet {
         state.highSchool?.run?.identity?.name?.let(::add)
         state.pro?.identityName?.let(::add)

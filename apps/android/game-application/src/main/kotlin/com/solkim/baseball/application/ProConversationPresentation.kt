@@ -2,7 +2,22 @@ package com.solkim.baseball.application
 
 import com.solkim.baseball.core.pro.*
 
+public data class ProConversationView(
+    val teamId: String,
+    val decisionId: String,
+    val type: ProSeasonDecisionType,
+    val title: String,
+    val detail: String,
+    val choices: List<ProDecisionChoice>,
+)
+
 public object ProConversationPresentation {
+    public fun view(state: GameAggregateState): ProConversationView? {
+        val pro = state.pro ?: return null
+        val decision = pro.pendingDecision ?: return null
+        return ProConversationView(pro.team.id, decision.id, decision.type, decision.title, decision.detail, decision.choices)
+    }
+
     /** Scouting a rival is a conversation with the catcher, not an invented rival appearance. */
     public fun role(type: ProSeasonDecisionType?): String? = when (type) {
         ProSeasonDecisionType.CATCHER_GAME_PLAN, ProSeasonDecisionType.RIVAL_ANALYSIS -> "catcher"

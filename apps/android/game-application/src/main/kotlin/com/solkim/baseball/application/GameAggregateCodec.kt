@@ -61,7 +61,26 @@ public object GameAggregateCodec : JsonPayloadCodec<GameAggregateState> {
             commitment = value.string("commitment"),
         )
         try { state.validate() } catch (error: IllegalArgumentException) { throw GameSaveCodecException(error.message ?: "aggregate.invalid") }
-        return state
+        return migrateLoadedAggregate(state)
+    }
+
+    private fun migrateLoadedAggregate(state: GameAggregateState): GameAggregateState {
+        val pitch = state.pitch?.let { current ->
+            current.copy(checkpoint = CareerWire.migrateCheckpoint(current.checkpoint))
+        }
+        val receipts = state.commandReceipts.map { receipt ->
+            receipt.copy(
+                commandId = CareerWire.migrateCommandId(receipt.commandId),
+                sessionId = CareerWire.migrateSessionId(receipt.sessionId),
+            )
+        }
+        val challenge = state.meta.seedChallenge?.let { session ->
+            val migratedPitch = session.returnPitch?.copy(checkpoint = CareerWire.migrateCheckpoint(session.returnPitch.checkpoint))
+            if (migratedPitch == session.returnPitch) session else session.copy(returnPitch = migratedPitch)
+        }
+        val meta = if (challenge == state.meta.seedChallenge) state.meta else state.meta.copy(seedChallenge = challenge)
+        if (pitch == state.pitch && receipts == state.commandReceipts && meta == state.meta) return state
+        return state.copy(pitch = pitch, commandReceipts = receipts, meta = meta).committed()
     }
 
     private fun encodeMeta(value: GameMetaState): JsonValue.Obj = JsonValue.Obj(linkedMapOf<String, JsonValue>(

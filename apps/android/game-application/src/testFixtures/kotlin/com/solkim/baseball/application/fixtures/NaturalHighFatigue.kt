@@ -9,7 +9,7 @@ import com.solkim.baseball.application.GameCommandEnvelope
 import com.solkim.baseball.application.CommandReceiptRetention
 import com.solkim.baseball.application.CSharpLegacyProBridge
 import com.solkim.baseball.application.PitchCareerKind
-import com.solkim.baseball.application.Phase7VerticalController
+import com.solkim.baseball.application.PitchSessionController
 import com.solkim.baseball.model.JsonValue
 
 /** Reproduces the round-five seed journey without overwriting fatigue, phase, or pitch counters. */
@@ -59,7 +59,7 @@ public suspend fun prepareNaturalHighFatigueInput(store: KotlinGameStore, freshD
     }
     dispatch(GameCommand.ReservePitch(active.sessionId, PitchCareerKind.PRO, pro.careerId, active.log.gameId, active.seed, false))
     dispatch(GameCommand.StartPitch(active.sessionId))
-    val controller = Phase7VerticalController(store)
+    val controller = PitchSessionController(store)
     val saved = controller.commitSavedPresentation(active.sessionId)
     controller.consumePresentation(active.sessionId, saved)
     controller.completePitchAndPostgame(active.sessionId)

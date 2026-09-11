@@ -79,10 +79,10 @@ class GameCopyTest {
         val pro = com.solkim.baseball.core.pro.ProKernel().startDirect(
             com.solkim.baseball.core.pro.ProStartDirectRequest("7841", "power_prospect", "포심")).state
         val state = GameAggregateState.initial("copy-name").copy(pro = pro, stage = GameStage.PRO)
-        val id = Phase8ScreenId.P025_RECORDS_LEAGUE
-        val model = Phase8ScreenModel(id, "기록", "기록", listOf(Phase8Section("test", "기록", listOf(
-            Phase8Row("선수", "포심"), Phase8Row("구종", "포심"),
-        ))), emptyList(), Phase8Payloads.view(state, id)).localized(en, state)
+        val id = ScreenId.P025_RECORDS_LEAGUE
+        val model = ScreenModel(id, "기록", "기록", listOf(ScreenSection("test", "기록", listOf(
+            ScreenRow("선수", "포심"), ScreenRow("구종", "포심"),
+        ))), emptyList(), ScreenPayloads.view(state, id)).localized(en, state)
         assertEquals("포심", model.sections.single().rows[0].value)
         assertEquals("Four-seam", model.sections.single().rows[1].value)
     }

@@ -14,12 +14,12 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class Phase7VerticalControllerTest {
+class PitchSessionControllerTest {
     @Test fun regularInningContinuationSurvivesNativeStoreRestartWithoutClosingTheGame() = runBlocking {
         withTempDirectory { directory ->
             val repository = CSharpLegacyGameStoreRepository(directory, "inning-choice")
             var store = KotlinGameStore.open("inning-choice", repository, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
-            var controller = Phase7VerticalController(store)
+            var controller = PitchSessionController(store)
             try {
                 controller.enterSetup(); controller.startHighSchool("이어던짐"); controller.beginTutorial()
                 controller.completeTutorial(); controller.chooseSchool()
@@ -59,7 +59,7 @@ class Phase7VerticalControllerTest {
                 controller.continueInning()
                 store.close()
                 store = KotlinGameStore.open("inning-choice", repository, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
-                controller = Phase7VerticalController(store)
+                controller = PitchSessionController(store)
                 assertEquals(pitches, store.current.highSchool!!.activePitch!!.pitches)
                 assertFalse(store.current.highSchool!!.activePitch!!.ended)
                 controller.completePitchAndPostgame(launch.sessionId)
@@ -110,7 +110,7 @@ class Phase7VerticalControllerTest {
                 repository,
                 NativeAuthorityMode.NATIVE_SHADOW_READ_ONLY,
             )
-            var controller = Phase7VerticalController(store)
+            var controller = PitchSessionController(store)
             controller.enterSetup()
             controller.startHighSchool("민서준")
             controller.beginTutorial()
@@ -133,7 +133,7 @@ class Phase7VerticalControllerTest {
 
             store = reopen(store, repository)
             assertEquals(PitchBoundary.PLAYING, store.current.pitch?.boundary)
-            val presentation = Phase7VerticalController(store).submitPitch(
+            val presentation = PitchSessionController(store).submitPitch(
                 sessionId,
                 0,
                 PitchKind.FOUR_SEAM,
@@ -162,7 +162,7 @@ class Phase7VerticalControllerTest {
             assertEquals(PitchBoundary.COMPLETED, store.current.pitch?.boundary)
 
             store = reopen(store, repository)
-            controller = Phase7VerticalController(store)
+            controller = PitchSessionController(store)
             assertEquals(PitchBoundary.COMPLETED, store.current.pitch?.boundary)
             assertEquals(0UL, store.current.meta.completedGameCount)
             assertFalse(store.busy.value)
@@ -175,15 +175,15 @@ class Phase7VerticalControllerTest {
     fun openingToTutorialPitchSurvivesReservedPlayingCommitConsumeTerminalAndCompletionRestart() = runBlocking {
         val repository = InMemoryShadowFixtureGameStoreRepository(GameAggregateState.initial("phase7-vertical"))
         var store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase7-vertical"), repository)
-        var controller = Phase7VerticalController(store)
+        var controller = PitchSessionController(store)
 
-        assertEquals(Phase7Route.OPENING, controller.route())
+        assertEquals(PitchSessionRoute.OPENING, controller.route())
         controller.enterSetup()
-        assertEquals(Phase7Route.SETUP, controller.route())
+        assertEquals(PitchSessionRoute.SETUP, controller.route())
         controller.startHighSchool("민서준")
-        assertEquals(Phase7Route.PROLOGUE, controller.route())
+        assertEquals(PitchSessionRoute.PROLOGUE, controller.route())
         controller.beginTutorial()
-        assertEquals(Phase7Route.TUTORIAL, controller.route())
+        assertEquals(PitchSessionRoute.TUTORIAL, controller.route())
 
         val reservedSession = "phase7-reserved"
         send(store, "reserve", GameCommand.ReservePitch(
@@ -196,26 +196,26 @@ class Phase7VerticalControllerTest {
         assertEquals(PitchBoundary.RESERVED, store.current.pitch?.boundary)
 
         store = restart(store, repository, "phase7-vertical")
-        controller = Phase7VerticalController(store)
+        controller = PitchSessionController(store)
         assertEquals(PitchBoundary.RESERVED, store.current.pitch?.boundary)
         send(store, "start", GameCommand.StartPitch(reservedSession))
         assertEquals(PitchBoundary.PLAYING, store.current.pitch?.boundary)
 
         store = restart(store, repository, "phase7-vertical")
-        controller = Phase7VerticalController(store)
+        controller = PitchSessionController(store)
         assertEquals(PitchBoundary.PLAYING, store.current.pitch?.boundary)
         val request = controller.submitPitch(reservedSession, 2, PitchKind.SLIDER, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
         assertEquals(PitchBoundary.COMMITTED, store.current.pitch?.boundary)
 
         store = restart(store, repository, "phase7-vertical")
-        controller = Phase7VerticalController(store)
+        controller = PitchSessionController(store)
         assertEquals(PitchBoundary.COMMITTED, store.current.pitch?.boundary)
         assertEquals(request, controller.preparePresentation(reservedSession, 2))
         controller.consumePresentation(reservedSession, request)
         assertEquals(PitchBoundary.TERMINAL, store.current.pitch?.boundary)
 
         store = restart(store, repository, "phase7-vertical")
-        controller = Phase7VerticalController(store)
+        controller = PitchSessionController(store)
         controller.completePitchAndPostgame(reservedSession)
         assertEquals(PitchBoundary.COMPLETED, store.current.pitch?.boundary)
         controller.completePitchAndPostgame(reservedSession)
@@ -225,9 +225,9 @@ class Phase7VerticalControllerTest {
         // The retained terminal tutorial wire shape must not block the next durable HS phase.
         controller.completeTutorial()
         assertEquals(HighSchoolPhase.SCHOOL_SELECTION, requireNotNull(store.current.highSchool).run.phase)
-        assertEquals(Phase7Route.SCHOOL, controller.route())
+        assertEquals(PitchSessionRoute.SCHOOL, controller.route())
         controller.chooseSchool()
-        assertEquals(Phase7Route.TRAINING, controller.route())
+        assertEquals(PitchSessionRoute.TRAINING, controller.route())
         assertEquals(0UL, store.current.meta.completedGameCount)
     }
 
@@ -236,7 +236,7 @@ class Phase7VerticalControllerTest {
         suspend fun throwTutorial(delivery: PitchDelivery, zone: PitchZone): Pair<KotlinGameStore, String> {
             val repository = InMemoryShadowFixtureGameStoreRepository(GameAggregateState.initial("phase7-tutorial-feel"))
             val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase7-tutorial-feel"), repository)
-            val controller = Phase7VerticalController(store)
+            val controller = PitchSessionController(store)
             controller.enterSetup()
             controller.startHighSchool("민서준")
             controller.beginTutorial()
@@ -282,7 +282,7 @@ class Phase7VerticalControllerTest {
     @Test
     fun leftoverTutorialPresentationDoesNotRecoverOntoOfficialMound() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase7-tutorial-leftover"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -317,9 +317,9 @@ class Phase7VerticalControllerTest {
     }
 
     @Test
-    fun officialPitchContinuesFromControllerWithoutPhase8NextImportantPitch() = runBlocking {
+    fun officialPitchContinuesFromControllerWithoutNextImportantPitch() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase7-continue"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -368,7 +368,7 @@ class Phase7VerticalControllerTest {
     fun backSuspendAndExplicitAbandonRemainDistinctAcrossRestart() = runBlocking {
         val repository = InMemoryShadowFixtureGameStoreRepository(GameAggregateState.initial("phase7-back"))
         var store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase7-back"), repository)
-        var controller = Phase7VerticalController(store)
+        var controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -377,7 +377,7 @@ class Phase7VerticalControllerTest {
         assertEquals(PitchBoundary.SUSPENDED, store.current.pitch?.boundary)
 
         store = restart(store, repository, "phase7-back")
-        controller = Phase7VerticalController(store)
+        controller = PitchSessionController(store)
         assertEquals(PitchBoundary.SUSPENDED, store.current.pitch?.boundary)
         controller.resumePitch(launch.sessionId)
         controller.abandonPitch(launch.sessionId, "user-abandoned")
@@ -395,7 +395,7 @@ class Phase7VerticalControllerTest {
             repository,
             AnalyticsReceiptProjection(sink = AnalyticsReceiptSink { receipts -> firstPublished += receipts.map { it.receiptId } }),
         )
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         assertTrue(firstPublished.isNotEmpty())
         val durableHistory = firstPublished.toList()
@@ -408,7 +408,7 @@ class Phase7VerticalControllerTest {
             AnalyticsReceiptProjection(sink = AnalyticsReceiptSink { receipts -> afterRestartPublished += receipts.map { it.receiptId } }),
         )
         assertTrue(afterRestartPublished.isEmpty())
-        Phase7VerticalController(store).startHighSchool("민서준")
+        PitchSessionController(store).startHighSchool("민서준")
         assertTrue(afterRestartPublished.isNotEmpty())
         assertTrue(afterRestartPublished.none { it in durableHistory })
         assertEquals(afterRestartPublished.size, afterRestartPublished.distinct().size)
@@ -419,7 +419,7 @@ class Phase7VerticalControllerTest {
     fun trainingRelationshipImportantGamePostgameAwakeningAndChapterRoutesAreExecutable() = runBlocking {
         val repository = InMemoryShadowFixtureGameStoreRepository(GameAggregateState.initial("phase7-routes"))
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("phase7-routes"), repository)
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -428,12 +428,12 @@ class Phase7VerticalControllerTest {
 
         var safety = 0
         var observedMultiPitchGame = false
-        while (controller.route() != Phase7Route.AWAKENING) {
+        while (controller.route() != PitchSessionRoute.AWAKENING) {
             assertTrue(++safety < 120, "Phase 7 route loop did not advance")
             when (controller.route()) {
-                Phase7Route.TRAINING -> controller.commitTraining()
-                Phase7Route.RELATIONSHIP -> controller.resolveRelationship()
-                Phase7Route.IMPORTANT_GAME -> {
+                PitchSessionRoute.TRAINING -> controller.commitTraining()
+                PitchSessionRoute.RELATIONSHIP -> controller.resolveRelationship()
+                PitchSessionRoute.IMPORTANT_GAME -> {
                     val gamesBefore = store.current.meta.completedGameCount
                     var launch = controller.reserveImportantGame()
                     var pitchCount = 0
@@ -456,15 +456,15 @@ class Phase7VerticalControllerTest {
                     assertTrue(pitchCount > 0)
                     observedMultiPitchGame = observedMultiPitchGame || pitchCount > 1
                     assertEquals(gamesBefore + 1UL, store.current.meta.completedGameCount)
-                    if (controller.route() == Phase7Route.POSTGAME) controller.dismissPostgame()
+                    if (controller.route() == PitchSessionRoute.POSTGAME) controller.dismissPostgame()
                 }
-                Phase7Route.POSTGAME -> controller.dismissPostgame()
-                Phase7Route.CHAPTER -> controller.advanceChapter()
+                PitchSessionRoute.POSTGAME -> controller.dismissPostgame()
+                PitchSessionRoute.CHAPTER -> controller.advanceChapter()
                 else -> error("unexpected Phase 7 route ${controller.route()}")
             }
         }
 
-        assertEquals(Phase7Route.AWAKENING, controller.route())
+        assertEquals(PitchSessionRoute.AWAKENING, controller.route())
         assertTrue(observedMultiPitchGame, "Phase 7 must exercise a multi-pitch important game")
         assertTrue(store.current.meta.completedGameCount > 0UL)
         assertEquals(
@@ -476,16 +476,18 @@ class Phase7VerticalControllerTest {
             store.current.analytics.receipts.map { it.receiptId }.distinct().size,
         )
         controller.chooseAwakening()
-        assertEquals(Phase7Route.CHAPTER, controller.route())
+        assertEquals(PitchSessionRoute.CHAPTER, controller.route())
         controller.advanceChapter()
-        assertEquals(Phase7Route.TRAINING, controller.route())
+        assertEquals(PitchSessionRoute.TRAINING, controller.route())
     }
 
     @Test
-    fun phase7CommandWireRoundTripsShellAndPresentationCommandsStrictly() {
-        val setup = GameCommandEnvelope("setup", "phase7-shell", 0UL, GameCommand.EnterSetup)
-        val clear = GameCommandEnvelope("clear", "phase7-pitch", 8UL, GameCommand.ClearPitchPresentation("phase7-pitch"))
+    fun commandWireRoundTripsShellAndPresentationCommandsStrictly() {
+        val setup = GameCommandEnvelope("setup", CareerWire.UI_SESSION, 0UL, GameCommand.EnterSetup)
+        val legacy = GameCommandEnvelope("setup-legacy", "phase7-shell", 0UL, GameCommand.EnterSetup)
+        val clear = GameCommandEnvelope("clear", "pitch-clear-session", 8UL, GameCommand.ClearPitchPresentation("pitch-clear-session"))
         assertEquals(setup, GameCommandCodec.decode(GameCommandCodec.encode(setup)))
+        assertEquals(legacy, GameCommandCodec.decode(GameCommandCodec.encode(legacy)))
         assertEquals(clear, GameCommandCodec.decode(GameCommandCodec.encode(clear)))
     }
 
@@ -539,7 +541,7 @@ class Phase7VerticalControllerTest {
                 repository,
                 NativeAuthorityMode.NATIVE_SHADOW_READ_ONLY,
             )
-            var controller = Phase7VerticalController(store)
+            var controller = PitchSessionController(store)
             controller.enterSetup()
             controller.startHighSchool("민서준")
             controller.beginTutorial()
@@ -571,7 +573,7 @@ class Phase7VerticalControllerTest {
             }
 
             store = reopen(store, repository, installId)
-            controller = Phase7VerticalController(store)
+            controller = PitchSessionController(store)
             val presentation = controller.submitPitch(sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
             if (target == PitchBoundary.COMMITTED) {
                 store = reopen(store, repository, installId)
@@ -607,7 +609,7 @@ class Phase7VerticalControllerTest {
     }
 
     private fun commandSession(command: GameCommand): String = when (command) {
-        GameCommand.EnterSetup, GameCommand.ResetProgress -> "phase7-shell"
+        GameCommand.EnterSetup, GameCommand.ResetProgress -> CareerWire.UI_SESSION
         is GameCommand.ReservePitch -> command.sessionId
         is GameCommand.StartPitch -> command.sessionId
         is GameCommand.CommitPitch -> command.sessionId
@@ -622,6 +624,6 @@ class Phase7VerticalControllerTest {
         is GameCommand.HighSchool,
         is GameCommand.Pro,
         is GameCommand.UpdateCompanion, is GameCommand.UpdateSettings,
-        is GameCommand.RecordAnalytics -> "phase7-shell"
+        is GameCommand.RecordAnalytics -> CareerWire.UI_SESSION
     }
 }

@@ -45,8 +45,10 @@ public object GameActionFailurePresentation {
         if (codes.any { it == "game.command.stale_revision" }) return Failure(Kind.STALE_STATE,"game.command.stale_revision")
         if (full) return Failure(Kind.STORAGE_FULL,"ENOSPC")
         if (save?.code == SaveFailureCode.IO_FAILED || chain.any { it is java.io.IOException }) return Failure(Kind.IO,"IO_FAILED")
-        if (codes.any { it.startsWith("pitch.") || it.startsWith("phase7.") }) return Failure(Kind.PITCH_STATE,"pitch.state")
-        if (codes.any { it.startsWith("phase8.action_disabled:") || it.startsWith("phase8.screen_unreachable:") }) return Failure(Kind.RULE,"action.unavailable")
+        if (codes.any { it.startsWith("pitch.") }) return Failure(Kind.PITCH_STATE,"pitch.state")
+        if (codes.any {
+            it.startsWith("screen.action_disabled:") || it.startsWith("screen.screen_unreachable:")
+        }) return Failure(Kind.RULE,"action.unavailable")
         return Failure(Kind.UNKNOWN,"unknown")
     }
 

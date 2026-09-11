@@ -51,7 +51,7 @@ class SeedChallengeTest {
             harness.send(GameCommand.HighSchool(HighSchoolPhase4Command.ChooseSchool("42233", harness.state.highSchool!!.run.schoolOptions.first().id)))
             harness.send(GameCommand.Pro(ProCommand.StartDirect(ProStartDirectRequest("42234", "power_prospect", "이전선수", harness.state.highSchool!!.run.careerId))))
             val before = harness.state
-            val context = Phase8CommandContext()
+            val context = ScreenCommandContext()
             val normalSeed = context.seed(before, "pro-plan:develop_stuff")
             harness.send(GameCommand.HighSchool(HighSchoolPhase4Command.StartSeedChallenge("41233", 2, "power_prospect")))
             val challengeSeed = context.seed(harness.state, "school-choice")
@@ -79,7 +79,7 @@ class SeedChallengeTest {
             val prior = first
             if (prior == null) first = harness.state else {
                 assertEquals(prior.highSchool!!.run, harness.state.highSchool!!.run)
-                assertEquals(Phase8CommandContext().seed(prior, "training"), Phase8CommandContext().seed(harness.state, "training"))
+                assertEquals(ScreenCommandContext().seed(prior, "training"), ScreenCommandContext().seed(harness.state, "training"))
             }
         }
     }
@@ -104,7 +104,7 @@ class SeedChallengeTest {
                 if (native) NativeAuthorityMode.NATIVE_AUTHORITATIVE else NativeAuthorityMode.NATIVE_SHADOW_READ_ONLY)
         }
         suspend fun send(command: GameCommand) {
-            requireNotNull(store).dispatch(GameCommandEnvelope("seed-command-${index++}", "phase8-ui", state.revision, command))
+            requireNotNull(store).dispatch(GameCommandEnvelope("seed-command-${index++}", CareerWire.uiSession(state, command), state.revision, command))
         }
     }
 }

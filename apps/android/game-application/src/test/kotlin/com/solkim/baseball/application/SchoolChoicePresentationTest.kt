@@ -42,7 +42,7 @@ class SchoolChoicePresentationTest {
     }
     @Test fun selectionExplainsTrainingInsteadOfNamesAndUnsupportedPenalties() {
         val state = fixture()
-        val model = Phase8ScreenProjection.project(state, Phase8ScreenId.P005_SCHOOL_SELECTION)
+        val model = ScreenProjection.project(state, ScreenId.P005_SCHOOL_SELECTION)
         val text = model.sections.flatMap { it.rows }.joinToString { "${it.value} ${it.detail}" }
         for (school in SchoolChoicePresentation.schools(state)) {
             assertFalse(text.contains(school.coachName))

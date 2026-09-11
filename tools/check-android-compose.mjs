@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,11 +11,18 @@ const required = [
   "apps/android/app/src/main/AndroidManifest.xml",
   "apps/android/app/src/main/java/com/solkim/baseball/android/MainActivity.kt",
   "apps/android/app/src/main/java/com/solkim/baseball/android/PitchActivity.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/PitchMoundScreen.kt",
   "apps/android/app/src/main/java/com/solkim/baseball/android/PitchDeliveryControl.kt",
-  "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pitch/PitchReleaseMeter.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/PitchDeliveryMeter.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/PitchDeliveryHeartbeat.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/PitchHudChrome.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/PitchControlsViews.kt",
+  "apps/android/game-core-api/src/main/kotlin/com/solkim/baseball/core/pitch/PitchReleaseMeter.kt",
   "apps/android/game-model/src/main/kotlin/com/solkim/baseball/model/PitchIpcModels.kt",
+  "apps/android/game-core-api/src/main/kotlin/com/solkim/baseball/core/pitch/PitchModels.kt",
+  "apps/android/game-core-api/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolPhase4Models.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pitch/PitchKernel.kt",
-  "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolContentCatalog.kt",
+  "apps/android/game-core-api/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolContentCatalog.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolKernel.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolStateCodec.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/CSharpHighSchoolSnapshotCodec.kt",
@@ -23,15 +31,20 @@ const required = [
   "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/CSharpLegacyAggregateBridge.kt",
   "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/CSharpLegacyProBridge.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pitch/CommittedPitchReplay.kt",
-  "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pro/ProJourneyModels.kt",
+  "apps/android/game-core-api/src/main/kotlin/com/solkim/baseball/core/pro/ProJourneyModels.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pro/ProJourneyKernel.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pro/ProJourneyStateCodec.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pro/ProStateCodecV2.kt",
-  "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pro/ProJourneyCommands.kt",
+  "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pro/ProJourneyCommandCodec.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pro/ProCareerDistributionRunner.kt",
   "apps/android/game-core/src/test/resources/fixtures/swift-pro-career-oracle-v2.json",
   "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/ProCareerJourneyApplication.kt",
-  "apps/android/feature-career/src/main/kotlin/com/solkim/baseball/feature/career/ProCareerJourneyScreens.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/CareerScreens.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/CareerScreenContent.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/CareerViewport.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/CareerSetupViews.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/CareerActionSupport.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/ProWeekView.kt",
   "apps/android/game-core/src/test/resources/fixtures/csharp-pitch-oracle-v1.json",
   "apps/android/game-core/src/test/resources/fixtures/swift-pitch-kernel-approved-v2.json",
   "apps/android/game-core/src/test/resources/fixtures/swift-pitch-kernel-current-v1.json",
@@ -60,12 +73,18 @@ const kotlinContract = readFileSync(
   resolve(root, "apps/android/game-model/src/main/kotlin/com/solkim/baseball/model/PitchIpcModels.kt"),
   "utf8",
 );
-const activity = readFileSync(
-  resolve(root, "apps/android/app/src/main/java/com/solkim/baseball/android/PitchActivity.kt"),
-  "utf8",
-);
+const activity = [
+  "PitchActivity.kt",
+  "PitchMoundScreen.kt",
+  "PitchHudViews.kt",
+  "PitchHudChrome.kt",
+  "PitchControlsViews.kt",
+].map((name) => readFileSync(resolve(root, `apps/android/app/src/main/java/com/solkim/baseball/android/${name}`), "utf8")).join("\n");
 const pitchKernel = readFileSync(
   resolve(root, "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pitch/PitchKernel.kt"),
+  "utf8",
+) + readFileSync(
+  resolve(root, "apps/android/game-core-api/src/main/kotlin/com/solkim/baseball/core/pitch/PitchModels.kt"),
   "utf8",
 );
 const replayCodec = readFileSync(
@@ -77,7 +96,7 @@ const highSchoolKernel = readFileSync(
   "utf8",
 );
 const highSchoolCatalog = readFileSync(
-  resolve(root, "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolContentCatalog.kt"),
+  resolve(root, "apps/android/game-core-api/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolContentCatalog.kt"),
   "utf8",
 );
 const highSchoolCodec = readFileSync(
@@ -97,17 +116,24 @@ const wave6Codec = readFileSync(
   "utf8",
 );
 const wave6CommandCodec = readFileSync(
-  resolve(root, "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pro/ProJourneyCommands.kt"),
+  resolve(root, "apps/android/game-core-api/src/main/kotlin/com/solkim/baseball/core/pro/ProJourneyCommands.kt"),
+  "utf8",
+) + readFileSync(
+  resolve(root, "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pro/ProJourneyCommandCodec.kt"),
   "utf8",
 );
 const wave6Application = readFileSync(
   resolve(root, "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/ProCareerJourneyApplication.kt"),
   "utf8",
 );
-const wave6Feature = readFileSync(
-  resolve(root, "apps/android/feature-career/src/main/kotlin/com/solkim/baseball/feature/career/ProCareerJourneyScreens.kt"),
-  "utf8",
-);
+const wave6Feature = [
+  "CareerScreens.kt",
+  "CareerScreenContent.kt",
+  "CareerViewport.kt",
+  "CareerSetupViews.kt",
+  "CareerActionSupport.kt",
+  "ProWeekView.kt",
+].map((name) => readFileSync(resolve(root, `apps/android/app/src/main/java/com/solkim/baseball/android/${name}`), "utf8")).join("\n");
 const settingsGradle = readFileSync(resolve(root, "apps/android/settings.gradle.kts"), "utf8");
 
 const productLabel = readFileSync(resolve(root, "apps/android/app/src/main/res/values/strings.xml"), "utf8");
@@ -229,11 +255,11 @@ for (const marker of [
   if (!wave6Application.includes(marker)) errors.push(`Wave 6 application marker missing: ${marker}`);
 }
 for (const marker of [
-  "ProCareerJourneySurface",
-  "ProContractMarketScreen",
-  "ProSettlementScreen",
-  "ProInvestmentScreen",
-  "ProRetirementScreen",
+  "CareerShell",
+  "CareerContractChoices",
+  "P016_PRO_CONTRACT",
+  "P017_PRO_WEEK",
+  "P021_PRO_RETIREMENT",
 ]) {
   if (!wave6Feature.includes(marker)) errors.push(`Wave 6 Compose surface marker missing: ${marker}`);
 }
@@ -252,6 +278,18 @@ if (activity.includes("Compose Pitch HUD") || activity.includes('Text("투구하
 if (!activity.includes("PitchDeliveryControl") || !activity.includes("autoReleaseEnabled")) {
   errors.push("pitch overlay must host PitchDeliveryControl and read the saved auto-release setting");
 }
+const careerShell = [
+  "CareerScreens.kt",
+  "CareerScreenContent.kt",
+  "CareerViewport.kt",
+  "CareerSetupViews.kt",
+  "CareerActionSupport.kt",
+  "MainActivity.kt",
+  "MainActivityContent.kt",
+].map((name) => readFileSync(resolve(root, `apps/android/app/src/main/java/com/solkim/baseball/android/${name}`), "utf8")).join("\n");
+if (careerShell.includes("PitchDeliveryControl")) {
+  errors.push("career shell must not host PitchDeliveryControl; the mound stays on PitchActivity");
+}
 const deliveryControl = readFileSync(
   resolve(root, "apps/android/app/src/main/java/com/solkim/baseball/android/PitchDeliveryControl.kt"),
   "utf8",
@@ -268,21 +306,21 @@ if (!deliveryControl.includes("if (autoRelease)") || !deliveryControl.includes("
   errors.push("auto-release must stay an explicit accessibility path that throws a neutral pitch");
 }
 const releaseMeter = readFileSync(
-  resolve(root, "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pitch/PitchReleaseMeter.kt"),
+  resolve(root, "apps/android/game-core-api/src/main/kotlin/com/solkim/baseball/core/pitch/PitchReleaseMeter.kt"),
   "utf8",
 );
 for (const marker of ["PERFECT_PHASE: Double = 0.5", "fun phase(", "fun delivery("]) {
   if (!releaseMeter.includes(marker)) errors.push(`release meter marker missing: ${marker}`);
 }
-const phase7 = readFileSync(
-  resolve(root, "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/Phase7VerticalController.kt"),
+const pitchSessionController = readFileSync(
+  resolve(root, "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/PitchSessionController.kt"),
   "utf8",
 );
-if (phase7.includes("PitchDelivery(1_000, 1_000)")) {
-  errors.push("Phase7 submitPitch must not hardcode a perfect delivery");
+if (pitchSessionController.includes("PitchDelivery(1_000, 1_000)")) {
+  errors.push("submitPitch must not hardcode a perfect delivery");
 }
-if (!phase7.includes("delivery: PitchDelivery") || !phase7.includes("SubmitPitch(sessionId, call, delivery)")) {
-  errors.push("Phase7 submitPitch must pass the player's PitchDelivery into the career command");
+if (!pitchSessionController.includes("delivery: PitchDelivery") || !pitchSessionController.includes("SubmitPitch(sessionId, call, delivery)")) {
+  errors.push("submitPitch must pass the player's PitchDelivery into the career command");
 }
 const settingsModel = readFileSync(
   resolve(root, "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/GameAggregateModels.kt"),
@@ -290,6 +328,9 @@ const settingsModel = readFileSync(
 );
 if (!settingsModel.includes("autoReleaseEnabled: Boolean = false")) {
   errors.push("auto-release must default off so the pitch slider is the product default");
+}
+if (!deliveryControl.includes("autoRelease: Boolean = false")) {
+  errors.push("PitchDeliveryControl must default auto-release off so omitted callers keep the slider");
 }
 for (const marker of [
   "public class PitchKernel",
@@ -363,6 +404,9 @@ for (const term of blockedWorldTerms) {
     errors.push(`real-world baseball IP found in migration contract: ${term}`);
   }
 }
+
+const layer = spawnSync(process.execPath, [resolve(root, "tools/check-android-layers.mjs")], { stdio: "inherit" });
+if (layer.status !== 0) process.exit(layer.status ?? 1);
 
 if (errors.length > 0) {
   console.error(`android-compose check failed (${errors.length})`);

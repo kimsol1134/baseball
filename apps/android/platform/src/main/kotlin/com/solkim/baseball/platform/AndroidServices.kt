@@ -54,7 +54,7 @@ import java.util.Locale
 import kotlin.math.sqrt
 import kotlin.coroutines.resume
 
-public data class Phase9NativeSdkConfiguration(
+public data class NativeSdkConfiguration(
     public val externalSdkEnabled: Boolean = false,
     public val amplitudeApiKey: String? = null,
     public val analyticsConsent: Boolean = false,
@@ -70,7 +70,7 @@ public data class Phase9NativeSdkConfiguration(
 
 public class FirebaseAnalyticsDestination(
     context: Context,
-    private val configuration: Phase9NativeSdkConfiguration,
+    private val configuration: NativeSdkConfiguration,
 ) : AnalyticsDestination {
     override val id: String = "firebase"
     private val analytics: FirebaseAnalytics? = if (!configuration.externalSdkEnabled || !configuration.analyticsConsent) {
@@ -97,7 +97,7 @@ public class FirebaseAnalyticsDestination(
 
 public class AmplitudeAnalyticsDestination(
     context: Context,
-    private val configuration: Phase9NativeSdkConfiguration,
+    private val configuration: NativeSdkConfiguration,
     private val installId: String,
 ) : AnalyticsDestination {
     override val id: String = "amplitude"
@@ -155,7 +155,7 @@ public data class CrashContext(
 
 public class FirebaseCrashReporter(
     context: Context,
-    private val configuration: Phase9NativeSdkConfiguration,
+    private val configuration: NativeSdkConfiguration,
 ) : NativeCrashReporter {
     private val crashlytics: FirebaseCrashlytics? = if (!configuration.externalSdkEnabled || !configuration.diagnosticsConsent) {
         null
@@ -566,7 +566,7 @@ public class NativeLifeCardShareService(
 ) {
     public fun share(payload: LifeCardSharePayload, portrait: Bitmap? = null, appName: String? = null): ShareResult {
         val epoch = stateStore?.read()?.shareCacheEpoch ?: 0L
-        val shareDirectory = File(context.cacheDir, "phase9-share-$epoch").apply { mkdirs() }
+        val shareDirectory = File(context.cacheDir, "share-$epoch").apply { mkdirs() }
         val baseName = "lifecard-${Hashing.sha256Hex("${payload.careerId}|${payload.lifeNumber}|${payload.text}").take(16)}"
         val textIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
@@ -597,7 +597,7 @@ public class NativeLifeCardShareService(
 
     public fun clearCache() {
         context.cacheDir.listFiles().orEmpty()
-            .filter { it.name.startsWith("phase9-share-") || it.name == "achievement-share" }
+            .filter { it.name.startsWith("share-") || it.name.startsWith("phase9-share-") || it.name == "achievement-share" }
             .forEach { it.deleteRecursively() }
     }
 
@@ -1090,9 +1090,9 @@ public class NativeAudioHapticsService(
     private fun abandonFocus() { focusRequest?.let(audioManager::abandonAudioFocusRequest); focusRequest = null }
 }
 
-public class NativePhase9Platform(
+public class NativePlatform(
     context: Context,
-    configuration: Phase9NativeSdkConfiguration = Phase9NativeSdkConfiguration(),
+    configuration: NativeSdkConfiguration = NativeSdkConfiguration(),
 ) {
     private val identityRoot = context.noBackupFilesDir.toPath()
     public val installIdentity: FileInstallIdentity = FileInstallIdentity(identityRoot)
@@ -1101,7 +1101,7 @@ public class NativePhase9Platform(
     public val analytics: NativeAnalyticsService = NativeAnalyticsService(
         stateStore,
         listOf(FirebaseAnalyticsDestination(context, configuration), AmplitudeAnalyticsDestination(context, configuration, installId)),
-        AnalyticsContext("${configuration.distribution}", "phase9", "platform", environment = configuration.environment),
+        AnalyticsContext("${configuration.distribution}", PLATFORM_APP_SCHEMA, "platform", environment = configuration.environment),
     )
     public val crashReporter: NativeCrashReporter = FirebaseCrashReporter(context, configuration)
     public val notifications: NativeNotificationService = NativeNotificationService(context, stateStore)

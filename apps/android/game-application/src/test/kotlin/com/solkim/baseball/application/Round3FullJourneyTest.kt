@@ -13,14 +13,14 @@ class Round3FullJourneyTest {
         val dir = Files.createTempDirectory("round3-full-journey-")
         var store = KotlinGameStore.open("round3-full", CSharpLegacyGameStoreRepository(dir, "round3-full"), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
         try {
-            var c = Phase8Controller(store)
-            var pitch = Phase7VerticalController(store, "phase8-ui")
-            suspend fun action(screen: Phase8ScreenId, id: String? = null, prefix: String? = null) {
+            var c = ScreenController(store)
+            var pitch = PitchSessionController(store)
+            suspend fun action(screen: ScreenId, id: String? = null, prefix: String? = null) {
                 val a = c.projection(screen).actions.first { it.enabled && (id == null || it.id == id) && (prefix == null || it.id.startsWith(prefix)) }
                 c.execute(screen, a.id, a.payloads)
             }
             suspend fun outing(pro: Boolean) {
-                val screen = if (pro) Phase8ScreenId.P018_PRO_IMPORTANT_GAME else Phase8ScreenId.P008_IMPORTANT_GAME
+                val screen = if (pro) ScreenId.P018_PRO_IMPORTANT_GAME else ScreenId.P008_IMPORTANT_GAME
                 var n = 0
                 while (if (pro) store.current.pro!!.phase == ProCareerPhase.IMPORTANT_GAME else store.current.highSchool!!.run.phase == HighSchoolPhase.IMPORTANT_GAME) {
                     check(n++ < 180)
@@ -38,11 +38,11 @@ class Round3FullJourneyTest {
                     }
                 }
             }
-            action(Phase8ScreenId.P001_OPENING, "enterSetup")
-            action(Phase8ScreenId.P002_SETUP, "startHighSchool")
-            action(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-            action(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-            action(Phase8ScreenId.P005_SCHOOL_SELECTION)
+            action(ScreenId.P001_OPENING, "enterSetup")
+            action(ScreenId.P002_SETUP, "startHighSchool")
+            action(ScreenId.P003_PROLOGUE, "beginTutorial")
+            action(ScreenId.P003_PROLOGUE, "completeTutorial")
+            action(ScreenId.P005_SCHOOL_SELECTION)
             var steps = 0
             while (store.current.highSchool!!.run.phase != HighSchoolPhase.DRAFT) {
                 check(steps++ < 300)
@@ -54,17 +54,17 @@ class Round3FullJourneyTest {
                             TrainingFocus.VELOCITY to player.stuff, TrainingFocus.COMMAND to player.command,
                             TrainingFocus.BREAKING_BALL to player.movement, TrainingFocus.STAMINA to player.stamina).minBy { it.second }.first
                         val payloads = TrainingPresentation.payloads(state, c.context, focus, TrainingIntensity.STANDARD, if (focus == TrainingFocus.BREAKING_BALL) TrainingPresentation.initialTarget(state) else null, false)
-                        c.execute(Phase8ScreenId.P006_TRAINING, "train:${focus.wire}", payloads)
+                        c.execute(ScreenId.P006_TRAINING, "train:${focus.wire}", payloads)
                     }
-                    HighSchoolPhase.RELATIONSHIP -> action(Phase8ScreenId.P007_RELATIONSHIP)
-                    HighSchoolPhase.AWAKENING -> action(Phase8ScreenId.P009_AWAKENING)
-                    HighSchoolPhase.CHAPTER_REVIEW -> action(Phase8ScreenId.P010_CHAPTER)
+                    HighSchoolPhase.RELATIONSHIP -> action(ScreenId.P007_RELATIONSHIP)
+                    HighSchoolPhase.AWAKENING -> action(ScreenId.P009_AWAKENING)
+                    HighSchoolPhase.CHAPTER_REVIEW -> action(ScreenId.P010_CHAPTER)
                     HighSchoolPhase.IMPORTANT_GAME -> outing(false)
                     else -> error("Unexpected school phase ${store.current.highSchool!!.run.phase}")
                 }
             }
             assertEquals(8, store.current.highSchool!!.run.chapter.number)
-            action(Phase8ScreenId.P013_DRAFT, "resolveDraft")
+            action(ScreenId.P013_DRAFT, "resolveDraft")
             val schoolRecord = CareerRecordPresentation.resolve(store.current, "hs:${store.current.highSchool!!.run.careerId}")
             assertNotNull(schoolRecord)
             assertTrue(schoolRecord.games > 0 && schoolRecord.outs > 0)
@@ -74,8 +74,8 @@ class Round3FullJourneyTest {
                     check(steps++ < 320)
                     action(c.preferredScreen())
                 }
-                action(Phase8ScreenId.P015_REBIRTH, "startLinked")
-                action(Phase8ScreenId.P016_PRO_CONTRACT, prefix = "acceptOffer:")
+                action(ScreenId.P015_REBIRTH, "startLinked")
+                action(ScreenId.P016_PRO_CONTRACT, prefix = "acceptOffer:")
             } else {
                 // A fixed bot is not guaranteed a draft selection. Verify its legitimate ending,
                 // then independently exercise the direct-pro journey. Linked contracts have their own fixture test.
@@ -83,24 +83,24 @@ class Round3FullJourneyTest {
                 println("ROUND3 school ending: undrafted; games=${schoolRecord.games}, outs=${schoolRecord.outs}")
                 store.close()
                 store = KotlinGameStore.open("round3-direct", CSharpLegacyGameStoreRepository(dir.resolve("direct"), "round3-direct"), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
-                c = Phase8Controller(store)
-                pitch = Phase7VerticalController(store, "phase8-ui")
-                action(Phase8ScreenId.P001_OPENING, "startDirect")
+                c = ScreenController(store)
+                pitch = PitchSessionController(store)
+                action(ScreenId.P001_OPENING, "startDirect")
             }
             assertEquals(GameStage.PRO, store.current.stage)
             var proSteps = 0
             while (store.current.pro!!.season < 2) {
                 check(proSteps++ < 220)
                 when (store.current.pro!!.phase) {
-                    ProCareerPhase.WEEKLY_PLAN -> action(Phase8ScreenId.P017_PRO_WEEK, "proAdvanceSegment")
+                    ProCareerPhase.WEEKLY_PLAN -> action(ScreenId.P017_PRO_WEEK, "proAdvanceSegment")
                     ProCareerPhase.IMPORTANT_GAME -> outing(true)
-                    ProCareerPhase.SEASON_DECISION -> action(Phase8ScreenId.P019_PRO_SEASON, prefix = "seasonDecision:")
-                    ProCareerPhase.SEASON_REVIEW -> action(Phase8ScreenId.P019_PRO_SEASON, "reviewSeason")
-                    ProCareerPhase.SEASON_SETTLEMENT -> action(Phase8ScreenId.P019_PRO_SEASON, "acknowledgeSettlement")
-                    ProCareerPhase.NATIONAL_TEAM_CALL -> action(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:decline")
-                    ProCareerPhase.NATIONAL_TOURNAMENT -> action(Phase8ScreenId.P019_PRO_SEASON, "nationalTeam:acknowledge")
-                    ProCareerPhase.OFFSEASON_DECISION -> action(Phase8ScreenId.P020_OFFSEASON, "offseason:continue")
-                    ProCareerPhase.OFFSEASON_INVESTMENT -> action(Phase8ScreenId.P020_OFFSEASON, "investment:none")
+                    ProCareerPhase.SEASON_DECISION -> action(ScreenId.P019_PRO_SEASON, prefix = "seasonDecision:")
+                    ProCareerPhase.SEASON_REVIEW -> action(ScreenId.P019_PRO_SEASON, "reviewSeason")
+                    ProCareerPhase.SEASON_SETTLEMENT -> action(ScreenId.P019_PRO_SEASON, "acknowledgeSettlement")
+                    ProCareerPhase.NATIONAL_TEAM_CALL -> action(ScreenId.P019_PRO_SEASON, "nationalTeam:decline")
+                    ProCareerPhase.NATIONAL_TOURNAMENT -> action(ScreenId.P019_PRO_SEASON, "nationalTeam:acknowledge")
+                    ProCareerPhase.OFFSEASON_DECISION -> action(ScreenId.P020_OFFSEASON, "offseason:continue")
+                    ProCareerPhase.OFFSEASON_INVESTMENT -> action(ScreenId.P020_OFFSEASON, "investment:none")
                     else -> error("Unexpected pro phase ${store.current.pro!!.phase}")
                 }
                 assertEquals(GameStage.PRO, store.current.stage)

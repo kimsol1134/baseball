@@ -101,7 +101,7 @@ public data class RebirthStartPreview(
     val previousLife: Int, val nextLife: Int, val previousStrikeouts: Int,
 ) {
     public companion object {
-        public fun resolve(state: GameAggregateState, action: Phase8ActionModel?): RebirthStartPreview? {
+        public fun resolve(state: GameAggregateState, action: ScreenActionModel?): RebirthStartPreview? {
             if (action == null || !action.enabled || (action.id != "quickRebirth" && !action.id.startsWith("rebirthPath:"))) return null
             val before = state.highSchool ?: return null
             val command = (action.payloads.firstOrNull()?.envelope?.command as? GameCommand.HighSchool)?.command ?: return null

@@ -26,18 +26,18 @@ class CareerParityPresentationTest {
         val id = "learning-native-save"
         var store = KotlinGameStore.open(id, CSharpLegacyGameStoreRepository(directory, id), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
         try {
-            val controller = Phase8Controller(store)
-            controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
-            controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
+            val controller = ScreenController(store)
+            controller.execute(ScreenId.P001_OPENING, "enterSetup")
+            controller.execute(ScreenId.P002_SETUP, "startHighSchool")
             val started = store.current.highSchool!!.run
             assertNotNull(started.pitchLearningProject)
             assertEquals(3, started.toPitcherSnapshot().pitchProfiles!!.size)
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-            controller.execute(Phase8ScreenId.P005_SCHOOL_SELECTION, controller.projection(Phase8ScreenId.P005_SCHOOL_SELECTION).actions.first().id)
+            controller.execute(ScreenId.P003_PROLOGUE, "beginTutorial")
+            controller.execute(ScreenId.P003_PROLOGUE, "completeTutorial")
+            controller.execute(ScreenId.P005_SCHOOL_SELECTION, controller.projection(ScreenId.P005_SCHOOL_SELECTION).actions.first().id)
             val target = started.pitchLearningProject!!.pitchType
             val payload = TrainingPresentation.payloads(store.current, controller.context, TrainingFocus.BREAKING_BALL, TrainingIntensity.INTENSIVE, target, false)
-            controller.execute(Phase8ScreenId.P006_TRAINING, "train:breaking_ball", payload)
+            controller.execute(ScreenId.P006_TRAINING, "train:breaking_ball", payload)
             val before = store.current
             assertEquals(3, before.highSchool!!.run.pitchLearningProject!!.practiceCredits)
             store.close()

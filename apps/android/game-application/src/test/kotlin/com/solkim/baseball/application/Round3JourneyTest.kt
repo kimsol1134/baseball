@@ -14,7 +14,7 @@ class Round3JourneyTest {
             var store = KotlinGameStore.open("round3-recovery", CSharpLegacyGameStoreRepository(directory, "round3-recovery", allowDeviceRestore = true), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
             try {
                 assertEquals(GameStage.PRO, store.current.stage)
-                assertEquals(Phase8ScreenId.P018_PRO_IMPORTANT_GAME, ReturnVisitPresentation.screen(store.current))
+                assertEquals(ScreenId.P018_PRO_IMPORTANT_GAME, ReturnVisitPresentation.screen(store.current))
                 assertTrue(ReturnVisitPresentation.isPro(store.current))
                 val pro = store.current.pro
                 val briefing = assertNotNull(OutingPresentation.briefing(store.current))
@@ -39,8 +39,8 @@ class Round3JourneyTest {
         val base = GameAggregateState.initial("round3-last").copy(stage = GameStage.PRO, pro = ready)
         var store = KotlinGameStore.fromShadowFixture(base.copy(commitment = base.recomputeCommitment()))
         try {
-            Phase8Controller(store).execute(Phase8ScreenId.P018_PRO_IMPORTANT_GAME, "openProImportantGame")
-            val c = Phase7VerticalController(store)
+            ScreenController(store).execute(ScreenId.P018_PRO_IMPORTANT_GAME, "openProImportantGame")
+            val c = PitchSessionController(store)
             val result = assertNotNull(c.fastForwardCurrentBatter(finishOuting = true))
             assertEquals(PitchBoundary.TERMINAL, store.current.pitch!!.boundary)
             assertNotNull(PitchLiveResult.outcome(store.current))
@@ -48,7 +48,7 @@ class Round3JourneyTest {
             assertEquals(store.current.pro!!.activePitch!!.context.inning, PitchScoreboardProjection.model(store.current).inning)
             val saved = store.current
             store.close(); store = KotlinGameStore.fromShadowFixture(saved)
-            val resumed = Phase7VerticalController(store)
+            val resumed = PitchSessionController(store)
             assertEquals(result.pitchId, resumed.preparePresentation(store.current.pitch!!.sessionId, 0).pitchId)
             resumed.completePitchAndPostgame(store.current.pitch!!.sessionId)
             val settled = store.current

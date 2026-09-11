@@ -12,7 +12,7 @@ class Round2ProgressIntegrityTest {
             Files.write(directory.resolve("save.json"), requireNotNull(javaClass.getResourceAsStream("/regression/high-school-terminal-v42.json")).use { it.readBytes() })
             val store = KotlinGameStore.open("round2", CSharpLegacyGameStoreRepository(directory, "round2", allowDeviceRestore = true), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
             try {
-                val c = Phase7VerticalController(store)
+                val c = PitchSessionController(store)
                 val id = store.current.pitch!!.sessionId
                 c.consumePresentation(id, c.preparePresentation(id, 0))
                 c.completePitchAndPostgame(id)
@@ -29,12 +29,12 @@ class Round2ProgressIntegrityTest {
             val meta = store.current.meta
             try {
                 repeat(3) {
-                    val c = Phase7VerticalController(store)
+                    val c = PitchSessionController(store)
                     c.abandonPitch(store.current.pitch!!.sessionId)
                     store.close()
                     store = KotlinGameStore.open("round2", CSharpLegacyGameStoreRepository(directory, "round2"), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
                     assertEquals(PitchBoundary.ABANDONED, store.current.pitch!!.boundary)
-                    assertNotNull(Phase7VerticalController(store).continueOfficialPitch())
+                    assertNotNull(PitchSessionController(store).continueOfficialPitch())
                     assertEquals(highSchool, store.current.highSchool)
                     assertEquals(meta.completedGameCount, store.current.meta.completedGameCount)
                 }
@@ -46,7 +46,7 @@ class Round2ProgressIntegrityTest {
         recovered { store, _ ->
             val before = store.current.highSchool!!.activePitch!!
             val batterNumber = before.context.plateAppearanceId.substringAfterLast(":batter:").toIntOrNull() ?: 1
-            assertNotNull(Phase7VerticalController(store).fastForwardCurrentBatter())
+            assertNotNull(PitchSessionController(store).fastForwardCurrentBatter())
             val after = store.current.highSchool?.activePitch
             if (after != null && !after.ended) {
                 assertEquals(batterNumber + 1, after.context.plateAppearanceId.substringAfterLast(":batter:").toInt())
@@ -67,20 +67,20 @@ class Round2ProgressIntegrityTest {
         val base = GameAggregateState.initial("round2-pro").copy(stage = GameStage.PRO, pro = ready)
         var store = KotlinGameStore.fromShadowFixture(base.copy(commitment = base.recomputeCommitment()))
         try {
-            Phase8Controller(store).execute(Phase8ScreenId.P018_PRO_IMPORTANT_GAME, "openProImportantGame")
+            ScreenController(store).execute(ScreenId.P018_PRO_IMPORTANT_GAME, "openProImportantGame")
             val before = store.current.pro
             repeat(3) {
-                Phase7VerticalController(store).abandonPitch(store.current.pitch!!.sessionId)
+                PitchSessionController(store).abandonPitch(store.current.pitch!!.sessionId)
                 val saved = store.current
                 store.close()
                 store = KotlinGameStore.fromShadowFixture(saved)
-                assertNotNull(Phase7VerticalController(store).continueOfficialPitch())
+                assertNotNull(PitchSessionController(store).continueOfficialPitch())
                 assertEquals(before, store.current.pro)
             }
-            assertNotNull(Phase7VerticalController(store).fastForwardCurrentBatter(finishOuting = true))
+            assertNotNull(PitchSessionController(store).fastForwardCurrentBatter(finishOuting = true))
             assertTrue(store.current.pro?.activePitch == null || store.current.pro!!.activePitch!!.ended)
             val settled = store.current
-            Phase7VerticalController(store).fastForwardCurrentBatter(finishOuting = true)
+            PitchSessionController(store).fastForwardCurrentBatter(finishOuting = true)
             assertEquals(settled, store.current)
             assertFalse(store.current.settings.autoReleaseEnabled)
         } finally { store.close() }
@@ -97,7 +97,7 @@ class Round2ProgressIntegrityTest {
                 val state = base.copy(commitment = base.recomputeCommitment())
                 val store = KotlinGameStore.fromShadowFixture(state)
                 try {
-                    val c = Phase7VerticalController(store)
+                    val c = PitchSessionController(store)
                     c.reserveImportantGame()
                     assertTrue(PitchHudProjection.canFastForward(store.current))
                     assertNotNull(c.fastForwardCurrentBatter(finishOuting = true))

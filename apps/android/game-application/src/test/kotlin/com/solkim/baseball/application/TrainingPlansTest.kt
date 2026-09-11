@@ -18,10 +18,10 @@ class TrainingPlansTest {
     @Test fun balancedPlanExecutesMixedStepsOnceAndKeepsEachReceipt() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(fixture())
         try {
-            val controller = Phase8Controller(store)
+            val controller = ScreenController(store)
             val before = store.current
             val payloads = TrainingPlans.payloads(before, controller.context, "balanced")
-            controller.execute(Phase8ScreenId.P006_TRAINING, payloads.first().actionId, payloads)
+            controller.execute(ScreenId.P006_TRAINING, payloads.first().actionId, payloads)
             val after = store.current
             assertEquals(3, after.highSchool!!.run.totalTrainingsCompleted)
             assertEquals(listOf(TrainingFocus.VELOCITY, TrainingFocus.RECOVERY, TrainingFocus.COMMAND), after.highSchool!!.trainingEvidence.map { it.focus })
@@ -35,14 +35,14 @@ class TrainingPlansTest {
         val school = state.highSchool!!
         val tired = state.copy(highSchool = school.copy(run = school.run.copy(fatigue = 100, armRisk = 60)))
         assertEquals(0, TrainingPlans.availableSteps(tired, TrainingPlans.options.first()))
-        assertFailsWith<IllegalArgumentException> { TrainingPlans.payloads(tired, Phase8CommandContext(), "balanced") }
+        assertFailsWith<IllegalArgumentException> { TrainingPlans.payloads(tired, ScreenCommandContext(), "balanced") }
         assertEquals(1, TrainingPlans.availableSteps(tired, TrainingPlans.options.last()))
-        val command = TrainingPlans.payloads(tired, Phase8CommandContext(), "condition").single().envelope.command as GameCommand.HighSchool
+        val command = TrainingPlans.payloads(tired, ScreenCommandContext(), "condition").single().envelope.command as GameCommand.HighSchool
         assertEquals(listOf(TrainingFocus.RECOVERY to TrainingIntensity.LIGHT), (command.command as HighSchoolPhase4Command.TrainingBlock).requests)
         val lastSlot = state.copy(highSchool = school.copy(run = school.run.copy(chapterTrainingCount = school.run.schedule.trainingsByChapter.first() - 1)))
         assertEquals(1, TrainingPlans.availableSteps(lastSlot, TrainingPlans.options.first()))
         assertEquals(1, TrainingPresentation.remaining(lastSlot))
-        val repeated = TrainingPresentation.payloads(lastSlot, Phase8CommandContext(), TrainingFocus.COMMAND, TrainingIntensity.LIGHT, null, true)
+        val repeated = TrainingPresentation.payloads(lastSlot, ScreenCommandContext(), TrainingFocus.COMMAND, TrainingIntensity.LIGHT, null, true)
             .single().envelope.command as GameCommand.HighSchool
         assertEquals(1, (repeated.command as HighSchoolPhase4Command.TrainingBlock).requests.size)
     }
@@ -51,16 +51,16 @@ class TrainingPlansTest {
         try {
             val repo = CSharpLegacyGameStoreRepository(directory, "plan-native")
             val store = KotlinGameStore.open("plan-native", repo, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
-            val controller = Phase8Controller(store)
-            controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
-            controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-            controller.execute(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-            controller.execute(Phase8ScreenId.P005_SCHOOL_SELECTION, "chooseSchool:cheongam_development")
+            val controller = ScreenController(store)
+            controller.execute(ScreenId.P001_OPENING, "enterSetup")
+            controller.execute(ScreenId.P002_SETUP, "startHighSchool")
+            controller.execute(ScreenId.P003_PROLOGUE, "beginTutorial")
+            controller.execute(ScreenId.P003_PROLOGUE, "completeTutorial")
+            controller.execute(ScreenId.P005_SCHOOL_SELECTION, "chooseSchool:cheongam_development")
             val plan = TrainingPlans.options.first()
             val count = TrainingPlans.availableSteps(store.current, plan)
             val payloads = TrainingPlans.payloads(store.current, controller.context, plan.id)
-            controller.execute(Phase8ScreenId.P006_TRAINING, payloads.first().actionId, payloads)
+            controller.execute(ScreenId.P006_TRAINING, payloads.first().actionId, payloads)
             assertEquals(plan.steps.take(count).map { it.first }, store.current.highSchool!!.trainingEvidence.map { it.focus })
             assertEquals(store.current.highSchool, repo.load().envelope!!.payload.highSchool)
             store.close()

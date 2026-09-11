@@ -18,16 +18,16 @@ class Round6PitchRecoveryTest {
             })
             var store = KotlinGameStore.open("r6", repo, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
             try {
-                Phase8Controller(store).execute(Phase8ScreenId.P001_OPENING, "startDirect")
+                ScreenController(store).execute(ScreenId.P001_OPENING, "startDirect")
                 val root = StrictJson.parseUtf8(Files.readAllBytes(dir.resolve("save.json"))) as JsonValue.Obj
                 val launch = prepareNaturalHighFatigueInput(store, root["payload"] as JsonValue.Obj)
                 assertNull(store.current.pro!!.lastPresentation)
                 assertNull(store.current.pro!!.lastBattedBall)
                 assertNull(store.current.pro!!.lastFielding)
-                assertFalse(Phase7VerticalController(store).shouldRecoverPlayingPresentation(store.current, launch.sessionId))
+                assertFalse(PitchSessionController(store).shouldRecoverPlayingPresentation(store.current, launch.sessionId))
                 assertEquals(80, PitchHudProjection.fatigue(store.current))
                 assertEquals(18, store.current.pro!!.activePitch!!.pitches)
-                var controller = Phase7VerticalController(store)
+                var controller = PitchSessionController(store)
                 remaining = 1
                 val beforeSubmit = store.current.pro
                 assertFails { controller.submitPitch(launch.sessionId, PitchHudSelection.Primary, PitchDelivery(1000,1000)) }
@@ -47,7 +47,7 @@ class Round6PitchRecoveryTest {
                 assertEquals(if (failOnWrite == 1) PitchBoundary.COMMITTED else PitchBoundary.CONSUMED, store.current.pitch!!.boundary)
                 store.close()
                 store = KotlinGameStore.open("r6", CSharpLegacyGameStoreRepository(dir,"r6"), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
-                controller = Phase7VerticalController(store)
+                controller = PitchSessionController(store)
                 assertFails { controller.consumePresentation("stale-session", saved) }
                 assertFails { controller.consumePresentation(launch.sessionId, saved.copy(pitchId="stale-pitch")) }
                 controller.consumePresentation(launch.sessionId, saved)

@@ -158,8 +158,8 @@ public class CSharpLegacyGameStoreRepository(
         if (envelope.expectedRevision != currentRevision) throw GameCommandException("game.command.stale_revision")
 
         val currentPayload = currentEnvelope?.payload ?: initialPayload(installId)
-        val commandReceipts = currentPayload.stringArray("commandReceipts")
-        if (envelope.commandId in commandReceipts) {
+        val commandReceipts = currentPayload.stringArray("commandReceipts").map(CareerWire::migrateCommandId)
+        if (CareerWire.migrateCommandId(envelope.commandId) in commandReceipts) {
             // The C# v1 wire stores command IDs, not command/result hashes.  Replaying a durable
             // ID is therefore safe and idempotent, while a new ID still requires the exact
             // expected revision above.

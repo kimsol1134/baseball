@@ -96,8 +96,8 @@ case "$BUILD_MODE" in
     ./gradlew :app:bundleRelease --no-daemon --stacktrace \
       -Pphase10VersionName="$VERSION_NAME" \
       -Pphase10VersionCode="$VERSION_CODE" \
-      -Pphase9ExternalSdks=true \
-      -Pphase9AmplitudeApiKey="$BASEBALL_AMPLITUDE_API_KEY" \
+      -PplatformExternalSdks=true \
+      -PplatformAmplitudeApiKey="$BASEBALL_AMPLITUDE_API_KEY" \
       -Pphase11Distribution=production
 
     cleanup_injection
