@@ -540,11 +540,12 @@ final class CareerSignatureLegacyTests: XCTestCase {
         let engine = HighSchoolCareerEngine()
         let current = try engine.start(.init(seed: "918220", presetID: "power_prospect")).snapshot
         // 문턱은 밸런스에 따라 움직인다. v4는 63 → 66으로 올렸고(중립 자동 진행 지명률
-        // 55%를 13%로), v7은 경기 자체가 어려워졌으므로 그 +5를 되돌려 61이다. 이 줄은
+        // 55%를 13%로), v7은 경기 자체가 어려워졌으므로 그 +5를 되돌려 61, v8은 **직접
+        // 던지는 공까지** 재조정된 곡선을 쓰면서 52가 됐다(계획 문서 §2.8). 이 줄은
         // "지금 값이 얼마인가"를 적어 두는 기록이고, 아래 v3 단언이 진짜 계약이다 —
         // 진행 중인 옛 저장의 당락선은 어떤 밸런스 변경에도 움직이면 안 된다.
         XCTAssertEqual(current.balanceVersion, HighSchoolGameplayRules.current)
-        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: current), 61)
+        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: current), 52)
         XCTAssertEqual(
             (0..<5).map { HighSchoolCareerEngine.draftVariance(balanceVersion: 4, roll: $0) },
             [-1, 0, 0, 0, 1]
