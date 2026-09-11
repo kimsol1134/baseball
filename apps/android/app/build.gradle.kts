@@ -5,11 +5,14 @@ plugins {
     alias(libs.plugins.firebase.crashlytics) apply false
 }
 
-val phase9ExternalSdkEnabled = providers.gradleProperty("phase9ExternalSdks")
-    .map { it.equals("true", ignoreCase = true) }
-    .orElse(false)
-    .get()
-val phase9AmplitudeApiKey = providers.gradleProperty("phase9AmplitudeApiKey").orElse("").get()
+val platformExternalSdkEnabled = sequenceOf("platformExternalSdks", "phase9ExternalSdks")
+    .map { providers.gradleProperty(it).orNull }
+    .firstOrNull { !it.isNullOrBlank() }
+    .equals("true", ignoreCase = true)
+val platformAmplitudeApiKey = sequenceOf("platformAmplitudeApiKey", "phase9AmplitudeApiKey")
+    .map { providers.gradleProperty(it).orNull }
+    .firstOrNull { !it.isNullOrBlank() }
+    .orEmpty()
     .replace("\\", "\\\\")
     .replace("\"", "\\\"")
 val phase10VersionCode = providers.gradleProperty("phase10VersionCode")
@@ -55,7 +58,7 @@ val phase10SigningConfigured = listOf(
     phase10KeyPassword,
 ).all { it != null }
 
-if (phase9ExternalSdkEnabled) {
+if (platformExternalSdkEnabled) {
     apply(plugin = "com.google.gms.google-services")
     apply(plugin = "com.google.firebase.crashlytics")
 }
@@ -74,8 +77,8 @@ android {
         versionCode = phase10VersionCode
         versionName = phase10VersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("boolean", "PHASE9_EXTERNAL_SDKS_ENABLED", phase9ExternalSdkEnabled.toString())
-        buildConfigField("String", "PHASE9_AMPLITUDE_API_KEY", "\"$phase9AmplitudeApiKey\"")
+        buildConfigField("boolean", "PLATFORM_EXTERNAL_SDKS_ENABLED", platformExternalSdkEnabled.toString())
+        buildConfigField("String", "PLATFORM_AMPLITUDE_API_KEY", "\"$platformAmplitudeApiKey\"")
         buildConfigField("String", "NATIVE_AUTHORITY_MODE", "\"nativeShadowReadOnly\"")
         buildConfigField("boolean", "PHASE10_PRODUCTION_BUILD", "false")
         buildConfigField("boolean", "QA_NATIVE_STORE", "false")

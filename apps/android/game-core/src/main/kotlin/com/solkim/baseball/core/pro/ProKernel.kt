@@ -111,7 +111,7 @@ public class ProKernel(
         public fun liveClimate(state: ProState, week: Int? = null): ProSeasonClimate? {
             if (!usesCareerArcRules(state)) return null
             val stabilize = if (state.journeyState?.activeSeasonBenefit?.kind == ProSeasonBenefitKind.CLIMATE_STABILIZATION) {
-                state.journeyState.activeSeasonBenefit?.remainingCharges ?: 0
+                state.journeyState?.activeSeasonBenefit?.remainingCharges ?: 0
             } else 0
             return ProSeasonClimateRules.climate(
                 careerId = state.careerId,
@@ -202,10 +202,11 @@ public class ProKernel(
             draftEvaluation = request.draftEvaluation,
         )
         val journey = state.journeyState!!.let { base ->
-            if (request.draftRound == null) base else {
-                require(request.draftRound >= 1 && (request.signingBonus ?: 0) > 0 && (request.overallPick ?: 0) > 0) { "pro.invalid_draft" }
+            val draftRound = request.draftRound
+            if (draftRound == null) base else {
+                require(draftRound >= 1 && (request.signingBonus ?: 0) > 0 && (request.overallPick ?: 0) > 0) { "pro.invalid_draft" }
                 base.copy(reputation = base.reputation.copy(fanSupport = request.sourceFanInterest?.let { (5 + it.coerceAtLeast(0) / 2).coerceIn(5, 30) } ?: (5 + (request.draftEvaluation - 50).coerceAtLeast(0) / 2).coerceIn(5, 25)), pendingContractMarket = ProJourneyKernel.rookieMarket(state.careerId, team.id, state.revision,
-                    draftRound = request.draftRound, signingBonus = request.signingBonus!!, overallPick = request.overallPick!!))
+                    draftRound = draftRound, signingBonus = request.signingBonus!!, overallPick = request.overallPick!!))
             }
         }
         return result(state.copy(pitchLearningProject = request.pitchLearningProject, journeyState = journey), seed.nextSeed(), listOf("pro_career_started", "pro_linked_start"))
@@ -704,7 +705,7 @@ public class ProKernel(
         val mediaEffect = if (pending.type == ProSeasonDecisionType.MEDIA_OPPORTUNITY) mediaJourneyEffect(choice.id) else null
         var nextJourney = if (mediaEffect != null && state.journeyState != null) {
             ProJourneyKernel.applyMediaChoice(
-                state.journeyState,
+                requireNotNull(state.journeyState),
                 state.careerId,
                 state.season,
                 pending.id,
@@ -746,7 +747,7 @@ public class ProKernel(
             usesFinalSeriesRules(state) &&
             ProPostseasonRules.isAutumn(state.seasonTrigger) &&
             state.postseason != null &&
-            ProPostseasonRules.requiresAvailabilityDecision(state.postseason, state.role)
+            ProPostseasonRules.requiresAvailabilityDecision(requireNotNull(state.postseason), state.role)
         ) {
             availabilityState = choosePostseasonAvailability(state, seedText, ProPostseasonAvailabilityChoice.PITCH_AGAIN).state
         }
@@ -1924,7 +1925,7 @@ public class ProKernel(
                 includesMilitaryService = military,
                 route = ProOffseasonTransitionRoute.UNDER_CONTRACT,
             )
-            val journey = state.journeyState.copy(offseasonTransition = transition)
+            val journey = requireNotNull(state.journeyState).copy(offseasonTransition = transition)
             return result(
                 state.copy(
                     revision = state.revision + 1UL,
@@ -1954,9 +1955,10 @@ public class ProKernel(
                 includesMilitaryService = military,
                 route = route,
             )
-            val marketState = state.copy(journeyState = state.journeyState.copy(offseasonTransition = transition))
+            val journeyState = requireNotNull(state.journeyState)
+            val marketState = state.copy(journeyState = journeyState.copy(offseasonTransition = transition))
             val market = if (!freeAgency) ProCurrentMarketRules.renewal(marketState) else ProCurrentMarketRules.freeAgency(marketState)
-            val journey = state.journeyState.copy(
+            val journey = journeyState.copy(
                 pendingContractMarket = market,
                 offseasonTransition = transition,
             )
@@ -2028,10 +2030,13 @@ public class ProKernel(
         }
         val season = state.season + 1
         val pitcher = projectedPitcher(state.pitcher, age, gameplayRulesVersion, recoveryYear = state.journeyState?.recoveryYearPending == true)
-        val contract = if (state.journeyState != null && state.contract != null) state.contract else state.contract?.copy(
-            annualSalary = max(state.contract.annualSalary, 40_000_000 + service * 50_000_000),
+        val existingContract = state.contract
+        val contract = if (state.journeyState != null && existingContract != null) existingContract else existingContract?.let {
+            it.copy(
+            annualSalary = max(it.annualSalary, 40_000_000 + service * 50_000_000),
             rolePromise = state.role,
-        ) ?: ProContract(
+        )
+        } ?: ProContract(
             yearsRemaining = 1,
             annualSalary = 40_000_000 + service * 50_000_000,
             rolePromise = state.role,
@@ -2193,12 +2198,13 @@ public class ProKernel(
             require(recordedNationalCallValid(state)) { "pro.national_team_call" }
         }
         if (state.phase == ProCareerPhase.SEASON_SETTLEMENT && state.journeyState != null) {
-            val settlement = state.journeyState.lastSettlement
-            require(settlement != null && !state.journeyState.settlementAcknowledged) { "pro.settlement_phase" }
+            val journeyState = requireNotNull(state.journeyState)
+            val settlement = journeyState.lastSettlement
+            require(settlement != null && !journeyState.settlementAcknowledged) { "pro.settlement_phase" }
             require(settlement.season == state.season && settlement.teamId == state.team.id) { "pro.settlement_identity" }
         }
         if (state.phase == ProCareerPhase.OFFSEASON_INVESTMENT && state.journeyState != null) {
-            require(state.journeyState.offseasonTransition != null) { "pro.investment_phase" }
+            require(requireNotNull(state.journeyState).offseasonTransition != null) { "pro.investment_phase" }
         }
         val tournamentExpected = state.phase == ProCareerPhase.NATIONAL_TOURNAMENT ||
             (state.phase == ProCareerPhase.IMPORTANT_GAME && state.seasonTrigger == ProSeasonTrigger.NATIONAL_FINAL)
@@ -2219,7 +2225,7 @@ public class ProKernel(
             requireStandingSnapshot(state.standings, "pro.standings")
             requireLeaderboardSnapshot(state.leaderboards, "pro.leaderboards")
         } else {
-            require(state.contract == null || state.contract.yearsRemaining == 0 && (state.journeyState == null || state.journeyState.pendingContractMarket?.kind in setOf(ProContractMarketKind.RENEWAL, ProContractMarketKind.FREE_AGENCY))) { "pro.contract_unexpected" }
+            require(state.contract == null || requireNotNull(state.contract).yearsRemaining == 0 && (state.journeyState == null || state.journeyState?.pendingContractMarket?.kind in setOf(ProContractMarketKind.RENEWAL, ProContractMarketKind.FREE_AGENCY))) { "pro.contract_unexpected" }
             require(state.standings.isEmpty() && state.leaderboards.isEmpty()) { "pro.contract_projection" }
         }
         require(state.activePitch == null || state.phase == ProCareerPhase.IMPORTANT_GAME) { "pro.pitch_phase" }
@@ -2497,7 +2503,7 @@ public class ProKernel(
             }
         }
         if (!reviewDue && usesWeeklyDecisionRules(state) && week == ProCatalog.mediaOpportunityWeek(state.careerId, state.season, state.proRulesVersion) && ProSeasonDecisionType.MEDIA_OPPORTUNITY !in used &&
-            state.journeyState != null && (state.journeyState.reputation.fanSupport >= 35)
+            (state.journeyState?.reputation?.fanSupport ?: 0) >= 35
         ) {
             return mediaDecision(state, week)
         }

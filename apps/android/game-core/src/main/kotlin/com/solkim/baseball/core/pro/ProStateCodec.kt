@@ -117,7 +117,7 @@ public object ProStateCodec {
         out.writeNullable(state.nationalTournament) { writeNationalTournament(it) }
         out.writeList(state.nationalTeamHistory) { writeNationalRecord(it) }
         out.writeNullable(state.nationalTeamCarry) { writeNationalCarry(it) }
-        if (state.pitchLearningProject != null) out.writeNullableString(state.pitchLearningProject.token())
+        state.pitchLearningProject?.let { out.writeNullableString(it.token()) }
     }
 
     private fun readState(input: DataInputStream, version: Int): ProState {

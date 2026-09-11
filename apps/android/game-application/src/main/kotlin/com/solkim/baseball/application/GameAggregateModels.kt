@@ -125,6 +125,7 @@ public data class PitchDurableState(
 }
 
 public data class GameSettingsState(
+    /** Accessibility opt-in. New games, resets, and missing save fields keep the pitch slider. */
     val autoReleaseEnabled: Boolean = false,
     val soundEnabled: Boolean = true,
     val musicEnabled: Boolean = true,
@@ -213,13 +214,19 @@ public data class GameCommandReceipt(
     }
 }
 
-public data class GameAggregateState(
+/**
+ * Application aggregate. Career snapshots are module-internal; production UI reads
+ * [CareerUiRules] and presentation DTOs. :app tests go through test-fixture [CareerAccess]
+ * and [withCareers]. Kernels that mutate them live in :game-core.
+ */
+@ConsistentCopyVisibility
+public data class GameAggregateState internal constructor(
     val aggregateVersion: Int = CURRENT_AGGREGATE_VERSION,
     val revision: ULong,
     val installId: String,
     val stage: GameStage,
-    val highSchool: HighSchoolPhase4State? = null,
-    val pro: ProState? = null,
+    internal val highSchool: HighSchoolPhase4State? = null,
+    internal val pro: ProState? = null,
     val meta: GameMetaState = GameMetaState(),
     val pitch: PitchDurableState? = null,
     val settings: GameSettingsState = GameSettingsState(),

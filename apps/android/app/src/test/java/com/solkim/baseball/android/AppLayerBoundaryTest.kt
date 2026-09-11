@@ -27,11 +27,11 @@ class AppLayerBoundaryTest {
 
     @Test
     fun appSourcesDoNotImportGameCore() {
-        val roots = listOf(File("src/main"), File("src/androidTest")).filter { it.exists() }
+        val roots = listOf(File("src/main"), File("src/androidTest"), File("src/test")).filter { it.exists() }
         assertTrue("app source roots", roots.isNotEmpty())
         val hits = roots.flatMap { root ->
             root.walkTopDown()
-                .filter { it.isFile && (it.extension == "kt" || it.extension == "java") }
+                .filter { it.isFile && (it.extension == "kt" || it.extension == "java") && it.name != "AppLayerBoundaryTest.kt" }
                 .flatMap { file ->
                     file.readLines().mapIndexedNotNull { index, line ->
                         if (line.contains("com.solkim.baseball.core")) {

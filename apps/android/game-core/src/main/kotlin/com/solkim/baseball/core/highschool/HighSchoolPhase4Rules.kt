@@ -521,10 +521,11 @@ public object HighSchoolSeasonLineRules {
         val outs = report.outs ?: 0
         val support: Int
         val opponentRuns: Int
-        if (report.scoreDifferentialAtEntry != null) {
+        val scoreDifferentialAtEntry = report.scoreDifferentialAtEntry
+        if (scoreDifferentialAtEntry != null) {
             val opponentEarlier = rng.nextInt(3)
             opponentRuns = opponentEarlier + report.runsAllowed
-            support = maxOf(0, opponentEarlier + report.scoreDifferentialAtEntry + rng.nextInt(2))
+            support = maxOf(0, opponentEarlier + scoreDifferentialAtEntry + rng.nextInt(2))
         } else {
             support = highSchoolTeamRuns(rng)
             opponentRuns = report.runsAllowed + restOfHighSchoolTeamRuns(maxOf(0, 27 - outs), rng)

@@ -38,7 +38,8 @@ public class HighSchoolPhase4Kernel(
         require(request.weekKey.isNotBlank()) { "weekKey.invalid" }
         request.lineageLoadout?.let { loadout ->
             require(loadout.legacyId == request.inheritedSignatureLegacyId) { "lineage.signature_mismatch" }
-            require(loadout.sourceLifeNumber == null || loadout.sourceLifeNumber < request.lifeNumber) {
+            val sourceLifeNumber = loadout.sourceLifeNumber
+            require(sourceLifeNumber == null || sourceLifeNumber < request.lifeNumber) {
                 "lineage.source_life"
             }
             require(loadout.rulesVersion in 1..HighSchoolLineageRules.RULES_VERSION) { "lineage.rules_version" }
@@ -323,9 +324,8 @@ public class HighSchoolPhase4Kernel(
         call: PitchCall,
         delivery: PitchDelivery = PitchDelivery.NEUTRAL,
     ): HighSchoolPhase4Result {
-        if (state.activePitch == null) return submitTutorialPitch(state, sessionId, call, delivery)
+        val session = state.activePitch ?: return submitTutorialPitch(state, sessionId, call, delivery)
         val pitch = if (state.run.balanceVersion >= 7) PitchKernel(schoolBalance = true) else this.pitch
-        val session = state.activePitch
         require(session.sessionId == sessionId) { "pitch.session_stale" }
         require(!session.ended) { "pitch.ended" }
         val pitcher = state.run.toPitcherSnapshot()
@@ -804,7 +804,7 @@ public class HighSchoolPhase4Kernel(
     public fun finalizeArchive(state: HighSchoolPhase4State): HighSchoolPhase4Result {
         require(!state.challenge.active) { "archive.challenge_locked" }
         require(state.run.phase == HighSchoolPhase.COMPLETED) { "archive.phase" }
-        require(state.selectedSignatureLegacyId != null) { "archive.legacy_required" }
+        val selectedLegacyId = requireNotNull(state.selectedSignatureLegacyId) { "archive.legacy_required" }
         require(state.archive.none { it.careerId == state.run.careerId }) { "archive.already_finalized" }
         val draft = state.run.draftResult ?: error("archive.draft_required")
         val pledge = pledgeUpdate(state)
@@ -827,7 +827,7 @@ public class HighSchoolPhase4Kernel(
             runsAllowed = state.run.performance.runsAllowed,
             perfectReleases = state.run.performance.perfectReleases,
             selectedAwakenings = state.run.selectedAwakenings.map { it.wire },
-            selectedSignatureLegacyId = state.selectedSignatureLegacyId,
+            selectedSignatureLegacyId = selectedLegacyId,
             pledgeId = pledge?.definition?.id,
             pledgeAchieved = pledge?.achieved == true,
             soulEarned = earned,
@@ -839,14 +839,14 @@ public class HighSchoolPhase4Kernel(
             soulTotalEarned = state.inheritance.soulTotalEarned + earned,
             automaticSoulEarned = state.inheritance.automaticSoulEarned + earned,
             inheritedMemories = state.run.selectedMemories,
-            selectedSignatureLegacyId = state.selectedSignatureLegacyId,
-            unlockedSignatureLegacyIds = (state.inheritance.unlockedSignatureLegacyIds + state.selectedSignatureLegacyId).distinct(),
+            selectedSignatureLegacyId = selectedLegacyId,
+            unlockedSignatureLegacyIds = (state.inheritance.unlockedSignatureLegacyIds + selectedLegacyId).distinct(),
             lineageMasteries = HighSchoolLineageRules.masteries(
-                (state.archive.mapNotNull { it.selectedSignatureLegacyId } + state.selectedSignatureLegacyId),
+                state.archive.mapNotNull { it.selectedSignatureLegacyId } + selectedLegacyId,
             ),
             lineageLoadout = HighSchoolLineageRules.loadout(
-                legacyId = state.selectedSignatureLegacyId,
-                selectedLegacyIds = (state.archive.mapNotNull { it.selectedSignatureLegacyId } + state.selectedSignatureLegacyId),
+                legacyId = selectedLegacyId,
+                selectedLegacyIds = state.archive.mapNotNull { it.selectedSignatureLegacyId } + selectedLegacyId,
                 sourceLifeNumber = state.run.lifeNumber,
             ),
         )
@@ -1131,8 +1131,8 @@ public class HighSchoolPhase4Kernel(
         result(sign(state.copy(nextRunIntent = null)), "next_run_intent_cleared")
 
     public fun dismissReturnPlan(state: HighSchoolPhase4State): HighSchoolPhase4Result {
-        require(state.returnPlan != null) { "return_plan.missing" }
-        return result(sign(state.copy(returnPlan = state.returnPlan.copy(dismissed = true))), "return_plan_dismissed")
+        val returnPlan = requireNotNull(state.returnPlan) { "return_plan.missing" }
+        return result(sign(state.copy(returnPlan = returnPlan.copy(dismissed = true))), "return_plan_dismissed")
     }
 
     public fun acknowledgeAchievement(state: HighSchoolPhase4State, achievementId: String): HighSchoolPhase4Result {

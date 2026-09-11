@@ -64518,8 +64518,8 @@
   "rulesVersion" : 10,
   "schema" : "baseball-release-parity-v1",
   "scope" : "current rules v10; public career commands; identical fixed important-game report; national calls declined",
-  "sourceCommit" : "e0c8f9b89c17061aa9269f44e1de3dc38bd19104",
-  "sourceTreeSha256" : "fdd15496fd76e17120a2fc0e530e3cce2375b7d4b6f68361a48e1fbd72fac4b2",
+  "sourceCommit" : "bb0b52aca66c5d059713208c41567513a8d97b89",
+  "sourceTreeSha256" : "000d1e8046d0dae6a0d7c36a4e9272d3b1f6faf0bba328a5dd4988e5939a3fdf",
   "training" : [
     {
       "after" : [
