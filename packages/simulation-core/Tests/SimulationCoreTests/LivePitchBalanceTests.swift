@@ -8,9 +8,10 @@ import XCTest
 /// 지금 배포 중인 버전은 한 줄도 바뀌지 않는다는 것, 그리고 **누군가 연결하려 하면 반드시
 /// 측정을 거치게 되는 것**.
 final class LivePitchBalanceTests: XCTestCase {
-    /// 오늘 배포되는 고교·프로 커리어는 예전과 같은 확률식으로 던진다.
-    func testEveryShippedVersionStillThrowsOnTheLegacyCurve() {
-        for version in 1...HighSchoolGameplayRules.current {
+    /// 진행 중인 옛 저장은 예전과 같은 확률식으로 끝까지 던진다. 업데이트만으로 3년의
+    /// 난이도가 바뀌면 안 된다.
+    func testEveryOlderVersionStillThrowsOnTheLegacyCurve() {
+        for version in 1...7 {
             XCTAssertEqual(
                 HighSchoolGameplayRules.livePitchBalance(version).arena, .legacy,
                 "고교 v\(version)"
@@ -27,10 +28,23 @@ final class LivePitchBalanceTests: XCTestCase {
         XCTAssertEqual(ProGameplayRules.livePitchBalance(nil).arena, .legacy)
     }
 
-    /// 연결은 다음 버전에서만 열린다.
-    func testTheConnectionOpensOnlyOnTheNextVersion() {
+    /// 고교 8이 연결을 연다. 프로는 아직이다.
+    func testTheConnectionIsOpenForSchoolAndStillClosedForPro() {
         XCTAssertEqual(HighSchoolGameplayRules.livePitchBalance(8).arena, .school)
+        XCTAssertEqual(HighSchoolGameplayRules.current, 8)
         XCTAssertEqual(ProGameplayRules.livePitchBalance(14).arena, .professional)
+        XCTAssertEqual(ProGameplayRules.livePitchBalance(ProGameplayRules.current).arena, .legacy)
+    }
+
+    /// 연결과 평가는 **같은 버전에서** 움직여야 한다. 곡선만 바꾸고 문턱을 두면 지명이
+    /// 사실상 막히고, 문턱만 내리고 곡선을 두면 그냥 쉬워진다.
+    func testTheCurveAndTheEvaluationMoveTogether() {
+        for version in 1...7 {
+            XCTAssertEqual(HighSchoolGameplayRules.livePitchBalance(version).arena, .legacy, "v\(version)")
+            XCTAssertFalse(HighSchoolGameplayRules.usesLiveBalanceEvaluation(version), "v\(version)")
+        }
+        XCTAssertEqual(HighSchoolGameplayRules.livePitchBalance(8).arena, .school)
+        XCTAssertTrue(HighSchoolGameplayRules.usesLiveBalanceEvaluation(8))
     }
 
     /// 같은 school 곡선인데 **자동 등판은 멀쩡하고 직접 등판은 무너지는가**(§2.5 Step 2).
@@ -84,14 +98,14 @@ final class LivePitchBalanceTests: XCTestCase {
     /// 그냥 숫자만 맞춰 통과시키는 것은 이 검사가 막으려는 바로 그 일이다.
     func testConnectingTheLiveCurveRequiresTheMeasurement() {
         XCTAssertEqual(
-            HighSchoolGameplayRules.current, 7,
-            "고교 current를 올렸다면 §2.5 측정을 마쳤는지 확인하라 — 라이브 곡선 연결은 "
-                + "중립 릴리스 지명률을 43%에서 5%로 떨어뜨린다"
+            HighSchoolGameplayRules.current, 8,
+            "고교 current를 올렸다면 §2.8 측정을 마쳤는지 확인하라 — 곡선·감도·문턱은 "
+                + "한 버전에서 같이 움직여야 하고, 기준은 지명률(중립 47% · 거의 완벽 60%)이다"
         )
         XCTAssertEqual(
             ProGameplayRules.current, 13,
-            "프로 current를 올렸다면 §2.5 측정을 마쳤는지 확인하라 — 프로 직접 등판도 "
-                + "같은 이유로 아직 legacy다"
+            "프로 current를 올렸다면 §2.5 측정을 마쳤는지 확인하라 — 프로 직접 등판은 "
+                + "아직 legacy이고, 고교 8에서 쓴 방법을 그대로 써야 한다"
         )
     }
 }

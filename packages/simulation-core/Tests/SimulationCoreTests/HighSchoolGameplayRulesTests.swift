@@ -123,11 +123,19 @@ final class HighSchoolGameplayRulesTests: XCTestCase {
         XCTAssertEqual(restarted.stuff, first.stuff)
     }
 
-    func testDraftThresholdReturnsToTheBaseLineWhenTheGamesGotHarder() throws {
-        let current = try startedCareer().result.snapshot
+    /// 문턱은 **그 버전의 경기 난이도와 짝**이다. 세 자리 전부를 못 박는다.
+    ///
+    /// v4(66)는 판정식이 실제 리그 수준으로 옮겨 오면서 올린 값이고, v7(61)은 자동 경기가
+    /// 어려워진 만큼 되돌린 값이다. v8(52)은 **직접 던지는 공까지** 재조정된 곡선을 쓰면서
+    /// 같은 투구가 더 낮은 성적을 만들기 때문이다 — 실측으로 중립 릴리스 47% · 거의 완벽
+    /// 60%가 나오는 자리다(계획 문서 §2.8).
+    func testEachVersionsDraftThresholdMatchesItsDifficulty() throws {
         let reference = try startedCareer(rules: HighSchoolGameplayRules.reference).result.snapshot
-        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: current), 61)
+        let schoolBalance = try startedCareer(rules: 7).result.snapshot
+        let current = try startedCareer().result.snapshot
         XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: reference), 66)
+        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: schoolBalance), 61)
+        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: current), 52)
     }
 
     func testChapterGamesStopScalingWithRebirthsUnderSchoolBalance() {

@@ -21,7 +21,7 @@ public enum HighSchoolGameplayRules {
     /// The frozen comparison path.
     public static let reference = 4
     /// What a new or resumed career runs.
-    public static let current = 7
+    public static let current = 8
 
     /// The rules version a state actually carries. Unversioned legacy saves read as 1.
     public static func version(of balanceVersion: Int?) -> Int { balanceVersion ?? 1 }
@@ -45,5 +45,13 @@ public enum HighSchoolGameplayRules {
     /// 43%에서 5%로 떨어진다.
     public static func livePitchBalance(_ balanceVersion: Int?) -> PitchBalanceRules {
         version(of: balanceVersion) >= 8 ? .school : .legacy
+    }
+
+    /// v8+: 직접 던진 경기의 평가 감도와 당락 문턱을 함께 옮긴 경로.
+    ///
+    /// 라이브 곡선을 연결하면 같은 투구가 더 낮은 성적을 만든다. 문턱을 그대로 두면 지명이
+    /// 사실상 막히므로 둘을 **한 버전에서 같이** 옮긴다(계획 문서 §2.8).
+    public static func usesLiveBalanceEvaluation(_ balanceVersion: Int?) -> Bool {
+        version(of: balanceVersion) >= 8
     }
 }

@@ -1522,9 +1522,21 @@ public struct HighSchoolCareerEngine: Sendable {
                 27 * max(1, state.performance.importantGamesCompleted),
                 state.performance.pitches / 5
             )
+            // v8은 감도를 두 배로 연다(계수 3 → 6, 클램프 ±6 → ±12).
+            //
+            // 직접 던진 경기가 3년 통틀어 3~4이닝뿐이라, 손이 좋아져 볼넷을 41% 줄여도 이 항은
+            // 1점밖에 움직이지 않았다. 슬라이더 손맛이 이 게임의 핵심인데 3년의 결과가 그것을
+            // 거의 듣지 않았다는 뜻이다(§2.7 실측).
+            //
+            // 계수를 더 키우거나 채점 대상을 바꾸는 쪽(FIP식 가중)은 실측에서 오히려 나빴다 —
+            // 표본이 작아 신호와 잡음이 같이 커진다. 두 배가 오늘의 지명률을 지키면서 간격을
+            // 넓히는 유일한 자리였다(§2.8 표).
+            let liveEvaluation = HighSchoolGameplayRules.usesLiveBalanceEvaluation(state.balanceVersion)
+            let sensitivity = liveEvaluation ? 6 : 3
+            let ceiling = liveEvaluation ? 12 : 6
             performanceScore = directOuts == 0
                 ? 0
-                : min(6, max(-6, gameQuality * 3 / max(9, directOuts)))
+                : min(ceiling, max(-ceiling, gameQuality * sensitivity / max(9, directOuts)))
         } else {
             performanceScore = gameQuality / (usesV4Balance ? 6 : 4)
         }
@@ -1594,6 +1606,15 @@ public struct HighSchoolCareerEngine: Sendable {
     static func draftThreshold(state: HighSchoolCareerSnapshot) -> Int {
         let legacy = state.difficulty.careerHarshness == .relaxed ? 57
             : state.difficulty.careerHarshness == .challenging ? 65 : 61
+        // v8은 **플레이어가 직접 던지는 공**까지 재조정된 확률식을 쓴다. v7까지는 자동 경기만
+        // 어려워졌고 직접 등판은 옛 곡선 그대로였다 — 그래서 문턱만 내려간 채로 배포돼 있었다.
+        //
+        // 같은 투구가 더 낮은 성적을 만들므로 문턱도 같이 내린다. −9는 실측에서 나온 값이다:
+        // 이 자리에서 중립 릴리스 지명률 47% · 거의 완벽 60%로, **오늘(46%/58%)과 같은
+        // 결과를 유지하면서** 실력 간격만 넓어진다(§2.8).
+        if HighSchoolGameplayRules.usesLiveBalanceEvaluation(state.balanceVersion) {
+            return legacy - 9
+        }
         // v7은 경기 자체가 어려워졌으므로 +5를 되돌린다. 문턱과 난이도를 동시에 올리면 벽이 된다.
         if HighSchoolGameplayRules.usesSchoolBalance(state.balanceVersion) { return legacy }
         return legacy + ((state.balanceVersion ?? 1) >= 4 ? 5 : 0)

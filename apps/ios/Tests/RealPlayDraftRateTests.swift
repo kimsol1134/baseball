@@ -22,6 +22,19 @@ final class RealPlayDraftRateTests: XCTestCase {
         let drafted: Bool
         let evaluation: Int
         let threshold: Int
+        /// 성적 항 계수를 훑기 위한 원재료(K·BB·R).
+        let strikeouts: Int
+        let walks: Int
+        let runsAllowed: Int
+        /// 성적 항을 다시 만들기 위한 원재료. 코어를 다시 빌드하지 않고 계수·문턱을
+        /// 훑기 위해서다(§2.5 Step B).
+        let gameQuality: Int
+        let directOuts: Int
+        /// 마운드에서 온 항들. 코어와 같은 산식을 공개 데이터로 다시 계산한다 —
+        /// **실력이 어느 항에 나타나는지**를 보기 위해서다(§2.5 Step B).
+        let processBonus: Int
+        let seasonTerm: Int
+        let ratingScore: Int
         /// 드래프트 평가의 경기 성적 항. 코어와 같은 산식을 공개 데이터로 다시 계산한다 —
         /// **클램프에 걸려 있는지**를 보기 위해서다(§2.5 Step 3).
         let rawPerformance: Int
@@ -98,7 +111,10 @@ final class RealPlayDraftRateTests: XCTestCase {
         /// 두 곡선을 **같은 하네스로** 재기 위한 것이지 운영 경로를 바꾸지 않는다(§2.5).
         forcedBalance: PitchBalanceRules? = nil,
         /// 이 사람의 손. 중립(500/500)이 실력 0의 바닥이다(§2.5 Step 4).
-        delivery: PitchDelivery = .neutral
+        delivery: PitchDelivery = .neutral,
+        /// 한 경기에서 상대할 타자 수를 강제한다. **직접 던지는 표본을 키우면 손맛이
+        /// 평가에 반영되는가**를 재기 위한 대리 측정이다(§2.5 Step B).
+        battersOverride: Int? = nil
     ) throws -> RunOutcome? {
         var pitching = PitchingTotals()
         let engine = HighSchoolCareerEngine()
@@ -142,12 +158,14 @@ final class RealPlayDraftRateTests: XCTestCase {
                     .init(seed: result.nextSeed, state: state, response: .listen)
                 )
             case .importantGame:
-                var scenario = PitchScenario.highSchool(state: state)
+                var scenario = PitchScenario.highSchool(
+                    state: state, maximumBattersOverride: battersOverride
+                )
                 if let forcedBalance { scenario.livePitchBalance = forcedBalance }
                 let session = PitchSession(scenario: scenario, seed: result.nextSeed)
                 session.start()
                 // 화면에서 한 구씩 누를 때와 같은 경로. 중립 릴리스라 손 실력은 0이다.
-                for _ in 0..<12 {
+                for _ in 0..<max(12, (battersOverride ?? 0) * 3) {
                     if case .ready = session.stage {
                         session.fastForwardCurrentBatter(delivery: delivery)
                     }
@@ -181,10 +199,29 @@ final class RealPlayDraftRateTests: XCTestCase {
                     - performance.runsAllowed * 2
                 let outs = performance.outs ?? 0
                 let raw = outs == 0 ? 0 : quality * 3 / max(9, outs)
+                // processBonus: 기대 피해보다 얼마나 덜 맞았는가 — 이것도 실력 신호다.
+                let process = max(-8, min(10,
+                    (performance.expectedDamage - performance.actualDamage) / 350))
+                // seasonTerm: 공식 기록(직접 + 자동) 전체의 실점률. school 영점 6000·기울기 700.
+                let autoLines = (state.seasonLog ?? []).filter { !$0.played }
+                let officialOuts = outs + autoLines.reduce(0) { $0 + $1.outs }
+                let officialRuns = performance.runsAllowed + autoLines.reduce(0) { $0 + $1.runsAllowed }
+                let season = officialOuts == 0 ? 0 : min(8, max(-8,
+                    (6_000 - officialRuns * 27_000 / officialOuts) / 700)) * min(90, officialOuts) / 90
+                let ratings = state.pitcher.stuff + state.pitcher.command
+                    + state.pitcher.movement + state.pitcher.stamina
                 return RunOutcome(
                     drafted: draft.outcome == .drafted,
                     evaluation: draft.evaluationScore,
                     threshold: forecast.threshold,
+                    strikeouts: performance.strikeouts,
+                    walks: performance.walks,
+                    runsAllowed: performance.runsAllowed,
+                    gameQuality: quality,
+                    directOuts: max(9, outs),
+                    processBonus: process,
+                    seasonTerm: season,
+                    ratingScore: ratings / 4 + 15,
                     rawPerformance: raw,
                     clampedPerformance: min(6, max(-6, raw)),
                     pitching: pitching
@@ -270,6 +307,232 @@ final class RealPlayDraftRateTests: XCTestCase {
                 + "평가 \(sorted.first ?? 0)/\(sorted[max(0, sorted.count / 2)])/\(sorted.last ?? 0)")
             XCTAssertGreaterThan(totals.games, 0, "\(name): 직접 던진 경기가 없습니다")
             XCTAssertGreaterThan(totals.outs, 0, "\(name): 아웃이 하나도 기록되지 않았습니다")
+        }
+    }
+
+    /// **고교 8이 실제로 예측대로 나오는가**(§2.8 확인).
+    ///
+    /// 스윕은 기록해 둔 원재료로 평가를 재조립한 예측이다. 진짜 코드가 같은 값을 내는지
+    /// 확인하지 않으면 그 표는 종이 위의 숫자다. 버전만 v8로 두고 그대로 3년을 산다.
+    func testSchoolEightLandsWhereTheSweepSaidItWould() throws {
+        let seeds = (1...40).map(String.init)
+        var rates: [String: Int] = [:]
+        for (handName, accuracy) in [("중립", 500), ("완벽", 950)] {
+            var drafted = 0, total = 0
+            var thresholds: Set<Int> = []
+            for seed in seeds {
+                guard let outcome = try playOneCareer(
+                    seed: seed, policy: .sensible,
+                    delivery: PitchDelivery(releaseAccuracy: accuracy, aimAccuracy: accuracy)
+                ) else { continue }
+                total += 1
+                thresholds.insert(outcome.threshold)
+                if outcome.drafted { drafted += 1 }
+            }
+            let rate = drafted * 100 / max(1, total)
+            rates[handName] = rate
+            print("[v8] \(handName) — 지명 \(drafted)/\(total) = \(rate)% · 문턱 \(thresholds.sorted())")
+        }
+        let low = try XCTUnwrap(rates["중립"])
+        let high = try XCTUnwrap(rates["완벽"])
+        print("[v8] 간격 \(high - low)%p")
+
+        // 밴드는 예측(47%/60%) 주변으로 넉넉히 잡는다. 정확한 숫자를 고정하면 시드 하나에
+        // 깨지는 검사가 되고, 너무 넓으면 회귀를 못 잡는다.
+        XCTAssertTrue(
+            (30...65).contains(low),
+            "중립 릴리스 지명률 \(low)% — 손을 못 맞히는 사람의 하한이 무너졌거나 너무 후하다"
+        )
+        XCTAssertGreaterThanOrEqual(
+            high, low,
+            "잘 던진 쪽이 더 낮게 지명됐다 — 손맛이 벌이 되고 있다"
+        )
+    }
+
+    /// **스카우트가 투수의 무엇을 보는가**(§2.5 Step B).
+    ///
+    /// 계수를 키우는 것도(운만 커진다), 표본을 키우는 것도(비율이라 안 커진다) 답이 아니었다.
+    /// 남은 것은 **무엇을 채점하느냐**다.
+    ///
+    /// 지금 식은 `K*4 − BB*2 − R*2`인데 school에서 R/9는 20, BB/9는 5다. 실력이 볼넷을 41%
+    /// 줄여도 실점은 14%밖에 못 줄인다 — 실점은 수비와 운이 절반을 쥐고 있기 때문이다.
+    /// 가중치가 같으니 **투수가 통제하는 것이 통제 못 하는 것에 묻힌다.**
+    ///
+    /// 야구에는 이미 답이 있다: FIP, 수비와 무관한 투구. 투수는 자기가 통제하는 것으로
+    /// 평가한다. 그 방향으로 계수를 옮기면 손맛이 평가에 들리는지 잰다.
+    func testWhatTheScoutShouldBeWatching() throws {
+        let seeds = (1...40).map(String.init)
+        var byHand: [String: [RunOutcome]] = [:]
+        for (handName, accuracy) in [("중립", 500), ("완벽", 950)] {
+            var outcomes: [RunOutcome] = []
+            for seed in seeds {
+                guard let outcome = try playOneCareer(
+                    seed: seed, policy: .sensible, forcedBalance: .school,
+                    delivery: PitchDelivery(releaseAccuracy: accuracy, aimAccuracy: accuracy)
+                ) else { continue }
+                outcomes.append(outcome)
+            }
+            byHand[handName] = outcomes
+        }
+        let neutral = try XCTUnwrap(byHand["중립"])
+        let perfect = try XCTUnwrap(byHand["완벽"])
+
+        func rate(
+            _ outcomes: [RunOutcome],
+            k: Int, b: Int, r: Int, scale: Int, clamp: Int, threshold: Int
+        ) -> Int {
+            let drafted = outcomes.count { outcome in
+                let old = min(6, max(-6, outcome.gameQuality * 3 / outcome.directOuts))
+                let quality = outcome.strikeouts * k - outcome.walks * b - outcome.runsAllowed * r
+                let new = min(clamp, max(-clamp, quality * scale / outcome.directOuts))
+                return outcome.evaluation - old + new >= threshold
+            }
+            return outcomes.isEmpty ? 0 : drafted * 100 / outcomes.count
+        }
+
+        print("[fip] school 곡선 · 40시드 · K/BB/R 가중치 × 감도 × 문턱")
+        let weightings: [(String, Int, Int, Int)] = [
+            ("현재 4/2/2", 4, 2, 2),
+            ("실점 절반 4/2/1", 4, 2, 1),
+            ("볼넷 강조 5/4/1", 5, 4, 1),
+            ("수비무관 6/5/0", 6, 5, 0),
+        ]
+        for (name, k, b, r) in weightings {
+            for (scale, clamp) in [(3, 6), (6, 12)] {
+                var best = (gap: -100, low: 0, high: 0, threshold: 0)
+                for threshold in 40...70 {
+                    let low = rate(neutral, k: k, b: b, r: r, scale: scale, clamp: clamp, threshold: threshold)
+                    let high = rate(perfect, k: k, b: b, r: r, scale: scale, clamp: clamp, threshold: threshold)
+                    if (15...30).contains(low), high - low > best.gap {
+                        best = (high - low, low, high, threshold)
+                    }
+                }
+                print("[fip]   \(name) · 감도 \(scale)/±\(clamp) → 문턱 \(best.threshold): "
+                    + "중립 \(best.low)% / 완벽 \(best.high)% (간격 \(best.gap)%p)"
+                    + (best.gap >= 25 && (55...75).contains(best.high) ? "  ★ 목표 충족" : ""))
+            }
+        }
+    }
+
+    /// **표본을 키우면 손맛이 평가에 들리는가**(§2.5 Step B).
+    ///
+    /// 계수 스윕이 답을 냈다 — 3.5이닝짜리 표본을 크게 채점하면 실력만큼 운도 커져서
+    /// 간격이 20%p에서 멈춘다. 그러면 남은 길은 하나, **던질 이닝을 늘리는 것**이다.
+    /// 1-G(장별 직접 등판)를 짓기 전에 그 가정이 맞는지 대리 측정으로 먼저 확인한다.
+    func testABiggerDirectSampleRestoresTheSkillGap() throws {
+        let seeds = (1...40).map(String.init)
+        for batters in [nil, 8, 14] as [Int?] {
+            var results: [(String, Int, Int, Int)] = []
+            for (handName, accuracy) in [("중립", 500), ("완벽", 950)] {
+                var drafted = 0, total = 0, outs = 0
+                for seed in seeds {
+                    guard let outcome = try playOneCareer(
+                        seed: seed, policy: .sensible, forcedBalance: .school,
+                        delivery: PitchDelivery(releaseAccuracy: accuracy, aimAccuracy: accuracy),
+                        battersOverride: batters
+                    ) else { continue }
+                    total += 1
+                    outs += outcome.pitching.outs
+                    if outcome.drafted { drafted += 1 }
+                }
+                results.append((handName, drafted * 100 / max(1, total), outs / max(1, total), total))
+            }
+            let label = batters.map { "타자 \($0)명" } ?? "현재(4~6명)"
+            print("[sample] \(label) — 커리어당 직접 아웃 \(results[0].2)개 · "
+                + "중립 \(results[0].1)% / 완벽 \(results[1].1)% "
+                + "(간격 \(results[1].1 - results[0].1)%p)")
+        }
+    }
+
+    /// **계수와 문턱을 함께 훑는다**(§2.5 Step A·B).
+    ///
+    /// 성적 항이 실력을 나르는 유일한 항이라는 것을 알았으니, 그 항의 감도(계수·클램프)와
+    /// 당락 문턱을 같이 움직여 본다. 커리어를 다시 돌리지 않고 **기록해 둔 원재료로** 평가를
+    /// 다시 만들어 훑으므로, 한 번의 실행으로 조합 전체를 본다.
+    ///
+    /// 목표는 지명률 복구가 아니라 **간격**이다 — 중립 15~30%, 거의 완벽 55~75%,
+    /// 그 차이 최소 25%p. 손맛이 핵심 재미라는 말의 조작적 정의다.
+    func testSweepPerformanceWeightAndThreshold() throws {
+        let seeds = (1...40).map(String.init)
+        var byHand: [String: [RunOutcome]] = [:]
+        for (handName, accuracy) in [("중립", 500), ("완벽", 950)] {
+            var outcomes: [RunOutcome] = []
+            for seed in seeds {
+                guard let outcome = try playOneCareer(
+                    seed: seed, policy: .sensible, forcedBalance: .school,
+                    delivery: PitchDelivery(releaseAccuracy: accuracy, aimAccuracy: accuracy)
+                ) else { continue }
+                outcomes.append(outcome)
+            }
+            byHand[handName] = outcomes
+        }
+
+        func rate(_ outcomes: [RunOutcome], scale: Int, clamp: Int, threshold: Int) -> Int {
+            let drafted = outcomes.count { outcome in
+                // 오늘의 성적 항을 빼고 새 계수로 다시 넣는다.
+                let old = min(6, max(-6, outcome.gameQuality * 3 / outcome.directOuts))
+                let new = min(clamp, max(-clamp, outcome.gameQuality * scale / outcome.directOuts))
+                return outcome.evaluation - old + new >= threshold
+            }
+            return outcomes.isEmpty ? 0 : drafted * 100 / outcomes.count
+        }
+
+        let neutral = try XCTUnwrap(byHand["중립"])
+        let perfect = try XCTUnwrap(byHand["완벽"])
+        print("[sweep] school 곡선 · 40시드 · 계수/클램프 × 문턱 → 중립% / 완벽% (간격)")
+        for (scale, clamp) in [(3, 6), (6, 12), (9, 18), (12, 24), (15, 30)] {
+            for threshold in [46, 49, 52, 55, 58, 61] {
+                let low = rate(neutral, scale: scale, clamp: clamp, threshold: threshold)
+                let high = rate(perfect, scale: scale, clamp: clamp, threshold: threshold)
+                let marker = (15...30).contains(low) && (55...75).contains(high) && high - low >= 25
+                    ? "  ★ 목표 충족" : ""
+                print("[sweep]   계수 \(scale)/클램프 ±\(clamp) · 문턱 \(threshold) → "
+                    + "\(low)% / \(high)% (간격 \(high - low)%p)\(marker)")
+            }
+        }
+    }
+
+    /// **실력은 어느 항에 나타나는가.**
+    ///
+    /// 평가는 여러 항의 합이고 마운드에서 오는 것은 셋이다 — 경기 성적(±6), 기대 대비
+    /// 피해(−8~+10), 공식 기록 실점률(±8). 어느 항이 실력에 반응하는지 모르면 무게를
+    /// 어디에 줘야 할지도 모른다. 추론하지 않고 항별로 쟀다.
+    func testWhichEvaluationTermCarriesSkill() throws {
+        let seeds = (1...16).map(String.init)
+        for (curveName, balance) in [
+            ("legacy", PitchBalanceRules.legacy),
+            ("school", PitchBalanceRules.school),
+        ] {
+            var rows: [(String, [Int], [Int], [Int], [Int])] = []
+            for (handName, accuracy) in [("중립", 500), ("완벽", 950)] {
+                var perf: [Int] = [], process: [Int] = [], season: [Int] = [], rating: [Int] = []
+                for seed in seeds {
+                    guard let outcome = try playOneCareer(
+                        seed: seed, policy: .sensible, forcedBalance: balance,
+                        delivery: PitchDelivery(releaseAccuracy: accuracy, aimAccuracy: accuracy)
+                    ) else { continue }
+                    perf.append(outcome.clampedPerformance)
+                    process.append(outcome.processBonus)
+                    season.append(outcome.seasonTerm)
+                    rating.append(outcome.ratingScore)
+                }
+                rows.append((handName, perf, process, season, rating))
+            }
+            func median(_ values: [Int]) -> Int { values.sorted()[values.count / 2] }
+            for row in rows {
+                print(String(
+                    format: "[term] %@ · %@ — 성적 %d · 기대대비 %d · 시즌 %d · 능력 %d",
+                    curveName, row.0, median(row.1), median(row.2), median(row.3), median(row.4)
+                ))
+            }
+            let neutral = rows[0], perfect = rows[1]
+            print(String(
+                format: "[term] %@ · 실력이 바꾼 폭 — 성적 %+d · 기대대비 %+d · 시즌 %+d",
+                curveName,
+                median(perfect.1) - median(neutral.1),
+                median(perfect.2) - median(neutral.2),
+                median(perfect.3) - median(neutral.3)
+            ))
         }
     }
 
