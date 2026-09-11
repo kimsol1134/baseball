@@ -32,4 +32,18 @@ public enum HighSchoolGameplayRules {
     public static func usesLightenedIntensity(_ balanceVersion: Int?) -> Bool { version(of: balanceVersion) >= 6 }
     /// v7+: the school balance pass — pitching, opponents, inheritance and draft threshold.
     public static func usesSchoolBalance(_ balanceVersion: Int?) -> Bool { version(of: balanceVersion) >= 7 }
+
+    /// **직접 던지는 공이 어느 확률식을 쓰는가.**
+    ///
+    /// v7의 재조정은 자동 등판(`AutoOutingSimulator`)을 기준으로 맞춘 값이고, 플레이어가
+    /// 직접 던지는 경기에는 한 번도 적용된 적이 없다 — 앱이 `PitchKernelEngine`을 기본
+    /// 인자로 만들어 `.legacy`가 조용히 들어갔기 때문이다. **기본값이 밸런스를 정하고
+    /// 있었고 아무도 그것을 고른 적이 없다.**
+    ///
+    /// 그래서 여기서 버전으로 명시한다. v7까지는 오늘과 **바이트 단위로 같은** `.legacy`다.
+    /// 연결은 v8에서 측정과 함께 한다(계획 문서 §2.5) — 그냥 켜면 중립 릴리스 지명률이
+    /// 43%에서 5%로 떨어진다.
+    public static func livePitchBalance(_ balanceVersion: Int?) -> PitchBalanceRules {
+        version(of: balanceVersion) >= 8 ? .school : .legacy
+    }
 }

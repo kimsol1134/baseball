@@ -31,4 +31,13 @@ public enum ProGameplayRules {
     public static func usesProfessionalBalance(_ proRulesVersion: Int?) -> Bool { version(of: proRulesVersion) >= 12 }
     /// v13+: workload-driven changes and complete games.
     public static func usesWorkload(_ proRulesVersion: Int?) -> Bool { version(of: proRulesVersion) >= 13 }
+
+    /// **직접 던지는 공이 어느 확률식을 쓰는가.** 고교와 같은 이유로 여기도 `.legacy`다.
+    ///
+    /// v11~v13의 프로 재조정은 자동 등판에만 적용돼 왔다. 중요 경기·가을야구처럼 플레이어가
+    /// 직접 던지는 경기는 여전히 옛 확률식이다. 연결은 고교 8에서 세운 방법을 그대로 써서
+    /// 프로 14에서 한다(계획 문서 §2.5).
+    public static func livePitchBalance(_ proRulesVersion: Int?) -> PitchBalanceRules {
+        version(of: proRulesVersion) >= 14 ? .professionalWorkload : .legacy
+    }
 }

@@ -67,6 +67,9 @@ struct PitchScenario {
     var maximumPitches: Int?
     /// 같은 앱 빌드 안의 보존 v3와 신규 v4 결과를 분석에서 섞지 않는다.
     let developmentRulesVersion: Int
+    /// **직접 던지는 공이 쓰는 확률식.** 기본 인자로 조용히 정해지지 않도록, 커리어의 규칙
+    /// 버전에서 명시적으로 고른 값을 시나리오가 들고 다닌다(계획 문서 §2.5).
+    var livePitchBalance: PitchBalanceRules = .legacy
 
     var gameState: GameStateSnapshot {
         GameStateSnapshot(
@@ -165,7 +168,8 @@ struct PitchScenario {
             initialRivalMemory: state.postseason?.series?.rivalMemory,
             maximumBatters: batters,
             maximumPitches: nil,
-            developmentRulesVersion: state.balanceVersion ?? 1
+            developmentRulesVersion: state.balanceVersion ?? 1,
+            livePitchBalance: ProGameplayRules.livePitchBalance(state.proRulesVersion)
         )
     }
 
@@ -404,7 +408,9 @@ struct PitchScenario {
             // 게다가 기본값이 사인 추종이라 13구가 전부 같은 코스였다 — 배우는 자리가
             // 아니라 같은 버튼을 열세 번 누르는 자리였다. 8구면 3구 스크립트가 두 바퀴 돈다.
             maximumPitches: pitchLimit,
-            developmentRulesVersion: balanceVersion
+            developmentRulesVersion: balanceVersion,
+            // 연습장은 커리어 규칙을 따르지 않는다. 배우는 자리의 난이도는 따로 정한다.
+            livePitchBalance: .legacy
         )
     }
 
@@ -493,7 +499,8 @@ struct PitchScenario {
             initialRivalMemory: nil,
             maximumBatters: maximumBattersOverride ?? highSchoolMaximumBatters(state: state),
             maximumPitches: nil,
-            developmentRulesVersion: state.balanceVersion ?? 1
+            developmentRulesVersion: state.balanceVersion ?? 1,
+            livePitchBalance: HighSchoolGameplayRules.livePitchBalance(state.balanceVersion)
         )
     }
 

@@ -56,11 +56,13 @@ final class PitchSession {
         CareerTelemetry.log(.pitchFailed, diagnosis.analyticsProperties)
     }
 
-    private let engine = PitchKernelEngine(
-        recommendationEngine: CatcherRecommendationEngine(
-            rules: CatcherSignRules(version: CatcherSignRules.livePlayVersion)
-        )
-    )
+    /// 직접 던지는 공의 커널.
+    ///
+    /// 예전에는 `balance`를 넘기지 않아 기본값 `.legacy`가 조용히 들어갔다 — **기본 인자
+    /// 하나가 게임 밸런스를 정하고 있었고 아무도 그것을 고른 적이 없다.** 이제 시나리오가
+    /// 커리어의 규칙 버전에서 고른 값을 들고 오고, 오늘 값은 모든 버전에서 `.legacy`라
+    /// 동작은 한 줄도 바뀌지 않는다(계획 문서 §2.5).
+    private let engine: PitchKernelEngine
     let scenario: PitchScenario
 
     private(set) var stage: Stage = .ready
@@ -352,6 +354,12 @@ final class PitchSession {
     }
 
     init(scenario: PitchScenario, seed: String) {
+        self.engine = PitchKernelEngine(
+            recommendationEngine: CatcherRecommendationEngine(
+                rules: CatcherSignRules(version: CatcherSignRules.livePlayVersion)
+            ),
+            balance: scenario.livePitchBalance
+        )
         self.scenario = scenario
         self.seed = seed
         self.scouting = scenario.scouting
