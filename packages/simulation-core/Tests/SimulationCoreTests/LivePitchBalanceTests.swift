@@ -47,6 +47,15 @@ final class LivePitchBalanceTests: XCTestCase {
         XCTAssertTrue(HighSchoolGameplayRules.usesLiveBalanceEvaluation(8))
     }
 
+    /// 새 커리어가 실제로 v8을 달고 나오는가. 버전을 올렸는데 엔진이 다른 값을 찍으면
+    /// 문턱·감도가 전부 헛돈다.
+    func testANewCareerIsStampedWithTheCurrentVersion() throws {
+        let engine = HighSchoolCareerEngine()
+        let started = try engine.start(.init(seed: "918220", presetID: "power_prospect"))
+        XCTAssertEqual(started.snapshot.balanceVersion, 8)
+        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: started.snapshot), 52)
+    }
+
     /// 같은 school 곡선인데 **자동 등판은 멀쩡하고 직접 등판은 무너지는가**(§2.5 Step 2).
     ///
     /// 자동 시뮬레이터는 사람의 조준 오차가 없다. 라이브 하네스는 중립 릴리스라 조준 실력이
