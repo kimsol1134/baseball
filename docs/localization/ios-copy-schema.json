@@ -63061,6 +63061,17 @@
       "status": "ui_verified"
     },
     {
+      "key": "chapter.review.claim-game",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "정규 경기 등판",
+      "en": "Take the regular start",
+      "ja": "公式戦に登板",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "chapter.review.continue",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "다음 이야기로",
@@ -90841,6 +90852,28 @@
       "ko": "9회말 리드 방어",
       "en": "Protecting a Ninth-Inning Lead",
       "ja": "9回のリードを守る",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.important-game.regular-chapter.narrative",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "1회부터 마운드를 맡습니다. 이 장의 정규 경기입니다.",
+      "en": "You take the mound from the first inning. This is this chapter's regular game.",
+      "ja": "1回からマウンドを任されます。今章の公式戦です。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.important-game.regular-chapter.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "정규 경기 선발 등판",
+      "en": "Regular-season start",
+      "ja": "公式戦の先発",
       "ko_state": "translated",
       "en_state": "translated",
       "ja_state": "translated",

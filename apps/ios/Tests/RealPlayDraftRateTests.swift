@@ -14,8 +14,8 @@ import BaseballIOSDomain
 /// 이 하네스가 그 질문에 답한다: 시나리오를 실제로 만들고, `PitchSession`으로 타석을
 /// 끝까지 굴리고, 그 리포트를 엔진에 돌려준다. UI만 없을 뿐 플레이와 같은 경로다.
 ///
-/// **중립 릴리스로 던진다.** 즉 여기서 나오는 숫자는 타이밍·조준을 전혀 못 맞히는
-/// 사람의 하한선이다. 실제 사람은 이보다 잘한다.
+/// **기본은 중립 릴리스 + 포수 사인 추종.** 그 숫자는 타이밍·조준·코스를 전혀 안 고르는
+/// 사람의 하한선이다. `CallPolicy.skilledCourse`가 코스 선택이라는 나머지 절반을 잰다.
 @MainActor
 final class RealPlayDraftRateTests: XCTestCase {
     private struct RunOutcome {
@@ -101,6 +101,69 @@ final class RealPlayDraftRateTests: XCTestCase {
         case smokeAutopilot
     }
 
+    /// 한 구의 코스를 누가 고르는가. 릴리스(`delivery`)와 독립이다 — 손은 맞아도 한복판에
+    /// 던지면 school 곡선이 벌한다(§2.7).
+    enum CallPolicy {
+        /// 포수 1안을 그대로 따른다. 지금까지의 모든 실측이 이 정책이다.
+        case followCatcher
+        /// 포수의 카운트 판단을 유지한 채, 한복판·핫존만 존 안 옆칸으로 민다.
+        case skilledCourse
+
+        var refine: ((PitchCall, BatterScoutingSnapshot, PlateAppearanceContext) -> PitchCall)? {
+            switch self {
+            case .followCatcher: nil
+            case .skilledCourse: Self.skilledCourse
+            }
+        }
+
+        /// 구종·카운트 판단은 포수, 코스만 고친다.
+        ///
+        /// 첫 판은 한복판을 코너로 빼고 2-0도 가장자리를 노렸다. 24시드에서 볼넷이 늘고
+        /// 지명률이 54%→29%로 떨어졌다 — 한복판을 피하는 것이 아니라 **스트라이크를
+        /// 포기한 것**이었다. 포수의 카운트 판단을 유지한 채, 한복판·핫존일 때만 존 안의
+        /// 옆칸으로 민다. school 곡선의 가운데 벌은 피하고 볼은 늘리지 않는 자리.
+        static func skilledCourse(
+            catcher: PitchCall,
+            scouting: BatterScoutingSnapshot,
+            context: PlateAppearanceContext
+        ) -> PitchCall {
+            var zone = catcher.zone
+            var intent = catcher.zoneIntent
+            let hot = scouting.hotZone
+            let cold = scouting.coldZone
+            if zone == hot {
+                zone = (cold != hot && !isCenter(cold)) ? cold : inZoneNeighbor(preferring: cold, avoiding: hot)
+                if intent == .chase, isCenter(zone) { intent = .strike }
+            }
+            if isCenter(zone) {
+                zone = inZoneNeighbor(preferring: cold, avoiding: hot)
+                if intent == .chase { intent = .strike }
+            }
+            return PitchCall(
+                pitchType: catcher.pitchType,
+                zone: zone,
+                zoneIntent: ZoneIntent.clamped(intent, for: zone),
+                intensity: catcher.intensity
+            )
+        }
+
+        private static func isCenter(_ zone: PitchZone) -> Bool {
+            zone.row == 1 && zone.column == 1
+        }
+
+        /// 한복판의 존 안 이웃. 코너는 가장자리라 `.strike`여도 볼이 되기 쉽다.
+        private static func inZoneNeighbor(preferring cold: PitchZone, avoiding hot: PitchZone) -> PitchZone {
+            let neighbors = [
+                PitchZone(row: 0, column: 1),
+                PitchZone(row: 2, column: 1),
+                PitchZone(row: 1, column: 0),
+                PitchZone(row: 1, column: 2),
+            ]
+            if neighbors.contains(cold), cold != hot { return cold }
+            return neighbors.first { $0 != hot } ?? PitchZone(row: 2, column: 1)
+        }
+    }
+
     /// 한 회차를 끝까지 자동으로 산다.
     private func playOneCareer(
         seed: String,
@@ -112,6 +175,8 @@ final class RealPlayDraftRateTests: XCTestCase {
         forcedBalance: PitchBalanceRules? = nil,
         /// 이 사람의 손. 중립(500/500)이 실력 0의 바닥이다(§2.5 Step 4).
         delivery: PitchDelivery = .neutral,
+        /// 한 구의 코스. 기본은 포수 추종 — 코스 실력은 0이다(§2.7).
+        callPolicy: CallPolicy = .followCatcher,
         /// 한 경기에서 상대할 타자 수를 강제한다. **직접 던지는 표본을 키우면 손맛이
         /// 평가에 반영되는가**를 재기 위한 대리 측정이다(§2.5 Step B).
         battersOverride: Int? = nil
@@ -164,10 +229,14 @@ final class RealPlayDraftRateTests: XCTestCase {
                 if let forcedBalance { scenario.livePitchBalance = forcedBalance }
                 let session = PitchSession(scenario: scenario, seed: result.nextSeed)
                 session.start()
-                // 화면에서 한 구씩 누를 때와 같은 경로. 중립 릴리스라 손 실력은 0이다.
-                for _ in 0..<max(12, (battersOverride ?? 0) * 3) {
+                // 화면에서 한 구씩 누를 때와 같은 경로. 기본은 포수 추종이라 코스 실력은 0이다.
+                for _ in 0..<max(40, (battersOverride ?? session.scenario.maximumBatters) * 3) {
                     if case .ready = session.stage {
-                        session.fastForwardCurrentBatter(delivery: delivery)
+                        session.fastForwardCurrentBatter(
+                            maximumPitches: 20,
+                            delivery: delivery,
+                            refineCall: callPolicy.refine
+                        )
                     }
                     if case .betweenBatters = session.stage {
                         session.advanceToNextBatter()
@@ -187,7 +256,15 @@ final class RealPlayDraftRateTests: XCTestCase {
                     .init(seed: result.nextSeed, state: state, awakening: option)
                 )
             case .chapterReview:
-                result = try engine.advanceChapter(.init(seed: result.nextSeed, state: state))
+                if HighSchoolGameplayRules.usesChapterLiveOuting(state.balanceVersion),
+                   state.chapterGameClaimed != true,
+                   state.chapter.number < 8 {
+                    result = try engine.claimChapterGame(
+                        .init(seed: result.nextSeed, state: state)
+                    )
+                } else {
+                    result = try engine.advanceChapter(.init(seed: result.nextSeed, state: state))
+                }
             case .draft:
                 result = try engine.resolveDraft(.init(seed: result.nextSeed, state: state))
                 let draft = try XCTUnwrap(result.snapshot.draftResult)
@@ -310,11 +387,11 @@ final class RealPlayDraftRateTests: XCTestCase {
         }
     }
 
-    /// **고교 8이 실제로 예측대로 나오는가**(§2.8 확인).
+    /// **고교 9가 손맛 목표에 닿는가**(§2.8).
     ///
-    /// 스윕은 기록해 둔 원재료로 평가를 재조립한 예측이다. 진짜 코드가 같은 값을 내는지
-    /// 확인하지 않으면 그 표는 종이 위의 숫자다. 버전만 v8로 두고 그대로 3년을 산다.
-    func testSchoolEightLandsWhereTheSweepSaidItWould() throws {
+    /// 장별 등판과 이닝 가중을 한 버전에서 같이 켠 뒤, 문턱 50에서 40시드 실측이
+    /// 중립 27% · 완벽 52% · 간격 25%p였다.
+    func testSchoolNineLandsInsideTheSkillGapTarget() throws {
         let seeds = (1...40).map(String.init)
         var rates: [String: Int] = [:]
         for (handName, accuracy) in [("중립", 500), ("완벽", 950)] {
@@ -331,21 +408,125 @@ final class RealPlayDraftRateTests: XCTestCase {
             }
             let rate = drafted * 100 / max(1, total)
             rates[handName] = rate
-            print("[v8] \(handName) — 지명 \(drafted)/\(total) = \(rate)% · 문턱 \(thresholds.sorted())")
+            print("[v9] \(handName) — 지명 \(drafted)/\(total) = \(rate)% · 문턱 \(thresholds.sorted())")
         }
         let low = try XCTUnwrap(rates["중립"])
         let high = try XCTUnwrap(rates["완벽"])
-        print("[v8] 간격 \(high - low)%p")
+        print("[v9] 간격 \(high - low)%p")
 
-        // 밴드는 예측(47%/60%) 주변으로 넉넉히 잡는다. 정확한 숫자를 고정하면 시드 하나에
-        // 깨지는 검사가 되고, 너무 넓으면 회귀를 못 잡는다.
+        // v9 목표: 중립 15~30%, 간격 25%p. 시드 하나에 깨지지 않게 밴드는 조금 넉넉히.
         XCTAssertTrue(
-            (30...65).contains(low),
+            (10...40).contains(low),
             "중립 릴리스 지명률 \(low)% — 손을 못 맞히는 사람의 하한이 무너졌거나 너무 후하다"
         )
         XCTAssertGreaterThanOrEqual(
             high, low,
             "잘 던진 쪽이 더 낮게 지명됐다 — 손맛이 벌이 되고 있다"
+        )
+        XCTAssertGreaterThanOrEqual(
+            high - low, 15,
+            "실력 간격 \(high - low)%p — 장별 등판이 손맛을 다시 묻히고 있다"
+        )
+    }
+
+    /// 숙련 코스 정책이 포수의 한복판 요구를 실제로 거절하는가.
+    ///
+    /// 포수는 3-0에 (1, 1)을 요구한다. school 곡선은 그 공을 타구 품질로 벌한다. 정책이
+    /// 한복판·핫존을 남기면 아래 커리어 스윕은 코스를 재는 척만 하는 것이다.
+    func testSkilledCourseNeverThrowsTheMiddleOrTheHotZone() {
+        let hot = PitchZone(row: 0, column: 0)
+        let cold = PitchZone(row: 2, column: 2)
+        let scouting = BatterScoutingSnapshot(
+            hotZone: hot,
+            coldZone: cold,
+            pitchStrength: .fourSeam,
+            pitchWeakness: .slider,
+            chaseTendency: 55
+        )
+        let catcherMiddle = PitchCall(
+            pitchType: .slider,
+            zone: PitchZone(row: 1, column: 1),
+            zoneIntent: .strike,
+            intensity: .normal
+        )
+        for (balls, strikes) in [(0, 0), (0, 2), (2, 0), (3, 0), (3, 1), (1, 2)] {
+            let context = PlateAppearanceContext(
+                plateAppearanceID: "course-\(balls)-\(strikes)",
+                revision: 0, inning: 1, outs: 0,
+                balls: balls, strikes: strikes, pitchNumber: 1,
+                scoreDifferential: 0, leverage: 500, fatigue: 20
+            )
+            let call = CallPolicy.skilledCourse(catcher: catcherMiddle, scouting: scouting, context: context)
+            XCTAssertNotEqual(call.zone, PitchZone(row: 1, column: 1), "\(balls)-\(strikes) 한복판")
+            XCTAssertNotEqual(call.zone, hot, "\(balls)-\(strikes) 핫존")
+            XCTAssertEqual(call.pitchType, catcherMiddle.pitchType, "구종은 포수를 따른다")
+        }
+    }
+
+    /// **코스 선택이 실력 간격의 빠진 절반인가**(§2.7).
+    ///
+    /// 지금까지의 모든 숫자는 포수 사인을 그대로 따른 값이다. school 곡선은 한복판을
+    /// 벌하므로, 사람이 코스를 고르면 간격이 지금(13%p)보다 클 수 있다. 1-G의 목표
+    /// (25%p)를 세우기 전에 그 하한이 맞는지를 잰다.
+    ///
+    /// 이 검사는 밴드를 주장하지 않는다 — **재는 것이 일이다.**
+    func testCourseSelectionIsTheMissingHalfOfSkill() throws {
+        let seeds = (1...24).map(String.init)
+        var rows: [(String, String, Int, PitchingTotals, [Int])] = []
+        for (policyName, policy) in [
+            ("포수 추종", CallPolicy.followCatcher),
+            ("숙련 코스", CallPolicy.skilledCourse),
+        ] {
+            for (handName, accuracy) in [("중립", 500), ("완벽", 950)] {
+                var totals = PitchingTotals()
+                var drafted = 0
+                var evaluations: [Int] = []
+                for seed in seeds {
+                    guard let outcome = try playOneCareer(
+                        seed: seed, policy: .sensible,
+                        delivery: PitchDelivery(releaseAccuracy: accuracy, aimAccuracy: accuracy),
+                        callPolicy: policy
+                    ) else { continue }
+                    totals = totals + outcome.pitching
+                    evaluations.append(outcome.evaluation)
+                    if outcome.drafted { drafted += 1 }
+                }
+                let rate = evaluations.isEmpty ? 0 : drafted * 100 / evaluations.count
+                rows.append((policyName, handName, rate, totals, evaluations))
+                let sorted = evaluations.sorted()
+                print(String(
+                    format: "[course] %@ · %@ — 지명 %d/%d = %d%% · 평가 중앙 %d · %@",
+                    policyName, handName, drafted, evaluations.count, rate,
+                    sorted.isEmpty ? 0 : sorted[sorted.count / 2],
+                    totals.line
+                ))
+            }
+        }
+        func gap(_ policyName: String) -> Int {
+            let low = rows.first { $0.0 == policyName && $0.1 == "중립" }?.2 ?? 0
+            let high = rows.first { $0.0 == policyName && $0.1 == "완벽" }?.2 ?? 0
+            return high - low
+        }
+        let catcherGap = gap("포수 추종")
+        let skilledGap = gap("숙련 코스")
+        print("[course] 간격 포수 추종 \(catcherGap)%p · 숙련 코스 \(skilledGap)%p")
+
+        let catcherNeutral = try XCTUnwrap(rows.first { $0.0 == "포수 추종" && $0.1 == "중립" })
+        let skilledNeutral = try XCTUnwrap(rows.first { $0.0 == "숙련 코스" && $0.1 == "중립" })
+        XCTAssertGreaterThan(skilledNeutral.3.games, 0, "숙련 코스로 던진 경기가 없습니다")
+        // 정책이 포수와 글자 그대로 같으면 코스를 재는 척만 한 것이다. 한복판을 거절하면
+        // 실점이나 볼넷 중 하나는 반드시 움직인다.
+        let catcherBB = catcherNeutral.3.per9(catcherNeutral.3.walks)
+        let skilledBB = skilledNeutral.3.per9(skilledNeutral.3.walks)
+        let catcherR = catcherNeutral.3.per9(catcherNeutral.3.runsAllowed)
+        let skilledR = skilledNeutral.3.per9(skilledNeutral.3.runsAllowed)
+        XCTAssertTrue(
+            abs(catcherBB - skilledBB) > 0.05 || abs(catcherR - skilledR) > 0.05,
+            "숙련 코스가 포수 추종과 같은 투구를 남겼습니다 — 정책을 다시 보세요"
+        )
+        XCTAssertGreaterThanOrEqual(
+            skilledGap, catcherGap - 5,
+            "코스를 고르는 쪽이 손맛 간격을 크게 깎았다 — 정책이 벌을 만들고 있다"
         )
     }
 

@@ -707,6 +707,9 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     public let lineageLoadout: CareerLineageLoadout?
     /// 훈련 진도. 이 필드가 없던 저장본은 nil이며, 그 회차는 예전처럼 성장 아니면 무(無)다.
     public let trainingProgress: CareerTrainingProgressSnapshot?
+    /// 이번 장의 정규 경기를 직접 던지기로 했는가. 옛 저장본은 nil이며 false로 읽는다.
+    /// 커밋에는 true일 때만 넣는다. [[focusStreak]] 패턴.
+    public let chapterGameClaimed: Bool?
     public let stateCommitment: String
 
     public var effectiveWorldRulesVersion: CareerRulesVersion {
@@ -768,6 +771,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         rebirthEcho: RebirthEchoSnapshot? = nil,
         lineageLoadout: CareerLineageLoadout? = nil,
         trainingProgress: CareerTrainingProgressSnapshot? = nil,
+        chapterGameClaimed: Bool? = nil,
         stateCommitment: String
     ) {
         self.careerID = careerID
@@ -820,6 +824,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.rebirthEcho = rebirthEcho
         self.lineageLoadout = lineageLoadout
         self.trainingProgress = trainingProgress
+        self.chapterGameClaimed = chapterGameClaimed
         self.stateCommitment = stateCommitment
     }
 
@@ -875,6 +880,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.rebirthEcho == rhs.rebirthEcho
             && lhs.lineageLoadout == rhs.lineageLoadout
             && lhs.trainingProgress == rhs.trainingProgress
+            && lhs.chapterGameClaimed == rhs.chapterGameClaimed
             && lhs.stateCommitment == rhs.stateCommitment
     }
 }

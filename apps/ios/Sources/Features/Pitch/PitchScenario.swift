@@ -70,6 +70,9 @@ struct PitchScenario {
     /// **직접 던지는 공이 쓰는 확률식.** 기본 인자로 조용히 정해지지 않도록, 커리어의 규칙
     /// 버전에서 명시적으로 고른 값을 시나리오가 들고 다닌다(계획 문서 §2.5).
     var livePitchBalance: PitchBalanceRules = .legacy
+    /// 장별 정규 등판처럼 이닝이 끝나도 다음 회를 이어서 던진다. 중요 경기 장면은
+    /// 한 이닝에서 멈춘다.
+    var continuesAcrossInnings: Bool = false
 
     var gameState: GameStateSnapshot {
         GameStateSnapshot(
@@ -448,6 +451,8 @@ struct PitchScenario {
         maximumBattersOverride: Int? = nil
     ) -> PitchScenario {
         let content = state.currentGameScenario
+        let claimed = state.chapterGameClaimed == true
+            && HighSchoolGameplayRules.usesChapterLiveOuting(state.balanceVersion)
         let rival = state.rival
         // 상대는 학년이 오르고 회차가 쌓일수록 세진다. 안 그러면 플레이어만 성장해
         // 난이도 곡선이 단조 하강한다 — 뒤로 갈수록 쉬워지는 게임이 된다.
@@ -470,7 +475,7 @@ struct PitchScenario {
             pitcher: state.pitcher,
             lineup: [rivalBatter] + HighSchoolPresentation.followUpBatters(
                 seedText: "\(state.careerID)|\(state.performance.importantGamesCompleted)",
-                count: 5
+                count: claimed ? 11 : 5
             ).map { DifficultyScale.scaled($0, by: scale) },
             scouting: scoutingWithCatcherBond(
                 HighSchoolPresentation.scouting(rival: rival, clarity: state.difficulty.informationClarity),
@@ -479,13 +484,13 @@ struct PitchScenario {
             catcherTrust: catcherTrust,
             defense: defense,
             park: ParkSnapshot(id: "hs-park", name: "고교 구장", hitFactor: 1_000, homeRunFactor: 1_000),
-            inning: content?.inning ?? 5,
-            outs: content?.outs ?? 0,
-            runners: content?.runners ?? .empty,
-            leverage: content?.leverage ?? 500,
+            inning: claimed ? 1 : (content?.inning ?? 5),
+            outs: claimed ? 0 : (content?.outs ?? 0),
+            runners: claimed ? .empty : (content?.runners ?? .empty),
+            leverage: claimed ? 400 : (content?.leverage ?? 500),
             // 시나리오가 점수 차를 들고 온다. 예전에는 전부 "1점 앞섬" 고정이라 고교 3년의
             // 모든 승부가 리드를 지키는 경기였다 — 지고 있는 마운드가 한 번도 없었다.
-            scoreDifferential: content?.scoreDifferential ?? 1,
+            scoreDifferential: claimed ? 0 : (content?.scoreDifferential ?? 1),
             fatigue: min(100, max(0, state.fatigue)),
             moundComposure: MoundComposureInput(
                 command: state.pitcher.command,
@@ -497,10 +502,11 @@ struct PitchScenario {
             detail: content?.narrative ?? "이 이닝을 막아야 합니다.",
             presentationContext: .highSchool(scenarioID: content?.id),
             initialRivalMemory: nil,
-            maximumBatters: maximumBattersOverride ?? highSchoolMaximumBatters(state: state),
+            maximumBatters: maximumBattersOverride ?? (claimed ? 9 : highSchoolMaximumBatters(state: state)),
             maximumPitches: nil,
             developmentRulesVersion: state.balanceVersion ?? 1,
-            livePitchBalance: HighSchoolGameplayRules.livePitchBalance(state.balanceVersion)
+            livePitchBalance: HighSchoolGameplayRules.livePitchBalance(state.balanceVersion),
+            continuesAcrossInnings: claimed
         )
     }
 

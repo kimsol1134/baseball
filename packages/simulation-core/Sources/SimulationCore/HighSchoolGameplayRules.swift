@@ -17,11 +17,15 @@ import Foundation
 /// - 6: intensive training costs 11 fatigue instead of 15.
 /// - 7: rebalanced school pitching, opponents that no longer scale with the rebirth count,
 ///   completed-life inheritance, and a draft threshold matched to the harder games.
+/// - 8: the live pitch uses the school curve, with evaluation sensitivity and the draft
+///   threshold moved in the same version.
+/// - 9: one regular start per chapter is thrown live, and the performance term is weighted
+///   by how many outs were actually recorded.
 public enum HighSchoolGameplayRules {
     /// The frozen comparison path.
     public static let reference = 4
     /// What a new or resumed career runs.
-    public static let current = 8
+    public static let current = 9
 
     /// The rules version a state actually carries. Unversioned legacy saves read as 1.
     public static func version(of balanceVersion: Int?) -> Int { balanceVersion ?? 1 }
@@ -54,4 +58,21 @@ public enum HighSchoolGameplayRules {
     public static func usesLiveBalanceEvaluation(_ balanceVersion: Int?) -> Bool {
         version(of: balanceVersion) >= 8
     }
+
+    /// v9+: 장 결산에서 정규 경기 하나를 직접 던진다. 자동 경기는 두 줄을 시뮬한 뒤
+    /// 하나를 버려 난수 소비 순서를 보존한다(§2.8 1-G).
+    public static func usesChapterLiveOuting(_ balanceVersion: Int?) -> Bool {
+        version(of: balanceVersion) >= 9
+    }
+
+    /// v9+: 성적 항이 비율만이 아니라 던진 아웃 수에 비례한다.
+    /// `seasonTerm`의 `min(cap, outs) / cap`과 같은 모양이다. 장별 등판과 **한 버전에서
+    /// 같이** 켠다 — 가중만 켜면 3.5이닝 항이 줄고, 등판만 늘리면 비율이라 항이 안 큰다.
+    public static func usesInningsWeightedPerformance(_ balanceVersion: Int?) -> Bool {
+        version(of: balanceVersion) >= 9
+    }
+
+    /// 직접 던진 아웃이 이만큼이면 성적 항이 가득 찬다. 장별 1이닝 × 7장 + 중요 경기
+    /// ≈ 30아웃을 한 시즌의 표본으로 본다.
+    public static let performanceSampleOuts = 36
 }

@@ -399,6 +399,7 @@ public enum AppCopyKey {
     public static let chapterReviewAbilityAccessibility = GameCopyKey.localizable("chapter.review.ability.accessibility")
     public static let chapterReviewNextStoryRival = GameCopyKey.localizable("chapter.review.next-story.rival")
     public static let chapterReviewContinue = GameCopyKey.localizable("chapter.review.continue")
+    public static let chapterReviewClaimGame = GameCopyKey.localizable("chapter.review.claim-game")
 
     public static let chapterReviewKeys: [GameCopyKey] = [
         chapterReviewCardTitle, chapterReviewStatLine, chapterReviewGrowthTitle,
@@ -406,6 +407,7 @@ public enum AppCopyKey {
         chapterReviewGrowthSummary, chapterReviewAbilitiesTitle, chapterReviewAbilityAccessibility,
         chapterReviewNextStoryRival,
         chapterReviewContinue,
+        chapterReviewClaimGame,
     ]
 
     public static let tournamentAceStart = GameCopyKey.localizable("tournament.ace-start")

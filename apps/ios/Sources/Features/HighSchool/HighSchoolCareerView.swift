@@ -817,7 +817,9 @@ struct HighSchoolCareerView: View {
                           onChoose: career.chooseAwakening)
         case .chapterReview:
             ChapterReviewCard(state: state, gains: career.chapterGains,
-                              trainingCount: career.chapterTrainingCount, onContinue: career.advanceChapter)
+                              trainingCount: career.chapterTrainingCount,
+                              onContinue: career.advanceChapter,
+                              onClaim: career.claimChapterGame)
         case .draft:
             DraftCard(state: state, chronicle: career.chronicle, career: career, onResolve: career.resolveDraft)
         case .legacy:

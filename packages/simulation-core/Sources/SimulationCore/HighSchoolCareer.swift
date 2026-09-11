@@ -1200,7 +1200,10 @@ public struct HighSchoolCareerEngine: Sendable {
             pitchLearningProject: nextLearningProject,
             talent: gameGrowth?.resultingTalent,
             awakeningSparks: sparks)
-        let next = advanceMilestone(nextBase, seed: seed)
+        // 장별 정규 등판은 일정표의 다음 국면이 아니라 장 결산으로 돌아간다.
+        let next = params.state.chapterGameClaimed == true
+            ? replacing(nextBase, phase: .chapterReview, clearCurrentGameScenario: true)
+            : advanceMilestone(nextBase, seed: seed)
         return result(
             seed: seed,
             state: signed(next),
@@ -1228,6 +1231,35 @@ public struct HighSchoolCareerEngine: Sendable {
         return result(seed: seed, state: signed(next), event: "career_awakening_selected", reasons: ["awakening.\(params.awakening.rawValue)"])
     }
 
+    public func claimChapterGame(_ params: AdvanceCareerChapterParams) throws -> HighSchoolCareerResult {
+        let seed = try validatedSeed(params.seed)
+        try validate(params.state, phase: .chapterReview)
+        guard HighSchoolGameplayRules.usesChapterLiveOuting(params.state.balanceVersion) else {
+            throw SimulationError.invalidPitcherLab("chapter game is not available")
+        }
+        guard params.state.chapter.number < 8 else {
+            throw SimulationError.invalidPitcherLab("final chapter cannot claim a game")
+        }
+        guard params.state.chapterGameClaimed != true else {
+            throw SimulationError.invalidPitcherLab("chapter game already claimed")
+        }
+        let scenario = HighSchoolContentCatalog.scenarios.first { $0.id == "regular-chapter" }
+            ?? HighSchoolContentCatalog.scenarios[0]
+        let next = replacing(
+            params.state,
+            revision: params.state.revision + 1,
+            phase: .importantGame,
+            currentGameScenario: scenario,
+            chapterGameClaimed: true as Bool?
+        )
+        return result(
+            seed: seed,
+            state: signed(next),
+            event: "career_chapter_game_claimed",
+            reasons: ["chapter_game.\(scenario.id)"]
+        )
+    }
+
     public func advanceChapter(_ params: AdvanceCareerChapterParams) throws -> HighSchoolCareerResult {
         let seed = try validatedSeed(params.seed); try validate(params.state, phase: .chapterReview)
         guard params.state.chapter.number < 8 else { throw SimulationError.invalidPitcherLab("final chapter cannot advance") }
@@ -1243,7 +1275,8 @@ public struct HighSchoolCareerEngine: Sendable {
         let next = replacing(params.state, revision: params.state.revision + 1, phase: .training,
             chapter: chapter, chapterTrainingCount: 0, milestoneIndex: 0,
             seasonLog: (params.state.seasonLog ?? []) + autoGames,
-            news: [Self.chapterGameHeadline(autoGames), "\(chapter.title) — \(chapter.theme)."] + params.state.news)
+            news: [Self.chapterGameHeadline(autoGames), "\(chapter.title) — \(chapter.theme)."] + params.state.news,
+            chapterGameClaimed: false as Bool?)
         return result(seed: seed, state: signed(next), event: "career_chapter_advanced", reasons: ["chapter.\(chapter.number)"])
     }
 
@@ -1341,7 +1374,9 @@ public struct HighSchoolCareerEngine: Sendable {
             chapter: chapter.number, lifeNumber: state.lifeNumber, scalesWithRebirths: !schoolBalance)
         let alreadyPlayed = state.seasonLog?.count ?? 0
 
-        return (0..<2).map { index in
+        // 두 줄을 모두 시뮬한 뒤 하나를 버린다. 장별 등판이 첫 줄을 대체해도
+        // 난수 소비 순서는 오늘과 같다(Kotlin HighSchoolKernel.advanceChapter).
+        let lines = (0..<2).map { index in
             let line = simulator.simulate(
                 pitcher: state.pitcher,
                 startingFatigue: state.fatigue + index * 6,
@@ -1379,6 +1414,11 @@ public struct HighSchoolCareerEngine: Sendable {
                 homeRuns: line.homeRuns
             )
         }
+        if HighSchoolGameplayRules.usesChapterLiveOuting(state.balanceVersion),
+           state.chapterGameClaimed == true {
+            return Array(lines.dropFirst())
+        }
+        return lines
     }
 
     /// 자동 경기 두 개를 한 줄 뉴스로. 숫자만 쌓이고 아무 말도 없으면 읽히지 않는다.
@@ -1534,9 +1574,15 @@ public struct HighSchoolCareerEngine: Sendable {
             let liveEvaluation = HighSchoolGameplayRules.usesLiveBalanceEvaluation(state.balanceVersion)
             let sensitivity = liveEvaluation ? 6 : 3
             let ceiling = liveEvaluation ? 12 : 6
-            performanceScore = directOuts == 0
+            let rate = directOuts == 0
                 ? 0
                 : min(ceiling, max(-ceiling, gameQuality * sensitivity / max(9, directOuts)))
+            if HighSchoolGameplayRules.usesInningsWeightedPerformance(state.balanceVersion) {
+                let sample = HighSchoolGameplayRules.performanceSampleOuts
+                performanceScore = rate * min(sample, max(0, recordedOuts)) / sample
+            } else {
+                performanceScore = rate
+            }
         } else {
             performanceScore = gameQuality / (usesV4Balance ? 6 : 4)
         }
@@ -1612,6 +1658,12 @@ public struct HighSchoolCareerEngine: Sendable {
         // 같은 투구가 더 낮은 성적을 만들므로 문턱도 같이 내린다. −9는 실측에서 나온 값이다:
         // 이 자리에서 중립 릴리스 지명률 47% · 거의 완벽 60%로, **오늘(46%/58%)과 같은
         // 결과를 유지하면서** 실력 간격만 넓어진다(§2.8).
+        if HighSchoolGameplayRules.usesChapterLiveOuting(state.balanceVersion) {
+            // v9는 장별 등판으로 직접 이닝이 늘고 성적 항이 그 양에 비례한다.
+            // 40시드에서 문턱 52는 중립 중앙 46 · 완벽 중앙 50 둘 다 아래에 두어
+            // 15%/35%가 됐다. −11(50)은 완벽 군집만 선 위로 올리는 자리다.
+            return legacy - 11
+        }
         if HighSchoolGameplayRules.usesLiveBalanceEvaluation(state.balanceVersion) {
             return legacy - 9
         }
@@ -1664,7 +1716,16 @@ public struct HighSchoolCareerEngine: Sendable {
         let threshold = draftThreshold(state: state)
         // 밴드 경계는 resolveDraft의 라운드 경계와 같다. 경계 ±분산 구간은
         // 정직하게 "당락 경계"라고 말한다 — 예측이 확신을 팔면 안 된다.
-        let bandID = DraftForecastPresentationCatalog.bandID(score: score, threshold: threshold)
+        // 갓 시작한 회차는 아직 공을 던지지 않았다. 능력만으로 문턱에 닿아 있어도
+        // "당락 경계"라고 하면 3년이 쟁취가 아니라 방어가 된다(§2.8).
+        let bandID: DraftForecastBandID
+        if HighSchoolGameplayRules.usesChapterLiveOuting(state.balanceVersion),
+           state.performance.importantGamesCompleted == 0,
+           (state.seasonLog ?? []).isEmpty {
+            bandID = .outside
+        } else {
+            bandID = DraftForecastPresentationCatalog.bandID(score: score, threshold: threshold)
+        }
         let band = DraftForecastPresentationCatalog.descriptor(for: bandID).koreanValue
         let interestedTeam = bestTeam(for: state.pitcher, seed: 0)
         return DraftForecastSnapshot(
@@ -2507,6 +2568,7 @@ public struct HighSchoolCareerEngine: Sendable {
         performance: CareerPerformanceSnapshot? = nil, seasonLog: [ProGameLine]?? = nil, lastTraining: CareerTrainingSnapshot? = nil,
         lastRelationship: CareerRelationshipResultSnapshot? = nil,
         currentGameScenario: ImportantGameScenarioContent? = nil,
+        clearCurrentGameScenario: Bool = false,
         currentRelationshipEvent: CareerEventContent? = nil,
         news: [String]? = nil, fanInterest: Int? = nil, draftResult: DraftResultSnapshot? = nil,
         legacyOptions: [MemoryCardID]? = nil, selectedMemories: [MemoryCardID]? = nil,
@@ -2517,6 +2579,7 @@ public struct HighSchoolCareerEngine: Sendable {
         talent: TalentSnapshot? = nil,
         awakeningSparks: Int?? = nil,
         trainingProgress: CareerTrainingProgressSnapshot?? = nil,
+        chapterGameClaimed: Bool?? = nil,
         stateCommitment: String? = nil
     ) -> HighSchoolCareerSnapshot {
         // 인자가 하나 늘 때마다 이 초기화식의 타입 체크가 지수적으로 무거워진다. 옵셔널
@@ -2541,7 +2604,9 @@ public struct HighSchoolCareerEngine: Sendable {
         let nextFatigue: Int = fatigue ?? state.fatigue
         let nextPerformance: CareerPerformanceSnapshot = performance ?? state.performance
         let nextSeasonLog: [ProGameLine]? = seasonLog ?? state.seasonLog
-        let nextScenario: ImportantGameScenarioContent? = currentGameScenario ?? state.currentGameScenario
+        let nextScenario: ImportantGameScenarioContent? = clearCurrentGameScenario
+            ? nil
+            : (currentGameScenario ?? state.currentGameScenario)
         let nextRelationshipEvent: CareerEventContent? = currentRelationshipEvent ?? state.currentRelationshipEvent
         let nextLastTraining: CareerTrainingSnapshot? = lastTraining ?? state.lastTraining
         let nextLastRelationship: CareerRelationshipResultSnapshot? = lastRelationship ?? state.lastRelationship
@@ -2564,6 +2629,7 @@ public struct HighSchoolCareerEngine: Sendable {
         let nextTalent: TalentSnapshot? = talent ?? state.talent
         let nextAwakeningSparks: Int? = awakeningSparks ?? state.awakeningSparks
         let nextTrainingProgress: CareerTrainingProgressSnapshot? = trainingProgress ?? state.trainingProgress
+        let nextChapterGameClaimed: Bool? = chapterGameClaimed ?? state.chapterGameClaimed
         let nextCommitment: String = stateCommitment ?? state.stateCommitment
         return HighSchoolCareerSnapshot(
             careerID: state.careerID,
@@ -2616,6 +2682,7 @@ public struct HighSchoolCareerEngine: Sendable {
             rebirthEcho: state.rebirthEcho,
             lineageLoadout: state.lineageLoadout,
             trainingProgress: nextTrainingProgress,
+            chapterGameClaimed: nextChapterGameClaimed,
             stateCommitment: nextCommitment)
     }
 
@@ -2769,6 +2836,9 @@ public struct HighSchoolCareerEngine: Sendable {
         // 검증되게 한다. 팔·focusStreak 필드와 같은 조건부 계열이다.
         if let schedule = state.schedule {
             canonical.append("schedule:\(schedule.commitmentToken)")
+        }
+        if state.chapterGameClaimed == true {
+            canonical.append("chapterGame:claimed")
         }
         if let relationship = state.lastRelationship {
             let relationshipValues: [String] = [

@@ -62,7 +62,7 @@ final class CareerPacingTests: XCTestCase {
         XCTAssertEqual(Set(first.map(\.id)).count, first.count)
         XCTAssertEqual(
             HighSchoolPresentation.followUpBatters(seedText: "career-42", count: 99).count,
-            6
+            12
         )
     }
 }

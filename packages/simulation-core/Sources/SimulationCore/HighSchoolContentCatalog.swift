@@ -218,6 +218,18 @@ public enum HighSchoolContentCatalog {
         .init(id: "game-perfect-bid", title: "5회까지 완전", inning: 6, outs: 1, runners: runners(false, false, false, speed: 55), leverage: 780, narrative: "5회까지 한 명도 내보내지 않았습니다. 더그아웃이 조용해졌습니다 — 아무도 그 단어를 입에 올리지 않습니다.", scoreDifferential: 3, minChapter: 4),
         .init(id: "game-backup-catcher", title: "백업 포수와의 승부", inning: 7, outs: 1, runners: runners(true, false, false, speed: 61), leverage: 740, narrative: "주전 포수가 파울 타구에 손가락을 맞아 교체됐습니다. 백업 포수와는 불펜 한 번 맞춰 본 게 전부입니다.", scoreDifferential: 0),
         .init(id: "game-seniors-last", title: "선배들의 마지막", inning: 8, outs: 1, runners: runners(true, true, false, speed: 64), leverage: 890, narrative: "두 점 뒤진 8회. 지면 3학년 선배들의 고교 야구가 오늘로 끝납니다. 더그아웃의 눈이 전부 마운드를 보고 있습니다.", scoreDifferential: -2, minChapter: 2),
-        .init(id: "game-sign-leak", title: "새는 사인", inning: 5, outs: 0, runners: runners(false, true, false, speed: 65), leverage: 720, narrative: "상대 2루 주자가 타자에게 무언가를 전달하는 정황. 사인이 읽히고 있다면, 이제부터는 코스보다 배짱의 승부입니다.", scoreDifferential: -1)
+        .init(id: "game-sign-leak", title: "새는 사인", inning: 5, outs: 0, runners: runners(false, true, false, speed: 65), leverage: 720, narrative: "상대 2루 주자가 타자에게 무언가를 전달하는 정황. 사인이 읽히고 있다면, 이제부터는 코스보다 배짱의 승부입니다.", scoreDifferential: -1),
+        // 장별 정규 등판. minChapter 9라 추첨 풀에 안 들어간다 — claimChapterGame만 이 장면을 쓴다.
+        .init(
+            id: "regular-chapter",
+            title: "정규 경기 선발 등판",
+            inning: 1,
+            outs: 0,
+            runners: runners(false, false, false, speed: 52),
+            leverage: 400,
+            narrative: "1회부터 마운드를 맡습니다. 이 장의 정규 경기입니다.",
+            scoreDifferential: 0,
+            minChapter: 9
+        ),
     ]
 }

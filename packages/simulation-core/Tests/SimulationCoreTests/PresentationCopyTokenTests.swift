@@ -588,7 +588,7 @@ final class PresentationCopyTokenTests: XCTestCase {
 
     func testImportantGamePresentationRegistryCoversAllCurrentScenariosAndFallbacks() throws {
         let scenarios = HighSchoolContentCatalog.scenarios
-        XCTAssertEqual(scenarios.count, 30)
+        XCTAssertEqual(scenarios.count, 31)
         XCTAssertEqual(ImportantGamePresentationCatalog.scenarioIDs, scenarios.map(\.id))
         XCTAssertEqual(
             ImportantGamePresentationCatalog.scenarioDescriptors.count,

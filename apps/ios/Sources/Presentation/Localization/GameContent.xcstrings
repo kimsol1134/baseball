@@ -13091,6 +13091,50 @@
         }
       }
     },
+    "content.important-game.regular-chapter.narrative": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You take the mound from the first inning. This is this chapter's regular game."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1回からマウンドを任されます。今章の公式戦です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1회부터 마운드를 맡습니다. 이 장의 정규 경기입니다."
+          }
+        }
+      }
+    },
+    "content.important-game.regular-chapter.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regular-season start"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公式戦の先発"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정규 경기 선발 등판"
+          }
+        }
+      }
+    },
     "content.karma.erased_memory.detail": {
       "localizations": {
         "en": {

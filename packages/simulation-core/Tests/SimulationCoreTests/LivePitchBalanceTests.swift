@@ -31,7 +31,7 @@ final class LivePitchBalanceTests: XCTestCase {
     /// 고교 8이 연결을 연다. 프로는 아직이다.
     func testTheConnectionIsOpenForSchoolAndStillClosedForPro() {
         XCTAssertEqual(HighSchoolGameplayRules.livePitchBalance(8).arena, .school)
-        XCTAssertEqual(HighSchoolGameplayRules.current, 8)
+        XCTAssertEqual(HighSchoolGameplayRules.current, 9)
         XCTAssertEqual(ProGameplayRules.livePitchBalance(14).arena, .professional)
         XCTAssertEqual(ProGameplayRules.livePitchBalance(ProGameplayRules.current).arena, .legacy)
     }
@@ -52,8 +52,8 @@ final class LivePitchBalanceTests: XCTestCase {
     func testANewCareerIsStampedWithTheCurrentVersion() throws {
         let engine = HighSchoolCareerEngine()
         let started = try engine.start(.init(seed: "918220", presetID: "power_prospect"))
-        XCTAssertEqual(started.snapshot.balanceVersion, 8)
-        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: started.snapshot), 52)
+        XCTAssertEqual(started.snapshot.balanceVersion, 9)
+        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: started.snapshot), 50)
     }
 
     /// 같은 school 곡선인데 **자동 등판은 멀쩡하고 직접 등판은 무너지는가**(§2.5 Step 2).
@@ -107,9 +107,10 @@ final class LivePitchBalanceTests: XCTestCase {
     /// 그냥 숫자만 맞춰 통과시키는 것은 이 검사가 막으려는 바로 그 일이다.
     func testConnectingTheLiveCurveRequiresTheMeasurement() {
         XCTAssertEqual(
-            HighSchoolGameplayRules.current, 8,
-            "고교 current를 올렸다면 §2.8 측정을 마쳤는지 확인하라 — 곡선·감도·문턱은 "
-                + "한 버전에서 같이 움직여야 하고, 기준은 지명률(중립 47% · 거의 완벽 60%)이다"
+            HighSchoolGameplayRules.current, 9,
+            "고교 current를 올렸다면 §2.8 측정을 마쳤는지 확인하라 — 장별 등판과 "
+                + "이닝 가중은 한 버전에서 같이 움직여야 하고, 기준은 지명률"
+                + "(v8 중립 47% · 거의 완벽 60%, 목표 간격 25%p · 중립 15~30%)이다"
         )
         XCTAssertEqual(
             ProGameplayRules.current, 13,

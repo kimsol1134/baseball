@@ -491,10 +491,14 @@ final class PitchSession {
     /// - Parameter delivery: 이 타석을 어떤 손으로 던지는가. 화면의 자동 진행은 늘 중립이고,
     ///   밸런스 하네스만 **실력 있는 손**을 넣어 잰다 — 중립만 재면 못 하는 사람 기준으로만
     ///   난이도를 맞추게 된다(계획 문서 §2.5 Step 4).
+    /// - Parameter refineCall: 포수 1안을 받은 뒤 코스·노림만 고친다. nil이면 포수를 그대로
+    ///   따른다(화면의 자동 진행). 밸런스 하네스가 사람의 코스 선택을 흉내 낼 때만 넘긴다
+    ///   — school 곡선은 한복판을 벌하므로, 포수 추종만 재면 실력의 절반이 빠진다(§2.7).
     @discardableResult
     func fastForwardCurrentBatter(
         maximumPitches: Int = 12,
-        delivery: PitchDelivery = .neutral
+        delivery: PitchDelivery = .neutral,
+        refineCall: ((PitchCall, BatterScoutingSnapshot, PlateAppearanceContext) -> PitchCall)? = nil
     ) -> Int {
         guard case .ready = stage, maximumPitches > 0 else { return 0 }
         let startingBatter = batterIndex
@@ -507,7 +511,8 @@ final class PitchSession {
               pitches - startingPitches < maximumPitches,
               case .ready = stage {
             if let preparation {
-                let call = preparation.primaryRecommendation.call
+                let catcher = preparation.primaryRecommendation.call
+                let call = refineCall?(catcher, scouting, context) ?? catcher
                 selectedPitchType = call.pitchType
                 selectedZone = call.zone
                 selectedIntent = call.zoneIntent
@@ -753,7 +758,19 @@ final class PitchSession {
 
         let inningEnded = snapshot.inningTransition?.inningEnded ?? false
         let reachedCap = batterIndex + 1 >= min(scenario.maximumBatters, scenario.lineup.count)
-        if inningEnded || reachedCap || reachedPitchCap {
+        if inningEnded, scenario.continuesAcrossInnings, !reachedCap, !reachedPitchCap {
+            // 우리 공격 이닝은 건너뛴다. 다음 회 초구부터 다시 던진다.
+            let nextInning = (gameState.inningState?.inning ?? context.inning) + 1
+            gameState = GameStateSnapshot(
+                defense: gameState.defense,
+                park: gameState.park,
+                runners: .empty,
+                runsAllowed: gameState.runsAllowed,
+                inningState: InningStateSnapshot(inning: nextInning, half: .top, outs: 0)
+            )
+            stage = .betweenBatters(snapshot.shortFeedback)
+            preparation = nil
+        } else if inningEnded || reachedCap || reachedPitchCap {
             stage = .finished
             preparation = nil
         } else {

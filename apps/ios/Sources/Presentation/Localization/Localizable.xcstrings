@@ -1698,6 +1698,28 @@
         }
       }
     },
+    "chapter.review.claim-game": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take the regular start"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公式戦に登板"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정규 경기 등판"
+          }
+        }
+      }
+    },
     "chapter.review.continue": {
       "localizations": {
         "en": {

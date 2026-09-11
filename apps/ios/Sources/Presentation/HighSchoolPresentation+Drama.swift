@@ -7,7 +7,10 @@ extension HighSchoolPresentation {
     /// 요청한다. 같은 seed/count는 언제나 같은 타순이라 저장 복구와 재현성이 흔들리지 않는다.
     static func followUpBatters(seedText: String, count: Int = 3) -> [BatterSnapshot] {
         var rng = SplitMix64(seed: seedValue(seedText))
-        let names = ["구본휘", "설재빈", "천유겸", "봉시원", "옥준서", "석다온"]
+        let names = [
+            "구본휘", "설재빈", "천유겸", "봉시원", "옥준서", "석다온",
+            "연시후", "마도윤", "채이안", "표하준", "강누리", "손지호",
+        ]
         var used: Set<String> = []
         return (0..<min(max(0, count), names.count)).map { slot in
             var name = names[rng.nextInt(upperBound: names.count)]

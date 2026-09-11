@@ -127,15 +127,29 @@ final class HighSchoolGameplayRulesTests: XCTestCase {
     ///
     /// v4(66)는 판정식이 실제 리그 수준으로 옮겨 오면서 올린 값이고, v7(61)은 자동 경기가
     /// 어려워진 만큼 되돌린 값이다. v8(52)은 **직접 던지는 공까지** 재조정된 곡선을 쓰면서
-    /// 같은 투구가 더 낮은 성적을 만들기 때문이다 — 실측으로 중립 릴리스 47% · 거의 완벽
-    /// 60%가 나오는 자리다(계획 문서 §2.8).
+    /// 같은 투구가 더 낮은 성적을 만들기 때문이다. v9(50)는 장별 등판으로 직접 이닝이
+    /// 늘고 성적 항이 그 양에 비례하면서, 완벽 군집(중앙 50)만 선 위로 올리는 자리다.
     func testEachVersionsDraftThresholdMatchesItsDifficulty() throws {
         let reference = try startedCareer(rules: HighSchoolGameplayRules.reference).result.snapshot
         let schoolBalance = try startedCareer(rules: 7).result.snapshot
+        let liveBalance = try startedCareer(rules: 8).result.snapshot
         let current = try startedCareer().result.snapshot
         XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: reference), 66)
         XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: schoolBalance), 61)
-        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: current), 52)
+        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: liveBalance), 52)
+        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: current), 50)
+    }
+
+    func testRulesEightStillStartsOnTheBorderlineAndNineStartsOutside() throws {
+        let eight = try startedCareer(rules: 8).result.snapshot
+        let eightForecast = HighSchoolCareerEngine.draftForecast(state: eight)
+        XCTAssertEqual(eightForecast.threshold, 52)
+        XCTAssertEqual(eightForecast.presentation?.bandID, .borderline)
+
+        let nine = try startedCareer().result.snapshot
+        let nineForecast = HighSchoolCareerEngine.draftForecast(state: nine)
+        XCTAssertEqual(nineForecast.threshold, 50)
+        XCTAssertEqual(nineForecast.presentation?.bandID, .outside)
     }
 
     func testChapterGamesStopScalingWithRebirthsUnderSchoolBalance() {

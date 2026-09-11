@@ -598,6 +598,23 @@ final class PitchSessionTests: XCTestCase {
         XCTFail("세션이 끝나지 않았습니다.")
     }
 
+    func testFastForwardRefineCallOverridesTheCatcherZone() {
+        let session = PitchSession(state: snapshot(), seed: "20260911")
+        session.start()
+        let forced = PitchZone(row: 2, column: 0)
+        _ = session.fastForwardCurrentBatter { catcher, _, _ in
+            PitchCall(
+                pitchType: catcher.pitchType,
+                zone: forced,
+                zoneIntent: .chase,
+                intensity: catcher.intensity
+            )
+        }
+        XCTAssertFalse(session.pitchLog.isEmpty)
+        XCTAssertTrue(session.pitchLog.allSatisfy { $0.call.zone == forced })
+        XCTAssertTrue(session.pitchLog.contains { !$0.acceptedRecommendation })
+    }
+
     func testFastForwardUsesCatcherRecommendationsAndStopsAtBatterBoundary() {
         let session = PitchSession(state: snapshot(), seed: "20260725")
         session.start()
