@@ -215,12 +215,12 @@ final class CareerSmokeUITests: XCTestCase {
         let continueControl = assertFinaleContinueControl(app, language: "ja")
         writeQAScreenshot(app, name: "ja-finale.png")
         tapIfPresent(app.buttons["pro.notice.banner.dismiss"])
-        let reviewConfirm = identified(app, "pro.seasonReview.confirm")
-        if reviewConfirm.exists {
-            _ = bringIntoView(reviewConfirm)
-            reviewConfirm.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-        } else {
-            XCTAssertTrue(tapIfPresent(continueControl) || tapIdentified(app, "pro.seasonReview.confirm"))
+        XCTAssertTrue(
+            tapIfPresent(continueControl) || tapSeasonReviewConfirm(app),
+            "終了画面の続行を押せません。見えるボタン: \(visibleIdentifiers(app))"
+        )
+        if identified(app, "pro.postseason.finale").waitForExistence(timeout: 1) {
+            _ = tapSeasonReviewConfirm(app)
         }
         XCTAssertTrue(
             identified(app, "pro.postseason.finale").waitForNonExistence(timeout: timeout)
@@ -479,19 +479,25 @@ final class CareerSmokeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-uiTestIsolatedCareer", "-uiTestResetCareer", "-uiTestRebornFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
-        let proceed = app.buttons["hs.reborn.continue"]
-        XCTAssertTrue(proceed.waitForExistence(timeout: timeout))
-        XCTAssertTrue(proceed.isHittable)
-        XCTAssertTrue(app.buttons["hs.reborn.practice"].isHittable)
+        let proceed = identified(app, "hs.reborn.continue")
+        XCTAssertTrue(
+            proceed.waitForExistence(timeout: timeout) || app.buttons["hs.reborn.continue"].waitForExistence(timeout: 2),
+            "2회차 이어가기 화면이 없습니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
+        XCTAssertTrue(bringIntoView(proceed) || bringIntoView(app.buttons["hs.reborn.continue"]))
+        XCTAssertTrue(proceed.isHittable || app.buttons["hs.reborn.continue"].isHittable)
+        let practice = identified(app, "hs.reborn.practice")
+        XCTAssertTrue(practice.exists || app.buttons["hs.reborn.practice"].exists)
+        XCTAssertTrue(practice.isHittable || app.buttons["hs.reborn.practice"].isHittable)
         let letter = app.descendants(matching: .any).matching(identifier: "hs.previousPlayerLetter").firstMatch
         XCTAssertFalse(letter.exists)
         assertVisibleCopyContainsNoHangul(app, context: "Japanese reborn ready")
         capture(app, name: "loop-reborn-ready-ja")
-        app.buttons["hs.reborn.memories"].tap()
+        XCTAssertTrue(tapIdentified(app, "hs.reborn.memories"))
         XCTAssertTrue(letter.waitForExistence(timeout: timeout))
         XCTAssertTrue(letter.label.contains("前の人生"))
-        XCTAssertTrue(tapIfPresent(app.buttons["hs.reborn.memories"]))
-        XCTAssertTrue(tapIfPresent(proceed))
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.reborn.memories"]) || tapIdentified(app, "hs.reborn.memories"))
+        XCTAssertTrue(tapIfPresent(proceed) || tapIdentified(app, "hs.reborn.continue"))
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "hs.school.")).firstMatch.waitForExistence(timeout: timeout))
     }
 
@@ -499,9 +505,13 @@ final class CareerSmokeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-uiTestIsolatedCareer", "-uiTestResetCareer", "-uiTestRebornFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
         app.launch()
-        XCTAssertTrue(app.buttons["hs.reborn.practice"].waitForExistence(timeout: timeout))
+        let practice = identified(app, "hs.reborn.practice")
+        XCTAssertTrue(
+            practice.waitForExistence(timeout: timeout) || app.buttons["hs.reborn.practice"].waitForExistence(timeout: 2),
+            "2회차 연습 화면이 없습니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
         capture(app, name: "loop-reborn-ready-ko")
-        app.buttons["hs.reborn.practice"].tap()
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.reborn.practice"]) || tapIdentified(app, "hs.reborn.practice"))
         let pad = windUpPad(app)
         XCTAssertTrue(pad.waitForExistence(timeout: timeout))
         XCTAssertFalse(app.buttons["pitch.throw"].exists)
@@ -1360,27 +1370,51 @@ final class CareerSmokeUITests: XCTestCase {
         )
     }
 
-    /// 실행 전에 simctl content_size를 접근성 최대로 설정해 호출한다.
+    /// 첫 회차 구종 구성은 투수 유형 단계 안의 공개 영역에 있다. 접근성 최대 글자
+    /// 크기에서도 학습·주력 구종과 시작 버튼에 닿아야 한다.
     func testRepertoireSetupAtAccessibilityContentSizeKeepsEveryActionReachable() {
-        let app = launch()
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-uiTestResetCareer",
+            "-uiTestAutoRelease",
+            "-baseball.audio.sound", "NO",
+            "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL",
+            "-AppleLanguages", "(ko)",
+            "-AppleLocale", "ko_KR",
+        ]
+        app.launch()
         dismissOpening(app)
         finishOnboardingBullpenIfNeeded(app, wait: timeout)
         let next = app.buttons["hs.setup.next"]
-        let repertoire = app.descendants(matching: .any)
-            .matching(identifier: "setup.repertoire").firstMatch
+        let start = app.buttons["hs.start"]
         var hops = 0
-        while !repertoire.exists, next.waitForExistence(timeout: 2), hops < 5 {
+        while !start.exists, next.waitForExistence(timeout: 2), hops < 6 {
             next.tap()
             hops += 1
         }
-        XCTAssertTrue(repertoire.waitForExistence(timeout: timeout))
+        let disclosure = identified(app, "hs.setup.repertoire")
+        let repertoire = identified(app, "setup.repertoire")
+        if !app.buttons["setup.pitch.slider"].exists {
+            if disclosure.waitForExistence(timeout: timeout) {
+                _ = bringIntoView(disclosure, attempts: 12)
+                if !repertoire.exists { disclosure.tap() }
+            }
+        }
+        XCTAssertTrue(
+            repertoire.waitForExistence(timeout: timeout)
+                || app.buttons["setup.pitch.slider"].waitForExistence(timeout: timeout),
+            "접근성 글자 크기에서 구종 구성이 없습니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
         for identifier in [
             "setup.pitch.slider", "setup.pitch.curveball", "setup.pitch.changeup",
             "setup.pitch.primary.four_seam",
         ] {
             let action = app.buttons[identifier]
             XCTAssertTrue(action.waitForExistence(timeout: timeout), "접근성 글자 크기에서 \(identifier)가 없습니다.")
-            XCTAssertTrue(bringIntoView(action), "접근성 글자 크기에서 \(identifier)를 누를 수 없습니다.")
+            XCTAssertTrue(
+                bringIntoView(action, attempts: 12),
+                "접근성 글자 크기에서 \(identifier)를 누를 수 없습니다."
+            )
             XCTAssertGreaterThanOrEqual(action.frame.height, 44)
         }
         XCTAssertTrue(bringIntoView(app.buttons["hs.start"]), "접근성 글자 크기에서 시작 버튼에 닿지 못합니다.")

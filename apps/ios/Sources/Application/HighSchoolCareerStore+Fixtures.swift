@@ -73,15 +73,32 @@ extension HighSchoolCareerStore {
         lastSetup = .init(presetID: "precision_commander", playerName: "Alex Han", region: "서울", harshness: "standard", karmas: [], soulDomain: nil,
             startingRepertoire: PitchLearningRules.recommendedSelection(presetID: "precision_commander"), throwingHand: .right)
         resolveDraft()
-        guard state?.phase == .legacy, prepareSignatureLegacyCandidates(), let state,
-              let legacy = signatureLegacyCandidates(for: state).first else { return false }
+        guard state?.phase == .legacy else {
+            loadState = .failed("환생 픽스처가 유산 국면에 도달하지 못했습니다.")
+            return false
+        }
+        guard prepareSignatureLegacyCandidates(), let state,
+              let legacy = signatureLegacyCandidates(for: state).first else {
+            loadState = .failed("환생 픽스처에 대표 유산 후보가 없습니다.")
+            return false
+        }
         selectSignatureLegacy(legacy.id)
         confirmLegacy()
-        guard self.state?.phase == .completed else { return false }
-        guard beginNextLife() else { return false }
+        guard self.state?.phase == .completed else {
+            loadState = .failed("환생 픽스처가 회차를 닫지 못했습니다.")
+            return false
+        }
+        guard beginNextLife() else {
+            loadState = .failed("환생 픽스처가 다음 회차를 열지 못했습니다.")
+            return false
+        }
         pendingRecap = nil
         startQuickRebirth(entryPoint: "qa_fixture")
-        return self.state?.phase == .prologue && self.state?.lifeNumber == 2
+        guard self.state?.phase == .prologue, self.state?.lifeNumber == 2 else {
+            loadState = .failed("환생 픽스처가 2회차 프롤로그에 도달하지 못했습니다.")
+            return false
+        }
+        return true
     }
 #endif
 }

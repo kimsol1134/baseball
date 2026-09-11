@@ -360,6 +360,9 @@ struct BaseballApp: App {
                         _ = pro.deleteCareer()
                         CareerTelemetry.resetCompletedGameCountForUITesting()
                         DailyReminder.resetForUITesting()
+                        // 앞선 테스트가 접어 둔 공개 영역이 다음 실행의 구종 구성·훈련
+                        // 설명을 삼키지 않게, 커리어와 같이 처음 본 상태로 되돌린다.
+                        SeenContentStore.reset()
                         // `previousReturnPlan`은 App 초기화 때 이미 읽힌 값이라 defaults만 지워서는
                         // 이번 화면에 남는다. 메모리 사본도 같은 원자적 초기화에 포함한다.
                         previousReturnPlan = nil

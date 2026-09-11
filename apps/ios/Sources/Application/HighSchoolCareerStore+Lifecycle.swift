@@ -39,7 +39,7 @@ extension HighSchoolCareerStore {
                 schoolID: .miraeAnalytics
             ))
 
-            fixtureLoop: for _ in 0..<100 {
+            fixtureLoop: for _ in 0..<160 {
                 switch fixture.snapshot.phase {
                 case .training:
                     fixture = try fixtureEngine.commitTraining(.init(
@@ -67,7 +67,8 @@ extension HighSchoolCareerStore {
                             runsAllowed: 7,
                             expectedDamage: 1_200,
                             actualDamage: 4_500,
-                            recommendationAccepted: 0
+                            recommendationAccepted: 0,
+                            outs: 3
                         )
                     ))
                 case .awakening:
@@ -84,10 +85,21 @@ extension HighSchoolCareerStore {
                         awakening: awakening
                     ))
                 case .chapterReview:
-                    fixture = try fixtureEngine.advanceChapter(.init(
-                        seed: fixture.nextSeed,
-                        state: fixture.snapshot
-                    ))
+                    // 고교 9는 장 결산에서 정규 등판을 직접 던진다. 건너뛰면 자동 두 경기가
+                    // 성적 항에 남아 당락 문턱 50을 넘고, 미지명 픽스처가 지명으로 바뀐다.
+                    if HighSchoolGameplayRules.usesChapterLiveOuting(fixture.snapshot.balanceVersion),
+                       fixture.snapshot.chapterGameClaimed != true,
+                       fixture.snapshot.chapter.number < 8 {
+                        fixture = try fixtureEngine.claimChapterGame(.init(
+                            seed: fixture.nextSeed,
+                            state: fixture.snapshot
+                        ))
+                    } else {
+                        fixture = try fixtureEngine.advanceChapter(.init(
+                            seed: fixture.nextSeed,
+                            state: fixture.snapshot
+                        ))
+                    }
                 case .draft:
                     break fixtureLoop
                 case .legacy, .completed:

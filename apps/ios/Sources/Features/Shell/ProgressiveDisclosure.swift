@@ -154,6 +154,7 @@ struct ProgressiveDisclosure<Detail: View>: View {
                 }
             }
         }
+        .accessibilityIdentifier(contentID)
         .accessibilityLabel(copyResolver.resolve(
             expanded
                 ? MetaUICopyKey.disclosureAccessibilityExpanded
