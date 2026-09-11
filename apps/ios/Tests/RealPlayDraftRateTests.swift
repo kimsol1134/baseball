@@ -22,6 +22,10 @@ final class RealPlayDraftRateTests: XCTestCase {
         let drafted: Bool
         let evaluation: Int
         let threshold: Int
+        /// 드래프트 평가의 경기 성적 항. 코어와 같은 산식을 공개 데이터로 다시 계산한다 —
+        /// **클램프에 걸려 있는지**를 보기 위해서다(§2.5 Step 3).
+        let rawPerformance: Int
+        let clampedPerformance: Int
         /// 이 회차에서 **직접 던진** 경기들의 합. 지명 여부 하나로는 어느 축이 움직였는지
         /// 알 수 없다 — 손잡이를 고르려면 이 표가 있어야 한다(§2.5 Step 1).
         let pitching: PitchingTotals
@@ -92,7 +96,9 @@ final class RealPlayDraftRateTests: XCTestCase {
         harshness: DifficultyLevel = .standard,
         /// 라이브 확률식을 강제한다. nil이면 커리어 버전이 고른 값(오늘은 `.legacy`).
         /// 두 곡선을 **같은 하네스로** 재기 위한 것이지 운영 경로를 바꾸지 않는다(§2.5).
-        forcedBalance: PitchBalanceRules? = nil
+        forcedBalance: PitchBalanceRules? = nil,
+        /// 이 사람의 손. 중립(500/500)이 실력 0의 바닥이다(§2.5 Step 4).
+        delivery: PitchDelivery = .neutral
     ) throws -> RunOutcome? {
         var pitching = PitchingTotals()
         let engine = HighSchoolCareerEngine()
@@ -143,7 +149,7 @@ final class RealPlayDraftRateTests: XCTestCase {
                 // 화면에서 한 구씩 누를 때와 같은 경로. 중립 릴리스라 손 실력은 0이다.
                 for _ in 0..<12 {
                     if case .ready = session.stage {
-                        session.fastForwardCurrentBatter()
+                        session.fastForwardCurrentBatter(delivery: delivery)
                     }
                     if case .betweenBatters = session.stage {
                         session.advanceToNextBatter()
@@ -168,10 +174,19 @@ final class RealPlayDraftRateTests: XCTestCase {
                 result = try engine.resolveDraft(.init(seed: result.nextSeed, state: state))
                 let draft = try XCTUnwrap(result.snapshot.draftResult)
                 let forecast = HighSchoolCareerEngine.draftForecast(state: state)
+                // 코어의 v5+ 산식과 같은 계산(HighSchoolCareer.draftEvaluationCore):
+                // gameQuality = K*4 − BB*2 − R*2, 이닝당으로 나눈 뒤 ±6으로 자른다.
+                let performance = state.performance
+                let quality = performance.strikeouts * 4 - performance.walks * 2
+                    - performance.runsAllowed * 2
+                let outs = performance.outs ?? 0
+                let raw = outs == 0 ? 0 : quality * 3 / max(9, outs)
                 return RunOutcome(
                     drafted: draft.outcome == .drafted,
                     evaluation: draft.evaluationScore,
                     threshold: forecast.threshold,
+                    rawPerformance: raw,
+                    clampedPerformance: min(6, max(-6, raw)),
                     pitching: pitching
                 )
             case .legacy, .completed:
@@ -255,6 +270,79 @@ final class RealPlayDraftRateTests: XCTestCase {
                 + "평가 \(sorted.first ?? 0)/\(sorted[max(0, sorted.count / 2)])/\(sorted.last ?? 0)")
             XCTAssertGreaterThan(totals.games, 0, "\(name): 직접 던진 경기가 없습니다")
             XCTAssertGreaterThan(totals.outs, 0, "\(name): 아웃이 하나도 기록되지 않았습니다")
+        }
+    }
+
+    /// **평가가 실력을 듣고 있는가**(§2.5 Step 3).
+    ///
+    /// 사다리에서 school 곡선의 평가 중앙값이 실력과 무관하게 55~56으로 고정됐다. 원인을
+    /// 추론하지 않고 잰다 — 경기 성적 항이 ±6 클램프의 **바닥에 붙어 있으면** 실력이 아무리
+    /// 늘어도 점수가 움직일 수 없다.
+    func testWhetherTheDraftEvaluationStillHearsSkill() throws {
+        let seeds = (1...16).map(String.init)
+        for (curveName, balance) in [
+            ("legacy", PitchBalanceRules.legacy),
+            ("school", PitchBalanceRules.school),
+        ] {
+            for (handName, accuracy) in [("중립 500", 500), ("거의 완벽 950", 950)] {
+                var raws: [Int] = []
+                var clamped: [Int] = []
+                for seed in seeds {
+                    guard let outcome = try playOneCareer(
+                        seed: seed, policy: .sensible, forcedBalance: balance,
+                        delivery: PitchDelivery(releaseAccuracy: accuracy, aimAccuracy: accuracy)
+                    ) else { continue }
+                    raws.append(outcome.rawPerformance)
+                    clamped.append(outcome.clampedPerformance)
+                }
+                let saturated = clamped.count { $0 <= -6 || $0 >= 6 }
+                print(String(
+                    format: "[eval] %@ · %@ — 원값 중앙 %d (범위 %d~%d) · 자른 값 중앙 %d · 클램프에 붙은 회차 %d/%d",
+                    curveName, handName,
+                    raws.sorted()[raws.count / 2], raws.min() ?? 0, raws.max() ?? 0,
+                    clamped.sorted()[clamped.count / 2], saturated, clamped.count
+                ))
+            }
+        }
+    }
+
+    /// **실력이 보상받는 폭**(§2.5 Step 4).
+    ///
+    /// 지금까지의 모든 측정은 중립 릴리스 — 타이밍도 조준도 하나도 못 맞히는 사람이다.
+    /// 그 한 점만 보고 난이도를 정하면 **못 하는 사람 기준으로 게임을 맞추게 된다.**
+    /// 손이 좋아질수록 결과가 좋아지는지, 얼마나 좋아지는지를 사다리로 잰다.
+    ///
+    /// 이 간격이 곧 투구 슬라이더의 존재 이유다(AGENTS.md 투구 조작 불변 규칙).
+    func testSkillLadderOnBothCurves() throws {
+        let seeds = (1...24).map(String.init)
+        for (curveName, balance) in [
+            ("legacy", PitchBalanceRules.legacy),
+            ("school", PitchBalanceRules.school),
+        ] {
+            for (handName, accuracy) in [
+                ("중립 500", 500), ("보통 700", 700), ("능숙 850", 850), ("거의 완벽 950", 950),
+            ] {
+                var totals = PitchingTotals()
+                var drafted = 0
+                var evaluations: [Int] = []
+                for seed in seeds {
+                    guard let outcome = try playOneCareer(
+                        seed: seed, policy: .sensible, forcedBalance: balance,
+                        delivery: PitchDelivery(releaseAccuracy: accuracy, aimAccuracy: accuracy)
+                    ) else { continue }
+                    totals = totals + outcome.pitching
+                    evaluations.append(outcome.evaluation)
+                    if outcome.drafted { drafted += 1 }
+                }
+                let sorted = evaluations.sorted()
+                print(String(
+                    format: "[skill] %@ · %@ — 지명 %d/%d · 평가 중앙 %d · K/9 %.2f · BB/9 %.2f · R/9 %.2f · WHIP %.2f",
+                    curveName, handName, drafted, evaluations.count,
+                    sorted.isEmpty ? 0 : sorted[sorted.count / 2],
+                    totals.per9(totals.strikeouts), totals.per9(totals.walks),
+                    totals.per9(totals.runsAllowed), totals.whip
+                ))
+            }
         }
     }
 

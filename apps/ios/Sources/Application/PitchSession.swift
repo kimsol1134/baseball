@@ -488,8 +488,14 @@ final class PitchSession {
     /// 코어를 우회하거나 결과를 미리 만들지 않는다. 화면에서 한 구씩 누를 때와 같은
     /// `preparePitch → submitPitch` 경로를 그대로 반복하며, 타석 종료/이닝 종료에서 멈춘다.
     /// 호출자가 저위험 상황에만 버튼을 노출하므로 승부처는 계속 직접 던진다.
+    /// - Parameter delivery: 이 타석을 어떤 손으로 던지는가. 화면의 자동 진행은 늘 중립이고,
+    ///   밸런스 하네스만 **실력 있는 손**을 넣어 잰다 — 중립만 재면 못 하는 사람 기준으로만
+    ///   난이도를 맞추게 된다(계획 문서 §2.5 Step 4).
     @discardableResult
-    func fastForwardCurrentBatter(maximumPitches: Int = 12) -> Int {
+    func fastForwardCurrentBatter(
+        maximumPitches: Int = 12,
+        delivery: PitchDelivery = .neutral
+    ) -> Int {
         guard case .ready = stage, maximumPitches > 0 else { return 0 }
         let startingBatter = batterIndex
         let startingPitches = pitches
@@ -508,8 +514,8 @@ final class PitchSession {
                 selectedIntensity = call.intensity
             }
             throwPitch(
-                delivery: .neutral,
-                automaticRelease: true,
+                delivery: delivery,
+                automaticRelease: delivery.isNeutral,
                 countsForPitchLearning: false
             )
         }
