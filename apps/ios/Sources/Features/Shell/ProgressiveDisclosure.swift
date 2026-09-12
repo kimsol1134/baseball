@@ -153,17 +153,21 @@ struct ProgressiveDisclosure<Detail: View>: View {
                     Text(verbatim: summary).detailStyle().multilineTextAlignment(.leading)
                 }
             }
+            // 라벨·힌트는 여는 손잡이에만 붙인다. `DisclosureGroup` 전체에 붙이면 펼친 본문의
+            // 자식 요소마다 같은 라벨이 전파돼, VoiceOver가 내용 대신 제목만 되풀이한다
+            // (시즌 결산에서 네 줄이 전부 "팬 지지 변화 이유"로 읽혔다 — QA 2026-09-12 F-07).
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(copyResolver.resolve(
+                expanded
+                    ? MetaUICopyKey.disclosureAccessibilityExpanded
+                    : MetaUICopyKey.disclosureAccessibilityCollapsed,
+                arguments: [.userText(title)]
+            ))
+            .accessibilityHint(copyResolver.resolve(
+                expanded ? MetaUICopyKey.disclosureHintCollapse : MetaUICopyKey.disclosureHintExpand
+            ))
         }
         .accessibilityIdentifier(contentID)
-        .accessibilityLabel(copyResolver.resolve(
-            expanded
-                ? MetaUICopyKey.disclosureAccessibilityExpanded
-                : MetaUICopyKey.disclosureAccessibilityCollapsed,
-            arguments: [.userText(title)]
-        ))
-        .accessibilityHint(copyResolver.resolve(
-            expanded ? MetaUICopyKey.disclosureHintCollapse : MetaUICopyKey.disclosureHintExpand
-        ))
         .onAppear {
             guard !appeared else { return }
             appeared = true

@@ -63,9 +63,15 @@ struct DeliveryControl: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.dynamicTypeSize) private var typeSize
     /// 접근성 글자 크기에서 안내 문구가 커지면 92pt 고정 패드 안에서 겹친다 —
     /// 패드가 글자를 따라 자란다(3차 패널 P1, Dynamic Type).
     @ScaledMetric(relativeTo: .body) private var padHeight: CGFloat = 92
+    /// 패드 높이의 상한. 접근성 글자에서 그대로 두면 200pt까지 자라 화면의 절반을 먹고,
+    /// 구종 줄과 구속 행이 스크롤 밖으로 밀려난다(QA 2026-09-12 F-06). 140pt면 손가락에
+    /// 넉넉하면서 본문이 남는다.
+    private static let maximumPadHeight: CGFloat = 140
+    private var clampedPadHeight: CGFloat { min(padHeight, Self.maximumPadHeight) }
     @State private var heldCommandRating = PitchReleaseWindow.baselineCommand
     @State private var isPressing = false
     @State private var meter: Double = 0
@@ -105,10 +111,16 @@ struct DeliveryControl: View {
         return reduceMotion ? seconds * 1.5 : seconds
     }
 
+    /// 미터 속도 변화가 손에 잡히기 시작하는 피로. 20이면 왕복이 약 5% 빨라진다.
+    private static let fatigueTempoThreshold = 20
+
     private var tempoLabel: String {
         let tempo = sweepSeconds <= 0.90 ? copyResolver.resolve(.deliveryTempoFast)
             : sweepSeconds >= 1.06 ? copyResolver.resolve(.deliveryTempoSlow) : copyResolver.resolve(.deliveryTempoNormal)
-        return copyResolver.resolve(.localizable(fatigue > 0 ? "loop.meter.tired" : "loop.meter.rested"), arguments: [.userText(tempo)])
+        // 피로 1에서 미터가 빨라지는 폭은 5ms다 — 읽을 수 없는 차이를 "피로 영향"이라고
+        // 부르면 라벨이 거짓말이 된다(QA 2026-09-12 F-13a). 실제로 손에 잡히는 구간부터 말한다.
+        let meterAffected = fatigue >= Self.fatigueTempoThreshold
+        return copyResolver.resolve(.localizable(meterAffected ? "loop.meter.tired" : "loop.meter.rested"), arguments: [.userText(tempo)])
     }
 
     /// 조준을 최대로 흔들 수 있는 반경(pt). 이 거리에서 aimAccuracy가 0이 된다.
@@ -158,16 +170,28 @@ struct DeliveryControl: View {
 
     private var manual: some View {
         VStack(spacing: 10) {
-            HStack {
-                Text(verbatim: copyResolver.resolve(
-                    .localizable("control.window.title")
-                ))
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                Spacer(minLength: 0)
-                Text(verbatim: tempoLabel)
-                    .font(.caption.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(BaseballTheme.milestone)
+            // 큰 글씨에서 두 문구가 한 줄을 나눠 쓰면 둘 다 "제구 · 안정…"으로 잘려
+            // 릴리스 창을 읽을 수 없었다(QA 2026-09-12 F-06). 좁으면 세로로 쌓는다.
+            let windowTitle = Text(verbatim: copyResolver.resolve(.localizable("control.window.title")))
+                .font(.caption.weight(.bold))
+                .foregroundStyle(BaseballTheme.textSecondary)
+            let tempo = Text(verbatim: tempoLabel)
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(BaseballTheme.milestone)
+            Group {
+                if typeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 2) {
+                        windowTitle.fixedSize(horizontal: false, vertical: true)
+                        tempo.fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HStack {
+                        windowTitle
+                        Spacer(minLength: 0)
+                        tempo
+                    }
+                }
             }
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("pitch.releaseTempo")
@@ -252,14 +276,14 @@ struct DeliveryControl: View {
                     .foregroundStyle(onTarget && inPerfectBand ? BaseballTheme.milestone
                                      : onTarget && inSweetSpot ? BaseballTheme.action
                                      : BaseballTheme.textSecondary)
-                    .offset(y: padHeight * 0.39)
+                    .offset(y: clampedPadHeight * 0.39)
             } else {
                 Text(verbatim: copyResolver.resolve(showHoldHint ? .deliveryHoldLonger : .deliveryHold))
                     .font(.headline)
                     .foregroundStyle(BaseballTheme.actionInk)
             }
         }
-        .frame(height: padHeight)
+        .frame(height: clampedPadHeight)
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)

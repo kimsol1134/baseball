@@ -14,6 +14,7 @@ import BaseballIOSDomain
 struct ScoreboardBar: View {
     let session: PitchSession
     @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     /// 점수 차를 읽는 말. 부호만으로는 어느 쪽이 앞서는지 헷갈린다.
     private var scoreText: String {
@@ -63,10 +64,13 @@ struct ScoreboardBar: View {
                     language: copyResolver.language
                 ))
                     .font(BaseballType.annotation.weight(.heavy))
-                    // 스코어보드는 한 줄 고정이다. 긴 로케일·큰 글자에서 상황 문구가
-                    // 옆 요소를 밀어 화면 밖으로 나가느니 줄여서라도 한 줄에 남긴다.
-                    .lineLimit(1)
+                    // 스코어보드는 한 줄 고정이다. 긴 로케일에서 상황 문구가 옆 요소를 밀어
+                    // 화면 밖으로 나가느니 줄여서라도 한 줄에 남긴다. 다만 접근성 글자에서는
+                    // 0.7로 줄여도 "0アウト…"로 잘려 주자 상황을 못 읽었다(QA 2026-09-12 F-06) —
+                    // 그 크기에서는 한 줄을 포기하고 두 줄까지 허용한다.
+                    .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                     .minimumScaleFactor(0.7)
+                    .fixedSize(horizontal: false, vertical: true)
                     .foregroundStyle(session.gameState.runners.firstOccupied
                                      || session.gameState.runners.secondOccupied
                                      || session.gameState.runners.thirdOccupied
@@ -99,6 +103,8 @@ struct ScoreboardBar: View {
                     ]))
                 .font(BaseballType.detail.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textTertiary)
+                // 이번 등판 줄은 접근성 글자에서 "0回・0K・0BB・0R・…"로 잘렸다. 줄바꿈을 허용한다.
+                .fixedSize(horizontal: false, vertical: true)
             }
             // 삼진 현수막 — 고교야구 백스톱에 K가 한 장씩 걸리듯 쌓인다.
             // 숫자 "3K"는 정보고, K·K·K는 자랑이다. 하나 잡을 때마다 줄이 자란다.

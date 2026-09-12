@@ -532,19 +532,41 @@ struct PitchView: View {
         .clipped()
 
         if let result = session.lastResult, showsLastPitch || session.stage != .ready {
-            HStack(alignment: .center, spacing: 8) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(verbatim: PitchCopy.localized(result.snapshot.outcome,
-                        battedBall: result.snapshot.battedBall, resolver: copyResolver))
-                        .font(.title3.weight(.bold))
-                    if let verdict = session.lastDelivery.flatMap({ DeliveryControl.localizedVerdict($0, resolver: copyResolver) }) {
-                        EffectChip(text: verdict.text, tone: chipTone(for: verdict.tone))
+            let outcomeText = Text(verbatim: PitchCopy.localized(result.snapshot.outcome,
+                battedBall: result.snapshot.battedBall, resolver: copyResolver))
+                .font(.title3.weight(.bold))
+            let detailButton = Button(copyResolver.resolve(.localizable("mobile.core.details"))) {
+                coreDetail = .result
+            }
+                .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                .accessibilityIdentifier("pitch.resultDetails")
+            let verdictChip = session.lastDelivery
+                .flatMap { DeliveryControl.localizedVerdict($0, resolver: copyResolver) }
+            // 접근성 글자에서는 결과 문구가 한 줄을 다 먹어 "자세히"가 5pt까지 찌그러졌다
+            // (QA 2026-09-12 F-06). 폭을 강제하면 카드가 화면보다 넓어지므로, 그 크기에서는
+            // 나란히 두기를 포기하고 아래로 내린다.
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 6) {
+                        outcomeText.fixedSize(horizontal: false, vertical: true)
+                        if let verdictChip {
+                            EffectChip(text: verdictChip.text, tone: chipTone(for: verdictChip.tone))
+                        }
+                        detailButton
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HStack(alignment: .center, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            outcomeText
+                            if let verdictChip {
+                                EffectChip(text: verdictChip.text, tone: chipTone(for: verdictChip.tone))
+                            }
+                        }
+                        Spacer(minLength: 4)
+                        detailButton
                     }
                 }
-                Spacer(minLength: 4)
-                Button(copyResolver.resolve(.localizable("mobile.core.details"))) { coreDetail = .result }
-                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
-                    .accessibilityIdentifier("pitch.resultDetails")
             }
             .foregroundStyle(BaseballTheme.textPrimary)
         }

@@ -236,7 +236,7 @@ struct AppShell: View {
             isOnboarding: hidesTabBarForOnboarding,
             hasPitchSession: highSchool.pitchSession != nil,
             hasTutorialSession: highSchool.tutorialSession != nil
-        ) || Self.isChoicePhase(highSchool.state?.phase)
+        ) || Self.hidesFloatingTabBarForPhase(highSchool.state?.phase)
     }
 
     private var hidesCareerTabBar: Bool {
@@ -332,9 +332,13 @@ struct AppShell: View {
     /// 학교·관계·각성처럼 카드 하나를 골라야 넘어가는 국면에는 탭 바를 감춘다.
     /// 페르소나 플레이테스트에서 목표 카드 아래쪽을 누르면 떠 있는 탭 바의 '프로' 탭이
     /// 먼저 먹어 프로 허브로 튕겼고, 학교 카드는 탭 바 위로 한 줄만 보였다(2026-09-03 보고서 §2-1).
-    static func isChoicePhase(_ phase: HighSchoolCareerPhase?) -> Bool {
+    ///
+    /// 장 정산도 같은 성격이다 — 읽고 한 번 누르고 넘어가는 화면인데, 주 버튼 "다음 이야기로"가
+    /// 떠 있는 탭 바(y 791~874) 아래에 놓여 초록이 비쳐 보이고 그 자리를 누르면 기록 탭이
+    /// 먼저 먹었다(QA 2026-09-12 F-02). 고교 8장마다 지나가는 화면이라 빈도가 높다.
+    static func hidesFloatingTabBarForPhase(_ phase: HighSchoolCareerPhase?) -> Bool {
         switch phase {
-        case .schoolSelection, .relationship, .awakening: true
+        case .schoolSelection, .relationship, .awakening, .chapterReview: true
         default: false
         }
     }

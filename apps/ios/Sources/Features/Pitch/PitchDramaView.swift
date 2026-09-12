@@ -647,7 +647,12 @@ struct PitchDramaView: View {
     }
 
     /// 결과 한 단어. 이 장면이 무엇이었는지 3초 안에 읽히게 한다.
+    ///
+    /// 도장이 찍히는 판정(루킹 스트라이크·볼)에는 그리지 않는다. 도장이 곧 그 결과이고,
+    /// 둘 다 캔버스 위쪽에 앉아 글자가 정면으로 겹쳐 깨져 보였다(QA 2026-09-12 F-01).
+    /// 전체 문구는 캔버스 아래 결과 카드 제목이 이미 말한다 — 같은 말이 세 번이었다.
     private func drawVerdict(context: GraphicsContext, size: CGSize) {
+        guard callStampLabel == nil else { return }
         guard verdictFlash > 0 else { return }
         let scale = min(size.width / Self.pitchBox.width, size.height / Self.pitchBox.height)
         let text = Text(PitchCopy.localized(outcome, battedBall: battedBall, resolver: copyResolver))

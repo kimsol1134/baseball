@@ -281,6 +281,12 @@ struct HighSchoolCareerView: View {
     @State private var optionalPledgeCareerID: String?
     @State private var dismissedArmHealth = false
     @State private var dismissedSummary: String?
+    /// 성장 카드가 태어난 국면. 국면이 바뀌면 카드도 같이 사라진다.
+    ///
+    /// `pendingGains`는 "닫기"로만 비워져서, 훈련 뒤 뜬 카드가 각성·정규 경기·다음 장까지
+    /// 따라다녔다. 그 사이 각성과 경기로 능력이 바뀌어 같은 화면 능력표와 숫자가 어긋났다
+    /// (QA 2026-09-12 F-09). 태어난 국면 안에서는 그대로 두고, 벗어나면 접는다.
+    @State private var growthNoticePhase: HighSchoolCareerPhase?
 
     /// 관계 국면에서는 선택지가 뉴스·버즈보다 먼저다(페르소나 보고서 §2-2). 다른
     /// 국면에서는 예전대로 주 행동 위에 둔다.
@@ -565,6 +571,17 @@ struct HighSchoolCareerView: View {
                     draftLegacyStep = 0
                     dismissedArmHealth = false
                     dismissedSummary = nil
+                    growthNoticePhase = nil
+                }
+                // 성장이 붙은 국면을 기억해 둔다. 성장과 국면 전환이 같은 갱신에서 오면
+                // (마지막 훈련이 장을 끝내는 경우) 새 국면이 그대로 기준이 되어 카드가 보인다.
+                .onChange(of: career.pendingGains.count) { _, count in
+                    growthNoticePhase = count > 0 ? career.state?.phase : nil
+                }
+                .onChange(of: state.phase) { _, current in
+                    guard let anchor = growthNoticePhase, anchor != current else { return }
+                    career.acknowledgeGains()
+                    growthNoticePhase = nil
                 }
                 // 스크롤 콘텐츠가 상태바 밑을 그대로 지나면 시계와 제목이 겹친다(QA P2-3).
                 .topStatusScrim()
@@ -631,7 +648,10 @@ struct HighSchoolCareerView: View {
         if career.result?.armHealthReceipt != nil, !dismissedArmHealth { return .armHealth }
         if career.trainingReceipt != nil { return .trainingResult }
         if career.pendingBloom != nil { return .bloom }
-        if !career.pendingGains.isEmpty { return .growth }
+        if !career.pendingGains.isEmpty,
+           growthNoticePhase == nil || growthNoticePhase == career.state?.phase {
+            return .growth
+        }
         if let state = career.state, state.phase == .prologue, state.lifeNumber > 1 { return nil }
         if let summary = career.lastSummary, dismissedSummary != summary { return .summary }
         return nil
