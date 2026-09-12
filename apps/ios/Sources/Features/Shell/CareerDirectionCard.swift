@@ -268,6 +268,18 @@ struct SeasonArcBar: View {
 }
 
 /// 상태 한 칸. 큰 숫자가 주인공이라 `StatTile`을 그대로 쓴다.
+struct AdaptiveMetricRow<Content: View>: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: 10))
+        layout { content }
+    }
+}
+
 struct Metric: View {
     let title: String
     let value: String

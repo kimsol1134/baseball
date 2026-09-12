@@ -537,6 +537,7 @@ struct LegacyCard: View {
                                 Text(copy.title)
                                     .font(.subheadline.weight(.heavy))
                                     .foregroundStyle(BaseballTheme.textPrimary)
+                                    .fixedSize(horizontal: false, vertical: true)
                                 // localization-safe: resolved-copy
                                 // localization-safe: resolved-copy
                                 Text(copy.evidence)
@@ -601,6 +602,7 @@ struct LegacyCard: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 // localization-safe: resolved-copy
                                 Text(copy.title).font(.subheadline.weight(.bold))
+                                    .fixedSize(horizontal: false, vertical: true)
                                 // localization-safe: resolved-copy
                                 Text(copy.detail).detailStyle()
                             }

@@ -4,6 +4,136 @@ import BaseballIOSDomain
 
 extension MobileCareerStore {
 #if DEBUG
+    /// Two completed seasons plus a populated third season, using the unmodified engines.
+    /// Unlike the old screenshot fixtures, every total, earned run and replay comes from play.
+    static func populatedProFixture(
+        stoppingAt target: ProCareerPhase = .seasonReview
+    ) throws -> (result: ProCareerResult, replays: [AlbumReplay]) {
+        let engine = ProCareerEngine(journeyEnabled: AppFeatureConfiguration.production.proCareerJourneyV1)
+        let preset = PitcherPresetCatalog.all[1]
+        var result = try CareerBootstrap.startCareer(
+            preset: preset, playerName: "민서준", seed: 202_609_12,
+            startingRepertoire: PitchLearningRules.recommendedSelection(presetID: preset.id),
+            engine: engine
+        )
+        var replays: [AlbumReplay] = []
+        for _ in 0..<400 {
+            let state = result.snapshot
+            if state.season >= 3, state.phase == target,
+               target != .weeklyPlan || state.currentStats.games > 0 {
+                return (result, replays)
+            }
+            switch state.phase {
+            case .contractOffer:
+                guard let market = state.journeyState?.pendingContractMarket,
+                      let offer = market.offers.first else {
+                    throw SimulationError.invalidProCareer("populated fixture: missing contract")
+                }
+                result = try engine.acceptContract(.init(
+                    seed: result.nextSeed, state: state, expectedRevision: state.revision,
+                    marketID: market.id, offerID: offer.id, ambition: .franchiseIcon
+                ))
+            case .weeklyPlan:
+                result = try engine.planWeek(.init(
+                    seed: result.nextSeed, state: state,
+                    plan: state.fatigue > 30 ? .recover : .refineCommand
+                ))
+            case .seasonDecision:
+                guard let decision = state.pendingDecision, let choice = decision.choices.first else {
+                    throw SimulationError.invalidProCareer("populated fixture: missing decision")
+                }
+                result = try engine.applySeasonDecision(.init(
+                    seed: result.nextSeed, state: state, decisionID: decision.id, choiceID: choice.id
+                ))
+            case .importantGame:
+                if !canBeginImportantGame(state) {
+                    result = try engine.choosePostseasonAvailability(.init(
+                        seed: result.nextSeed, state: state, choice: .restForDecider
+                    ))
+                    continue
+                }
+                let sessionSeed = advanced(result.nextSeed)
+                let session = PitchSession(state: state, seed: sessionSeed)
+                session.replaySeason = state.season
+                session.replayWeek = state.week
+                session.replayOutingNumber = (state.gameLines?.count ?? 0) + 1
+                session.start()
+                for _ in 0..<240 {
+                    if session.stage == .finished { break }
+                    switch session.stage {
+                    case .ready:
+                        session.acceptCatcherRecommendation()
+                        session.throwPitch(delivery: .init(releaseAccuracy: 1000, aimAccuracy: 1000))
+                    case .betweenBatters:
+                        session.advanceToNextBatter()
+                    default:
+                        throw SimulationError.invalidProCareer("populated fixture: pitch session failed")
+                    }
+                }
+                guard session.stage == .finished else {
+                    throw SimulationError.invalidProCareer("populated fixture: inning bound exceeded")
+                }
+                for replay in session.capturedReplays {
+                    replays = AlbumReplayRules.appending(replay, to: replays)
+                }
+                result = try engine.resolveImportantGame(.init(
+                    seed: sessionSeed, state: state, report: session.report(scenarioNumber: state.week)
+                ))
+            case .seasonReview:
+                result = try engine.reviewSeason(.init(seed: result.nextSeed, state: state))
+            case .seasonSettlement:
+                guard let settlement = state.journeyState?.lastSettlement else {
+                    throw SimulationError.invalidProCareer("populated fixture: missing settlement")
+                }
+                result = try engine.acknowledgeSettlement(.init(
+                    seed: result.nextSeed, state: state, expectedRevision: state.revision,
+                    settlementID: settlement.id
+                ))
+            case .offseasonDecision, .retirementDecision:
+                result = try engine.chooseOffseason(.init(
+                    seed: result.nextSeed, state: state,
+                    decision: target == .completed && state.season >= 3 ? .retire : .continueCareer,
+                    expectedRevision: state.revision
+                ))
+            case .offseasonInvestment:
+                result = try engine.chooseInvestment(.init(
+                    seed: result.nextSeed, state: state, expectedRevision: state.revision,
+                    investment: .none
+                ))
+            case .nationalTeamCall:
+                result = try engine.respondToNationalTeamCall(.init(
+                    seed: result.nextSeed, state: state, accepted: false
+                ))
+            default:
+                throw SimulationError.invalidProCareer("populated fixture: unexpected phase \(state.phase.rawValue)")
+            }
+        }
+        throw SimulationError.invalidProCareer("populated fixture: career bound exceeded")
+    }
+
+    @discardableResult
+    func installPopulatedProFixtureForUITesting(stoppingAt target: ProCareerPhase = .seasonReview) -> Bool {
+        do {
+            let fixture = try Self.populatedProFixture(stoppingAt: target)
+            updatePersisted {
+                $0.result = fixture.result
+                $0.replays = fixture.replays
+                $0.gameResume = nil
+                $0.sourceHighSchoolCareerID = nil
+                $0.careerOrigin = .direct
+            }
+            selectedPlan = nil
+            pendingGains = []
+            lastSummary = nil
+            loadState = .ready
+            return save()
+        } catch {
+            NSLog("[fixture] populated pro failed: %@", String(describing: error))
+            loadState = .failed(error.localizedDescription)
+            return false
+        }
+    }
+
     /// 프로 1시즌 6주차 결정 대기.
     ///
     /// `CareerBootstrap.startCareer`로 고정 시드 스냅샷을 만든 뒤, 주차·국면·pending

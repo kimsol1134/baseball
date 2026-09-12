@@ -619,6 +619,7 @@ enum ProUICopyKey: String, CaseIterable, Sendable {
     case leagueAutumnCut = "league.standings.autumn-cut"
     case leagueTeam = "league.standings.team"
     case leagueHeader = "league.standings.header"
+    case leagueGamesBehindAccessibility = "league.standings.games-behind-accessibility"
     case leagueStandingAccessibility = "league.standings.accessibility"
     case leaguePitchersTitle = "league.pitchers.title"
     case leagueSort = "league.pitchers.sort"

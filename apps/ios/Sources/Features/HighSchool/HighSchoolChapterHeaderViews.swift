@@ -97,7 +97,7 @@ struct ChapterHeader: View {
                                 .detailStyle()
                         }
                     }
-                    HStack(alignment: .top, spacing: 12) {
+                    AdaptiveMetricRow {
                         CorePlayerStat(title: copyResolver.resolve(.localizable("mobile.core.velocity")),
                             value: state.pitcher.profile(for: .fourSeam).map {
                                 GameFormatters.velocity(tenthsKPH: $0.velocityTenthsKPH, language: copyResolver.language)

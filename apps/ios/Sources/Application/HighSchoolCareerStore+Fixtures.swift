@@ -67,7 +67,7 @@ extension HighSchoolCareerStore {
     }
     /// Uses ordinary engine/store transitions to create a disposable returning-life UI fixture.
     @discardableResult
-    func installRebornFixtureForUITesting() -> Bool {
+    func installRebornFixtureForUITesting(stopAtLegacy: Bool = false) -> Bool {
         guard installUndraftedDraftFixtureForUITesting() else { return false }
         updatePersisted { $0.signatureLegacyRulesVersion = Self.currentSignatureLegacyRulesVersion }
         lastSetup = .init(presetID: "precision_commander", playerName: "Alex Han", region: "서울", harshness: "standard", karmas: [], soulDomain: nil,
@@ -77,6 +77,7 @@ extension HighSchoolCareerStore {
             loadState = .failed("환생 픽스처가 유산 국면에 도달하지 못했습니다.")
             return false
         }
+        if stopAtLegacy { return true }
         guard prepareSignatureLegacyCandidates(), let state,
               let legacy = signatureLegacyCandidates(for: state).first else {
             loadState = .failed("환생 픽스처에 대표 유산 후보가 없습니다.")

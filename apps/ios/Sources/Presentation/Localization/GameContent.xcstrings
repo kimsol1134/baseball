@@ -5930,7 +5930,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "速球の動きと最高球速を同時に引き上げる"
+            "value": "速球の変化量と最高球速を同時に引き上げる"
           }
         },
         "ko": {
@@ -14466,7 +14466,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化球の動きが上昇、スタミナが小幅に減少"
+            "value": "変化球の変化量が増加、スタミナが少し低下"
           }
         },
         "ko": {
@@ -14862,7 +14862,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化球の動きと空振りが上昇、スタミナが小幅に減少"
+            "value": "変化球の変化量と空振り率が上昇、スタミナが少し低下"
           }
         },
         "ko": {
@@ -16908,7 +16908,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化球の動き"
+            "value": "変化球の変化量"
           }
         },
         "ko": {
@@ -22336,19 +22336,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Season %1$lld · %@ Role"
+            "value": "Season %1$lld · %2$@ role"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "シーズン %1$lld · %@ 役割"
+            "value": "シーズン%1$lld · %2$@の役割"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld시즌 %@ 역할"
+            "value": "%1$lld시즌 %2$@ 역할"
           }
         }
       }
@@ -47319,6 +47319,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "선수의 이야기를 먼저 듣는 스태프"
+          }
+        }
+      }
+    },
+    "content.pro-news.weekly-growth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly growth completed · %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "週間育成が完了 · %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "주간 성장 완성 · %@"
+          }
+        }
+      }
+    },
+    "content.pro-news.direct-outing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Played outing vs %@ (%@) · %lld K · %lld BB · %lld R"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接登板 · %@（%@）との対戦 · %lld奪三振 · %lld四球 · %lld失点"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "직접 등판 · %@(%@) 상대 · %lld탈삼진 · %lld볼넷 · %lld실점"
           }
         }
       }

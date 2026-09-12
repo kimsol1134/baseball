@@ -51,7 +51,11 @@ struct ScoreboardBar: View {
                 Spacer()
                 // 중요도는 화면 맨 위 배지가 맡는다 — 같은 말을 두 줄에 적지 않는다.
             }
-            HStack(spacing: 14) {
+            let countsLayout = typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+                : AnyLayout(HStackLayout(spacing: 14))
+            countsLayout {
+                HStack(spacing: 14) {
                 CountPips(label: "B", filled: session.context.balls, total: 3, tone: BaseballTheme.warning)
                 CountPips(label: "S", filled: session.context.strikes, total: 2, tone: BaseballTheme.action)
                 // 주자는 다이아몬드 하나로만 두면 26pt짜리 회색 마름모 셋이라, 이 이닝이
@@ -77,8 +81,11 @@ struct ScoreboardBar: View {
                                      ? BaseballTheme.warning : BaseballTheme.textSecondary)
                     .accessibilityHidden(true)
                 Spacer()
+                }
                 HStack(spacing: 6) {
-                    Text(verbatim: copyResolver.resolve(.scoreboardFatigue)).eyebrowStyle(BaseballTheme.textTertiary)
+                    Text(verbatim: copyResolver.resolve(.scoreboardFatigue))
+                        .eyebrowStyle(BaseballTheme.textTertiary)
+                        .fixedSize(horizontal: true, vertical: true)
                     Text("\(session.context.fatigue)")
                         .font(.subheadline.weight(.bold).monospacedDigit())
                         .foregroundStyle(

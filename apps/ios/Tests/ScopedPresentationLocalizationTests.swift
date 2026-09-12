@@ -5,6 +5,36 @@ import SimulationCore
 import BaseballIOSDomain
 
 final class ScopedPresentationLocalizationTests: XCTestCase {
+    func testPopulatedCareerRetrospectiveResolvesGrowthClimateAndPlayedOuting() {
+        let lines = [
+            "주간 성장 완성 · 제구 +1",
+            "14주차 · 상대 타선이 흔들린다. 오늘 공은 잘 먹힐 공기가 있다.",
+            "승부처 등판 · 백건우(인천 크레스트핀스) 상대 · 2탈삼진 · 1볼넷 · 0실점 · 감독의 믿음 +6. 고른 구종과 코스도 좋았다는 평가를 받았습니다.",
+        ]
+        for language in [AppLanguage.english, .japanese] {
+            let resolver = GameCopyResolver(language: language, policy: .releaseSafe)
+            for line in lines {
+                let text = ProCareerPresentation.news(line, resolver: resolver)
+                XCTAssertFalse(text.contains(GameCopyResolver.unavailableText), line)
+                XCTAssertFalse(containsHangul(text), text)
+            }
+        }
+    }
+
+    func testSeasonRoleMilestoneResolvesWithoutMixedFormatCrash() {
+        for language in AppLanguage.allCases {
+            let resolver = GameCopyResolver(language: language, policy: .releaseSafe)
+            let text = resolver.resolve(.gameContent("content.pro-milestone.season-role"),
+                                        arguments: [.integer(3), .userText("Starter")])
+            XCTAssertTrue(text.contains("3"))
+            XCTAssertTrue(text.contains("Starter"))
+        }
+        let unsafe = GameCopyResolver(language: .japanese,
+            catalog: [.japanese: ["test.mixed": "%1$lld · %@"]], policy: .releaseSafe)
+        XCTAssertEqual(unsafe.resolve(.localizable("test.mixed"), arguments: [.integer(3), .userText("Starter")]),
+                       GameCopyResolver.unavailableText)
+    }
+
     private struct CatalogEntry {
         let korean: String
         let english: String

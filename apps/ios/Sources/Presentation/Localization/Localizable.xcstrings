@@ -6785,19 +6785,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The game tracks runs, not earned runs, so it uses RA9 instead of ERA. A quality start is 6+ innings with 3 or fewer runs allowed."
+            "value": "RA9 counts all runs allowed, including unearned runs. Here, a quality start is 6+ innings with 3 or fewer runs allowed."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "試合では自責点ではなく得点が記録されるため、ERA ではなく RA9 が使用されます。クォリティスタートとは、6イニング以上、許される失点が3以下のことを指します。"
+            "value": "RA9は自責点かどうかにかかわらず、すべての失点を数えます。このゲームのクオリティスタートは6イニング以上・3失点以下です。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "자책점을 따로 세지 않아 평균자책점 대신 9이닝당 실점을 씁니다. 퀄리티스타트도 6이닝 3실점 이하 기준입니다."
+            "value": "RA9는 자책점 여부와 관계없이 모든 실점을 셉니다. 퀄리티스타트는 6이닝 이상·3실점 이하 기준입니다."
           }
         }
       }
@@ -14359,7 +14359,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化球型シナジー · 動きと凡打を活かします。"
+            "value": "変化球型シナジー · 変化量を増やし、凡打を誘います。"
           }
         },
         "ko": {
@@ -27075,7 +27075,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 季節"
+            "value": "%lldシーズン"
           }
         },
         "ko": {
@@ -28461,7 +28461,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "退職しました"
+            "value": "引退"
           }
         },
         "ko": {
@@ -31475,7 +31475,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "季節"
+            "value": "シーズン"
           }
         },
         "ko": {
@@ -35677,7 +35677,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この季節の登板"
+            "value": "今シーズンの登板"
           }
         },
         "ko": {
@@ -35759,19 +35759,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "FIP · WAR · K% · BB% · RA9 · QS · WHIP · replacement level"
+            "value": "ERA · FIP · WAR · K% · BB% · RA9 · QS · WHIP · replacement level"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "FIP · WAR · K% · BB% · RA9 · QS · WHIP · 代替レベル"
+            "value": "ERA · FIP · WAR · K% · BB% · RA9 · QS · WHIP · 代替レベル"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "FIP · WAR · K% · BB% · RA9 · QS · WHIP · 대체 수준"
+            "value": "ERA · FIP · WAR · K% · BB% · RA9 · QS · WHIP · 대체 수준"
           }
         }
       }
@@ -43852,12 +43852,6 @@
     },
     "mobile.polish.growth-movement": {
       "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "변화구의 움직임을 키웠어요."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -43867,7 +43861,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化球のキレが増しました。"
+            "value": "変化球の変化量が増しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "변화구의 움직임을 키웠어요."
           }
         }
       }
@@ -46701,6 +46701,160 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld장"
+          }
+        }
+      }
+    },
+    "record.album.play": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replay this pitch"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この投球を再生"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 공 다시 보기"
+          }
+        }
+      }
+    },
+    "record.album.view": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View pitch location"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "投球位置を見る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "공이 들어온 위치 보기"
+          }
+        }
+      }
+    },
+    "record.album.catcher-view": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Catcher view · strike zone"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "捕手視点 · ストライクゾーン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포수 시점 · 스트라이크 존"
+          }
+        }
+      }
+    },
+    "record.album.strikeout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strikeout"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "三振"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "삼진"
+          }
+        }
+      }
+    },
+    "record.album.other-scenes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld more moments"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ほかの%lld場面"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 장면 %lld개"
+          }
+        }
+      }
+    },
+    "record.saber.era": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ERA"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ERA"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ERA"
+          }
+        }
+      }
+    },
+    "league.standings.games-behind-accessibility": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Games behind %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ゲーム差 %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "승차 %@"
           }
         }
       }

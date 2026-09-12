@@ -121,7 +121,7 @@ private struct HighSchoolRecordBoard: View {
                 ))
                     .eyebrowStyle(BaseballTheme.action)
 
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.appearances), value: "\(state.performance.importantGamesCompleted)")
                     Metric(
                         title: copyResolver.resolve(.pitchedInnings),
@@ -129,7 +129,7 @@ private struct HighSchoolRecordBoard: View {
                     )
                     Metric(title: copyResolver.resolve(.pitches), value: "\(state.performance.pitches)")
                 }
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.strikeouts), value: "\(state.performance.strikeouts)", tone: .positive)
                     Metric(title: copyResolver.resolve(.walks), value: "\(state.performance.walks)", tone: .warning)
                     Metric(title: copyResolver.resolve(.runs), value: "\(state.performance.runsAllowed)")
@@ -317,6 +317,7 @@ private struct RecordBoard: View {
 
     /// 9이닝당 실점. 코어가 자책점을 따로 세지 않으므로 평균자책이 아니라 실점으로 적는다.
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                 WeeklyProgramView(
@@ -324,6 +325,7 @@ private struct RecordBoard: View {
                     highSchool: highSchool
                 )
                 ProAlbumCard(replays: replays)
+                    .id("album")
                 ProAdvancementCard(state: state)
                 ProGoalBoardCard(state: state)
                 if let history = state.nationalTeamHistory, !history.isEmpty {
@@ -349,7 +351,7 @@ private struct RecordBoard: View {
                 if let decisions = state.decisionHistory, !decisions.isEmpty {
                     ProDecisionHistoryCard(decisions: decisions)
                 }
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.totalsGames), value: "\(state.currentStats.games)")
                     Metric(
                         title: copyResolver.resolve(.totalsInnings),
@@ -364,7 +366,7 @@ private struct RecordBoard: View {
                         )
                     )
                 }
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.totalsStrikeouts), value: "\(state.currentStats.strikeouts)", tone: .positive)
                     Metric(title: copyResolver.resolve(.walks), value: "\(state.currentStats.walks)", tone: .warning)
                     Metric(
@@ -407,6 +409,7 @@ private struct RecordBoard: View {
                             Text(verbatim: copyResolver.resolve(.abilityGrowthTitle))
                                 .eyebrowStyle(BaseballTheme.textTertiary)
                             AbilityGrowthGraph(points: history)
+                                .id("growth")
                         }
                     }
                 }
@@ -422,13 +425,16 @@ private struct RecordBoard: View {
                     lines: state.gameLines ?? []
                 )
 
-                SaberMetricsCard(board: MobileCareerStore.saberBoard(state: state))
+                SaberMetricsCard(board: MobileCareerStore.saberBoard(state: state),
+                    seasons: ProCareerPresentation.recordedSeasons(state))
+                    .id("saber")
 
                 StandingsCard(
                     season: state.season, seed: state.proCareerID,
                     week: state.week, myTeamID: state.team.id,
                     myGames: state.gameLines ?? []
                 )
+                .id("standings")
 
                 PitcherLeaderboardCard(
                     season: state.season, seed: state.proCareerID,
@@ -554,18 +560,30 @@ private struct RecordBoard: View {
             .safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
         }
         .background(BaseballTheme.canvas)
+#if DEBUG
+        .task {
+            let arguments = ProcessInfo.processInfo.arguments
+            if arguments.contains("-uiTestResetCareer"),
+               let index = arguments.firstIndex(of: "-uiTestRecordSection"),
+               arguments.indices.contains(index + 1) {
+                proxy.scrollTo(arguments[index + 1], anchor: .top)
+            }
+        }
+#endif
+        }
     }
 }
 
 struct SaberMetricsCard: View {
     let board: SaberMetricsBoard
+    var seasons: [ProSeasonStats] = []
     @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         BaseballCard(title: copyResolver.resolve(.saberTitle)) {
             VStack(alignment: .leading, spacing: 10) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 8) {
+                ScrollView(.horizontal) {
+                    Grid(alignment: .trailing, horizontalSpacing: 12, verticalSpacing: 10) {
                         header
                         ForEach(board.rows) { line in
                             row(line, isCareer: false)
@@ -581,9 +599,10 @@ struct SaberMetricsCard: View {
     }
 
     private var header: some View {
-        HStack(spacing: 12) {
+        GridRow {
             headerCell(copyResolver.resolve(.saberSeasonHeader), width: 64, alignment: .leading)
             headerCell(copyResolver.resolve(.saberIP), width: 52)
+            headerCell(copyResolver.resolve(.saberERA), width: 48)
             headerCell(copyResolver.resolve(.saberRA9), width: 48)
             headerCell(copyResolver.resolve(.saberFIP), width: 48)
             headerCell(copyResolver.resolve(.saberKPercent), width: 52)
@@ -595,12 +614,16 @@ struct SaberMetricsCard: View {
     }
 
     private func row(_ line: SaberMetricsLine, isCareer: Bool) -> some View {
-        HStack(spacing: 12) {
+        GridRow {
             Text(verbatim: seasonLabel(line))
                 .font(isCareer ? BaseballType.detail.weight(.bold) : BaseballType.detail)
                 .foregroundStyle(BaseballTheme.textPrimary)
-                .frame(width: 64, alignment: .leading)
+                .fixedSize(horizontal: true, vertical: true)
+                .frame(minWidth: 64, alignment: .leading)
             valueCell(line.inningsText, width: 52, tone: .even)
+            valueCell(ProCareerPresentation.eraText(seasons: line.season.map { season in
+                seasons.filter { $0.season == season }
+            } ?? seasons), width: 48, tone: .even)
             valueCell(line.ra9Text, width: 48, tone: line.ra9Tone)
             valueCell(line.fipText, width: 48, tone: line.fipTone)
             valueCell(line.kPercentText, width: 52, tone: line.kPercentTone)
@@ -623,14 +646,16 @@ struct SaberMetricsCard: View {
         Text(verbatim: title)
             .font(BaseballType.annotation.weight(.bold))
             .foregroundStyle(BaseballTheme.textTertiary)
-            .frame(width: width, alignment: alignment)
+            .fixedSize(horizontal: true, vertical: true)
+            .frame(minWidth: width, alignment: alignment)
     }
 
     private func valueCell(_ value: String, width: CGFloat, tone: SaberMetricsTone) -> some View {
         Text(verbatim: value)
             .font(BaseballType.detail.monospacedDigit().weight(.semibold))
             .foregroundStyle(color(tone))
-            .frame(width: width, alignment: .trailing)
+            .fixedSize(horizontal: true, vertical: true)
+            .frame(minWidth: width, alignment: .trailing)
     }
 
     private func color(_ tone: SaberMetricsTone) -> Color {
@@ -670,9 +695,24 @@ struct ProAlbumCard: View {
                     .detailStyle(BaseballTheme.textTertiary)
             } else {
                 VStack(alignment: .leading, spacing: 12) {
-                    // 카드 하나에 전부 그리면 스크롤이 끝나지 않는다. 최근 여섯 개만 세운다.
-                    ForEach(newestFirst.prefix(6)) { replay in
-                        AlbumReplayCard(replay: replay)
+                    if let latest = newestFirst.first {
+                        AlbumReplayCard(replay: latest)
+                    }
+                    let others = Array(newestFirst.dropFirst().prefix(5))
+                    if !others.isEmpty {
+                        DisclosureGroup {
+                            VStack(spacing: 10) {
+                                ForEach(others) { replay in
+                                    AlbumReplayCard(replay: replay, featured: false)
+                                }
+                            }
+                            .padding(.top, 10)
+                        } label: {
+                            Text(verbatim: copyResolver.resolve(.albumOtherScenes, arguments: [.integer(others.count)]))
+                                .font(BaseballType.detail)
+                        }
+                        .tint(BaseballTheme.action)
+                        .accessibilityIdentifier("pro.album.more")
                     }
                 }
             }

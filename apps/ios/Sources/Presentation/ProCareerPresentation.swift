@@ -9,6 +9,21 @@ import BaseballIOSDomain
 /// remain untouched for save and iCloud compatibility. This projection uses stable enum values,
 /// choice IDs, team IDs, rival IDs, and numeric fields to author the visible English copy.
 enum ProCareerPresentation {
+    /// Missing earned-run ledgers stay unknown; total runs never stand in for earned runs.
+    static func eraText(seasons: [ProSeasonStats]) -> String {
+        guard !seasons.isEmpty, seasons.allSatisfy({ $0.earnedRuns != nil }),
+              let era = PitchingMetrics.runsPer9(
+                runs: seasons.reduce(0) { $0 + ($1.earnedRuns ?? 0) },
+                outs: seasons.reduce(0) { $0 + $1.inningsOuts }
+              ) else { return "—" }
+        return String(format: "%.2f", locale: Locale(identifier: "en_US_POSIX"), era)
+    }
+
+    static func recordedSeasons(_ state: ProCareerSnapshot) -> [ProSeasonStats] {
+        state.careerStats + (state.careerStats.contains { $0.season == state.currentStats.season }
+            ? [] : [state.currentStats])
+    }
+
     struct RivalCopy: Equatable {
         let name: String
         let teamName: String
@@ -523,22 +538,48 @@ enum ProCareerPresentation {
         if raw == "구종 연구 진전 · 다음 공식 경기에서 개발 구종을 시험할 수 있습니다." {
             return legacy("content.pro-news.pitch-learning.game-ready", resolver: resolver)
         }
+        if raw.hasPrefix("주간 성장 완성 · ") {
+            let gains = raw.dropFirst("주간 성장 완성 · ".count).components(separatedBy: " · ")
+            let localized = gains.compactMap { gain -> String? in
+                guard let values = captures(gain, pattern: #"^(구위|제구|변화구|체력) \+(\d+)$"#),
+                      let amount = Int(values[1]) else { return nil }
+                let key: ProUICopyKey = switch values[0] {
+                case "구위": .effectStuffGain
+                case "제구": .effectCommandGain
+                case "변화구": .effectMovementGain
+                default: .effectStaminaGain
+                }
+                return resolver.resolve(key, arguments: [.integer(amount)])
+            }
+            if localized.count == gains.count {
+                return legacy("content.pro-news.weekly-growth", [.userText(localized.joined(separator: " · "))], resolver: resolver)
+            }
+        }
+        if let values = captures(raw, pattern: #"^승부처 등판 · (.+?)\((.+?)\) 상대 · (\d+)탈삼진 · (\d+)볼넷 · (\d+)실점.*$"#),
+           let opponent = rivalForLegacyTitle(values[0]),
+           let strikeouts = Int(values[2]), let walks = Int(values[3]), let runs = Int(values[4]) {
+            return legacy("content.pro-news.direct-outing", [
+                .userText(rival(opponent, resolver: resolver).name),
+                .userText(leagueTeamName(values[1], resolver: resolver)),
+                .integer(strikeouts), .integer(walks), .integer(runs),
+            ], resolver: resolver)
+        }
         if let value = captures(raw, pattern: #"^구종 연구 진전 · 반복 감각 \+(\d+)$"#)?.first.flatMap(Int.init) {
             return legacy("content.pro-news.pitch-learning.practice", [.integer(value)], resolver: resolver)
         }
         if let value = captures(raw, pattern: #"^개발 구종 실전 감각 \+(\d+)\.$"#)?.first.flatMap(Int.init) {
             return legacy("content.pro-news.pitch-learning.live", [.integer(value)], resolver: resolver)
         }
-        if let week = captures(raw, pattern: #"^(\d+)주차 · 상대 타선이 흔들린다"#)?.first.flatMap(Int.init) {
+        if let week = captures(raw, pattern: #"^(\d+)주차 · 상대 타선이 흔들린다.*$"#)?.first.flatMap(Int.init) {
             return legacy("content.pro-news.climate.hot", [.integer(week)], resolver: resolver)
         }
-        if let week = captures(raw, pattern: #"^(\d+)주차 · 리그는 평이하다"#)?.first.flatMap(Int.init) {
+        if let week = captures(raw, pattern: #"^(\d+)주차 · 리그는 평이하다.*$"#)?.first.flatMap(Int.init) {
             return legacy("content.pro-news.climate.even", [.integer(week)], resolver: resolver)
         }
-        if let week = captures(raw, pattern: #"^(\d+)주차 · 타선이 직구를 기다리기 시작했다"#)?.first.flatMap(Int.init) {
+        if let week = captures(raw, pattern: #"^(\d+)주차 · 타선이 직구를 기다리기 시작했다.*$"#)?.first.flatMap(Int.init) {
             return legacy("content.pro-news.climate.slump", [.integer(week)], resolver: resolver)
         }
-        if let week = captures(raw, pattern: #"^(\d+)주차 · 상대 벤치가 내 구종 순서를 읽고 있다"#)?.first.flatMap(Int.init) {
+        if let week = captures(raw, pattern: #"^(\d+)주차 · 상대 벤치가 내 구종 순서를 읽고 있다.*$"#)?.first.flatMap(Int.init) {
             return legacy("content.pro-news.climate.adapted", [.integer(week)], resolver: resolver)
         }
         if let age = captures(raw, pattern: #"^(\d+)세 · 전성기가 기울며 구위가 한 단계 떨어졌습니다\.$"#)?.first.flatMap(Int.init) {
@@ -1405,6 +1446,7 @@ struct CareerComparisonCard: View {
     let subtitle: String
     var identifier: String
     @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         BaseballCard(title: title) {
@@ -1425,10 +1467,13 @@ struct CareerComparisonCard: View {
                 }
 
                 ForEach(comparison.metrics) { metric in
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    let layout = typeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+                        : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 8))
+                    layout {
                         Text(verbatim: copyResolver.resolve(.gameContent(metric.labelKey)))
                             .detailStyle(BaseballTheme.textSecondary)
-                        Spacer()
+                        if !typeSize.isAccessibilitySize { Spacer() }
                         Text(verbatim: "\(text(metric.previous, metric)) → \(text(metric.current, metric))")
                             .font(.subheadline.monospacedDigit())
                             .foregroundStyle(color(metric))
@@ -1469,87 +1514,155 @@ struct CareerComparisonCard: View {
 /// 움직이지 않는다 — 다시 보는 것으로 결과가 바뀌면 그건 앨범이 아니라 재시도다.
 struct AlbumReplayCard: View {
     let replay: AlbumReplay
+    var featured = true
     @Environment(\.gameCopyResolver) private var copyResolver
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var progress: Double = 1
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var playbackStartedAt: Date?
+    @State private var expanded = false
 
     private var samples: [TrajectorySample] { TrajectorySample.decode(replay.trajectory) }
+    private var accent: Color {
+        replay.outcome == .homeRun ? BaseballTheme.negative : BaseballTheme.action
+    }
+    private var outcomeTitle: String {
+        replay.result == .strikeout
+            ? copyResolver.resolve(.albumStrikeout)
+            : copyResolver.resolve(replay.outcome.displayCopyToken)
+    }
+    private var heading: String {
+        copyResolver.resolve(.albumReplayHeading, arguments: [.integer(replay.season), .integer(replay.week)])
+    }
+    private var pitchTitle: String { copyResolver.resolve(replay.pitchType.nameCopyToken) }
+    private var velocity: String {
+        GameFormatters.velocity(tenthsKPH: replay.velocityTenthsKPH, language: copyResolver.language)
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(verbatim: copyResolver.resolve(
-                    .albumReplayHeading,
-                    arguments: [.integer(replay.season), .integer(replay.week)]
-                ))
-                .detailStyle(BaseballTheme.textTertiary)
-                .monospacedDigit()
-                Spacer()
-                if replay.perfectRelease {
-                    Image(systemName: "sparkle")
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.milestone)
-                        .accessibilityHidden(true)
-                }
-                // **무엇이 일어났는지 없으면 삼진과 피홈런이 같은 그림이 된다.**
-                Text(verbatim: copyResolver.resolve(replay.outcome.displayCopyToken))
-                    .detailStyle(
-                        replay.outcome == .homeRun ? BaseballTheme.negative : BaseballTheme.positive
-                    )
-                Text(verbatim: copyResolver.resolve(replay.pitchType.nameCopyToken))
-                    .detailStyle(BaseballTheme.textSecondary)
-                Text(verbatim: "\(replay.velocityTenthsKPH / 10)")
-                    .font(.subheadline.monospacedDigit())
+        VStack(alignment: .leading, spacing: 12) {
+            Text(verbatim: heading)
+                .eyebrowStyle(BaseballTheme.textTertiary)
+            let layout =
+                typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+                : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 8))
+            layout {
+                Text(verbatim: outcomeTitle)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(accent)
+                if !typeSize.isAccessibilitySize { Spacer(minLength: 8) }
+                Text(verbatim: pitchTitle + " · " + velocity)
+                    .font(BaseballType.detail.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-
-            GeometryReader { proxy in
-                trace(in: proxy.size)
-                    .stroke(
-                        replay.perfectRelease ? BaseballTheme.milestone : BaseballTheme.action,
-                        style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
-                    )
+            if replay.perfectRelease {
+                Label(copyResolver.resolve(PitchUICopyKey.badgePerfectRelease), systemImage: "sparkle")
+                    .font(BaseballType.annotation.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.milestone)
             }
-            .frame(height: 84)
-            .accessibilityHidden(true)
+            if featured || expanded {
+                Text(verbatim: copyResolver.resolve(.albumCatcherView))
+                    .eyebrowStyle(BaseballTheme.textTertiary)
+                TimelineView(.animation(paused: playbackStartedAt == nil || reduceMotion)) { timeline in
+                    let progress =
+                        playbackStartedAt.map {
+                            min(1, max(0, timeline.date.timeIntervalSince($0) / 1.2))
+                        } ?? 1
+                    Canvas { context, size in
+                        drawReplay(context: &context, size: size, progress: progress)
+                    }
+                }
+                .frame(height: 170)
+                .background(BaseballTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
+                .accessibilityHidden(true)
+            }
+            Button {
+                expanded = true
+                playbackStartedAt = reduceMotion ? nil : Date()
+            } label: {
+                Label(
+                    copyResolver.resolve(reduceMotion ? RecordUICopyKey.albumView : .albumPlay),
+                    systemImage: reduceMotion ? "scope" : "play.circle.fill"
+                )
+                .font(BaseballType.detail.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(BaseballTheme.action)
+            .accessibilityIdentifier("album.replay.play.\(replay.id)")
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(copyResolver.resolve(
-            .albumReplayAccessibility,
-            arguments: [
-                .integer(replay.season),
-                .userText(copyResolver.resolve(replay.pitchType.nameCopyToken)),
-                .integer(replay.velocityTenthsKPH / 10),
-            ]
-        ))
+        .padding(16)
+        .background(BaseballTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(BaseballTheme.border.opacity(0.4)))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(heading), \(outcomeTitle), \(pitchTitle), \(velocity)")
         .accessibilityIdentifier("album.replay.\(replay.id)")
-        .onAppear {
-            guard !reduceMotion else { progress = 1; return }
-            progress = 0
-            withAnimation(.easeIn(duration: 0.5)) { progress = 1 }
+        .task(id: playbackStartedAt) {
+            guard playbackStartedAt != nil else { return }
+            do { try await Task.sleep(for: .milliseconds(1_250)) } catch { return }
+            playbackStartedAt = nil
         }
     }
 
-    /// 저장된 표본을 옆에서 본 궤적으로 편다. 앞뒤 거리를 가로로, 높이를 세로로 둔다.
-    private func trace(in size: CGSize) -> Path {
-        Path { path in
-            let points = samples
-            guard points.count >= 2, let first = points.first, let last = points.last else { return }
-            let span = max(0.001, first.forwardMeters - last.forwardMeters)
-            let heights = points.map(\.heightMeters)
-            let lowest = heights.min() ?? 0
-            let highest = max(lowest + 0.001, heights.max() ?? 1)
-            let shown = max(2, Int(Double(points.count) * progress))
-            for (index, sample) in points.prefix(shown).enumerated() {
-                let x = size.width * (first.forwardMeters - sample.forwardMeters) / span
-                let y = size.height - size.height * (sample.heightMeters - lowest) / (highest - lowest)
-                if index == 0 {
-                    path.move(to: CGPoint(x: x, y: y))
-                } else {
-                    path.addLine(to: CGPoint(x: x, y: y))
-                }
-            }
+    /// Fixed catcher-view projection. All pitches share the same metre scale and strike zone;
+    /// the old per-pitch min/max scaling made a ball and a strike look like the same curve.
+    private func drawReplay(context: inout GraphicsContext, size: CGSize, progress: Double) {
+        let center = CGPoint(x: size.width / 2, y: size.height * 0.53)
+        let halfWidth: CGFloat = 48
+        let halfHeight: CGFloat = 47
+        let zone = CGRect(
+            x: center.x - halfWidth, y: center.y - halfHeight,
+            width: halfWidth * 2, height: halfHeight * 2)
+        context.fill(Path(zone), with: .color(BaseballTheme.textPrimary.opacity(0.035)))
+        context.stroke(Path(zone), with: .color(BaseballTheme.textSecondary.opacity(0.65)), lineWidth: 1)
+        for step in 1...2 {
+            var grid = Path()
+            let x = zone.minX + zone.width * CGFloat(step) / 3
+            let y = zone.minY + zone.height * CGFloat(step) / 3
+            grid.move(to: CGPoint(x: x, y: zone.minY))
+            grid.addLine(to: CGPoint(x: x, y: zone.maxY))
+            grid.move(to: CGPoint(x: zone.minX, y: y))
+            grid.addLine(to: CGPoint(x: zone.maxX, y: y))
+            context.stroke(grid, with: .color(BaseballTheme.border), style: StrokeStyle(lineWidth: 0.7, dash: [3, 3]))
         }
+        var plate = Path()
+        let plateY = size.height - 23
+        plate.move(to: CGPoint(x: center.x - 18, y: plateY))
+        plate.addLine(to: CGPoint(x: center.x + 18, y: plateY))
+        plate.addLine(to: CGPoint(x: center.x + 18, y: plateY + 8))
+        plate.addLine(to: CGPoint(x: center.x, y: plateY + 17))
+        plate.addLine(to: CGPoint(x: center.x - 18, y: plateY + 8))
+        plate.closeSubpath()
+        context.stroke(plate, with: .color(BaseballTheme.textTertiary), lineWidth: 1)
+        let points = samples.map { sample -> CGPoint in
+            let depth = max(0, min(1, sample.forwardMeters / 18.44))
+            let travel = 1 - depth
+            let perspective = 0.3 + 0.7 * travel
+            let landingHeight = samples.last?.heightMeters ?? 0.75
+            let referenceHeight = 1.85 + (landingHeight - 1.85) * travel
+            let landingY = center.y - (landingHeight - 0.75) / 0.25 * halfHeight
+            // PitchKernelEngine maps ±500 zone coordinates to ±0.432 m laterally,
+            // and 0.75 ±0.25 m vertically. Use that same display mapping.
+            return CGPoint(
+                x: center.x - sample.lateralMeters / 0.432 * halfWidth * perspective,
+                y: 22 + (landingY - 22) * travel
+                    - (sample.heightMeters - referenceHeight) / 0.25 * halfHeight * perspective * 0.18)
+        }
+        guard points.count >= 2 else { return }
+        let count = max(2, Int(Double(points.count) * progress))
+        var trace = Path()
+        for (index, point) in points.prefix(count).enumerated() {
+            if index == 0 { trace.move(to: point) } else { trace.addLine(to: point) }
+        }
+        context.stroke(trace, with: .color(accent.opacity(0.18)), style: StrokeStyle(lineWidth: 8, lineCap: .round))
+        context.stroke(trace, with: .color(accent), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+        let ball = points[min(points.count - 1, count - 1)]
+        context.fill(Path(ellipseIn: CGRect(x: ball.x - 5, y: ball.y - 5, width: 10, height: 10)), with: .color(.white))
+        context.stroke(
+            Path(ellipseIn: CGRect(x: ball.x - 8, y: ball.y - 8, width: 16, height: 16)), with: .color(accent),
+            lineWidth: 1.5)
     }
 }
 
@@ -1595,6 +1708,7 @@ struct ProAbilityPanel: View {
 
     @Environment(\.gameCopyResolver) private var copyResolver
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var revealed = false
 
     private func value(_ axis: PitchAbilityAxis) -> Int {
@@ -1607,7 +1721,7 @@ struct ProAbilityPanel: View {
     }
 
     var body: some View {
-        let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 14), count: typeSize.isAccessibilitySize ? 1 : 2)
         LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
             ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
                 bar(axis)
@@ -1697,28 +1811,60 @@ struct AbilityGrowthGraph: View {
     private static let ladder = [75, 65, 50]
     private static let leagueAverage = 50
     /// 눈금 이름이 앉을 왼쪽 여백. 선이 여기까지 오면 글자와 겹쳐 둘 다 안 읽힌다.
-    private static let axisGutter: CGFloat = 66
+    @ScaledMetric(relativeTo: .caption) private var axisLabelScale: CGFloat = 1
+    private var axisGutter: CGFloat {
+        typeSize.isAccessibilitySize ? 76 : (copyResolver.language == .english ? 150 : 108) * axisLabelScale
+    }
+    private var chartHeight: CGFloat { typeSize.isAccessibilitySize ? 240 : 160 }
+    @ScaledMetric(relativeTo: .caption) private var seasonStep: CGFloat = 20
+    @ScaledMetric(relativeTo: .caption) private var axisHeight: CGFloat = 20
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         if points.count >= 2 {
             VStack(alignment: .leading, spacing: 6) {
-                GeometryReader { proxy in
-                    ZStack(alignment: .topLeading) {
-                        ForEach(Self.ladder, id: \.self) { rung in
-                            gridline(rung, in: proxy.size)
+                GeometryReader { viewport in
+                    ScrollView(.horizontal) {
+                        VStack(spacing: 6) {
+                            GeometryReader { proxy in
+                                ZStack(alignment: .topLeading) {
+                                    ForEach(Self.ladder, id: \.self) { rung in
+                                        gridline(rung, in: proxy.size)
+                                    }
+                                    ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
+                                        path(for: axis, in: proxy.size)
+                                            .stroke(
+                                                axis.tint,
+                                                style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                                        // 끝점을 찍어 "지금 여기"가 어디인지 눈이 바로 앉게 한다.
+                                        endpoint(for: axis, in: proxy.size)
+                                    }
+                                }
+                            }
+                            .frame(height: chartHeight)
+                            .accessibilityHidden(true)
+
+                            seasonAxis
                         }
-                        ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
-                            path(for: axis, in: proxy.size)
-                                .stroke(axis.tint, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-                            // 끝점을 찍어 "지금 여기"가 어디인지 눈이 바로 앉게 한다.
-                            endpoint(for: axis, in: proxy.size)
+                        .frame(
+                            width: max(viewport.size.width, axisGutter + seasonStep * CGFloat(points.count - 1) + 12)
+                        )
+                        .padding(.vertical, 4)
+                    }
+                }
+                .frame(height: chartHeight + axisHeight + 14)
+                if typeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(Self.ladder, id: \.self) { rung in
+                            Text(
+                                verbatim: "\(AbilityDisplayScale.displayRating(rung)) · "
+                                    + MetaPresentation.ratingMeaning(rung, context: .pro, resolver: copyResolver)
+                            )
+                            .font(BaseballType.annotation)
+                            .foregroundStyle(BaseballTheme.textTertiary)
                         }
                     }
                 }
-                .frame(height: 118)
-                .accessibilityHidden(true)
-
-                seasonAxis
 
                 // **범례가 곧 계기판이다.** 선만 있으면 모양은 보여도 값을 읽을 수 없다.
                 readout
@@ -1747,21 +1893,22 @@ struct AbilityGrowthGraph: View {
                     )
             }
         }
-        .frame(height: 12)
+        .frame(height: axisHeight)
     }
 
     /// 축마다 지금 값과 처음부터의 변화. 내려간 축도 숨기지 않는다 — 노화는 실제로 일어난 일이다.
     private var readout: some View {
-        let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: typeSize.isAccessibilitySize ? 1 : 2)
         return LazyVGrid(columns: columns, alignment: .leading, spacing: 4) {
             ForEach(PitchAbilityAxis.allCases, id: \.self) { axis in
                 let current = points.last?.value(axis) ?? 0
-                let change = AbilityGrowthHistoryRules.change(points, axis: axis).map { _ in
-                    AbilityDisplayScale.displayDelta(
-                        before: points.first?.value(axis) ?? 0,
-                        after: current
-                    )
-                } ?? 0
+                let change =
+                    AbilityGrowthHistoryRules.change(points, axis: axis).map { _ in
+                        AbilityDisplayScale.displayDelta(
+                            before: points.first?.value(axis) ?? 0,
+                            after: current
+                        )
+                    } ?? 0
                 HStack(spacing: 5) {
                     Circle().fill(axis.tint).frame(width: 7, height: 7)
                     Text(verbatim: copyResolver.resolve(axis.copyKey))
@@ -1773,6 +1920,7 @@ struct AbilityGrowthGraph: View {
                     if change != 0 {
                         Text(verbatim: change > 0 ? "+\(change)" : "\(change)")
                             .font(.caption.monospacedDigit())
+                            .fixedSize()
                             .foregroundStyle(change > 0 ? BaseballTheme.positive : BaseballTheme.negative)
                     }
                 }
@@ -1787,33 +1935,36 @@ struct AbilityGrowthGraph: View {
         let isAverage = rung == Self.leagueAverage
         return ZStack(alignment: .topLeading) {
             Path { path in
-                path.move(to: CGPoint(x: Self.axisGutter - 4, y: y))
+                path.move(to: CGPoint(x: axisGutter - 4, y: y))
                 path.addLine(to: CGPoint(x: size.width, y: y))
             }
             .stroke(
                 BaseballTheme.border.opacity(isAverage ? 0.55 : 0.3),
                 style: StrokeStyle(lineWidth: 1, dash: isAverage ? [3, 3] : [2, 4])
             )
-            Text(verbatim: MetaPresentation.ratingMeaning(rung, context: .pro, resolver: copyResolver))
-                .font(BaseballType.annotation)
-                .foregroundStyle(BaseballTheme.textTertiary.opacity(isAverage ? 1 : 0.8))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                // 눈금 여백 안, 자기 선과 같은 높이에 오른쪽 맞춤으로 앉는다.
-                .frame(width: Self.axisGutter - 8, alignment: .trailing)
-                .offset(x: 0, y: max(0, min(size.height - 10, y - 5)))
+            Text(
+                verbatim: typeSize.isAccessibilitySize
+                    ? "\(AbilityDisplayScale.displayRating(rung))"
+                    : MetaPresentation.ratingMeaning(rung, context: .pro, resolver: copyResolver)
+            )
+            .font(BaseballType.annotation)
+            .foregroundStyle(BaseballTheme.textTertiary.opacity(isAverage ? 1 : 0.8))
+            .lineLimit(1)
+            // 눈금 여백 안, 자기 선과 같은 높이에 오른쪽 맞춤으로 앉는다.
+            .frame(width: axisGutter - 8, alignment: .trailing)
+            .offset(x: 0, y: max(0, min(size.height - axisHeight, y - axisHeight / 2)))
         }
     }
 
     /// 선이 그려지는 너비. 왼쪽 눈금 여백은 뺀다.
     private func plotWidth(_ size: CGSize) -> CGFloat {
-        max(1, size.width - Self.axisGutter)
+        max(1, size.width - axisGutter - 12)
     }
 
     private func point(_ value: Int, index: Int, in size: CGSize) -> CGPoint {
         let step = points.count > 1 ? plotWidth(size) / CGFloat(points.count - 1) : 0
         return CGPoint(
-            x: Self.axisGutter + step * CGFloat(index),
+            x: axisGutter + step * CGFloat(index),
             y: size.height * (1 - AbilityDisplayScale.position(value))
         )
     }

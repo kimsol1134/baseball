@@ -176,6 +176,11 @@ public struct GameCopyResolver: @unchecked Sendable {
             }
             index = cursor + 1
         }
+        if placeholders.contains(where: { $0.position != nil }),
+           placeholders.contains(where: { $0.position == nil }) {
+            // Foundation may read an integer as an object and crash for mixed addressing.
+            return ["invalid_mixed_positioning"]
+        }
         if placeholders.allSatisfy({ $0.position != nil }) {
             return placeholders.sorted { $0.position! < $1.position! }.map(\.kind)
         }

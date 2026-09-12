@@ -68,6 +68,7 @@ struct BaseballApp: App {
     nonisolated static let seasonReviewFixtureLaunchArgument = "-uiTestSeasonReviewFixture"
     /// 은퇴 화면 미리보기 Debug 전용 픽스처.
     nonisolated static let retiredShareFixtureLaunchArgument = "-uiTestRetiredShareFixture"
+    nonisolated static let populatedProFixtureLaunchArgument = "-uiTestPopulatedProFixture"
 #endif
 
     @Environment(\.scenePhase) private var scenePhase
@@ -387,7 +388,7 @@ struct BaseballApp: App {
                         } else if arguments.contains(Self.postseasonFixtureLaunchArgument) {
                             _ = pro.installPostseasonFixtureForUITesting()
                         } else if arguments.contains(Self.rebornFixtureLaunchArgument) {
-                            _ = highSchool.installRebornFixtureForUITesting()
+                            _ = highSchool.installRebornFixtureForUITesting(stopAtLegacy: arguments.contains("-uiTestStopAtLegacy"))
                         } else if arguments.contains(Self.commandMilestoneFixtureLaunchArgument) {
                             _ = highSchool.installTrainingFixtureForUITesting(presetID: "breaking_ball_artist", commandMilestone: true)
                         } else if arguments.contains(Self.trainingFixtureLaunchArgument) {
@@ -397,6 +398,13 @@ struct BaseballApp: App {
                         } else if arguments.contains(Self.seasonDecisionFixtureLaunchArgument) {
                             SeenContentStore.reset()
                             _ = pro.installSeasonDecisionFixtureForUITesting()
+                        } else if arguments.contains(Self.populatedProFixtureLaunchArgument) {
+                            let phaseIndex = arguments.firstIndex(of: "-uiTestProPhase")
+                            let phase = phaseIndex.flatMap { index in
+                                arguments.indices.contains(index + 1)
+                                    ? ProCareerPhase(rawValue: arguments[index + 1]) : nil
+                            } ?? .seasonReview
+                            _ = pro.installPopulatedProFixtureForUITesting(stoppingAt: phase)
                         } else if arguments.contains(Self.seasonReviewFixtureLaunchArgument) {
                             _ = pro.installSeasonReviewFixtureForUITesting()
                         } else if arguments.contains(Self.retiredShareFixtureLaunchArgument) {

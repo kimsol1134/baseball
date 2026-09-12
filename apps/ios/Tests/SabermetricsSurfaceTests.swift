@@ -6,6 +6,37 @@ import BaseballIOSDomain
 
 @MainActor
 final class SabermetricsSurfaceTests: XCTestCase {
+    func testPopulatedFixtureReconcilesTwoCompletedSeasonsAndLivePitchAlbum() throws {
+        let fixture = try MobileCareerStore.populatedProFixture()
+        let state = fixture.result.snapshot
+        XCTAssertEqual(state.season, 3)
+        XCTAssertEqual(state.phase, .seasonReview)
+        XCTAssertEqual(state.careerStats.map(\.season), [1, 2])
+        XCTAssertTrue(state.careerStats.allSatisfy { $0.games > 0 && $0.earnedRuns != nil })
+        let lines = try XCTUnwrap(state.gameLines)
+        XCTAssertFalse(lines.isEmpty)
+        XCTAssertEqual(lines.reduce(0) { $0 + $1.outs }, state.currentStats.inningsOuts)
+        XCTAssertEqual(lines.reduce(0) { $0 + $1.runsAllowed }, state.currentStats.runsAllowed)
+        XCTAssertGreaterThan(CareerDisplayRules.abilityHistory(for: state).count, 2)
+        XCTAssertFalse(fixture.replays.isEmpty)
+        XCTAssertTrue(fixture.replays.allSatisfy { $0.trajectory.count >= 8 && $0.trajectory.count % 4 == 0 })
+        let reviewed = try ProCareerEngine().reviewSeason(.init(seed: fixture.result.nextSeed, state: state))
+        XCTAssertEqual(reviewed.snapshot.careerStats.count, 3)
+        XCTAssertNotNil(MobileCareerStore.seasonComparison(state: reviewed.snapshot))
+        let era = ProCareerPresentation.eraText(seasons: ProCareerPresentation.recordedSeasons(state))
+        XCTAssertNotEqual(era, "—")
+        XCTAssertEqual(ProCareerPresentation.recordedSeasons(reviewed.snapshot).count, 3)
+    }
+
+    func testERAStaysUnknownForMissingLedgersAndUsesOutWeightedTotals() {
+        let first = ProSeasonStats(season: 1, teamID: "seoul_comets", inningsOuts: 27, runsAllowed: 5, earnedRuns: 3)
+        let second = ProSeasonStats(season: 2, teamID: "seoul_comets", inningsOuts: 54, runsAllowed: 2, earnedRuns: 1)
+        XCTAssertEqual(ProCareerPresentation.eraText(seasons: [first, second]), "1.33")
+        XCTAssertEqual(ProCareerPresentation.eraText(seasons: []), "—")
+        XCTAssertEqual(ProCareerPresentation.eraText(seasons: [first, .init(season: 2, teamID: "seoul_comets", inningsOuts: 27)]), "—")
+        XCTAssertEqual(ProCareerPresentation.eraText(seasons: [.init(season: 1, teamID: "seoul_comets", earnedRuns: 0)]), "—")
+    }
+
     func testRecordsSettlementRetirementAndShareStayDisplayOnly() throws {
         let record = try IOSSourceScan.read("apps/ios/Sources/Features/Shell/RecordView.swift")
         let recordBoard = try IOSSourceScan.typeBody(

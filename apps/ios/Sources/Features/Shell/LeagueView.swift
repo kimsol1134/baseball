@@ -25,7 +25,7 @@ struct AdvancedStatsCard: View {
     var body: some View {
         BaseballCard(title: title) {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(
                         title: copyResolver.resolve(.leagueInnings),
                         value: GameFormatters.innings(outs: outs, language: copyResolver.language)
@@ -36,12 +36,12 @@ struct AdvancedStatsCard: View {
                     )
                     Metric(title: "WHIP", value: decimal(PitchingMetrics.whip(hits: hits, walks: walks, outs: outs)))
                 }
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: "K/9", value: decimal(PitchingMetrics.per9(strikeouts, outs: outs)), tone: .positive)
                     Metric(title: "BB/9", value: decimal(PitchingMetrics.per9(walks, outs: outs)), tone: .warning)
                     Metric(title: "K/BB", value: decimal(PitchingMetrics.strikeoutToWalk(strikeouts: strikeouts, walks: walks)))
                 }
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: "H/9", value: decimal(PitchingMetrics.per9(hits, outs: outs)))
                     Metric(title: "HR/9", value: decimal(PitchingMetrics.per9(homeRuns, outs: outs)))
                     Metric(
@@ -51,7 +51,7 @@ struct AdvancedStatsCard: View {
                         ))
                     )
                 }
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.leagueStrikeoutRate), value: PitchingMetrics.rateText(
                         PitchingMetrics.strikeoutRate(strikeouts: strikeouts, battersFaced: faced)
                     ))
@@ -105,6 +105,9 @@ struct StandingsCard: View {
     let myTeamID: String
     /// 내가 등판한 경기들. 이게 없으면 내가 아무리 잘 던져도 우리 팀 순위가 안 움직인다.
     var myGames: [ProGameLine] = []
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric(relativeTo: .caption) private var rateWidth: CGFloat = 40
+    @ScaledMetric(relativeTo: .caption) private var gapWidth: CGFloat = 34
     @Environment(\.gameCopyResolver) private var copyResolver
 
     private var rows: [LeagueTable.StandingRow] {
@@ -146,30 +149,39 @@ struct StandingsCard: View {
                         row.teamName,
                         resolver: copyResolver
                     )
-                    HStack(spacing: 8) {
-                        Text("\(index + 1)")
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textTertiary)
-                            .frame(width: 18, alignment: .trailing)
-                        // localization-safe: resolved-copy
-                        Text(localizedTeam)
-                            .font(BaseballType.annotation.weight(mine ? .bold : .regular))
-                            .foregroundStyle(mine ? BaseballTheme.action : BaseballTheme.textPrimary)
-                            .lineLimit(1)
-                        Spacer(minLength: 4)
-                        Text("\(row.wins)-\(row.losses)-\(row.draws)")
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                        // localization-safe: numeric
-                        Text(PitchingMetrics.rateText(row.winRate))
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textPrimary)
-                            .frame(width: 40, alignment: .trailing)
-                        // localization-safe: numeric
-                        Text(index == 0 ? "-" : String(format: "%.1f", LeagueTable.gamesBehind(row, leader: all[0])))
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textTertiary)
-                            .frame(width: 34, alignment: .trailing)
+                    let layout = typeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+                        : AnyLayout(HStackLayout(spacing: 8))
+                    layout {
+                        HStack(spacing: 8) {
+                            Text("\(index + 1)")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                                .fixedSize()
+                            // localization-safe: resolved-copy
+                            Text(localizedTeam)
+                                .font(BaseballType.annotation.weight(mine ? .bold : .regular))
+                                .foregroundStyle(mine ? BaseballTheme.action : BaseballTheme.textPrimary)
+                                .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                        }
+                        if !typeSize.isAccessibilitySize { Spacer(minLength: 4) }
+                        HStack(spacing: 8) {
+                            Text("\(row.wins)-\(row.losses)-\(row.draws)")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                            // localization-safe: numeric
+                            Text(PitchingMetrics.rateText(row.winRate))
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textPrimary)
+                                .fixedSize()
+                                .frame(minWidth: rateWidth, alignment: .trailing)
+                            // localization-safe: numeric
+                            Text(index == 0 ? "-" : String(format: "%.1f", LeagueTable.gamesBehind(row, leader: all[0])))
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                                .fixedSize()
+                                .frame(minWidth: gapWidth, alignment: .trailing)
+                        }
                     }
                     .padding(.vertical, 6)
                     .accessibilityElement(children: .combine)
@@ -183,7 +195,9 @@ struct StandingsCard: View {
                             .integer(row.draws),
                             .userText(PitchingMetrics.rateText(row.winRate)),
                         ]
-                    ))
+                    ) + ", " + copyResolver.resolve(.leagueGamesBehindAccessibility, arguments: [
+                        .userText(index == 0 ? "—" : String(format: "%.1f", LeagueTable.gamesBehind(row, leader: all[0])))
+                    ]))
                     if row.id != all.last?.id {
                         Rectangle().fill(BaseballTheme.border.opacity(0.3)).frame(height: 1)
                     }
@@ -201,6 +215,7 @@ struct PitcherLeaderboardCard: View {
     let week: Int
     let player: LeagueTable.PitcherRow?
 
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var sort: LeagueTable.PitcherSort = .runsPer9
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -215,19 +230,18 @@ struct PitcherLeaderboardCard: View {
     var body: some View {
         BaseballCard(title: copyResolver.resolve(.leaguePitchersTitle)) {
             VStack(alignment: .leading, spacing: 10) {
-                Picker(copyResolver.resolve(.leagueSort), selection: $sort) {
-                    ForEach(LeagueTable.PitcherSort.allCases, id: \.self) { option in
-                        // localization-safe: resolved-copy
-                        Text(sortTitle(option)).tag(option)
-                    }
+                if typeSize.isAccessibilitySize {
+                    sortPicker.pickerStyle(.menu)
+                } else {
+                    sortPicker.pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
 
-                let all = rows
-                // 상위 10명과 내 선수. 전부 보여 주면 목록이 화면을 잡아먹는다.
-                let visible = Array(all.prefix(10)) + (all.prefix(10).contains { $0.isPlayer } ? [] : all.filter(\.isPlayer))
-                ForEach(Array(visible.enumerated()), id: \.element.id) { index, row in
-                    let rank = (all.firstIndex { $0.id == row.id } ?? index) + 1
+                let ranked = rows.enumerated().map { (rank: $0.offset + 1, row: $0.element) }
+                // Names can repeat. Rank identifies this sorted display row without changing core IDs.
+                let visible = Array(ranked.prefix(10)) + ranked.dropFirst(10).filter { $0.row.isPlayer }
+                ForEach(visible, id: \.rank) { entry in
+                    let row = entry.row
+                    let rank = entry.rank
                     let localizedName = ProCareerPresentation.leaguePitcherName(
                         row.name,
                         isPlayer: row.isPlayer,
@@ -237,33 +251,40 @@ struct PitcherLeaderboardCard: View {
                         row.teamName,
                         resolver: copyResolver
                     )
-                    HStack(spacing: 8) {
-                        Text("\(rank)")
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textTertiary)
-                            .frame(width: 20, alignment: .trailing)
-                        VStack(alignment: .leading, spacing: 0) {
-                            // localization-safe: resolved-copy
-                            Text(localizedName)
-                                .font(BaseballType.annotation.weight(row.isPlayer ? .bold : .regular))
-                                .foregroundStyle(row.isPlayer ? BaseballTheme.action : BaseballTheme.textPrimary)
-                            // localization-safe: resolved-copy
-                            Text(localizedTeam)
-                                .font(.caption2)
+                    let layout = typeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+                        : AnyLayout(HStackLayout(spacing: 8))
+                    layout {
+                        HStack(spacing: 8) {
+                            Text("\(rank)")
+                                .font(.caption.monospacedDigit())
                                 .foregroundStyle(BaseballTheme.textTertiary)
+                                .fixedSize()
+                            VStack(alignment: .leading, spacing: 0) {
+                                // localization-safe: resolved-copy
+                                Text(localizedName)
+                                    .font(BaseballType.annotation.weight(row.isPlayer ? .bold : .regular))
+                                    .foregroundStyle(row.isPlayer ? BaseballTheme.action : BaseballTheme.textPrimary)
+                                // localization-safe: resolved-copy
+                                Text(localizedTeam)
+                                    .font(.caption2)
+                                    .foregroundStyle(BaseballTheme.textTertiary)
+                            }
                         }
-                        Spacer(minLength: 4)
-                        // localization-safe: numeric
-                        Text(value(for: row))
-                            .font(BaseballType.annotation.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textPrimary)
-                        Text(copyResolver.resolve(
-                            .leagueInningsValue,
-                            arguments: [.userText(PitchingMetrics.inningsText(outs: row.inningsOuts))]
-                        ))
-                            .font(.caption2.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textTertiary)
-                            .frame(width: 58, alignment: .trailing)
+                        if !typeSize.isAccessibilitySize { Spacer(minLength: 4) }
+                        HStack(spacing: 8) {
+                            // localization-safe: numeric
+                            Text(value(for: row))
+                                .font(BaseballType.annotation.weight(.semibold).monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textPrimary)
+                            Text(copyResolver.resolve(
+                                .leagueInningsValue,
+                                arguments: [.userText(PitchingMetrics.inningsText(outs: row.inningsOuts))]
+                            ))
+                                .font(.caption2.monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                                .fixedSize()
+                        }
                     }
                     .padding(.vertical, 5)
                     .accessibilityElement(children: .combine)
@@ -293,6 +314,15 @@ struct PitcherLeaderboardCard: View {
                 .leagueWinLoss,
                 arguments: [.integer(row.wins), .integer(row.losses)]
             )
+        }
+    }
+
+    private var sortPicker: some View {
+        Picker(copyResolver.resolve(.leagueSort), selection: $sort) {
+            ForEach(LeagueTable.PitcherSort.allCases, id: \.self) { option in
+                // localization-safe: resolved-copy
+                Text(sortTitle(option)).tag(option)
+            }
         }
     }
 
