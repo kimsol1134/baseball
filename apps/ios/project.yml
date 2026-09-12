@@ -175,6 +175,8 @@ schemes:
       config: Debug
     test:
       config: Debug
+      environmentVariables:
+        BASEBALL_TEST_ISOLATION: "1"
       targets:
         - BaseballIOSTests
         - BaseballIOSUITests

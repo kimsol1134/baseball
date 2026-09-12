@@ -1,8 +1,30 @@
 import XCTest
 @testable import BaseballIOS
 import BaseballIOSDomain
+import BaseballIOSPersistence
 
 final class AnalyticsContextTests: XCTestCase {
+    func testUnitTestHostIsIsolatedBeforeServicesConfigure() {
+        XCTAssertTrue(TestExecution.isRunning(), "The shared scheme must isolate the test host.")
+        XCTAssertFalse(TestExecution.isRunning(environment: [:]))
+        XCTAssertTrue(TestExecution.isRunning(environment: ["BASEBALL_TEST_ISOLATION": "1"]))
+        XCTAssertTrue(TestExecution.isRunning(environment: ["XCTestConfigurationFilePath": "/test/config"]))
+        XCTAssertTrue(TestExecution.isRunning(environment: ["XCTestBundlePath": "/test/bundle"]))
+    }
+
+    func testDefaultSaveMirrorRestoresAcrossInstancesWithoutICloud() throws {
+        XCTAssertTrue(TestExecution.isRunning())
+        let key = "isolated-mirror-\(UUID().uuidString).json"
+        let sync = SaveSync(key: key)
+        defer { sync.clear() }
+        let data = Data("saved-test-value".utf8)
+        XCTAssertTrue(sync.write(data))
+        let root = try XCTUnwrap(FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first)
+        try FileManager.default.removeItem(at: root.appendingPathComponent(key))
+        let restored = SaveSync(key: key).readRecovering(revision: { $0 == data ? 1 : nil })
+        XCTAssertEqual(restored, .value(data, source: .remote))
+    }
+
     func testDebugBuildIsDevelopment() {
         let context = AnalyticsContext.resolve(
             appVersion: "1.0.2", build: "42", isDebug: true,

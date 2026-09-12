@@ -181,6 +181,9 @@ final class RealPlayDraftRateTests: XCTestCase {
         /// 평가에 반영되는가**를 재기 위한 대리 측정이다(§2.5 Step B).
         battersOverride: Int? = nil
     ) throws -> RunOutcome? {
+        // Drain Foundation/Objective-C temporaries after each simulated career, not after
+        // the entire 60-seed test. The returned value contains only the measured totals.
+        return try autoreleasepool {
         var pitching = PitchingTotals()
         let engine = HighSchoolCareerEngine()
         // 화면이 만드는 것과 **같은 선수**로 시작한다. `HighSchoolCareerStore.startCareer`는
@@ -312,6 +315,7 @@ final class RealPlayDraftRateTests: XCTestCase {
         }
         XCTFail("시드 \(seed): 3년이 끝나지 않았습니다")
         return nil
+        }
     }
 
     /// 실력 0(중립 릴리스)으로 자동 진행한 회차의 지명률.

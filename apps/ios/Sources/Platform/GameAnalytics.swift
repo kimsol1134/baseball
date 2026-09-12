@@ -303,7 +303,7 @@ enum GameAnalytics {
     /// 앱 시작 시 한 번. 설정이 없으면 조용히 꺼진 채 남는다.
     static func configure() {
         // UI 테스트의 기계 플레이가 대시보드에 섞이면 퍼널이 거짓말이 된다.
-        guard !isUITest(arguments: ProcessInfo.processInfo.arguments) else {
+        guard !TestExecution.isRunning(), !isUITest(arguments: ProcessInfo.processInfo.arguments) else {
             amplitude = nil
             enabled = false
             return
@@ -378,7 +378,7 @@ enum GameAnalytics {
 
     static func log(_ event: Event, _ properties: [String: Any] = [:]) {
         eventSinkForTesting?(event, properties)
-        guard enabled else { return }
+        guard !TestExecution.isRunning(), enabled else { return }
         let reserved = Set(context.properties.keys).union(amplitudeOnlyProperties.keys)
         let collisions = reserved.intersection(properties.keys)
         assert(collisions.isEmpty, "Analytics context keys are reserved: \(collisions.sorted())")

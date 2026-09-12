@@ -12,6 +12,17 @@ public protocol SaveSyncRemoteStoring: AnyObject {
 
 extension NSUbiquitousKeyValueStore: SaveSyncRemoteStoring {}
 
+/// Shared within the test host so restoring through another SaveSync still exercises the mirror.
+private final class TestRemoteStore: SaveSyncRemoteStoring, @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [String: Data] = [:]
+
+    func data(forKey key: String) -> Data? { lock.withLock { values[key] } }
+    func set(_ value: Any?, forKey key: String) { lock.withLock { values[key] = value as? Data } }
+    func removeObject(forKey key: String) { lock.withLock { values[key] = nil } }
+    func synchronize() -> Bool { true }
+}
+
 /// 기기 사이로 진행을 옮기는 계층.
 ///
 /// 이전에는 `Application Support`의 파일 하나가 전부라, 앱을 지우면 회차·기억·업적이 모두
@@ -44,13 +55,17 @@ public struct SaveSync {
     public let key: String
 
     private let store: any SaveSyncRemoteStoring
+    private static let testRemoteStore = TestRemoteStore()
+    private static var defaultRemoteStore: any SaveSyncRemoteStoring {
+        TestExecution.isRunning() ? testRemoteStore : NSUbiquitousKeyValueStore.default
+    }
 
     public init(
         key: String,
-        store: any SaveSyncRemoteStoring = NSUbiquitousKeyValueStore.default
+        store: (any SaveSyncRemoteStoring)? = nil
     ) {
         self.key = key
-        self.store = store
+        self.store = store ?? Self.defaultRemoteStore
     }
 
     private var storageRoot: URL {
@@ -240,7 +255,7 @@ public struct SaveSync {
     ) -> NSObjectProtocol {
         NotificationCenter.default.addObserver(
             forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: NSUbiquitousKeyValueStore.default,
+            object: defaultRemoteStore,
             queue: .main
         ) { _ in
             Task { @MainActor in handler() }
@@ -249,6 +264,6 @@ public struct SaveSync {
 
     /// 앱 시작 때 한 번 호출해 iCloud 쪽 최신값을 끌어온다.
     public static func prime() {
-        NSUbiquitousKeyValueStore.default.synchronize()
+        defaultRemoteStore.synchronize()
     }
 }
