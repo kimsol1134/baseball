@@ -1454,14 +1454,14 @@
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = 57548A6844F2D1CD3B695CBDA877209D1B6E6A8F;
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 67;
+				CURRENT_PROJECT_VERSION = 68;
 				DEVELOPMENT_TEAM = D48DDX5D5W;
 				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.9;
+				MARKETING_VERSION = 1.2.10;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.solkim.baseball.ios$(BASEBALL_QA_BUNDLE_SUFFIX)";
 				PRODUCT_NAME = BaseballIOS;
 				PROVISIONING_PROFILE_SPECIFIER = "Baseball App Store 1.2.9";
@@ -1499,14 +1499,14 @@
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 67;
+				CURRENT_PROJECT_VERSION = 68;
 				DEVELOPMENT_TEAM = D48DDX5D5W;
 				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.9;
+				MARKETING_VERSION = 1.2.10;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.solkim.baseball.ios$(BASEBALL_QA_BUNDLE_SUFFIX)";
 				PRODUCT_NAME = BaseballIOS;
 				SDKROOT = iphoneos;
