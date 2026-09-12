@@ -17,6 +17,18 @@ enum ProSeasonSettlementCopy {
         return resolver.resolve(.journeySettlementTitle, arguments: [.integer(season)])
     }
 
+    /// 회차 비교 카드의 부제("N시즌 → M시즌"). 화면이 인자를 직접 조립하지 않게 여기서 맞춘다.
+    static func seasonComparisonSubtitle(
+        previousLabel: Int,
+        currentLabel: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .seasonComparisonSeasons,
+            arguments: [.integer(previousLabel), .integer(currentLabel)]
+        )
+    }
+
     static func arcTitleKey(_ id: String?) -> ProUICopyKey? {
         switch id {
         case "pro.arc.first_half_ace": .journeyArcFirstHalfAce

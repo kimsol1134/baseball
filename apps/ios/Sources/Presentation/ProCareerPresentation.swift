@@ -1193,21 +1193,57 @@ enum ProCareerPresentation {
         return "\(surnameValue) \(givenValue)"
     }
 
-    static func gameRole(_ line: ProGameLine, resolver: GameCopyResolver) -> String {
+    /// 경기 로그가 어느 무대의 줄인가. 고교와 프로가 같은 목록 뷰를 쓰지만 기간 단위와
+    /// 보직 표기가 다르다(QA 2026-09-12 F-04).
+    enum GameLogStage {
+        case highSchool
+        case pro
+    }
+
+    /// 이 줄을 선발로 부를 것인가.
+    ///
+    /// 고교에서 플레이어가 직접 던지는 경기는 화면이 "정규 경기 선발 등판 · 1회부터 마운드를
+    /// 맡습니다"라고 말하고 실제로 1회부터 던진다. 그런데 커널은 그 줄을 `started: false`로
+    /// 남긴다 — 그 값이 `DecisionRules.decide`로 승패 판정에 쓰이기 때문에 커널에서 뒤집으면
+    /// 고교 승패 기록이 통째로 달라진다. 그래서 표시 레이어에서만 바로잡는다.
+    private static func rendersAsStarter(_ line: ProGameLine, stage: GameLogStage) -> Bool {
+        if stage == .highSchool, line.played { return true }
+        return line.started
+    }
+
+    /// 기간 표기. 고교는 주가 아니라 장이다.
+    static func gamePeriod(_ line: ProGameLine, stage: GameLogStage, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            stage == .highSchool ? RecordUICopyKey.chapter : RecordUICopyKey.week,
+            arguments: [.integer(line.week)]
+        )
+    }
+
+    static func gameRole(
+        _ line: ProGameLine,
+        stage: GameLogStage = .pro,
+        resolver: GameCopyResolver
+    ) -> String {
         resolver.resolve(
             RecordUICopyKey.role,
             arguments: [
                 .userText(resolver.resolve(
-                    line.started ? AppCopyKey.proRoleStarter : AppCopyKey.proRoleReliever
+                    rendersAsStarter(line, stage: stage) ? AppCopyKey.proRoleStarter : AppCopyKey.proRoleReliever
                 )),
                 .userText(GameFormatters.innings(outs: line.outs, language: resolver.language)),
             ]
         )
     }
 
-    static func gameSummary(_ line: ProGameLine, resolver: GameCopyResolver) -> String {
+    static func gameSummary(
+        _ line: ProGameLine,
+        stage: GameLogStage = .pro,
+        resolver: GameCopyResolver
+    ) -> String {
         let key = line.hits == nil ? AppCopyKey.proOutingSummary : AppCopyKey.proOutingSummaryHits
-        let role = resolver.resolve(line.started ? AppCopyKey.proRoleStarter : AppCopyKey.proRoleReliever)
+        let role = resolver.resolve(
+            rendersAsStarter(line, stage: stage) ? AppCopyKey.proRoleStarter : AppCopyKey.proRoleReliever
+        )
         var arguments: [LocalizedCopyArgument] = [
             .userText(role),
             .userText(GameFormatters.innings(outs: line.outs, language: resolver.language)),
@@ -1266,13 +1302,21 @@ enum ProCareerPresentation {
         return key.map { resolver.resolve($0) }
     }
 
-    static func gameAccessibility(_ line: ProGameLine, resolver: GameCopyResolver) -> String {
+    static func gameAccessibility(
+        _ line: ProGameLine,
+        stage: GameLogStage = .pro,
+        resolver: GameCopyResolver
+    ) -> String {
         let decision = gameDecision(line.decision, resolver: resolver)
+        // 기간은 정수가 아니라 이미 현지화된 문구로 넘긴다. 고교는 "N장", 프로는 "N주차"라
+        // 자리 하나에 두 단위가 들어와야 한다 — 눈으로 읽는 줄과 같은 말을 듣게 한다.
         var arguments: [LocalizedCopyArgument] = [
-            .integer(line.week),
-            .userText(resolver.resolve(line.started ? AppCopyKey.proRoleStarter : AppCopyKey.proRoleReliever)),
+            .userText(gamePeriod(line, stage: stage, resolver: resolver)),
+            .userText(resolver.resolve(
+                rendersAsStarter(line, stage: stage) ? AppCopyKey.proRoleStarter : AppCopyKey.proRoleReliever
+            )),
             .userText(GameFormatters.innings(outs: line.outs, language: resolver.language)),
-            .userText(gameSummary(line, resolver: resolver)),
+            .userText(gameSummary(line, stage: stage, resolver: resolver)),
             .integer(line.teamRuns),
             .integer(line.opponentRuns),
         ]
@@ -1693,7 +1737,9 @@ struct AbilityGrowthGraph: View {
         GeometryReader { proxy in
             ForEach(Array(points.enumerated()), id: \.element.id) { index, entry in
                 Text(verbatim: "\(entry.season)")
-                    .font(.system(size: 9).monospacedDigit())
+                    // 화면에서 읽는 글자다. 9pt 고정은 기기 글자 크기를 따라가지 않아
+                    // 접근성 크기에서도 9pt로 남았다(QA 2026-09-12 F-10).
+                    .font(BaseballType.annotation.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .position(
                         x: point(entry.value(.stuff), index: index, in: proxy.size).x,
@@ -1749,7 +1795,7 @@ struct AbilityGrowthGraph: View {
                 style: StrokeStyle(lineWidth: 1, dash: isAverage ? [3, 3] : [2, 4])
             )
             Text(verbatim: MetaPresentation.ratingMeaning(rung, context: .pro, resolver: copyResolver))
-                .font(.system(size: 8))
+                .font(BaseballType.annotation)
                 .foregroundStyle(BaseballTheme.textTertiary.opacity(isAverage ? 1 : 0.8))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)

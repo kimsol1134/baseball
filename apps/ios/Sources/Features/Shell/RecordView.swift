@@ -218,7 +218,7 @@ private struct HighSchoolRecordBoard: View {
                             .detailStyle()
                     }
                 } else {
-                    GameLogSection(title: copyResolver.resolve(.highSchoolGames), lines: lines)
+                    GameLogSection(title: copyResolver.resolve(.highSchoolGames), lines: lines, stage: .highSchool)
                 }
 
                 if !state.selectedAwakenings.isEmpty {
@@ -974,6 +974,8 @@ struct ProDecisionHistoryCard: View {
 private struct GameLogSection: View {
     let title: String
     let lines: [ProGameLine]
+    /// 고교는 장, 프로는 주차로 센다. 같은 목록 뷰가 두 무대를 그린다(QA 2026-09-12 F-04).
+    var stage: ProCareerPresentation.GameLogStage = .pro
 
     /// 구원이면 한 시즌에 70등판이 넘는다. 처음부터 다 펼치면 화면이 목록에 잡아먹힌다.
     @State private var showsAll = false
@@ -989,7 +991,7 @@ private struct GameLogSection: View {
         BaseballCard(title: title) {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(visible) { line in
-                    GameLogRow(line: line)
+                    GameLogRow(line: line, stage: stage)
                     if line.id != visible.last?.id {
                         Rectangle()
                             .fill(BaseballTheme.border.opacity(0.35))
@@ -1015,6 +1017,7 @@ private struct GameLogSection: View {
 
 private struct GameLogRow: View {
     let line: ProGameLine
+    var stage: ProCareerPresentation.GameLogStage = .pro
     @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
@@ -1026,10 +1029,10 @@ private struct GameLogRow: View {
                 EffectChip(text: copyResolver.resolve(.directOuting), tone: .gain, systemImage: "hand.raised.fill")
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(copyResolver.resolve(.week, arguments: [.integer(line.week)]))
+                Text(ProCareerPresentation.gamePeriod(line, stage: stage, resolver: copyResolver))
                     .font(BaseballType.annotation.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textTertiary)
-                Text(ProCareerPresentation.gameRole(line, resolver: copyResolver))
+                Text(ProCareerPresentation.gameRole(line, stage: stage, resolver: copyResolver))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(BaseballTheme.textPrimary)
                 Spacer()
@@ -1044,14 +1047,14 @@ private struct GameLogRow: View {
                         .foregroundStyle(GameLineFormat.decisionTone(line.decision))
                 }
             }
-            Text(ProCareerPresentation.gameSummary(line, resolver: copyResolver))
+            Text(ProCareerPresentation.gameSummary(line, stage: stage, resolver: copyResolver))
                 .font(BaseballType.detail.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textSecondary)
         }
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(ProCareerPresentation.gameAccessibility(line, resolver: copyResolver))
+        .accessibilityLabel(ProCareerPresentation.gameAccessibility(line, stage: stage, resolver: copyResolver))
     }
 }
 

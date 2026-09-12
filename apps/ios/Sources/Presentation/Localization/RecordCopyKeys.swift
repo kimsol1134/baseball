@@ -85,6 +85,9 @@ enum RecordUICopyKey: String, CaseIterable, Sendable {
 
     case directOuting = "record.game-log.direct-outing"
     case week = "record.game-log.week"
+    /// 고교는 주가 아니라 장 단위로 진행한다. 같은 목록 뷰가 두 무대를 그리므로
+    /// 기간 표기만 무대별로 갈라 쓴다(QA 2026-09-12 F-04).
+    case chapter = "record.game-log.chapter"
     case role = "record.game-log.role"
     case showRecent = "record.game-log.show-recent"
     case showAll = "record.game-log.show-all"

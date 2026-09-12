@@ -172,12 +172,12 @@ final class ScopedPresentationLocalizationTests: XCTestCase {
         XCTAssertEqual(
             english.resolve(AppCopyKey.prospectRankingForecastDetail,
                             arguments: ProspectRankingPresentation.forecastDetailArguments(forecast, resolver: english)),
-            "Evaluation 52 · Draft cutoff 66 · Daegu Forge is on the scouting radar"
+            "Evaluation 52 · Draft cutoff 50 · Daegu Forge is on the scouting radar"
         )
         XCTAssertEqual(
             korean.resolve(AppCopyKey.prospectRankingForecastDetail,
                            arguments: ProspectRankingPresentation.forecastDetailArguments(forecast, resolver: korean)),
-            "평가 52점 · 당락선 66점 · 대구 포지가 주목"
+            "평가 52점 · 당락선 50점 · 대구 포지가 주목"
         )
     }
 

@@ -129,6 +129,14 @@ function filesUnder(directory) {
   });
 }
 
+// 주석은 플레이어에게 보이지 않는다. 내부 용어 금지 목록이 설계 주석까지 잡으면 게이트가
+// 상시 빨갛게 남아 진짜 위반을 가린다(QA 2026-09-12 G-01). 실존 야구 IP 검사에는 이 예외를
+// 적용하지 않는다 — 주석에도 실존 구단명을 적지 않는 것이 규칙이다.
+const isCommentLine = (line) => {
+  const trimmed = line.trimStart();
+  return trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*");
+};
+
 const failures = [];
 for (const sourceRoot of sourceRoots) {
   for (const path of filesUnder(join(root, sourceRoot))) {
@@ -136,6 +144,7 @@ for (const sourceRoot of sourceRoots) {
     const lines = source.split("\n");
     for (const blocked of blockedCopy) {
       lines.forEach((line, index) => {
+        if (isCommentLine(line)) return;
         if (line.includes(blocked)) failures.push(`${relative(root, path)}:${index + 1} — ${blocked}`);
       });
     }

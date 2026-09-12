@@ -58,9 +58,10 @@ struct ProSeasonSettlementView: View {
                     CareerComparisonCard(
                         comparison: comparison,
                         title: copyResolver.resolve(.seasonComparisonTitle),
-                        subtitle: copyResolver.resolve(
-                            .seasonComparisonSeasons,
-                            arguments: [.integer(comparison.previousLabel), .integer(comparison.currentLabel)]
+                        subtitle: ProSeasonSettlementCopy.seasonComparisonSubtitle(
+                            previousLabel: comparison.previousLabel,
+                            currentLabel: comparison.currentLabel,
+                            resolver: copyResolver
                         ),
                         identifier: "pro.settlement.seasonComparison"
                     )

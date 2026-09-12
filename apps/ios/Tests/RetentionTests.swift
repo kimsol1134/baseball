@@ -221,8 +221,13 @@ final class RetentionTests: XCTestCase {
             bodyType: .balanced,
             region: "서울"
         )
+        // 스토어는 아카이브에 실제로 보관된 생의 수를 넘긴다. 도전 판은 맨몸이라 0이다.
+        // 이 인자를 빼면 커널이 `lifeNumber - 1`로 폴백해 1생 완주 보너스가 얹힌다.
         let bare = try HighSchoolCareerEngine().start(
-            .init(seed: "424242", presetID: preset.id, lifeNumber: 2, identity: identity)
+            .init(
+                seed: "424242", presetID: preset.id, lifeNumber: 2, identity: identity,
+                signatureLegacyID: nil, inheritanceRulesVersion: nil, completedLives: 0
+            )
         )
 
         XCTAssertTrue(store.isChallengeRun)
@@ -1481,7 +1486,10 @@ final class RetentionTests: XCTestCase {
             soulBoosts: nil,
             inheritedSoulTotal: 40,
             signatureLegacyID: nil,
-            inheritanceRulesVersion: SoulInheritanceRulesVersion.current.rawValue
+            inheritanceRulesVersion: SoulInheritanceRulesVersion.current.rawValue,
+            // 아카이브가 비어 있으므로 스토어도 0을 넘긴다. 생략하면 커널이 `lifeNumber - 1`로
+            // 폴백해 기대값에만 1생 완주 보너스가 붙는다.
+            completedLives: 0
         ))
         var rebirthProperties: [String: Any]?
         GameAnalytics.eventSinkForTesting = { event, properties in

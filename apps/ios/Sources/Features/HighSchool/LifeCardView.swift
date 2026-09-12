@@ -124,7 +124,8 @@ struct LifeCardView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(copyResolver.resolve(AppCopyKey.conclusionLifeCardStatsTitle))
                     .eyebrowStyle(BaseballTheme.textTertiary)
-                // 야구를 아는 사람이 먼저 보는 줄. 이닝이 있어야 방어율·WHIP이 성립한다.
+                // 야구를 아는 사람이 먼저 보는 줄. 이닝이 있어야 RA9·WHIP이 성립한다.
+                // RA9는 실점 기준이라 자책점 기준인 방어율(ERA)과 다르다 — 이름을 섞지 않는다.
                 if let rate = rateLine {
                     HStack(spacing: 0) {
                         rateStat(AppCopyKey.conclusionLifeCardInnings, rate.innings)
