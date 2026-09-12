@@ -105,3 +105,16 @@ F-08 및 경미한 끝 구분자 문제 등 잔여 항목은 `IOS_REMAINING_WORK
 
 Apple 안내: [새 버전 만들기](https://developer.apple.com/help/app-store-connect/update-your-app/create-a-new-version),
 [빌드 업로드](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds).
+
+## 실기기 실행 · 2026-09-12 19:31 KST
+
+사용자가 연결한 실기기에서 실행을 요청해 iPhone 16 Pro에 1.2.10 (68)을 설치하고 전면 실행했다.
+동일 Release 아카이브를 개발 서명으로 다시 내보냈으며 App Store IPA는 변경하지 않았다.
+기존 개발 프로파일의 Associated Domains 누락으로 첫 export가 실패해, 등록된 기기와 기존 개발 인증서로
+`Baseball Device 1.2.10` 프로파일을 생성한 뒤 export에 성공했다.
+기존 앱 1.2.3 (61)을 업데이트했으며 앱 삭제·세이브 초기화·언어 강제 변경은 하지 않았다.
+`devicectl` 설치·실행 성공 및 실행 프로세스 PID 21391을 확인했다.
+네트워크 screenshotr 서비스가 지원되지 않아 스크린샷은 얻지 못했다.
+이 실행만으로 일본어 스모크나 UI 육안 검증 완료로 간주하지 않는다. TestFlight 업로드는 하지 않았다.
+증거: `evidence/export-device.log`, `device-install.json`, `device-launch.json`, `device-processes.json`.
+설치용 IPA는 `export-device/BaseballIOS.ipa`에 보존하고 설치에 사용한 압축 해제 사본은 제거했다.
