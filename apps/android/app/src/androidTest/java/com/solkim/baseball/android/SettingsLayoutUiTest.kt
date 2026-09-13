@@ -41,6 +41,8 @@ class SettingsLayoutUiTest {
             compose.waitForIdle()
             compose.onNodeWithTag("settings.sound").performScrollTo().assertIsDisplayed().assertIsOn()
             compose.onNodeWithTag("settings.assist").assertDoesNotExist()
+            compose.onNodeWithTag("settings.review").performScrollTo().assertIsDisplayed()
+                .assertTextContains(GameCopy(GameLanguage.fromTag(code)).resolve("android.review.store.title"))
             compose.mainClock.advanceTimeBy(1_000)
             compose.waitForIdle()
             val inst = InstrumentationRegistry.getInstrumentation()

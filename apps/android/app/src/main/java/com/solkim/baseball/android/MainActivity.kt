@@ -295,7 +295,7 @@ public class MainActivity : ComponentActivity() {
                         val markerSeed = commandContext.seed((application as BaseballApplication).gameStore.current, "presentation:$marker").toULongOrNull() ?: 0UL
                         platform.audioHaptics.presentNativeMarker(marker, playbackSettings(), markerSeed)
                     }
-                    requestReviewAtProductMoment(action.actionId)
+                    if (!launchedMound) requestReviewAtProductMoment(action.actionId, beforeAction)
                     if (action.actionId == "prepareReturnPlan") scheduleSavedReturnPlan()
                     refreshPlatformUiState()
                     val completedGamesAfter = (application as BaseballApplication).gameStore.current.meta.completedGameCount

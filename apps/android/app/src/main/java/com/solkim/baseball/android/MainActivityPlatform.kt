@@ -29,26 +29,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Mirrors the iOS callers: the request is attempted only after the exact rendered product
- * moment has been durably acknowledged by the aggregate. A route visit alone can never prompt.
+ * The saved before/after transition proves that a visible continuation action succeeded.
+ * A route visit alone can never prompt; a delayed Play response must still match this moment.
  */
-internal fun MainActivity.requestReviewAtProductMoment(actionId: String) {
-    val reason = when (actionId) {
-        "confirmDraftResult" -> ReviewReason.DRAFTED_REVEAL_CONFIRMED
-        "confirmRecap" -> ReviewReason.GOOD_RECAP
-        "quickRebirth",
-        "startHighSchool" -> ReviewReason.THIRD_LIFE
-        else -> return
-    }
+internal fun MainActivity.requestReviewAtProductMoment(actionId: String, before: com.solkim.baseball.application.GameAggregateState) {
     val state = (application as BaseballApplication).gameStore.current
-    val trigger = ScreenProjection.reviewTrigger(state)
-    val expectedTrigger = when (reason) {
-        ReviewReason.DRAFTED_REVEAL_CONFIRMED -> "drafted-reveal-confirmed"
-        ReviewReason.GOOD_RECAP -> "good-recap"
-        ReviewReason.THIRD_LIFE -> "third-life"
-    }
-    if (trigger != expectedTrigger || platform.review.eligibility(reason).eligible.not()) return
-    platform.review.request(this, reason) { result ->
+    val trigger = com.solkim.baseball.application.ReviewMomentPolicy.reasonAfter(actionId, before, state) ?: return
+    val reason = ReviewReason.entries.first { it.wire == trigger }
+    val screen = selectedScreen
+    platform.review.request(this, reason, isStillAtMoment = {
+        val current = (application as BaseballApplication).gameStore.current
+        current.installId == state.installId && current.revision == state.revision && selectedScreen == screen
+    }) { result ->
         if (result is ReviewResult.Failed) {
             // Play failures are external platform results; they never mutate the game state.
             refreshPlatformUiState()

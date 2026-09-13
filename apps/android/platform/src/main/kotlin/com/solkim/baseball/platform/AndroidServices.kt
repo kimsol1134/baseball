@@ -680,30 +680,49 @@ public class NativePlayReviewService(
     private val gate: ReviewGate,
 ) {
     private val manager = runCatching { ReviewManagerFactory.create(context) }.getOrNull()
+    private var requestInFlight = false
 
     public fun eligibility(reason: ReviewReason): ReviewGateDecision = gate.canRequest(reason)
 
-    public fun request(activity: Activity, reason: ReviewReason, callback: (ReviewResult) -> Unit) {
+    public fun request(activity: Activity, reason: ReviewReason, isStillAtMoment: () -> Boolean = { true }, callback: (ReviewResult) -> Unit) {
         val eligible = runCatching { gate.canRequest(reason) }.getOrElse { callback(ReviewResult.Failed("review.gate")); return }
-        if (!eligible.eligible || manager == null) {
-            callback(if (!eligible.eligible) ReviewResult.Ineligible else ReviewResult.Failed("review.unavailable"))
+        if (!eligible.eligible || manager == null || requestInFlight) {
+            callback(if (!eligible.eligible || requestInFlight) ReviewResult.Ineligible else ReviewResult.Failed("review.unavailable"))
             return
         }
-        // A reason is consumed only once the native manager is present and a real request is
-        // being attempted. Missing Play services/credentials must not burn the product gate.
-        val reserved = runCatching { gate.reserve(reason) }.getOrElse { callback(ReviewResult.Failed("review.gate")); return }
-        if (!reserved.eligible) { callback(ReviewResult.Ineligible); return }
+        // Fetching ReviewInfo can fail offline. Consume the durable reason only when ready
+        // to launch; a successful launch callback does not prove a review was shown or written.
+        requestInFlight = true
         try {
             manager.requestReviewFlow().addOnCompleteListener { request ->
                 if (!request.isSuccessful || request.result == null) {
+                    requestInFlight = false
                     callback(ReviewResult.Failed("review.request"))
                     return@addOnCompleteListener
                 }
-                manager.launchReviewFlow(activity, request.result).addOnCompleteListener { launch ->
-                    callback(if (launch.isSuccessful) ReviewResult.Opened else ReviewResult.Failed("review.launch"))
+                try {
+                    if (activity.isFinishing || activity.isDestroyed || !activity.hasWindowFocus() || !isStillAtMoment()) {
+                        requestInFlight = false
+                        callback(ReviewResult.Ineligible)
+                        return@addOnCompleteListener
+                    }
+                    val reserved = gate.reserve(reason)
+                    if (!reserved.eligible) {
+                        requestInFlight = false
+                        callback(ReviewResult.Ineligible)
+                        return@addOnCompleteListener
+                    }
+                    manager.launchReviewFlow(activity, request.result).addOnCompleteListener { launch ->
+                        requestInFlight = false
+                        callback(if (launch.isSuccessful) ReviewResult.Opened else ReviewResult.Failed("review.launch"))
+                    }
+                } catch (_: Throwable) {
+                    requestInFlight = false
+                    callback(ReviewResult.Failed("review.launch"))
                 }
             }
         } catch (_: Throwable) {
+            requestInFlight = false
             callback(ReviewResult.Failed("review.exception"))
         }
     }

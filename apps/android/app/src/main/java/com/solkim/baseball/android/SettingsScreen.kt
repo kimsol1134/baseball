@@ -127,6 +127,16 @@ internal fun SettingsScreen(
                                     SettingsLink(label(target.key), "settings.open.${target.key}") { page = target }
                                 }
                             }
+                            SettingsGroup {
+                                SettingsLink(copy.resolve("android.review.store.title"), "settings.review") {
+                                    linkError = null
+                                    linkNotice = null
+                                    if (!ReviewStoreLinks.open(context)) linkError = copy.resolve("android.review.store.unavailable")
+                                }
+                                Text(copy.resolve("android.review.store.body"), verbatim = true,
+                                    color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+                            }
                         }
                         SettingsPage.CONTROLS -> {
                             Text(label("manual-default"), verbatim = true, color = BaseballColors.textSecondary, style = MaterialTheme.typography.bodyMedium)
