@@ -1,4 +1,19 @@
 {
+  "android.review.store.title": {
+    "ko": "Google Play에 리뷰 남기기",
+    "en": "Write a review on Google Play",
+    "ja": "Google Playでレビューを書く"
+  },
+  "android.review.store.body": {
+    "ko": "기억에 남은 야구 인생을 들려주세요. 솔직한 경험이 다른 플레이어의 선택에 도움이 됩니다.",
+    "en": "Share a moment from your baseball career. Your honest experience helps other players decide whether to play.",
+    "ja": "心に残った野球人生を聞かせてください。率直な感想が、ほかのプレイヤーのゲーム選びに役立ちます。"
+  },
+  "android.review.store.unavailable": {
+    "ko": "스토어를 열 수 없어요. Google Play에서 앱 이름을 검색해 주세요.",
+    "en": "Couldn't open the store. Search for the app in Google Play.",
+    "ja": "ストアを開けませんでした。Google Playでアプリ名を検索してください。"
+  },
   "android.setup.preset-description": {
     "ko": "%1$s. 구위 %2$d, 제구 %3$d, 무브먼트 %4$d, 체력 %5$d. 능력치는 100점 만점입니다.",
     "en": "%1$s. Stuff %2$d, command %3$d, movement %4$d, stamina %5$d. All abilities are out of 100.",

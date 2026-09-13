@@ -708,6 +708,48 @@ class ScreenProjectionTest {
         assertFalse(advanced.chapterGameClaimed)
     }
 
+    @Test
+    fun reviewFollowsVisibleRecapContinuationButNeverVisitsOrFailedCommands() = runBlocking {
+        val (store, controller) = completedHighSchoolFixture("review-visible-recap", archive = false)
+        val before = store.current
+        assertTrue(ScreenProjection.recapDeservesReview(before))
+        assertNull(ScreenProjection.reviewTrigger(before)) // No hidden confirmation button was pressed.
+        executeFirst(controller, ScreenId.P014_RUN_RECAP, "finalizeArchive")
+        val after = store.current
+        val expected = if (before.highSchool?.run?.draftResult?.outcome?.wire == "drafted") "drafted-reveal-confirmed" else "good-recap"
+        assertEquals(expected, ReviewMomentPolicy.reasonAfter("finalizeArchive", before, after))
+        assertNull(ReviewMomentPolicy.reasonAfter("finalizeArchive", before, before))
+        assertNull(ReviewMomentPolicy.reasonAfter("resolveDraft", before, after))
+        assertNull(ReviewMomentPolicy.reasonAfter("openSettings", before, after))
+        assertNull(ReviewMomentPolicy.reasonAfter("finalizeArchive", before, after.copy(installId = "reset-install")))
+        val school = requireNotNull(before.highSchool)
+        val unfinished = before.copy(highSchool = school.copy(run = school.run.copy(phase = HighSchoolPhase.TRAINING)))
+        assertNull(ReviewMomentPolicy.reasonAfter("finalizeArchive", unfinished, after))
+        val challenge = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel().startChallenge(school).state
+        assertNull(ReviewMomentPolicy.reasonAfter("finalizeArchive", before.copy(highSchool = challenge), after))
+    }
+
+    @Test
+    fun everyVisibleRebirthPathCanRequestFromThirdLifeIncludingSchoolSelection() = runBlocking {
+        val (store, _) = completedHighSchoolFixture("review-visible-rebirth")
+        val original = store.current
+        for (id in listOf("quickRebirth", "rebirthPath:endurance", "rebirthPath:closer", "rebirthPath:command")) {
+            val replay = KotlinGameStore.fromShadowFixture(original)
+            val controller = ScreenController(replay, context)
+            executeFirst(controller, ScreenId.P015_REBIRTH, id)
+            val actualAfter = replay.current
+            assertNull(ReviewMomentPolicy.reasonAfter(id, original, actualAfter)) // Second life is too early.
+            val previousSchool = requireNotNull(original.highSchool)
+            val nextSchool = requireNotNull(actualAfter.highSchool)
+            val before = original.copy(highSchool = previousSchool.copy(run = previousSchool.run.copy(lifeNumber = 2)))
+            val after = actualAfter.copy(highSchool = nextSchool.copy(run = nextSchool.run.copy(lifeNumber = 3)))
+            assertEquals("third-life", ReviewMomentPolicy.reasonAfter(id, before, after), id)
+            assertNull(ReviewMomentPolicy.reasonAfter("chooseSchool", before, after))
+            assertNull(ReviewMomentPolicy.reasonAfter(id, after, after.copy(revision = after.revision + 1UL)))
+            if (id.startsWith("rebirthPath:")) assertEquals(HighSchoolPhase.SCHOOL_SELECTION, nextSchool.run.phase)
+        }
+    }
+
     private suspend fun completedHighSchoolFixture(installId: String, archive: Boolean = true): Pair<KotlinGameStore, ScreenController> {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial(installId))
         val controller = ScreenController(store, context)
