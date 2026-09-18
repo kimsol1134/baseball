@@ -9,6 +9,24 @@ import XCTest
 /// 소스 계약은 리팩터를 잡고, ImageRenderer는 한글 획이 실제로 잘렸는지를 잡는다.
 /// 1.0.2 리뷰 "글씨가 화면 밖으로", 페르소나 05-setup-repertoire 제목 윗획 잘림.
 final class HighSchoolSetupLayoutTests: XCTestCase {
+    func testOpeningStartStaysPinnedOutsideIntroScroll() throws {
+        let source = try IOSSourceScan.read(
+            "apps/ios/Sources/Features/HighSchool/OpeningView.swift"
+        )
+        XCTAssertTrue(source.contains("hs.opening.startBar"))
+        XCTAssertTrue(source.contains("startBarReserve"))
+        XCTAssertTrue(source.contains("identifier: \"hs.opening.start\""))
+        let scroll = try XCTUnwrap(source.range(of: "ScrollView {"))
+        let indicators = try XCTUnwrap(source.range(of: ".scrollIndicators(.hidden)"))
+        XCTAssertLessThan(scroll.lowerBound, indicators.lowerBound)
+        let scrollBody = source[scroll.lowerBound..<indicators.lowerBound]
+        XCTAssertFalse(
+            scrollBody.contains("hs.opening.start"),
+            "시작 CTA는 소개 ScrollView 안에 두면 큰 글자에서 접힌다."
+        )
+        XCTAssertGreaterThan(OpeningView.startBarReserve, 52)
+    }
+
     func testSetupStepTransitionIsClippedToScrollArea() throws {
         let source = try IOSSourceScan.read(
             "apps/ios/Sources/Features/HighSchool/HighSchoolSetupView.swift"

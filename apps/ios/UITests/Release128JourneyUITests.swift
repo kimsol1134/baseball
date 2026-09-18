@@ -717,19 +717,27 @@ final class Release128JourneyUITests: XCTestCase {
 
     private func signRookieContract(_ app: XCUIApplication) {
         guard identified(app, "pro.contractOffer").waitForExistence(timeout: timeout) else { return }
-        if identified(app, "pro.contractOffer.ambition.required").exists {
-            let ambitionIDs = [
-                "pro.contractOffer.ambition.franchise_icon",
-                "pro.contractOffer.ambition.record_book",
-                "pro.contractOffer.ambition.enduring_pro",
-            ]
-            if let ambition = ambitionIDs.map({ app.buttons[$0] }).first(where: { $0.exists && $0.isEnabled }) {
+        let sign = app.buttons["pro.contractOffer.sign"]
+        let ambitionIDs = [
+            "pro.contractOffer.ambition.franchise_icon",
+            "pro.contractOffer.ambition.record_book",
+            "pro.contractOffer.ambition.enduring_pro",
+        ]
+        if identified(app, "pro.contractOffer.ambition.required").exists || (sign.exists && !sign.isEnabled) {
+            var ambition = ambitionIDs.map({ app.buttons[$0] }).first(where: { $0.exists && $0.isEnabled })
+            for _ in 0..<12 where ambition == nil {
+                app.swipeUp()
+                ambition = ambitionIDs.map({ app.buttons[$0] }).first(where: { $0.exists && $0.isEnabled })
+            }
+            if let ambition {
                 XCTAssertTrue(bringIntoView(ambition, attempts: 12))
                 ambition.tap()
             }
         }
-        let sign = app.buttons["pro.contractOffer.sign"]
-        XCTAssertTrue(sign.waitForExistence(timeout: timeout))
+        for _ in 0..<12 where !sign.exists {
+            app.swipeUp()
+        }
+        XCTAssertTrue(sign.waitForExistence(timeout: timeout), "신인 계약 서명 버튼이 없습니다. \(visibleIdentifiers(app))")
         XCTAssertTrue(bringIntoView(sign, attempts: 12), "신인 계약 서명 버튼이 화면에 없습니다.")
         if sign.isEnabled {
             sign.tap()
@@ -762,7 +770,8 @@ final class Release128JourneyUITests: XCTestCase {
     private func advanceToSeasonDecision(_ app: XCUIApplication) -> Bool {
         for _ in 0..<40 {
             if identified(app, "pro.seasonDecision").exists { return true }
-            if tapIfPresent(app.buttons["pro.seasonDecision.result.continue"]) { continue }
+            if forceTap(app.buttons["pro.notice.followUp.dismiss"]) { continue }
+            if forceTap(app.buttons["pro.seasonDecision.result.continue"]) { continue }
             if identified(app, "pro.contractOffer").exists { signRookieContract(app); continue }
             if app.buttons["pro.game.start"].exists {
                 tapIfPresent(app.buttons["pro.game.start"])
@@ -794,7 +803,7 @@ final class Release128JourneyUITests: XCTestCase {
         ).firstMatch
         for _ in 0..<48 {
             if followUp.exists { return true }
-            if tapIfPresent(app.buttons["pro.seasonDecision.result.continue"]) { continue }
+            if forceTap(app.buttons["pro.seasonDecision.result.continue"]) { continue }
             if identified(app, "pro.contractOffer").exists {
                 signRookieContract(app)
                 continue
@@ -879,6 +888,16 @@ final class Release128JourneyUITests: XCTestCase {
         while steps < 200 {
             steps += 1
             if app.buttons["pro.offseason.arrow.forward.circle"].exists { return true }
+            if forceTap(app.buttons["pro.notice.followUp.dismiss"]) { continue }
+            if forceTap(app.buttons["pro.seasonDecision.result.continue"]) { continue }
+            if identified(app, "pro.weekly.news.v1").exists {
+                if tapIfPresent(app.buttons["닫기"])
+                    || tapIfPresent(app.buttons["Close"])
+                    || tapIfPresent(app.buttons["閉じる"])
+                    || tapIfPresent(app.buttons["pro.notice.banner.dismiss"]) {
+                    continue
+                }
+            }
             if identified(app, "pro.seasonSettlement").exists {
                 capture(app, scenario: "06-season-complete", step: "settlement")
                 capture(app, scenario: "glyphs-iphone17", step: "settlement")
@@ -1088,14 +1107,26 @@ final class Release128JourneyUITests: XCTestCase {
             || windUpPad(app).exists {
             return
         }
-        let start = app.buttons["hs.opening.start"]
+        let start = app.descendants(matching: .any)["hs.opening.start"].firstMatch
         guard start.waitForExistence(timeout: timeout) else { return }
         if start.isHittable {
             start.tap()
-        } else {
-            start.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            if start.waitForNonExistence(timeout: 2) { return }
         }
-        _ = start.waitForNonExistence(timeout: timeout)
+        for _ in 0..<4 {
+            app.swipeUp()
+            if start.isHittable {
+                start.tap()
+            } else if start.exists {
+                start.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            } else {
+                break
+            }
+            if start.waitForNonExistence(timeout: 1) { return }
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.92)).tap()
+            if start.waitForNonExistence(timeout: 1) { return }
+        }
+        _ = start.waitForNonExistence(timeout: 2)
     }
 
     @discardableResult
@@ -1228,6 +1259,21 @@ final class Release128JourneyUITests: XCTestCase {
     private func tapIfPresent(_ element: XCUIElement) -> Bool {
         guard element.exists, element.isEnabled, bringIntoView(element) else { return false }
         element.tap()
+        return true
+    }
+
+    @discardableResult
+    private func forceTap(_ element: XCUIElement) -> Bool {
+        guard element.exists else { return false }
+        if element.isHittable {
+            element.tap()
+            return true
+        }
+        if bringIntoView(element, attempts: 12) {
+            element.tap()
+            return true
+        }
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         return true
     }
 
