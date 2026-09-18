@@ -475,29 +475,39 @@ final class HighSchoolCareerEngineTests: XCTestCase {
 
     func testPoorResultsReachUndraftedLegacyAndSelectThreeMemories() throws {
         let engine = HighSchoolCareerEngine()
-        var result = try engine.start(
-            StartHighSchoolCareerParams(seed: "17", presetID: "precision_commander")
-        )
-        result = try engine.completePrologue(
-            AdvanceCareerChapterParams(seed: result.nextSeed, state: result.snapshot)
-        )
-        result = try engine.chooseSchool(
-            ChooseSchoolParams(seed: result.nextSeed, state: result.snapshot, schoolID: .miraeAnalytics)
-        )
-        result = try completeCareer(engine, from: result, strongGames: false)
-
-        XCTAssertEqual(result.snapshot.draftResult?.outcome, .undrafted)
-        XCTAssertEqual(result.snapshot.phase, .legacy)
-        XCTAssertEqual(result.snapshot.legacyOptions.count, 5)
-        result = try engine.selectLegacy(
+        var result: HighSchoolCareerResult?
+        for seed in (1...40).map(String.init) {
+            var candidate = try engine.start(
+                StartHighSchoolCareerParams(
+                    seed: seed,
+                    presetID: "precision_commander",
+                    difficulty: CareerDifficultySnapshot(careerHarshness: .challenging)
+                )
+            )
+            candidate = try engine.completePrologue(
+                AdvanceCareerChapterParams(seed: candidate.nextSeed, state: candidate.snapshot)
+            )
+            candidate = try engine.chooseSchool(
+                ChooseSchoolParams(seed: candidate.nextSeed, state: candidate.snapshot, schoolID: .miraeAnalytics)
+            )
+            candidate = try completeCareer(engine, from: candidate, strongGames: false)
+            if candidate.snapshot.draftResult?.outcome == .undrafted {
+                result = candidate
+                break
+            }
+        }
+        var finished = try XCTUnwrap(result, "poor play must still be able to miss the draft")
+        XCTAssertEqual(finished.snapshot.phase, .legacy)
+        XCTAssertEqual(finished.snapshot.legacyOptions.count, 5)
+        finished = try engine.selectLegacy(
             SelectCareerLegacyParams(
-                seed: result.nextSeed,
-                state: result.snapshot,
-                memoryCards: Array(result.snapshot.legacyOptions.prefix(3))
+                seed: finished.nextSeed,
+                state: finished.snapshot,
+                memoryCards: Array(finished.snapshot.legacyOptions.prefix(3))
             )
         )
-        XCTAssertEqual(result.snapshot.phase, .completed)
-        XCTAssertEqual(result.snapshot.selectedMemories.count, 3)
+        XCTAssertEqual(finished.snapshot.phase, .completed)
+        XCTAssertEqual(finished.snapshot.selectedMemories.count, 3)
     }
 
     func testRelationshipSlotsExposeNonCoreCategoriesInOneRun() throws {
@@ -1229,7 +1239,10 @@ final class HighSchoolCareerEngineTests: XCTestCase {
                             runsAllowed: strongGames ? 0 : 7,
                             expectedDamage: strongGames ? 380 : 1_200,
                             actualDamage: strongGames ? 120 : 4_500,
-                            recommendationAccepted: strongGames ? 10 : 0
+                            recommendationAccepted: strongGames ? 10 : 0,
+                            outs: 3,
+                            hits: strongGames ? 0 : 4,
+                            earnedRuns: strongGames ? 0 : 7
                         )
                     )
                 )

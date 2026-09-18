@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 import SimulationCore
 
@@ -16,7 +15,7 @@ struct OracleRow {
 }
 
 func sha256(_ value: String) -> String {
-    SHA256.hash(data: Data(value.utf8)).map { String(format: "%02x", $0) }.joined()
+    SHA256.hexDigest(Data(value.utf8))
 }
 
 func fnv1a64(_ value: String) -> String {

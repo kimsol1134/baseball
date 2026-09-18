@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 import SimulationCore
 
@@ -25,7 +24,7 @@ private struct RealJourneyEvidence {
 }
 
 private func sha256(_ value: String) -> String {
-    SHA256.hash(data: Data(value.utf8)).map { String(format: "%02x", $0) }.joined()
+    SHA256.hexDigest(Data(value.utf8))
 }
 
 private func activeEntitlement() -> ProEntitlementSnapshot {
@@ -180,6 +179,37 @@ private func accept(
     ))
 }
 
+private func advanceToOffseason(
+    _ initial: ProCareerResult,
+    engine: ProCareerEngine,
+    trace: inout [String]
+) throws -> ProCareerResult {
+    var result = initial
+    if result.snapshot.phase == .nationalTeamCall {
+        result = try engine.respondToNationalTeamCall(.init(
+            seed: result.nextSeed,
+            state: result.snapshot,
+            accepted: false
+        ))
+        trace.append("respond_national_team:decline")
+    }
+    if result.snapshot.phase == .nationalTournament {
+        if result.snapshot.nationalTournament?.stage == .awaitingFinal,
+           result.snapshot.nationalTournament?.result == nil {
+            result = try engine.resolveNationalFinalAutomatically(.init(
+                seed: result.nextSeed,
+                state: result.snapshot
+            ))
+        }
+        result = try engine.acknowledgeNationalTeamResult(.init(
+            seed: result.nextSeed,
+            state: result.snapshot
+        ))
+        trace.append("acknowledge_national_team")
+    }
+    return result
+}
+
 private func nextAmbition(for state: ProCareerSnapshot) -> ProCareerAmbition? {
     let completed = Set(state.journeyState?.goalHistory.filter { $0.outcome == .completed }.map(\.ambition) ?? [])
     return realGoalOrder.first(where: { !completed.contains($0) })
@@ -210,6 +240,7 @@ private func runRealJourney() throws -> RealJourneyEvidence {
             settlementID: settlement.id
         ))
         trace.append("acknowledge_settlement:\(settlement.id)")
+        result = try advanceToOffseason(result, engine: engine, trace: &trace)
 
         if result.snapshot.phase == .retirementDecision {
             guard result.snapshot.season == ProCareerEngine.maximumCareerSeasons else {
@@ -408,7 +439,8 @@ private func buildRows() throws -> [FixtureRow] {
 
     let acknowledged = try engine.acknowledgeSettlement(.init(seed: reviewed.nextSeed, state: reviewed.snapshot, expectedRevision: reviewed.snapshot.revision, settlementID: settlement.id))
     sampleTrace.append("acknowledge_settlement:\(settlement.id)")
-    let transition = try engine.chooseOffseason(.init(seed: acknowledged.nextSeed, state: acknowledged.snapshot, decision: .continueCareer, expectedRevision: acknowledged.snapshot.revision))
+    let readyForOffseason = try advanceToOffseason(acknowledged, engine: engine, trace: &sampleTrace)
+    let transition = try engine.chooseOffseason(.init(seed: readyForOffseason.nextSeed, state: readyForOffseason.snapshot, decision: .continueCareer, expectedRevision: readyForOffseason.snapshot.revision))
     sampleTrace.append("choose_offseason:continue")
     let invested = try engine.chooseInvestment(.init(seed: transition.nextSeed, state: transition.snapshot, expectedRevision: transition.snapshot.revision, investment: .pitchLab, focus: .command))
     sampleTrace.append("choose_investment:pitch_lab")
@@ -499,7 +531,8 @@ private func buildRows() throws -> [FixtureRow] {
         let mediaSettlement1 = try unwrapSettlement(mediaSeason1.snapshot)
         let mediaAcknowledged1 = try engine.acknowledgeSettlement(.init(seed: mediaSeason1.nextSeed, state: mediaSeason1.snapshot, expectedRevision: mediaSeason1.snapshot.revision, settlementID: mediaSettlement1.id))
         mediaTrace.append("acknowledge_settlement:\(mediaSettlement1.id)")
-        let mediaTransition = try engine.chooseOffseason(.init(seed: mediaAcknowledged1.nextSeed, state: mediaAcknowledged1.snapshot, decision: .continueCareer, expectedRevision: mediaAcknowledged1.snapshot.revision))
+        let mediaReady = try advanceToOffseason(mediaAcknowledged1, engine: engine, trace: &mediaTrace)
+        let mediaTransition = try engine.chooseOffseason(.init(seed: mediaReady.nextSeed, state: mediaReady.snapshot, decision: .continueCareer, expectedRevision: mediaReady.snapshot.revision))
         mediaTrace.append("choose_offseason:continue")
         let mediaInvested = try engine.chooseInvestment(.init(seed: mediaTransition.nextSeed, state: mediaTransition.snapshot, expectedRevision: mediaTransition.snapshot.revision, investment: .fanFoundation))
         mediaTrace.append("choose_investment:fan_foundation")
