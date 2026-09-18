@@ -104,9 +104,7 @@ public object PitchReleaseMeter {
         aimRadius: Double = AIM_RADIUS_POINTS,
         commandRating: Int = PitchReleaseWindow.BASELINE_COMMAND,
     ): PitchDelivery {
-        val clampedMeter = meter.coerceIn(0.0, 1.0)
-        val releaseError = min(1.0, abs(clampedMeter - PERFECT_PHASE) * 2.0)
-        val release = ((1.0 - releaseError) * 1_000.0).roundToInt()
+        val release = PitchReleaseWindow.rawAccuracy(meter)
         val radius = if (aimRadius > 0.0) aimRadius else AIM_RADIUS_POINTS
         val distance = min(radius, hypot(aimX, aimY))
         val aimScore = ((1.0 - distance / radius) * 1_000.0).roundToInt()
@@ -136,6 +134,11 @@ public object PitchReleaseWindow {
     public const val STABLE_RELEASE_THRESHOLD: Int = 820
     public const val BASELINE_COMMAND: Int = 35
 
+    /** Shared by the orange band, its live highlight and manual release scoring. */
+    public const val PERFECT_WIDTH: Double = (1_000 - PitchDelivery.PERFECT_RELEASE_THRESHOLD) / 1_000.0
+    public fun containsPerfect(meter: Double): Boolean =
+        meter.isFinite() && meter >= 0.5 - PERFECT_WIDTH / 2 && meter <= 0.5 + PERFECT_WIDTH / 2
+
     public val milestones: List<Int> = listOf(40, 50, 65, 80)
     public fun nextMilestone(command: Int): Int? = milestones.firstOrNull { it > command }
     public fun crossesMilestone(before: Int, after: Int): Boolean = after > before && milestones.any { before < it && after >= it }
@@ -158,6 +161,11 @@ public object PitchReleaseWindow {
         if (score <= edge) return 500 + (score - 500) * (STABLE_RELEASE_THRESHOLD - 500) / (edge - 500)
         return minOf(perfect - 1, STABLE_RELEASE_THRESHOLD + (score - edge) * (perfect - STABLE_RELEASE_THRESHOLD) / (perfect - edge))
     }
-    public fun rawAccuracy(meter: Double): Int = if (!meter.isFinite()) 0 else ((1.0 - min(1.0, abs(meter - 0.5) * 2.0)) * 1_000).roundToInt().coerceIn(0, 1_000)
+    public fun rawAccuracy(meter: Double): Int {
+        if (!meter.isFinite()) return 0
+        val rounded = ((1.0 - min(1.0, abs(meter - 0.5) * 2.0)) * 1_000).roundToInt().coerceIn(0, 1_000)
+        // Integer rounding must never turn a visible miss into a perfect release.
+        return if (containsPerfect(meter)) rounded else minOf(PitchDelivery.PERFECT_RELEASE_THRESHOLD - 1, rounded)
+    }
     public fun contains(meter: Double, command: Int): Boolean = calibratedAccuracy(rawAccuracy(meter), command) >= STABLE_RELEASE_THRESHOLD
 }

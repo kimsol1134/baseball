@@ -5,6 +5,23 @@ import XCTest
 /// the system depends on: absent/neutral deliveries change nothing at all, and a real delivery
 /// changes execution without touching the judgment path.
 final class PitchDeliveryTests: XCTestCase {
+    func testPerfectRequiresTheNeedleToBeInsideTheVisibleOrangeBand() {
+        // The displayed 2.5% band spans 0.4875...0.5125. Rounding must not admit
+        // a position just outside either edge, even for a fully trained pitcher.
+        let cases: [(Double, Bool)] = [
+            (0.4874, false), (0.4875.nextDown, false), (0.4875, true),
+            (0.5, true), (0.5125, true), (0.5125.nextUp, false), (0.5126, false),
+        ]
+        for command in [20, 35, 50, 65, 80, 100] {
+            for (meter, expected) in cases {
+                let score = PitchReleaseWindow.calibratedAccuracy(
+                    raw: PitchReleaseWindow.rawAccuracy(meter: meter), command: command)
+                XCTAssertEqual(score >= PitchDelivery.perfectReleaseThreshold, expected,
+                               "meter \(meter), command \(command)")
+            }
+        }
+    }
+
     func testEarlyGrowthNeverNarrowsExistingWindowsAndMilestonesAreEarned() {
         for command in 20...80 {
             let previousCurve = 180 + min(45, max(0, command - 35)) * 60 / 45

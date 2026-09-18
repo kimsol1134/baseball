@@ -57,6 +57,12 @@ public enum PitchReleaseWindow {
     public static let stableReleaseThreshold = 820
     public static let baselineCommand = 35
 
+    /// Shared by the orange band, its live highlight and manual release scoring.
+    public static let perfectWidth = Double(1_000 - PitchDelivery.perfectReleaseThreshold) / 1_000
+    public static func containsPerfect(meter: Double) -> Bool {
+        meter.isFinite && meter >= 0.5 - perfectWidth / 2 && meter <= 0.5 + perfectWidth / 2
+    }
+
     /// More of the bounded margin arrives early; all anchors remain within the original 18–24% cap.
     public static let milestones = [40, 50, 65, 80]
     public static func nextMilestone(command: Int) -> Int? { milestones.first { $0 > command } }
@@ -89,7 +95,9 @@ public enum PitchReleaseWindow {
 
     public static func rawAccuracy(meter: Double) -> Int {
         guard meter.isFinite else { return 0 }
-        return min(1_000, max(0, Int(((1 - min(1, abs(meter - 0.5) * 2)) * 1_000).rounded())))
+        let rounded = min(1_000, max(0, Int(((1 - min(1, abs(meter - 0.5) * 2)) * 1_000).rounded())))
+        // Integer rounding must never turn a visible miss into a perfect release.
+        return containsPerfect(meter: meter) ? rounded : min(PitchDelivery.perfectReleaseThreshold - 1, rounded)
     }
 
     public static func contains(meter: Double, command: Int) -> Bool {

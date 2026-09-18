@@ -12,14 +12,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.solkim.baseball.application.PitchDelivery
 import com.solkim.baseball.application.PitchReleaseWindow
 import com.solkim.baseball.design.BaseballColors
 import kotlin.math.hypot
 
 @Composable
 internal fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolean, commandRating: Int, previousCommand: Int? = null, growthGlow: Float = 0f) {
-    val perfectWidth = (1_000 - PitchDelivery.PERFECT_RELEASE_THRESHOLD) / 1_000f
+    val perfectWidth = PitchReleaseWindow.PERFECT_WIDTH.toFloat()
     val windowWidth = PitchReleaseWindow.width(commandRating).toFloat()
     val copy = rememberGameCopy()
     val windowLabel = copy.resolve("control.window.accessibility", com.solkim.baseball.application.GameCopyArgument.Decimal(PitchReleaseWindow.widthPermille(commandRating) / 10.0))
@@ -50,7 +49,7 @@ internal fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolea
                 style = Stroke(width = 2f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(6f, 5f))),
             )
         }
-        val perfect = (width * perfectWidth).coerceAtLeast(3f)
+        val perfect = width * perfectWidth
         drawRoundRect(
             BaseballColors.milestone.copy(alpha = if (inPerfect) 1f else 0.92f),
             topLeft = Offset(width * (0.5f - perfectWidth / 2f), -(if (inPerfect) 3f else 0f)),
@@ -65,7 +64,7 @@ internal fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolea
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(height, height),
             )
         }
-        val needleX = ((width - 6f) * meter.toFloat()).coerceIn(0f, width - 6f)
+        val needleX = (width * meter.toFloat() - 3f).coerceIn(0f, (width - 6f).coerceAtLeast(0f))
         drawRoundRect(
             color = if (inPerfect) BaseballColors.milestone else if (pressing) BaseballColors.action else BaseballColors.border,
             topLeft = Offset(needleX, 0f),

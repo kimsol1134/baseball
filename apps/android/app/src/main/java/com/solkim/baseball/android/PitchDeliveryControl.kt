@@ -110,7 +110,6 @@ public fun PitchDeliveryControl(
     var holdHint by remember { mutableStateOf(false) }
 
     var wasInSweetSpot by remember { mutableStateOf(false) }
-    var baseMeter by remember { mutableStateOf(0.5) }
     var leadWarned by remember { mutableStateOf(false) }
     var perfectRing by remember { mutableStateOf(0) }
     val ringProgress = remember { androidx.compose.animation.core.Animatable(0f) }
@@ -198,7 +197,6 @@ public fun PitchDeliveryControl(
             }
             wasInSweetSpot = inSweet
             // 금색 구간은 들어간 뒤 알리면 늦다. 릴리스 지점 도착 시각을 정확히 계산해 앞당겨 알린다.
-            baseMeter = base
             val toCenter = PitchReleaseMeter.secondsToRelease(elapsed, sweep)
             val lead = perfectLeadSeconds(heldCommand)
             if (toCenter > lead * 1.5) leadWarned = false
@@ -212,10 +210,8 @@ public fun PitchDeliveryControl(
     }
 
     val aim = clampAim(sway + drag, aimRadiusPx)
-    val live = PitchReleaseMeter.delivery(meter, aim.x.toDouble(), aim.y.toDouble(), aimRadiusPx.toDouble(), windowCommand)
     val onTarget = hypot(aim.x.toDouble(), aim.y.toDouble()) <= with(density) { 14.dp.toPx() }
-    val timedLive = PitchReleaseMeter.delivery(baseMeter, aim.x.toDouble(), aim.y.toDouble(), aimRadiusPx.toDouble(), windowCommand)
-    val inPerfect = pressing && (live.isPerfectRelease || timedLive.isPerfectRelease)
+    val inPerfect = pressing && PitchReleaseWindow.containsPerfect(meter)
     val inSweet = pressing && PitchReleaseWindow.contains(meter, windowCommand)
     val prompt = when {
         !enabled -> "잠깐"
@@ -350,26 +346,13 @@ public fun PitchDeliveryControl(
                                 sway = Offset.Zero
                             } else {
                                 val releasedAim = clampAim(sway + drag, aimRadiusPx)
-                                val shown = PitchReleaseMeter.delivery(
+                                val scored = PitchReleaseMeter.delivery(
                                     meter,
                                     releasedAim.x.toDouble(),
                                     releasedAim.y.toDouble(),
                                     aimRadiusPx.toDouble(),
                                     heldCommand,
                                 )
-                                // 흔들림은 정확도에 남기되, 손끝이 정확히 가운데였던 퍼펙트까지 뺏지는 않는다.
-                                val timed = PitchReleaseMeter.delivery(
-                                    baseMeter,
-                                    releasedAim.x.toDouble(),
-                                    releasedAim.y.toDouble(),
-                                    aimRadiusPx.toDouble(),
-                                    heldCommand,
-                                )
-                                val scored = if (timed.isPerfectRelease) {
-                                    shown.copy(releaseAccuracy = maxOf(shown.releaseAccuracy, timed.releaseAccuracy))
-                                } else {
-                                    shown
-                                }
                                 windUp.release((scored.releaseAccuracy + scored.aimAccuracy) / 2_000.0, scored.isPerfectRelease, hapticsEnabled)
                                 if (scored.isPerfectRelease) {
                                     perfectRing += 1

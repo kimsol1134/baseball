@@ -1140,6 +1140,31 @@ final class PitchKernelEngineTests: XCTestCase {
         XCTAssertTrue(inningEndingAdvance.after.thirdOccupied)
     }
 
+    func testFirstAndSecondCannotScoreOnCaughtFly() throws {
+        let runners = BaserunnerStateSnapshot(
+            firstOccupied: true, secondOccupied: true, thirdOccupied: false, leadRunnerSpeed: 80
+        )
+        let game = gameState(defense: 50, hitFactor: 1_000, homeRunFactor: 1_000, runners: runners)
+        var caughtFlies = 0
+        for seed in 1...2_000 {
+            let params = makePrepareParams(seed: String(seed), gameState: game)
+            let preparation = try engine.preparePitch(params)
+            let result = try engine.submitPitch(makeSubmitParams(preparation: preparation, prepareParams: params))
+            let snapshot = result.snapshot
+            guard snapshot.outcome == .inPlayOut else { continue }
+            XCTAssertEqual(snapshot.runsScored, 0, "seed=\(seed)")
+            XCTAssertEqual(result.gameState.runsAllowed, game.runsAllowed, "seed=\(seed)")
+            XCTAssertNil(snapshot.stealAttempt, "A contact play must not steal second to third before the catch")
+            XCTAssertFalse(snapshot.shortFeedback.contains("희생플라이"), "seed=\(seed)")
+            if let ball = snapshot.battedBall, ball.launchAngleTenthsDegrees >= 90,
+               let fielding = snapshot.fieldingResolution,
+               fielding.sector == .outfield || fielding.sector == .fence {
+                caughtFlies += 1
+            }
+        }
+        XCTAssertGreaterThan(caughtFlies, 0)
+    }
+
     func testShallowFlyBallStrandsTheRunnerOnThird() {
         let engine = BaserunnerEngine()
         let thirdOnly = BaserunnerStateSnapshot(

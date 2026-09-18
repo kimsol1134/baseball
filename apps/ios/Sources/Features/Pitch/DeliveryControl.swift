@@ -224,7 +224,7 @@ struct DeliveryControl: View {
                 // 하나가 "적당히 초록"과 "정확히 가운데"를 다른 목표로 만든다.
                 Capsule()
                     .fill(BaseballTheme.milestone)
-                    .frame(width: max(3, proxy.size.width * Self.perfectBandWidth))
+                    .frame(width: proxy.size.width * Self.perfectBandWidth)
                     .offset(x: proxy.size.width * (0.5 - Self.perfectBandWidth / 2))
                     .shadow(color: BaseballTheme.milestone.opacity(inPerfectBand ? 0.9 : 0),
                             radius: inPerfectBand ? 6 : 0)
@@ -232,20 +232,21 @@ struct DeliveryControl: View {
                     .fill(inPerfectBand ? BaseballTheme.milestone
                           : isPressing ? BaseballTheme.action : BaseballTheme.border)
                     .frame(width: 6)
-                    .offset(x: (proxy.size.width - 6) * meter)
+                    .offset(x: min(max(0, proxy.size.width - 6), max(0, proxy.size.width * meter - 3)))
             }
             .overlay { Capsule().stroke(BaseballTheme.border.opacity(0.6), lineWidth: 1) }
         }
         .frame(height: 16)
+        .transaction { $0.animation = nil }
     }
 
     /// 미터 전체 폭 대비 퍼펙트 구간의 너비. `delivery(meter:…)`의 선형 환산에서
     /// `releaseAccuracy >= perfectReleaseThreshold`인 구간과 정확히 같아야 화면이 거짓말을 하지 않는다.
-    private static let perfectBandWidth = Double(1_000 - PitchDelivery.perfectReleaseThreshold) / 1_000
+    private static let perfectBandWidth = PitchReleaseWindow.perfectWidth
 
     /// 지금 손을 떼면 퍼펙트인가.
     private var inPerfectBand: Bool {
-        isPressing && abs(meter - 0.5) <= Self.perfectBandWidth / 2
+        isPressing && PitchReleaseWindow.containsPerfect(meter: meter)
     }
 
     private var gesturePad: some View {
@@ -401,9 +402,8 @@ struct DeliveryControl: View {
 
     /// 미터 위치와 조준 이탈을 0~1000 정확도로 옮긴다. 순수 함수라 테스트할 수 있다.
     static func delivery(meter: Double, aim: CGSize, aimRadius: CGFloat, commandRating: Int = PitchReleaseWindow.baselineCommand) -> PitchDelivery {
-        // 미터 0.5가 완벽. 멀어질수록 선형으로 떨어진다.
-        let releaseError = min(1, abs(meter - 0.5) * 2)
-        let release = Int(((1 - releaseError) * 1_000).rounded())
+        // 표시된 주황색 구간과 같은 경계로 판정한다. 경계 밖 반올림은 퍼펙트가 아니다.
+        let release = PitchReleaseWindow.rawAccuracy(meter: meter)
         let distance = min(Double(aimRadius), sqrt(Double(aim.width * aim.width + aim.height * aim.height)))
         let aimScore = Int(((1 - distance / Double(aimRadius)) * 1_000).rounded())
         return PitchDelivery(
@@ -418,7 +418,7 @@ struct DeliveryControl: View {
         // 정중앙 릴리스는 별도 등급이다. 아래 평균 점수는 조준이 흔들리면 850 밑으로
         // 떨어지므로, 타이밍을 완벽히 맞힌 사실이 그 평균에 묻혀 사라졌다.
         if delivery.isPerfectRelease {
-            return ("퍼펙트 릴리스 — 제대로 긁혔다", .milestone)
+            return ("퍼펙트 릴리스 — 손끝에 제대로 감겼다!", .milestone)
         }
         if delivery.releaseAccuracy >= PitchReleaseWindow.stableReleaseThreshold {
             return delivery.aimAccuracy < 650 ? ("안정 릴리스 · 조준은 흔들렸어요", .warning) : ("안정 릴리스", .positive)
@@ -457,12 +457,12 @@ struct DeliveryControl: View {
         guard min(release, aim) < 700 else { return nil }
         if release <= aim {
             return release < 400
-                ? "미터를 크게 놓쳤습니다 — 초록 구간에서 떼세요"
-                : "미터를 살짝 놓쳤습니다"
+                ? "타이밍을 크게 놓쳤어요! 게이지가 초록 구간에 올 때 손을 떼세요"
+                : "타이밍이 살짝 빗나갔어요"
         }
         return aim < 400
-            ? "조준이 크게 흔들렸습니다 — 손가락을 과녁에 머무르게 하세요"
-            : "조준이 살짝 흔들렸습니다"
+            ? "조준이 크게 빗나갔어요! 손가락을 목표 위치에 잘 유지해 보세요"
+            : "조준이 살짝 빗나갔어요"
     }
 
 

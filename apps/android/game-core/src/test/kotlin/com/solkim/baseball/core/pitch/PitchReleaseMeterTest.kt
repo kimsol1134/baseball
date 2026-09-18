@@ -7,6 +7,19 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class PitchReleaseMeterTest {
+    @Test fun perfectRequiresTheNeedleToBeInsideTheVisibleOrangeBand() {
+        val cases = listOf(
+            0.4874 to false, Math.nextDown(0.4875) to false, 0.4875 to true,
+            0.5 to true, 0.5125 to true, Math.nextUp(0.5125) to false, 0.5126 to false,
+        )
+        for (command in listOf(20, 35, 50, 65, 80, 100)) {
+            for ((meter, expected) in cases) {
+                val delivery = PitchReleaseMeter.delivery(meter, 12.0, 7.0, commandRating = command)
+                assertEquals(expected, delivery.isPerfectRelease, "meter $meter, command $command")
+            }
+        }
+    }
+
     @Test fun earlyGrowthAndMilestonesRemainBoundedAndNeverWeakenAnExistingWindow() {
         for (command in 20..80) assertTrue(PitchReleaseWindow.widthPermille(command) >= 180 + (command - 35).coerceIn(0, 45) * 60 / 45)
         assertFalse(PitchReleaseWindow.crossesMilestone(35, 36))
