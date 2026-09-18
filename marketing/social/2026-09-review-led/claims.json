@@ -1,0 +1,23 @@
+{
+  "asOf": "2026-09-10",
+  "storefront": "Korea",
+  "ratingRounded": 4.5,
+  "ratingRaw": 4.53297,
+  "ratingCount": 182,
+  "writtenReviewCount": 48,
+  "ratingSource": "Apple iTunes Lookup KR",
+  "reviewsSource": "ASC customerReviews; all pages",
+  "reviewId": "00000194-ffb8-a903-5f80-6b2800000000",
+  "reviewDate": "2026-08-29",
+  "quote": "사실상 프로 데뷔한 순간부터 할게 아예 없음",
+  "responseVersion": "1.2.8",
+  "currentPublicVersion": "1.2.9",
+  "claim": "프로 시즌 결정과 선택 효과 안내를 추가",
+  "notClaimed": [
+    "모든 버그 해결",
+    "182개의 글 리뷰",
+    "전체 사용자의 만족도",
+    "광고 성과",
+    "스토어 순위"
+  ]
+}

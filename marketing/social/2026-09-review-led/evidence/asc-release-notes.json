@@ -1,0 +1,970 @@
+[
+  {
+    "version": {
+      "platform": "IOS",
+      "versionString": "1.2.9",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-09-04T09:21:24-07:00"
+    },
+    "data": [
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "f06d9c3e-e22b-4ec7-af44-2399919d59ea",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-US",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "Fixed a bug where setup-step titles were clipped under the header and off the left edge, so the letters could not be read. The full question stays on screen when you tap Next.\n\nThe default direct-pitch control remains the timing slider."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/f06d9c3e-e22b-4ec7-af44-2399919d59ea/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/f06d9c3e-e22b-4ec7-af44-2399919d59ea/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/f06d9c3e-e22b-4ec7-af44-2399919d59ea/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/f06d9c3e-e22b-4ec7-af44-2399919d59ea/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/f06d9c3e-e22b-4ec7-af44-2399919d59ea/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/f06d9c3e-e22b-4ec7-af44-2399919d59ea/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/f06d9c3e-e22b-4ec7-af44-2399919d59ea"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "2b92b76d-4c79-45ce-8685-c3d1b3899cba",
+        "attributes": {
+          "description": "一球ずつ、自分で読む。選ぶ。投げ切る。\n\n『野球がダメならまた転生』は、高校3年間で投手を育て、ドラフトで名前を呼ばれることを目指す野球キャリアです。球種とコースを選び、打者を読み、ストライクゾーンを狙い、離すタイミングまで自分で決めます。\n\n■ 一球の重さ\n球種・コース・狙い・力配分を選びます。捕手は理由付きでサインを出しますが、従うか自分の配球に変えるかはあなた次第。同じ球を続ければ打者に読まれます。投げた球は軌道と打球で振り返れます。\n\n■ リスクを見て決める\n疲労と登板量はキャリアを変えます。負傷したときは、原因・回復期間・次に取る行動をすぐ確認できます。休むか、鍛えるか、もう一度勝負するかを選びましょう。\n\n■ 読みやすいキャリア\nストーリーや繰り返し表示される説明は、初回は背景まで詳しく表示。一度読んだ後はコンパクトな要約に折りたたんで、流れを止めずに読み進められます。必要なときはいつでも展開できます。\n\n■ 成長を分かりやすく\n能力値は、なじみのある1〜100で表示します。基本上限の100に達した後も、数値が無限に伸びるのではありません。別枠の熟練レベルと効果で、次の成長を積み重ねます。\n\n■ ドラフトと転生\n指名は保証されません。キャリアが終わっても、前の投手から記憶やレガシーを選び、新しい投手の出発点にできます。高校・捕手・ライバル・日程も、転生するたびに変わります。\n\n■ 高校の先へ\n指名されればプロへ進み、役割・契約・昇格・シーズン・記録・引退まで続きます。関係、地域の空気、あなたの選択が一人の投手の年代記になります。\n\n・買い切り。広告なし、追加課金なし、ガチャなし\n・オフラインでプレイ可能\n・日本語・韓国語・英語に対応\n\n本作は地域の野球文化と空気感をモチーフにした、完全オリジナルの架空野球世界です。実在のリーグ、球団、学校、選手とは関係ありません。",
+          "locale": "ja",
+          "keywords": "シミュレーション,ドラフト,高校野球,変化球,リリース,球種,コース,買い切り,オフライン,ブルペン,制球,握り,キャリア,配球,サイン,ウィンドアップ,先発,救援,記録",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/#faq",
+          "whatsNew": "選手作成の見出しが画面の左や上部の帯に切れ、文字が読めなくなっていた不具合を修正しました。「次へ」を押しても見出し全体が表示されます。\n\n直接投球の基本操作はタイミングスライダーのままです。"
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/2b92b76d-4c79-45ce-8685-c3d1b3899cba/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/2b92b76d-4c79-45ce-8685-c3d1b3899cba/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/2b92b76d-4c79-45ce-8685-c3d1b3899cba/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/2b92b76d-4c79-45ce-8685-c3d1b3899cba/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/2b92b76d-4c79-45ce-8685-c3d1b3899cba/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/2b92b76d-4c79-45ce-8685-c3d1b3899cba/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/2b92b76d-4c79-45ce-8685-c3d1b3899cba"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "5d9afeac-30f9-4e24-9423-e479e5b0ca76",
+        "attributes": {
+          "description": "공 하나하나를 직접 던지고, 한 투수의 인생을 선택하는 야구 게임입니다.\n\n구종과 코스를 고르고, 화면을 길게 눌러 와인드업한 뒤 손을 떼는 타이밍으로 제구가 갈립니다. 자동으로 굴러가는 경기를 구경하는 게임이 아닙니다. 중요한 공은 투구 슬라이더로 직접 던집니다.\n\n■ 한 구의 무게\n구종과 코스, 노림과 힘 배분을 고릅니다. 포수는 이유와 함께 사인을 내고, 따를지 고칠지는 당신이 정합니다. 같은 공을 반복하면 타자가 읽고 적응합니다. 던진 공은 궤적과 타구로 다시 확인할 수 있습니다.\n\n■ 3년의 선택\n고교 3년 동안 훈련·관계·중요 경기·각성이 이어집니다. 팔 상태와 피로를 무시하면 부상을 입을 수 있습니다. 부상이 생기면 원인, 회복 기간, 다음 행동을 결과 화면에서 바로 알려 줍니다. 쉴지, 훈련할지, 다시 승부할지 당신이 결정합니다.\n\n■ 더 읽기 쉬워진 커리어\n스토리와 반복 설명은 처음 볼 때 맥락을 충분히 보여 줍니다. 한 번 읽은 뒤에는 간결한 요약으로 접어 한눈에 읽을 수 있고, 원하면 언제든 다시 펼칠 수 있습니다.\n\n■ 누구나 이해하는 성장\n능력 수치는 익숙한 1–100으로 보여 줍니다. 기본 능력치가 100에 닿은 뒤에는 숫자가 끝없이 커지지 않습니다. 대신 별도의 숙련 레벨과 효과를 쌓아 다음 성장을 이어 갑니다.\n\n■ 다시 태어나기\n지명받지 못하면 기억과 대표 유산을 남기고 새 선수로 다시 시작합니다. 전 생의 실패가 다음 회차의 출발점이 됩니다. 학교·감독·포수·라이벌·일정도 회차마다 새로 짜입니다.\n\n■ 프로, 그리고 기록\n지명되면 프로에 진출해 역할·계약·콜업·시즌·기록·은퇴를 이어 갑니다. 관계와 지역의 분위기, 당신이 내린 선택이 한 투수의 연대기가 됩니다.\n\n■ 약속\n· 광고 없음 · 인앱 결제 없음 · 확률형 뽑기 없음\n· 한 번 구매하면 고교부터 은퇴까지 전부\n· 오프라인 플레이 가능\n· 한국어·영어·일본어 지원\n\n실존 리그·구단·학교·선수와 관련이 없는 독자적인 가상 야구 세계입니다.",
+          "locale": "ko",
+          "keywords": "로그라이트,회귀,드래프트,고교,에이스,삼진,오프라인,싱글,광고없음,커리어,성장,선수,타이밍,마운드,제구,구속,구종,선발,신인,피칭,전략,트레이닝,변화구,불펜,포수,회차,각성,사인",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/#faq",
+          "whatsNew": "선수 만들기에서 단계 제목이 화면 왼쪽과 머리글 아래로 잘려 글씨가 읽히지 않던 문제를 고쳤습니다. 이름을 정하고 다음으로 넘어갈 때도 제목 전체가 보입니다.\n\n직접 투구의 기본 조작은 타이밍 슬라이더입니다."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5d9afeac-30f9-4e24-9423-e479e5b0ca76/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5d9afeac-30f9-4e24-9423-e479e5b0ca76/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5d9afeac-30f9-4e24-9423-e479e5b0ca76/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5d9afeac-30f9-4e24-9423-e479e5b0ca76/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5d9afeac-30f9-4e24-9423-e479e5b0ca76/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5d9afeac-30f9-4e24-9423-e479e5b0ca76/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/5d9afeac-30f9-4e24-9423-e479e5b0ca76"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "26d753e4-3aed-44b5-88a3-600f2fc50181",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-CA",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "Fixed a bug where setup-step titles were clipped under the header and off the left edge, so the letters could not be read. The full question stays on screen when you tap Next.\n\nThe default direct-pitch control remains the timing slider."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/26d753e4-3aed-44b5-88a3-600f2fc50181/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/26d753e4-3aed-44b5-88a3-600f2fc50181/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/26d753e4-3aed-44b5-88a3-600f2fc50181/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/26d753e4-3aed-44b5-88a3-600f2fc50181/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/26d753e4-3aed-44b5-88a3-600f2fc50181/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/26d753e4-3aed-44b5-88a3-600f2fc50181/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/26d753e4-3aed-44b5-88a3-600f2fc50181"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "9f75edc1-8445-4559-aff5-75bb2900971b",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-GB",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "Fixed a bug where setup-step titles were clipped under the header and off the left edge, so the letters could not be read. The full question stays on screen when you tap Next.\n\nThe default direct-pitch control remains the timing slider."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/9f75edc1-8445-4559-aff5-75bb2900971b/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/9f75edc1-8445-4559-aff5-75bb2900971b/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/9f75edc1-8445-4559-aff5-75bb2900971b/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/9f75edc1-8445-4559-aff5-75bb2900971b/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/9f75edc1-8445-4559-aff5-75bb2900971b/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/9f75edc1-8445-4559-aff5-75bb2900971b/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/9f75edc1-8445-4559-aff5-75bb2900971b"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "4c271a92-0a1b-40fa-896d-7b784d18810a",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-AU",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "Fixed a bug where setup-step titles were clipped under the header and off the left edge, so the letters could not be read. The full question stays on screen when you tap Next.\n\nThe default direct-pitch control remains the timing slider."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/4c271a92-0a1b-40fa-896d-7b784d18810a/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/4c271a92-0a1b-40fa-896d-7b784d18810a/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/4c271a92-0a1b-40fa-896d-7b784d18810a/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/4c271a92-0a1b-40fa-896d-7b784d18810a/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/4c271a92-0a1b-40fa-896d-7b784d18810a/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/4c271a92-0a1b-40fa-896d-7b784d18810a/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/4c271a92-0a1b-40fa-896d-7b784d18810a"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/appStoreVersionLocalizations?limit=200"
+    },
+    "meta": {
+      "paging": {
+        "total": 6,
+        "limit": 200
+      }
+    }
+  },
+  {
+    "version": {
+      "platform": "IOS",
+      "versionString": "1.2.8",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-09-02T02:19:30-07:00"
+    },
+    "data": [
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "7d5a663f-f748-4815-91e1-d58a0c7e8f32",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-GB",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "This update is a response to the reviews you sent us.\n\n- In a professional season you make a choice every three weeks, then see how it landed on a result card three weeks later.\n- At spring camp you can request a starter, middle-relief, or closer role.\n- Tap an unfamiliar baseball term for a short explanation, and every choice now leads with a one-line summary of its effect.\n- Four new decisions: tighten the outing gap, retool with the farm club, take a new pitch into games, or take a veteran's advice.\n- Stability improvements."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/7d5a663f-f748-4815-91e1-d58a0c7e8f32/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/7d5a663f-f748-4815-91e1-d58a0c7e8f32/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/7d5a663f-f748-4815-91e1-d58a0c7e8f32/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/7d5a663f-f748-4815-91e1-d58a0c7e8f32/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/7d5a663f-f748-4815-91e1-d58a0c7e8f32/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/7d5a663f-f748-4815-91e1-d58a0c7e8f32/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/7d5a663f-f748-4815-91e1-d58a0c7e8f32"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "42e5f855-4e6c-4ab2-9c1f-2a4fbfd7d373",
+        "attributes": {
+          "description": "一球ずつ、自分で読む。選ぶ。投げ切る。\n\n『野球がダメならまた転生』は、高校3年間で投手を育て、ドラフトで名前を呼ばれることを目指す野球キャリアです。球種とコースを選び、打者を読み、ストライクゾーンを狙い、離すタイミングまで自分で決めます。\n\n■ 一球の重さ\n球種・コース・狙い・力配分を選びます。捕手は理由付きでサインを出しますが、従うか自分の配球に変えるかはあなた次第。同じ球を続ければ打者に読まれます。投げた球は軌道と打球で振り返れます。\n\n■ リスクを見て決める\n疲労と登板量はキャリアを変えます。負傷したときは、原因・回復期間・次に取る行動をすぐ確認できます。休むか、鍛えるか、もう一度勝負するかを選びましょう。\n\n■ 読みやすいキャリア\nストーリーや繰り返し表示される説明は、初回は背景まで詳しく表示。一度読んだ後はコンパクトな要約に折りたたんで、流れを止めずに読み進められます。必要なときはいつでも展開できます。\n\n■ 成長を分かりやすく\n能力値は、なじみのある1〜100で表示します。基本上限の100に達した後も、数値が無限に伸びるのではありません。別枠の熟練レベルと効果で、次の成長を積み重ねます。\n\n■ ドラフトと転生\n指名は保証されません。キャリアが終わっても、前の投手から記憶やレガシーを選び、新しい投手の出発点にできます。高校・捕手・ライバル・日程も、転生するたびに変わります。\n\n■ 高校の先へ\n指名されればプロへ進み、役割・契約・昇格・シーズン・記録・引退まで続きます。関係、地域の空気、あなたの選択が一人の投手の年代記になります。\n\n・買い切り。広告なし、追加課金なし、ガチャなし\n・オフラインでプレイ可能\n・日本語・韓国語・英語に対応\n\n本作は地域の野球文化と空気感をモチーフにした、完全オリジナルの架空野球世界です。実在のリーグ、球団、学校、選手とは関係ありません。",
+          "locale": "ja",
+          "keywords": "シミュレーション,ドラフト,高校野球,変化球,リリース,球種,コース,買い切り,オフライン,ブルペン,制球,握り,キャリア,配球,サイン,ウィンドアップ,先発,救援,記録",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/#faq",
+          "whatsNew": "今回のアップデートは、いただいたレビューへの返答です。\n\n- プロのシーズンでは3週ごとに判断を選び、3週後に結果カードでその選択がどう返ってきたかを確認できます。\n- 春季キャンプで先発・中継ぎ・抑えの役割に手を挙げられます。\n- なじみのない野球用語をタップすると説明が見られ、選択肢ごとに効果の要約が先に一行で表示されます。\n- 登板間隔、二軍での立て直し、新しい球種の実戦投入、ベテランの助言という4つの判断が加わります。\n- 安定性を改善しました。"
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/42e5f855-4e6c-4ab2-9c1f-2a4fbfd7d373/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/42e5f855-4e6c-4ab2-9c1f-2a4fbfd7d373/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/42e5f855-4e6c-4ab2-9c1f-2a4fbfd7d373/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/42e5f855-4e6c-4ab2-9c1f-2a4fbfd7d373/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/42e5f855-4e6c-4ab2-9c1f-2a4fbfd7d373/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/42e5f855-4e6c-4ab2-9c1f-2a4fbfd7d373/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/42e5f855-4e6c-4ab2-9c1f-2a4fbfd7d373"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "587d92d9-94ca-4862-a0ff-336207e6db0c",
+        "attributes": {
+          "description": "공 하나하나를 직접 던지고, 한 투수의 인생을 선택하는 야구 게임입니다.\n\n구종과 코스를 고르고, 화면을 길게 눌러 와인드업한 뒤 손을 떼는 타이밍으로 제구가 갈립니다. 자동으로 굴러가는 경기를 구경하는 게임이 아닙니다. 중요한 공은 투구 슬라이더로 직접 던집니다.\n\n■ 한 구의 무게\n구종과 코스, 노림과 힘 배분을 고릅니다. 포수는 이유와 함께 사인을 내고, 따를지 고칠지는 당신이 정합니다. 같은 공을 반복하면 타자가 읽고 적응합니다. 던진 공은 궤적과 타구로 다시 확인할 수 있습니다.\n\n■ 3년의 선택\n고교 3년 동안 훈련·관계·중요 경기·각성이 이어집니다. 팔 상태와 피로를 무시하면 부상을 입을 수 있습니다. 부상이 생기면 원인, 회복 기간, 다음 행동을 결과 화면에서 바로 알려 줍니다. 쉴지, 훈련할지, 다시 승부할지 당신이 결정합니다.\n\n■ 더 읽기 쉬워진 커리어\n스토리와 반복 설명은 처음 볼 때 맥락을 충분히 보여 줍니다. 한 번 읽은 뒤에는 간결한 요약으로 접어 한눈에 읽을 수 있고, 원하면 언제든 다시 펼칠 수 있습니다.\n\n■ 누구나 이해하는 성장\n능력 수치는 익숙한 1–100으로 보여 줍니다. 기본 능력치가 100에 닿은 뒤에는 숫자가 끝없이 커지지 않습니다. 대신 별도의 숙련 레벨과 효과를 쌓아 다음 성장을 이어 갑니다.\n\n■ 다시 태어나기\n지명받지 못하면 기억과 대표 유산을 남기고 새 선수로 다시 시작합니다. 전 생의 실패가 다음 회차의 출발점이 됩니다. 학교·감독·포수·라이벌·일정도 회차마다 새로 짜입니다.\n\n■ 프로, 그리고 기록\n지명되면 프로에 진출해 역할·계약·콜업·시즌·기록·은퇴를 이어 갑니다. 관계와 지역의 분위기, 당신이 내린 선택이 한 투수의 연대기가 됩니다.\n\n■ 약속\n· 광고 없음 · 인앱 결제 없음 · 확률형 뽑기 없음\n· 한 번 구매하면 고교부터 은퇴까지 전부\n· 오프라인 플레이 가능\n· 한국어·영어·일본어 지원\n\n실존 리그·구단·학교·선수와 관련이 없는 독자적인 가상 야구 세계입니다.",
+          "locale": "ko",
+          "keywords": "로그라이트,회귀,드래프트,고교,에이스,삼진,오프라인,싱글,광고없음,커리어,성장,선수,타이밍,마운드,제구,구속,구종,선발,신인,피칭,전략,트레이닝,변화구,불펜,포수,회차,각성,사인",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/#faq",
+          "whatsNew": "이번 업데이트는 리뷰로 보내주신 의견에 대한 응답입니다.\n\n- 프로 시즌에 3주마다 결정을 고르고, 3주 뒤에 결과 카드로 그 선택이 어떻게 돌아왔는지 확인할 수 있습니다.\n- 스프링캠프에서 선발·중간·마무리 보직을 직접 지원할 수 있습니다.\n- 낯선 야구 용어를 눌러 설명을 볼 수 있고, 선택지마다 효과 요약이 한 줄로 먼저 보입니다.\n- 등판 간격, 2군 재정비, 신구종 실전, 베테랑 조언 네 가지 결정이 더해집니다.\n- 안정성을 개선했습니다."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/587d92d9-94ca-4862-a0ff-336207e6db0c/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/587d92d9-94ca-4862-a0ff-336207e6db0c/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/587d92d9-94ca-4862-a0ff-336207e6db0c/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/587d92d9-94ca-4862-a0ff-336207e6db0c/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/587d92d9-94ca-4862-a0ff-336207e6db0c/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/587d92d9-94ca-4862-a0ff-336207e6db0c/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/587d92d9-94ca-4862-a0ff-336207e6db0c"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "6c328440-3d80-4a3c-ad62-7b6e193529d0",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-AU",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "This update is a response to the reviews you sent us.\n\n- In a professional season you make a choice every three weeks, then see how it landed on a result card three weeks later.\n- At spring camp you can request a starter, middle-relief, or closer role.\n- Tap an unfamiliar baseball term for a short explanation, and every choice now leads with a one-line summary of its effect.\n- Four new decisions: tighten the outing gap, retool with the farm club, take a new pitch into games, or take a veteran's advice.\n- Stability improvements."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6c328440-3d80-4a3c-ad62-7b6e193529d0/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6c328440-3d80-4a3c-ad62-7b6e193529d0/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6c328440-3d80-4a3c-ad62-7b6e193529d0/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6c328440-3d80-4a3c-ad62-7b6e193529d0/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6c328440-3d80-4a3c-ad62-7b6e193529d0/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6c328440-3d80-4a3c-ad62-7b6e193529d0/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6c328440-3d80-4a3c-ad62-7b6e193529d0"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "66cbf282-ec66-4639-b48f-10fe5743ecbb",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-CA",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "This update is a response to the reviews you sent us.\n\n- In a professional season you make a choice every three weeks, then see how it landed on a result card three weeks later.\n- At spring camp you can request a starter, middle-relief, or closer role.\n- Tap an unfamiliar baseball term for a short explanation, and every choice now leads with a one-line summary of its effect.\n- Four new decisions: tighten the outing gap, retool with the farm club, take a new pitch into games, or take a veteran's advice.\n- Stability improvements."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/66cbf282-ec66-4639-b48f-10fe5743ecbb/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/66cbf282-ec66-4639-b48f-10fe5743ecbb/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/66cbf282-ec66-4639-b48f-10fe5743ecbb/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/66cbf282-ec66-4639-b48f-10fe5743ecbb/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/66cbf282-ec66-4639-b48f-10fe5743ecbb/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/66cbf282-ec66-4639-b48f-10fe5743ecbb/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/66cbf282-ec66-4639-b48f-10fe5743ecbb"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "1e13b514-a698-44b9-afc5-7405ee58f5b9",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-US",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "This update is a response to the reviews you sent us.\n\n- In a professional season you make a choice every three weeks, then see how it landed on a result card three weeks later.\n- At spring camp you can request a starter, middle-relief, or closer role.\n- Tap an unfamiliar baseball term for a short explanation, and every choice now leads with a one-line summary of its effect.\n- Four new decisions: tighten the outing gap, retool with the farm club, take a new pitch into games, or take a veteran's advice.\n- Stability improvements."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1e13b514-a698-44b9-afc5-7405ee58f5b9/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1e13b514-a698-44b9-afc5-7405ee58f5b9/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1e13b514-a698-44b9-afc5-7405ee58f5b9/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1e13b514-a698-44b9-afc5-7405ee58f5b9/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1e13b514-a698-44b9-afc5-7405ee58f5b9/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1e13b514-a698-44b9-afc5-7405ee58f5b9/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1e13b514-a698-44b9-afc5-7405ee58f5b9"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/appStoreVersionLocalizations?limit=200"
+    },
+    "meta": {
+      "paging": {
+        "total": 6,
+        "limit": 200
+      }
+    }
+  },
+  {
+    "version": {
+      "platform": "IOS",
+      "versionString": "1.2.7",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-31T22:50:45-07:00"
+    },
+    "data": [
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "33d3fb85-b712-4077-8ce1-7691e92ae5b8",
+        "attributes": {
+          "description": "一球ずつ、自分で読む。選ぶ。投げ切る。\n\n『野球がダメならまた転生』は、高校3年間で投手を育て、ドラフトで名前を呼ばれることを目指す野球キャリアです。球種とコースを選び、打者を読み、ストライクゾーンを狙い、離すタイミングまで自分で決めます。\n\n■ 一球の重さ\n球種・コース・狙い・力配分を選びます。捕手は理由付きでサインを出しますが、従うか自分の配球に変えるかはあなた次第。同じ球を続ければ打者に読まれます。投げた球は軌道と打球で振り返れます。\n\n■ リスクを見て決める\n疲労と登板量はキャリアを変えます。負傷したときは、原因・回復期間・次に取る行動をすぐ確認できます。休むか、鍛えるか、もう一度勝負するかを選びましょう。\n\n■ 読みやすいキャリア\nストーリーや繰り返し表示される説明は、初回は背景まで詳しく表示。一度読んだ後はコンパクトな要約に折りたたんで、流れを止めずに読み進められます。必要なときはいつでも展開できます。\n\n■ 成長を分かりやすく\n能力値は、なじみのある1〜100で表示します。基本上限の100に達した後も、数値が無限に伸びるのではありません。別枠の熟練レベルと効果で、次の成長を積み重ねます。\n\n■ ドラフトと転生\n指名は保証されません。キャリアが終わっても、前の投手から記憶やレガシーを選び、新しい投手の出発点にできます。高校・捕手・ライバル・日程も、転生するたびに変わります。\n\n■ 高校の先へ\n指名されればプロへ進み、役割・契約・昇格・シーズン・記録・引退まで続きます。関係、地域の空気、あなたの選択が一人の投手の年代記になります。\n\n・買い切り。広告なし、追加課金なし、ガチャなし\n・オフラインでプレイ可能\n・日本語・韓国語・英語に対応\n\n本作は地域の野球文化と空気感をモチーフにした、完全オリジナルの架空野球世界です。実在のリーグ、球団、学校、選手とは関係ありません。",
+          "locale": "ja",
+          "keywords": "シミュレーション,ドラフト,高校野球,変化球,リリース,球種,コース,買い切り,オフライン,ブルペン,制球,握り,キャリア,配球,サイン,ウィンドアップ,先発,救援,記録",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/#faq",
+          "whatsNew": "レビューでいただいたご意見への対応アップデートです。\n\n• 契約更改・継承・次の選手への進行が止まるセーブ問題を修正しました。\n• 「5.2回19K」のような不可能な記録の原因だったイニング集計バグを修正しました。\n• プロ後半がより挑戦的に:リーグが好投手に適応し、31歳からエイジングが始まり、疲労無視には実際の故障リスクが生じます。\n• クローザーで終えたシーズン後も役割が維持されます。\n• 投手の利き腕(左/右)を選択できます。\n• ポストシーズンのボックススコアが記録され、通算被安打・WHIPを追加しました。"
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/33d3fb85-b712-4077-8ce1-7691e92ae5b8/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/33d3fb85-b712-4077-8ce1-7691e92ae5b8/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/33d3fb85-b712-4077-8ce1-7691e92ae5b8/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/33d3fb85-b712-4077-8ce1-7691e92ae5b8/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/33d3fb85-b712-4077-8ce1-7691e92ae5b8/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/33d3fb85-b712-4077-8ce1-7691e92ae5b8/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/33d3fb85-b712-4077-8ce1-7691e92ae5b8"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "fc322e93-9c37-48d7-bcef-63295fcef823",
+        "attributes": {
+          "description": "공 하나하나를 직접 던지고, 한 투수의 인생을 선택하는 야구 게임입니다.\n\n구종과 코스를 고르고, 화면을 길게 눌러 와인드업한 뒤 손을 떼는 타이밍으로 제구가 갈립니다. 자동으로 굴러가는 경기를 구경하는 게임이 아닙니다. 중요한 공은 투구 슬라이더로 직접 던집니다.\n\n■ 한 구의 무게\n구종과 코스, 노림과 힘 배분을 고릅니다. 포수는 이유와 함께 사인을 내고, 따를지 고칠지는 당신이 정합니다. 같은 공을 반복하면 타자가 읽고 적응합니다. 던진 공은 궤적과 타구로 다시 확인할 수 있습니다.\n\n■ 3년의 선택\n고교 3년 동안 훈련·관계·중요 경기·각성이 이어집니다. 팔 상태와 피로를 무시하면 부상을 입을 수 있습니다. 부상이 생기면 원인, 회복 기간, 다음 행동을 결과 화면에서 바로 알려 줍니다. 쉴지, 훈련할지, 다시 승부할지 당신이 결정합니다.\n\n■ 더 읽기 쉬워진 커리어\n스토리와 반복 설명은 처음 볼 때 맥락을 충분히 보여 줍니다. 한 번 읽은 뒤에는 간결한 요약으로 접어 한눈에 읽을 수 있고, 원하면 언제든 다시 펼칠 수 있습니다.\n\n■ 누구나 이해하는 성장\n능력 수치는 익숙한 1–100으로 보여 줍니다. 기본 능력치가 100에 닿은 뒤에는 숫자가 끝없이 커지지 않습니다. 대신 별도의 숙련 레벨과 효과를 쌓아 다음 성장을 이어 갑니다.\n\n■ 다시 태어나기\n지명받지 못하면 기억과 대표 유산을 남기고 새 선수로 다시 시작합니다. 전 생의 실패가 다음 회차의 출발점이 됩니다. 학교·감독·포수·라이벌·일정도 회차마다 새로 짜입니다.\n\n■ 프로, 그리고 기록\n지명되면 프로에 진출해 역할·계약·콜업·시즌·기록·은퇴를 이어 갑니다. 관계와 지역의 분위기, 당신이 내린 선택이 한 투수의 연대기가 됩니다.\n\n■ 약속\n· 광고 없음 · 인앱 결제 없음 · 확률형 뽑기 없음\n· 한 번 구매하면 고교부터 은퇴까지 전부\n· 오프라인 플레이 가능\n· 한국어·영어·일본어 지원\n\n실존 리그·구단·학교·선수와 관련이 없는 독자적인 가상 야구 세계입니다.",
+          "locale": "ko",
+          "keywords": "로그라이트,회귀,드래프트,고교,에이스,삼진,오프라인,싱글,광고없음,커리어,성장,선수,타이밍,마운드,제구,구속,구종,선발,신인,피칭,전략,트레이닝,변화구,불펜,포수,회차,각성,사인",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/#faq",
+          "whatsNew": "리뷰로 보내주신 의견에 대한 응답 업데이트입니다.\n\n• 프로 재계약·계승·다음 선수 진행이 막히던 저장 문제를 고쳤습니다. 업데이트하면 기존에 막혀 있던 진행도 풀립니다.\n• \"5.2이닝 19K\" 같은 불가능한 기록의 원인이던 이닝 집계 버그를 고쳤습니다.\n• 프로 후반이 더 도전적이 됩니다: 리그가 좋은 투수를 따라오고, 31세부터 에이징이 시작되며, 피로 강행에 실제 부상 위험이 생깁니다.\n• 마무리로 마친 시즌 뒤에도 보직이 유지됩니다.\n• 주인공의 투구 손(좌완/우완)을 선택할 수 있습니다.\n• 가을야구 직접 등판의 박스스코어가 기록에 남고, 통산 피안타·WHIP가 추가됐습니다.\n• 한 번 본 시즌 결정 서사는 접혀 표시되고, 한국어 줄바꿈이 단어 단위로 유지됩니다."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/fc322e93-9c37-48d7-bcef-63295fcef823/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/fc322e93-9c37-48d7-bcef-63295fcef823/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/fc322e93-9c37-48d7-bcef-63295fcef823/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/fc322e93-9c37-48d7-bcef-63295fcef823/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/fc322e93-9c37-48d7-bcef-63295fcef823/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/fc322e93-9c37-48d7-bcef-63295fcef823/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/fc322e93-9c37-48d7-bcef-63295fcef823"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "990ed9d0-d8a1-436b-9a81-046ff8abfebd",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-CA",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "This update responds to your reviews.\n\n• Fixed a save issue that could block contract renewal, inheritance, and starting the next player. Updating also unblocks existing stuck saves.\n• Fixed the inning-counting bug behind impossible lines like \"5.2 IP, 19 K\".\n• The late pro career is more challenging: the league scouts strong pitchers, aging starts at 31, and pushing through fatigue now carries real injury risk.\n• Your role carries over after finishing a season as closer.\n• Choose your pitcher's throwing hand (left/right).\n• Postseason box scores are recorded, and career hits allowed / WHIP were added.\n• Seen decision narratives collapse, and Korean line breaking keeps words intact."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/990ed9d0-d8a1-436b-9a81-046ff8abfebd/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/990ed9d0-d8a1-436b-9a81-046ff8abfebd/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/990ed9d0-d8a1-436b-9a81-046ff8abfebd/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/990ed9d0-d8a1-436b-9a81-046ff8abfebd/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/990ed9d0-d8a1-436b-9a81-046ff8abfebd/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/990ed9d0-d8a1-436b-9a81-046ff8abfebd/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/990ed9d0-d8a1-436b-9a81-046ff8abfebd"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "b5b66cfb-c09c-4ade-ac31-52c38c4669b8",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-US",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "This update responds to your reviews.\n\n• Fixed a save issue that could block contract renewal, inheritance, and starting the next player. Updating also unblocks existing stuck saves.\n• Fixed the inning-counting bug behind impossible lines like \"5.2 IP, 19 K\".\n• The late pro career is more challenging: the league scouts strong pitchers, aging starts at 31, and pushing through fatigue now carries real injury risk.\n• Your role carries over after finishing a season as closer.\n• Choose your pitcher's throwing hand (left/right).\n• Postseason box scores are recorded, and career hits allowed / WHIP were added.\n• Seen decision narratives collapse, and Korean line breaking keeps words intact."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/b5b66cfb-c09c-4ade-ac31-52c38c4669b8/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/b5b66cfb-c09c-4ade-ac31-52c38c4669b8/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/b5b66cfb-c09c-4ade-ac31-52c38c4669b8/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/b5b66cfb-c09c-4ade-ac31-52c38c4669b8/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/b5b66cfb-c09c-4ade-ac31-52c38c4669b8/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/b5b66cfb-c09c-4ade-ac31-52c38c4669b8/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/b5b66cfb-c09c-4ade-ac31-52c38c4669b8"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "1f2e7e31-4ee4-4be7-b633-2cba80bde190",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-GB",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "This update responds to your reviews.\n\n• Fixed a save issue that could block contract renewal, inheritance, and starting the next player. Updating also unblocks existing stuck saves.\n• Fixed the inning-counting bug behind impossible lines like \"5.2 IP, 19 K\".\n• The late pro career is more challenging: the league scouts strong pitchers, aging starts at 31, and pushing through fatigue now carries real injury risk.\n• Your role carries over after finishing a season as closer.\n• Choose your pitcher's throwing hand (left/right).\n• Postseason box scores are recorded, and career hits allowed / WHIP were added.\n• Seen decision narratives collapse, and Korean line breaking keeps words intact."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1f2e7e31-4ee4-4be7-b633-2cba80bde190/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1f2e7e31-4ee4-4be7-b633-2cba80bde190/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1f2e7e31-4ee4-4be7-b633-2cba80bde190/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1f2e7e31-4ee4-4be7-b633-2cba80bde190/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1f2e7e31-4ee4-4be7-b633-2cba80bde190/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1f2e7e31-4ee4-4be7-b633-2cba80bde190/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1f2e7e31-4ee4-4be7-b633-2cba80bde190"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "ac840000-36bd-4402-9a03-d3c23a6b727a",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-AU",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "This update responds to your reviews.\n\n• Fixed a save issue that could block contract renewal, inheritance, and starting the next player. Updating also unblocks existing stuck saves.\n• Fixed the inning-counting bug behind impossible lines like \"5.2 IP, 19 K\".\n• The late pro career is more challenging: the league scouts strong pitchers, aging starts at 31, and pushing through fatigue now carries real injury risk.\n• Your role carries over after finishing a season as closer.\n• Choose your pitcher's throwing hand (left/right).\n• Postseason box scores are recorded, and career hits allowed / WHIP were added.\n• Seen decision narratives collapse, and Korean line breaking keeps words intact."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/ac840000-36bd-4402-9a03-d3c23a6b727a/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/ac840000-36bd-4402-9a03-d3c23a6b727a/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/ac840000-36bd-4402-9a03-d3c23a6b727a/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/ac840000-36bd-4402-9a03-d3c23a6b727a/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/ac840000-36bd-4402-9a03-d3c23a6b727a/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/ac840000-36bd-4402-9a03-d3c23a6b727a/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/ac840000-36bd-4402-9a03-d3c23a6b727a"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/appStoreVersionLocalizations?limit=200"
+    },
+    "meta": {
+      "paging": {
+        "total": 6,
+        "limit": 200
+      }
+    }
+  },
+  {
+    "version": {
+      "platform": "IOS",
+      "versionString": "1.2.5",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-30T20:33:21-07:00"
+    },
+    "data": [
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "60db0f4c-272d-4fcc-991f-e86db48770b3",
+        "attributes": {
+          "description": "一球ずつ、自分で読む。選ぶ。投げ切る。\n\n『野球がダメならまた転生』は、高校3年間で投手を育て、ドラフトで名前を呼ばれることを目指す野球キャリアです。球種とコースを選び、打者を読み、ストライクゾーンを狙い、離すタイミングまで自分で決めます。\n\n■ 一球の重さ\n球種・コース・狙い・力配分を選びます。捕手は理由付きでサインを出しますが、従うか自分の配球に変えるかはあなた次第。同じ球を続ければ打者に読まれます。投げた球は軌道と打球で振り返れます。\n\n■ リスクを見て決める\n疲労と登板量はキャリアを変えます。負傷したときは、原因・回復期間・次に取る行動をすぐ確認できます。休むか、鍛えるか、もう一度勝負するかを選びましょう。\n\n■ 読みやすいキャリア\nストーリーや繰り返し表示される説明は、初回は背景まで詳しく表示。一度読んだ後はコンパクトな要約に折りたたんで、流れを止めずに読み進められます。必要なときはいつでも展開できます。\n\n■ 成長を分かりやすく\n能力値は、なじみのある1〜100で表示します。基本上限の100に達した後も、数値が無限に伸びるのではありません。別枠の熟練レベルと効果で、次の成長を積み重ねます。\n\n■ ドラフトと転生\n指名は保証されません。キャリアが終わっても、前の投手から記憶やレガシーを選び、新しい投手の出発点にできます。高校・捕手・ライバル・日程も、転生するたびに変わります。\n\n■ 高校の先へ\n指名されればプロへ進み、役割・契約・昇格・シーズン・記録・引退まで続きます。関係、地域の空気、あなたの選択が一人の投手の年代記になります。\n\n・買い切り。広告なし、追加課金なし、ガチャなし\n・オフラインでプレイ可能\n・日本語・韓国語・英語に対応\n\n本作は地域の野球文化と空気感をモチーフにした、完全オリジナルの架空野球世界です。実在のリーグ、球団、学校、選手とは関係ありません。",
+          "locale": "ja",
+          "keywords": "シミュレーション,ドラフト,高校野球,変化球,リリース,球種,コース,買い切り,オフライン,ブルペン,制球,握り,キャリア,配球,サイン,ウィンドアップ,先発,救援,記録",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/#faq",
+          "whatsNew": "今生が終わっても、次の一球は続きます。\n\n引退のあと次の投手へ進む瞬間を、よりなめらかに整えました。週ごとの成長は画面どおりに積み上がり、投手研究所で選んだ練習もこれまで積み上げた成長を引き継ぎます。\n\n最後の一球は、これまでどおり自分で投げます。"
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/60db0f4c-272d-4fcc-991f-e86db48770b3/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/60db0f4c-272d-4fcc-991f-e86db48770b3/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/60db0f4c-272d-4fcc-991f-e86db48770b3/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/60db0f4c-272d-4fcc-991f-e86db48770b3/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/60db0f4c-272d-4fcc-991f-e86db48770b3/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/60db0f4c-272d-4fcc-991f-e86db48770b3/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/60db0f4c-272d-4fcc-991f-e86db48770b3"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "0b5ea1c1-9ea1-409a-9573-dcc43234c748",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-US",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "Your next career is still yours to throw.\n\nThis update makes the handoff after a finished season feel seamless. Weekly growth now stays true to what you see on the board, and training you choose in the pitcher lab keeps the growth you already earned.\n\nYou still throw every important pitch."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/0b5ea1c1-9ea1-409a-9573-dcc43234c748/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/0b5ea1c1-9ea1-409a-9573-dcc43234c748/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/0b5ea1c1-9ea1-409a-9573-dcc43234c748/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/0b5ea1c1-9ea1-409a-9573-dcc43234c748/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/0b5ea1c1-9ea1-409a-9573-dcc43234c748/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/0b5ea1c1-9ea1-409a-9573-dcc43234c748/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/0b5ea1c1-9ea1-409a-9573-dcc43234c748"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "745a4738-fdf7-4a44-92c1-5f4ede183582",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-AU",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "Your next career is still yours to throw.\n\nThis update makes the handoff after a finished season feel seamless. Weekly growth now stays true to what you see on the board, and training you choose in the pitcher lab keeps the growth you already earned.\n\nYou still throw every important pitch."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/745a4738-fdf7-4a44-92c1-5f4ede183582/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/745a4738-fdf7-4a44-92c1-5f4ede183582/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/745a4738-fdf7-4a44-92c1-5f4ede183582/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/745a4738-fdf7-4a44-92c1-5f4ede183582/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/745a4738-fdf7-4a44-92c1-5f4ede183582/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/745a4738-fdf7-4a44-92c1-5f4ede183582/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/745a4738-fdf7-4a44-92c1-5f4ede183582"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "3aa22809-4aef-471e-b3c4-251056b07bf3",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-GB",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "Your next career is still yours to throw.\n\nThis update makes the handoff after a finished season feel seamless. Weekly growth now stays true to what you see on the board, and training you choose in the pitcher lab keeps the growth you already earned.\n\nYou still throw every important pitch."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/3aa22809-4aef-471e-b3c4-251056b07bf3/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/3aa22809-4aef-471e-b3c4-251056b07bf3/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/3aa22809-4aef-471e-b3c4-251056b07bf3/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/3aa22809-4aef-471e-b3c4-251056b07bf3/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/3aa22809-4aef-471e-b3c4-251056b07bf3/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/3aa22809-4aef-471e-b3c4-251056b07bf3/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/3aa22809-4aef-471e-b3c4-251056b07bf3"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "e7d87171-e180-4091-9b26-2ce1038c9ceb",
+        "attributes": {
+          "description": "공 하나하나를 직접 던지고, 한 투수의 인생을 선택하는 야구 게임입니다.\n\n구종과 코스를 고르고, 화면을 길게 눌러 와인드업한 뒤 손을 떼는 타이밍으로 제구가 갈립니다. 자동으로 굴러가는 경기를 구경하는 게임이 아닙니다. 중요한 공은 투구 슬라이더로 직접 던집니다.\n\n■ 한 구의 무게\n구종과 코스, 노림과 힘 배분을 고릅니다. 포수는 이유와 함께 사인을 내고, 따를지 고칠지는 당신이 정합니다. 같은 공을 반복하면 타자가 읽고 적응합니다. 던진 공은 궤적과 타구로 다시 확인할 수 있습니다.\n\n■ 3년의 선택\n고교 3년 동안 훈련·관계·중요 경기·각성이 이어집니다. 팔 상태와 피로를 무시하면 부상을 입을 수 있습니다. 부상이 생기면 원인, 회복 기간, 다음 행동을 결과 화면에서 바로 알려 줍니다. 쉴지, 훈련할지, 다시 승부할지 당신이 결정합니다.\n\n■ 더 읽기 쉬워진 커리어\n스토리와 반복 설명은 처음 볼 때 맥락을 충분히 보여 줍니다. 한 번 읽은 뒤에는 간결한 요약으로 접어 한눈에 읽을 수 있고, 원하면 언제든 다시 펼칠 수 있습니다.\n\n■ 누구나 이해하는 성장\n능력 수치는 익숙한 1–100으로 보여 줍니다. 기본 능력치가 100에 닿은 뒤에는 숫자가 끝없이 커지지 않습니다. 대신 별도의 숙련 레벨과 효과를 쌓아 다음 성장을 이어 갑니다.\n\n■ 다시 태어나기\n지명받지 못하면 기억과 대표 유산을 남기고 새 선수로 다시 시작합니다. 전 생의 실패가 다음 회차의 출발점이 됩니다. 학교·감독·포수·라이벌·일정도 회차마다 새로 짜입니다.\n\n■ 프로, 그리고 기록\n지명되면 프로에 진출해 역할·계약·콜업·시즌·기록·은퇴를 이어 갑니다. 관계와 지역의 분위기, 당신이 내린 선택이 한 투수의 연대기가 됩니다.\n\n■ 약속\n· 광고 없음 · 인앱 결제 없음 · 확률형 뽑기 없음\n· 한 번 구매하면 고교부터 은퇴까지 전부\n· 오프라인 플레이 가능\n· 한국어·영어·일본어 지원\n\n실존 리그·구단·학교·선수와 관련이 없는 독자적인 가상 야구 세계입니다.",
+          "locale": "ko",
+          "keywords": "로그라이트,회귀,드래프트,고교,에이스,삼진,오프라인,싱글,광고없음,커리어,성장,선수,타이밍,마운드,제구,구속,구종,선발,신인,피칭,전략,트레이닝,변화구,불펜,포수,회차,각성,사인",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/#faq",
+          "whatsNew": "이번 생이 끝나도, 다음 공이 이어집니다.\n\n은퇴 뒤 다음 투수로 넘어가는 순간을 더 부드럽게 다듬었습니다. 매주 쌓이는 성장은 눈에 보이는 그대로 남고, 투수연구소에서 고른 훈련도 지금까지 키운 성장을 그대로 이어 갑니다.\n\n마지막 한 구는 여전히 당신이 직접 던집니다."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/e7d87171-e180-4091-9b26-2ce1038c9ceb/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/e7d87171-e180-4091-9b26-2ce1038c9ceb/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/e7d87171-e180-4091-9b26-2ce1038c9ceb/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/e7d87171-e180-4091-9b26-2ce1038c9ceb/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/e7d87171-e180-4091-9b26-2ce1038c9ceb/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/e7d87171-e180-4091-9b26-2ce1038c9ceb/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/e7d87171-e180-4091-9b26-2ce1038c9ceb"
+        }
+      },
+      {
+        "type": "appStoreVersionLocalizations",
+        "id": "6ac8e2b9-c080-4018-9107-f4f6b63217c2",
+        "attributes": {
+          "description": "Call the pitch. Pick your spot. Finish the throw.\n\nMound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.\n\nBUILD A PITCHER\nTrain velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.\n\nTHINK THROUGH EVERY AT-BAT\nMix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.\n\nSEE THE RISK, THEN CHOOSE\nFatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.\n\nKEEP THE STORY MOVING\nCareer scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.\n\nREAD YOUR GROWTH\nAbility ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.\n\nCHASE THE DRAFT\nGetting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.\n\nGO BEYOND HIGH SCHOOL\nIf you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.\n\n- Premium game: pay once\n- No ads, in-app purchases, or gacha\n- Playable offline\n- English, Korean, and Japanese\n\nMound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.",
+          "locale": "en-CA",
+          "keywords": "pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command",
+          "marketingUrl": "https://baseball-reincarnation.vercel.app/en",
+          "promotionalText": null,
+          "supportUrl": "https://baseball-reincarnation.vercel.app/en/support",
+          "whatsNew": "Your next career is still yours to throw.\n\nThis update makes the handoff after a finished season feel seamless. Weekly growth now stays true to what you see on the board, and training you choose in the pitcher lab keeps the growth you already earned.\n\nYou still throw every important pitch."
+        },
+        "relationships": {
+          "appScreenshotSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6ac8e2b9-c080-4018-9107-f4f6b63217c2/relationships/appScreenshotSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6ac8e2b9-c080-4018-9107-f4f6b63217c2/appScreenshotSets"
+            }
+          },
+          "appPreviewSets": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6ac8e2b9-c080-4018-9107-f4f6b63217c2/relationships/appPreviewSets",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6ac8e2b9-c080-4018-9107-f4f6b63217c2/appPreviewSets"
+            }
+          },
+          "searchKeywords": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6ac8e2b9-c080-4018-9107-f4f6b63217c2/relationships/searchKeywords",
+              "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6ac8e2b9-c080-4018-9107-f4f6b63217c2/searchKeywords"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/6ac8e2b9-c080-4018-9107-f4f6b63217c2"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/appStoreVersionLocalizations?limit=200"
+    },
+    "meta": {
+      "paging": {
+        "total": 6,
+        "limit": 200
+      }
+    }
+  }
+]
