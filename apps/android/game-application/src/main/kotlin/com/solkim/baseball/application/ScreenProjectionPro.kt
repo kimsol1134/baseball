@@ -168,7 +168,7 @@ internal fun ScreenBuilder.buildP017_PRO_WEEK() {
             ScreenRow("주차", pro?.week?.toString() ?: "—", ProCatalog.segmentLabel(pro?.seasonSegment ?: ProSeasonSegment.SPRING_CAMP)),
             ScreenRow("역할", pro?.role?.label ?: "—", "지금은 ${pro?.level?.label ?: "—"}"),
             ScreenRow("내 등판", "이번 시즌 직접 ${pro?.importantGames ?: 0}번 던졌다", "남은 일정에서 감독이 맡길 등판은 ${remaining}경기쯤. 승부처는 따로 부른다."),
-            ScreenRow("성장", "구위 ${pro?.pitcher?.stuff?.let(AbilityDisplayScale::rating) ?: 0} · 무브먼트 ${pro?.pitcher?.movement?.let(AbilityDisplayScale::rating) ?: 0}", "이번 주에 무엇을 키울지 고른다."),
+            ScreenRow("성장", "구위 ${pro?.pitcher?.stuff?.let(AbilityDisplayScale::rating) ?: 0} · 변화구 ${pro?.pitcher?.movement?.let(AbilityDisplayScale::rating) ?: 0}", "이번 주에 무엇을 키울지 고른다."),
             ScreenRow("피로", "${pro?.fatigue ?: 0}", if ((pro?.fatigue ?: 0) >= 70) "몸이 무겁다. 이번 주는 쉬는 게 낫다." else "던질 만하다."),
         ) + tensions + newsRows))
         pro?.pitchLearningProject?.let { project ->
@@ -449,7 +449,7 @@ internal fun ScreenBuilder.buildP021_PRO_RETIREMENT() {
         addSection(ScreenSection("retirement", "은퇴", listOfNotNull(
             ScreenRow("${pro?.age ?: "—"}살, 마지막 계절", "${pro?.careerStats?.size ?: 0}시즌 · ${pro?.careerGames() ?: 0}경기 · ${pro?.careerStrikeouts() ?: 0}탈삼진", "마지막 공은 ${pro?.team?.name ?: "이 팀"}의 유니폼으로 던진다."),
             ScreenRow("명예의 전당", if (hof >= 70) "헌액 확정" else "헌액까지 ${70 - hof}점", "$hof/70"),
-            pro?.let { ScreenRow("다음 생으로", "야구혼 +${ProRetirementLedger.soulBonus(it)}", "이 커리어가 다음 생에 남기는 힘") },
+            pro?.let { ScreenRow("다음 선수에게", "야구혼 +${ProRetirementLedger.soulBonus(it)}", "이 커리어가 다음 선수에게 남기는 힘") },
             preview?.careerEarnings?.takeIf { it > 0 }?.let { ScreenRow("통산 수입", "%,d원".format(java.util.Locale.KOREA, it), "") },
         ) + honorRows))
         addAction("retire", "은퇴하고 기록 남기기", "글러브를 벗는다. 되돌릴 수 없다.", pro?.phase == ProCareerPhase.RETIREMENT_DECISION, listOf(proCommand(ProCommand.ChooseOffseason(context.seed(state, "retire"), OffseasonDecision.RETIRE))), destructive = true)
@@ -460,7 +460,7 @@ internal fun ScreenBuilder.buildP022_PRO_LEGACY() {
         val ceremony = pro?.news.orEmpty().take(3)
         val honorRows = pro?.journeyState?.retirementHonors.orEmpty().map { honor -> ScreenRow("훈장", retirementHonorTitle(honor.kind, honor.teamId), retirementHonorStory(honor.kind)) }
         if (ceremony.isNotEmpty() || honorRows.isNotEmpty()) addSection(ScreenSection("retirement-ceremony", "은퇴식", ceremony.map { ScreenRow("", it, "") } + honorRows))
-        addSection(ScreenSection("pro-legacy", "다음 생에 가져갈 하나", pro?.legacyCandidates.orEmpty().map { candidate ->
+        addSection(ScreenSection("pro-legacy", "다음 선수에게 물려줄 능력", pro?.legacyCandidates.orEmpty().map { candidate ->
             val family = HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == candidate.id }?.family.orEmpty()
             ScreenRow(candidate.title, legacyEvidence(candidate.evidenceSummary, pro), proLegacyFarewell(family))
         }))

@@ -72,11 +72,11 @@ internal fun ScreenBuilder.buildP001_OPENING() {
 
 internal fun ScreenBuilder.buildP002_SETUP() {
         addSection(ScreenSection("setup", "선수 만들기", HighSchoolContentCatalog.presets.map { preset ->
-            ScreenRow(HighSchoolDisplayRules.presetTitle(preset.id), "구위 ${AbilityDisplayScale.rating(preset.baseStuff)} · 제구 ${AbilityDisplayScale.rating(preset.baseCommand)}", "무브먼트 ${AbilityDisplayScale.rating(preset.baseMovement)} · 체력 ${AbilityDisplayScale.rating(preset.baseStamina)}")
+            ScreenRow(HighSchoolDisplayRules.presetTitle(preset.id), "구위 ${AbilityDisplayScale.rating(preset.baseStuff)} · 제구 ${AbilityDisplayScale.rating(preset.baseCommand)}", "변화구 ${AbilityDisplayScale.rating(preset.baseMovement)} · 체력 ${AbilityDisplayScale.rating(preset.baseStamina)}")
         } + listOf(
             ScreenRow("지역", "19개 지역", "지역마다 학교와 코치, 포수가 다르다."),
             ScreenRow("난이도", "표준", "기본 난이도."),
-            ScreenRow("능력 배분", "구위 · 제구 · 무브먼트 · 체력", "유형이 시작 능력을 정한다."),
+            ScreenRow("능력 배분", "구위 · 제구 · 변화구 · 체력", "유형이 시작 능력을 정한다."),
         )))
         addAction("startHighSchool", "이 투수로 시작하기", "이 이름으로 마운드에 선다.", state.stage == GameStage.SETUP, listOf(ScreenPayloads.startHighSchool(state, context)))
 }
@@ -84,8 +84,8 @@ internal fun ScreenBuilder.buildP002_SETUP() {
 
 internal fun ScreenBuilder.buildP003_PROLOGUE() {
         addSection(ScreenSection("letter", "도착한 편지", listOf(
-            ScreenRow("선수", run?.identity?.name ?: "—", "이번 생의 첫 기록"),
-            ScreenRow("편지", run?.news?.take(2)?.joinToString("\n\n") ?: "아직 편지가 오지 않았다.", "지난 생이 남긴 말."),
+            ScreenRow("선수", run?.identity?.name ?: "—", "선수의 첫 기록"),
+            ScreenRow("편지", run?.news?.take(2)?.joinToString("\n\n") ?: "아직 편지가 오지 않았다.", "이전 선수가 남긴 편지."),
             ScreenRow("첫 공", if (highSchool?.tutorial?.started == true) "던졌다" else "아직", "불펜에서 한 구 던지고 학교를 고른다."),
         )))
         addAction("beginTutorial", "불펜으로", "첫 공을 던지러 간다.", run?.phase == HighSchoolPhase.PROLOGUE && highSchool?.tutorial?.started != true, listOf(hs(HighSchoolPhase4Command.BeginTutorial)))
@@ -104,7 +104,7 @@ internal fun ScreenBuilder.buildP003_PROLOGUE() {
             val pending = PitchStateTransitions.hasResult(state.pitch)
             val begin = if (highSchool?.tutorial?.started == true) emptyList() else listOf(hs(HighSchoolPhase4Command.BeginTutorial))
             actions.removeAll { it.id == "completeTutorial" }
-            addAction("completeTutorial", "학교를 고르고 시작", "이번 생의 첫 등판을 준비합니다.", run?.phase == HighSchoolPhase.PROLOGUE && reusable && highSchool?.tutorial?.completed != true,
+            addAction("completeTutorial", "학교를 고르고 시작", "선수의 첫 등판을 준비합니다.", run?.phase == HighSchoolPhase.PROLOGUE && reusable && highSchool?.tutorial?.completed != true,
                 begin + hs(HighSchoolPhase4Command.CompleteTutorial(context.seed(state, "tutorial-complete"))))
             addAction("openTutorialPitch", if (pending) "투구 결과 확인하기" else "지금 몸으로 한 구 던지기", "기록에 안 남는 연습 한 구.",
                 run?.phase == HighSchoolPhase.PROLOGUE && ((reusable && highSchool?.tutorial?.completed != true) || pending),
@@ -146,7 +146,7 @@ internal fun ScreenBuilder.buildP006_TRAINING() {
         val recommended = opportunity?.focus
         addSection(ScreenSection("training", "오늘 훈련", listOf(
             ScreenRow("장면", recommended?.label ?: "훈련장", opportunity?.reason ?: "코치가 오늘 과제를 정해 뒀다. 하나 골라서 몸에 남기자."),
-            ScreenRow("몸 상태", "구위 ${run?.pitcher?.stuff?.let(AbilityDisplayScale::rating) ?: 0} · 제구 ${run?.pitcher?.command?.let(AbilityDisplayScale::rating) ?: 0}", "무브먼트 ${run?.pitcher?.movement?.let(AbilityDisplayScale::rating) ?: 0} · 체력 ${run?.pitcher?.stamina?.let(AbilityDisplayScale::rating) ?: 0}"),
+            ScreenRow("몸 상태", "구위 ${run?.pitcher?.stuff?.let(AbilityDisplayScale::rating) ?: 0} · 제구 ${run?.pitcher?.command?.let(AbilityDisplayScale::rating) ?: 0}", "변화구 ${run?.pitcher?.movement?.let(AbilityDisplayScale::rating) ?: 0} · 체력 ${run?.pitcher?.stamina?.let(AbilityDisplayScale::rating) ?: 0}"),
             ScreenRow("이번 훈련", "${run?.chapterTrainingCount ?: 0}회", "훈련이 끝나면 다음 일정으로."),
         )))
         val focuses = if (recommended == null) {
@@ -245,7 +245,7 @@ internal fun ScreenBuilder.buildP011_HIGH_SCHOOL_CAREER() {
         val played = highSchool?.seasonLog.orEmpty().filter { it.played && it.careerId == run?.careerId }
         val pitchedOuts = played.sumOf { it.outs }
         addSection(ScreenSection("career", "고교 커리어", listOf(
-            ScreenRow("선수", run?.identity?.name ?: "—", "${run?.lifeNumber ?: 0}번째 생"),
+            ScreenRow("선수", run?.identity?.name ?: "—", "${run?.lifeNumber ?: 0}번째 선수"),
             ScreenRow("현재 장면", run?.chapter?.title ?: "—", run?.phase?.label ?: "—"),
             ScreenRow("공식 경기", "${played.size + (run?.automaticGames ?: 0)}경기", "직접·자동 경기 합산"),
             ScreenRow("시즌 이닝", inningsLabel(pitchedOuts + (run?.automaticOuts ?: 0)), "직접·자동 투구 합산"),

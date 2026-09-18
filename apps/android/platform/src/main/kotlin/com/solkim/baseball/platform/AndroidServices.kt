@@ -620,7 +620,7 @@ public class NativeLifeCardShareService(
         }
         val fields = payload.lines.mapNotNull { line -> line.split(": ", limit = 2).takeIf { it.size == 2 }?.let { it[0] to it[1] } }.toMap()
         val name = fields["선수"] ?: payload.title.substringBefore(" · ")
-        val life = fields["생"] ?: "${payload.lifeNumber}번째 생"
+        val life = fields["선수"] ?: fields["생"] ?: "${payload.lifeNumber}번째 선수"
         val drafted = fields["드래프트"] == "지명"
         // portrait
         val portraitLeft = 96f

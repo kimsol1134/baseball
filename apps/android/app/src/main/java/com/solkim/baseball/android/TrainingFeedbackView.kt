@@ -61,7 +61,7 @@ internal fun TrainingFeedbackGate(careerId: String?, trainingsCompleted: Int, re
 internal fun TrainingFeedbackPanel(record: JSONObject, reducedMotion: Boolean = false, onContinue: () -> Unit) {
     val before = record.getJSONArray("before")
     val after = record.getJSONArray("after")
-    val labels = listOf("구위", "제구", "무브먼트", "체력")
+    val labels = listOf("구위", "제구", "변화구", "체력")
     val copy = rememberGameCopy()
     Column(Modifier.fillMaxWidth().padding(20.dp).testTag("training.feedback"), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("훈련 완료", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)

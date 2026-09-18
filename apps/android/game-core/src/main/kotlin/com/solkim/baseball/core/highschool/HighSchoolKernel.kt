@@ -828,7 +828,7 @@ public class HighSchoolKernel(private val balanceRulesVersion: Int = HighSchoolG
             summary = if (drafted) {
                 "지명 구단 · ${team?.name ?: "프로 구단"}. 구위와 고교 경기 기록이 스카우트를 움직였다."
             } else {
-                "마지막 라운드까지 이름이 불리지 않았다. 다음 생에 남길 것을 고른다."
+                "마지막 라운드까지 이름이 불리지 않았다. 다음 선수에게 남길 것을 고른다."
             },
         )
         val next = state.copy(
@@ -1546,7 +1546,7 @@ public class HighSchoolKernel(private val balanceRulesVersion: Int = HighSchoolG
             "시즌 기록 ${if (season >= 0) "+" else ""}$season",
             "위기 관리 ${if (process >= 0) "+" else ""}$process",
             "관심도 ${if (fan >= 0) "+" else ""}$fan",
-            "이번 생의 흐름 ${windFor(state.careerId).draftEvaluationDelta}",
+            "이번 회차의 흐름 ${windFor(state.careerId).draftEvaluationDelta}",
             "각성 +${state.selectedAwakenings.size}",
             "관계 ${if (relationship >= 0) "+" else ""}$relationship",
         ) + (if (karma > 0) listOf("핸디캡 -$karma") else emptyList()) +

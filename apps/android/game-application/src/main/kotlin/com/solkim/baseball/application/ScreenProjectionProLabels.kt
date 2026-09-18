@@ -251,12 +251,12 @@ internal fun retirementHonorStory(kind: com.solkim.baseball.core.pro.ProRetireme
 }
 
 internal fun proLegacyFarewell(family: String): String = when (family) {
-    "power" -> "마지막까지 공은 무거웠다. 그 무게를 다음 생의 어깨에 얹는다."
-    "command" -> "구석에 꽂던 감각은 손끝에 남는다. 다음 생의 첫 공부터."
-    "breaking" -> "타자를 얼리던 그 공. 다음 생의 손에도 같은 그립이 잡힌다."
-    "endurance" -> "긴 이닝을 버틴 몸. 다음 생은 지치기 전에 더 멀리 간다."
-    "gamecraft" -> "타자를 읽던 눈은 늙지 않는다. 다음 생이 먼저 본다."
-    else -> "포수와 맞춘 호흡. 다음 생의 배터리는 처음부터 한 호흡이다."
+    "power" -> "마지막까지 공은 무거웠다. 그 무게를 다음 선수의 어깨에 얹는다."
+    "command" -> "구석에 꽂던 감각은 손끝에 남는다. 다음 선수의 첫 공부터."
+    "breaking" -> "타자를 얼리던 그 공. 다음 선수의 손에도 같은 그립이 잡힌다."
+    "endurance" -> "긴 이닝을 버틴 몸. 다음 선수는 지치기 전에 더 멀리 간다."
+    "gamecraft" -> "타자를 읽던 눈은 늙지 않는다. 다음 선수가 먼저 본다."
+    else -> "포수와 맞춘 호흡. 다음 선수의 배터리는 처음부터 한 호흡이다."
 }
 
 internal fun proLegacyChoice(family: String): String = when (family) {
@@ -287,7 +287,7 @@ internal fun fanReasonLabel(kind: ProFanReasonKind): String = when (kind) {
     ProFanReasonKind.IMPORTANT_GAME_SCORELESS -> "무실점 등판"
     ProFanReasonKind.IMPORTANT_GAME_RUNS_ALLOWED -> "실점 등판"
     ProFanReasonKind.SEASON_AWARD -> "시즌 수상"
-    ProFanReasonKind.CAREER_MILESTONE -> "커리어 이정표"
+    ProFanReasonKind.CAREER_MILESTONE -> "주요 기록 달성"
     ProFanReasonKind.SAME_TEAM_SEASON -> "같은 구단에서 한 해"
     ProFanReasonKind.CONTRACT_EXPECTATION_MET -> "계약 목표 달성"
     ProFanReasonKind.CONTRACT_EXPECTATION_MISSED -> "계약 목표 미달"

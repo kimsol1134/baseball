@@ -33,7 +33,7 @@ class TrainingPresentationTest {
             assertTrue(evidence.all { it.targetPitch == target && it.intensity == TrainingIntensity.LIGHT })
             assertEquals(after.highSchool!!.run.fatigue - before.highSchool!!.run.fatigue, evidence.sumOf { it.fatigueDelta })
             val lines = TrainingPresentation.resultLines(after, before.highSchool!!.run.totalTrainingsCompleted)
-            assertTrue(lines.contains("무브먼트 +${AbilityDisplayScale.delta(before.highSchool!!.run.pitcher.movement, after.highSchool!!.run.pitcher.movement)}"), lines.toString())
+            assertTrue(lines.contains("변화구 +${AbilityDisplayScale.delta(before.highSchool!!.run.pitcher.movement, after.highSchool!!.run.pitcher.movement)}"), lines.toString())
             val reopened = KotlinGameStore.open(id, repository, NativeAuthorityMode.NATIVE_AUTHORITATIVE)
             try { assertEquals(after.highSchool, reopened.current.highSchool) } finally { reopened.close() }
         } finally {

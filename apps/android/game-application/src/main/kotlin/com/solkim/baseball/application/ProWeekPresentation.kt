@@ -17,7 +17,7 @@ public object ProWeekPresentation {
         val forecast = proWeekForecast(pro, plan)
         return ProWeekPreview(if (pro.week == 0) "시즌 준비" else "${pro.week + 1}주차 준비",
             if (forecast.growthActive) "${title(actionId)} 성장 진도 ${forecast.progress}/${forecast.required} → 훈련 1회 누적"
-            else if (plan == ProWeekPlan.RECOVER || pro.injuryWeeks > 0) "몸을 회복하는 한 주" else "감독의 신뢰를 쌓는 한 주",
+            else if (plan == ProWeekPlan.RECOVER || pro.injuryWeeks > 0) "몸을 회복하는 한 주" else "감독의 믿음을 얻는 한 주",
             if (forecast.outings == 0) "등판을 쉬는 주 · 회복을 준비하세요" else "예정된 자동 등판 ${forecast.outings}경기",
             "예상 피로 ${forecast.fatigueMinimum}~${forecast.fatigueMaximum} · 현재 ${pro.fatigue}")
     }
@@ -33,7 +33,7 @@ public object ProWeekPresentation {
         val old = before.pro ?: return null
         val next = after.pro ?: return null
         if (old.careerId != next.careerId || old.season != next.season || next.week <= old.week) return null
-        val labels = listOf("구위", "제구", "무브먼트", "체력")
+        val labels = listOf("구위", "제구", "변화구", "체력")
         val a = old.pitcher.let { listOf(it.stuff, it.command, it.movement, it.stamina) }
         val b = next.pitcher.let { listOf(it.stuff, it.command, it.movement, it.stamina) }
         val x = old.developmentProgress.let { listOf(it.stuff, it.command, it.movement, it.stamina) }

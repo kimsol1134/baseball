@@ -61,7 +61,7 @@ import java.time.temporal.WeekFields
 internal fun ScreenBuilder.buildP013_DRAFT() {
         addSection(ScreenSection("draft", "드래프트", listOfNotNull(
         if (run?.draftResult == null) ScreenRow("드래프트 당일", "이름이 불릴까.", "3년이 이 한 번의 호명에 달렸다. 숨을 참고 듣는다.")
-        else ScreenRow(run.draftResult?.outcome?.label ?: "결과", run.draftResult?.summary.orEmpty(), if (run.draftResult?.outcome?.wire == "drafted") "프로 계약이 기다린다." else "이 생은 여기까지. 기록은 다음 생으로 간다."),
+        else ScreenRow(run.draftResult?.outcome?.label ?: "결과", run.draftResult?.summary.orEmpty(), if (run.draftResult?.outcome?.wire == "drafted") "프로 계약이 기다린다." else "이번 도전은 여기까지. 기록은 다음 선수에게 이어집니다."),
     )))
     .also { addSection(ProfessionalStatusPresentation.section(state)); run?.let { CareerChoicePresentation.conclusion(it).forEach(::addSection) } }
     .also { addAction("resolveDraft", "드래프트 결과 확인", "이름이 불릴까. 숨을 참고 듣는다.", run?.let { it.phase == HighSchoolPhase.DRAFT && it.draftResult == null } == true, listOf(hs(HighSchoolPhase4Command.ResolveDraft(context.seed(state, "draft"))))) }
@@ -70,19 +70,19 @@ internal fun ScreenBuilder.buildP013_DRAFT() {
 
 internal fun ScreenBuilder.buildP014_RUN_RECAP() {
         run?.let { CareerChoicePresentation.conclusion(it).forEach(::addSection) }
-        addSection(ScreenSection("recap", "이번 생의 기록", listOf(
-            ScreenRow("선수", run?.identity?.name ?: "—", "이번 생에 남긴 기록"),
+        addSection(ScreenSection("recap", "이번 선수의 기록", listOf(
+            ScreenRow("선수", run?.identity?.name ?: "—", "이번 선수가 남긴 기록"),
             ScreenRow("투구", "${run?.performance?.pitches ?: 0}구", "실점 ${run?.performance?.runsAllowed ?: 0} · 삼진 ${run?.performance?.strikeouts ?: 0}" + perfectSuffix(run)),
             run?.legacyOptions.orEmpty().filter { id -> HighSchoolSignatureLegacyRules.definitions.any { it.id == id } }.let { frozen ->
-                if (frozen.isEmpty()) ScreenRow("유산", "아직 셋으로 추리기 전", "유산 후보 보기를 누르면 이 생이 남긴 셋이 정해진다.")
-                else ScreenRow("유산", frozen.joinToString(" · ") { legacyTitle(it) }, "다음 생에 가져갈 건 하나.")
+                if (frozen.isEmpty()) ScreenRow("유산", "아직 셋으로 추리기 전", "대표 능력 보기를 누르면 이 선수가 남긴 셋이 정해집니다.")
+                else ScreenRow("유산", frozen.joinToString(" · ") { legacyTitle(it) }, "다음 선수에게 물려줄 건 하나.")
             },
         )))
-        addAction("prepareLegacy", "다음 생에 가져갈 능력 고르기", "이 생이 남긴 세 가지 중 하나를 고른다.", run?.let { it.phase == HighSchoolPhase.LEGACY || (it.phase == HighSchoolPhase.COMPLETED && it.draftResult?.outcome?.wire == "drafted") } == true, listOf(hs(HighSchoolPhase4Command.PrepareLegacy)))
+        addAction("prepareLegacy", "다음 선수에게 물려줄 능력 고르기", "이번 선수가 남긴 세 가지 중 하나를 고릅니다.", run?.let { it.phase == HighSchoolPhase.LEGACY || (it.phase == HighSchoolPhase.COMPLETED && it.draftResult?.outcome?.wire == "drafted") } == true, listOf(hs(HighSchoolPhase4Command.PrepareLegacy)))
         // Old base-engine memory options must first be converted into frozen signature candidates.
         run?.legacyOptions.orEmpty().filter { id -> HighSchoolSignatureLegacyRules.definitions.any { it.id == id } }
             .forEach { legacy -> addAction("selectLegacy:$legacy", legacyTitle(legacy), legacyEffect(legacy), run?.phase == HighSchoolPhase.LEGACY, listOf(hs(HighSchoolPhase4Command.SelectLegacy(legacy)))) }
-        addAction("finalizeArchive", "이 생을 마무리", "기록을 남기고 다음 생을 준비한다.", run?.phase == HighSchoolPhase.COMPLETED && highSchool?.selectedSignatureLegacyId != null, listOf(hs(HighSchoolPhase4Command.FinalizeArchive)))
+        addAction("finalizeArchive", "선수 커리어 마무리", "기록을 남기고 다음 선수를 준비합니다.", run?.phase == HighSchoolPhase.COMPLETED && highSchool?.selectedSignatureLegacyId != null, listOf(hs(HighSchoolPhase4Command.FinalizeArchive)))
         val draftedReviewReceipt = "review-moment:${run?.careerId}:drafted-reveal-confirmed"
         val recapReviewReceipt = "review-moment:${run?.careerId}:good-recap"
         if (run?.draftResult?.outcome == HighSchoolDraftOutcome.DRAFTED) {
@@ -97,7 +97,7 @@ internal fun ScreenBuilder.buildP014_RUN_RECAP() {
             addAction(
                 "confirmRecap",
                 "3년, 여기까지",
-                "기록은 남는다. 다음 생으로 가져간다.",
+                "기록은 남는다. 다음 선수에게 이어진다.",
                 state.analytics.receipts.none { it.receiptId == recapReviewReceipt },
                 listOf(GameCommand.RecordAnalytics(recapReviewReceipt, "review_moment_good_recap")),
             )
@@ -108,9 +108,9 @@ internal fun ScreenBuilder.buildP014_RUN_RECAP() {
 internal fun ScreenBuilder.buildP015_REBIRTH() {
         addSection(ProfessionalStatusPresentation.section(state))
         val inheritedId = highSchool?.inheritance?.selectedSignatureLegacyId
-        addSection(ScreenSection("rebirth", "다음 생에도, 나의 공", listOf(
+        addSection(ScreenSection("rebirth", "다음 선수에게 이어지는 힘", listOf(
             ScreenRow("이어지는 힘", inheritedId?.let(::legacyTitle) ?: "남은 기억", inheritedId?.let(::legacyEffect).orEmpty()),
-            ScreenRow("남은 기억", highSchool?.inheritance?.inheritedMemories?.size?.toString() ?: "0", "다음 생으로 가져가는 기억"),
+            ScreenRow("남은 기억", highSchool?.inheritance?.inheritedMemories?.size?.toString() ?: "0", "다음 선수에게 이어지는 기억"),
             ScreenRow("다시 시작", "같은 이름, 같은 얼굴. 1학년부터.", ""),
         )))
         val canBeginRebirth = run?.phase == HighSchoolPhase.COMPLETED && highSchool?.archive?.any { it.careerId == run.careerId } == true
@@ -119,8 +119,8 @@ internal fun ScreenBuilder.buildP015_REBIRTH() {
                 Triple("endurance", "innings_eater", PitchKind.FOUR_SEAM),
                 Triple("closer", "breaking_ball_artist", PitchKind.SLIDER),
                 Triple("command", "precision_commander", PitchKind.CHANGEUP))
-            addSection(ScreenSection("new-life-path", "이번 생에는 다른 야구", listOf(
-                ScreenRow("이전 생은 남아요", "이름·얼굴·앨범·계승 유산 유지", "성장 유형과 구종을 바꾸고 학교 선택부터 시작합니다."))))
+            addSection(ScreenSection("new-life-path", "새로운 야구 인생의 길", listOf(
+                ScreenRow("이전 기록은 남아요", "이름·얼굴·앨범·계승 유산 유지", "성장 유형과 구종을 바꾸고 학교 선택부터 시작합니다."))))
             paths.forEach { (path, preset, primary) ->
                 val learning = if (primary == PitchKind.CHANGEUP) PitchKind.CURVEBALL else PitchKind.CHANGEUP
                 val setup = com.solkim.baseball.core.highschool.HighSchoolRebirthSetup(preset, run.identity, run.difficulty,
@@ -141,15 +141,15 @@ internal fun ScreenBuilder.buildP015_REBIRTH() {
         )
         addAction(
             "customizeRebirth",
-            "다음 생 설정하기",
-            "이름·구종·이어받을 힘을 바꿔서 시작한다.",
+            "다음 선수 설정하기",
+            "이름·구종·이어받을 힘을 정하고 시작합니다.",
             canBeginRebirth,
             listOf(GameCommand.EnterSetup),
         )
         addAction(
             "finalizeArchive",
-            "이 생을 마무리",
-            "기록을 남기고 다음 생을 준비한다.",
+            "선수 커리어 마무리",
+            "기록을 남기고 다음 선수를 준비합니다.",
             run?.phase == HighSchoolPhase.COMPLETED &&
                 highSchool?.selectedSignatureLegacyId != null &&
                 highSchool.archive.none { it.careerId == run.careerId },

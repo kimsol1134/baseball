@@ -5,7 +5,7 @@ import com.solkim.baseball.core.pro.*
 public object ProCallUpPresentation {
     public fun lines(state: GameAggregateState): List<String> = state.pro?.let(::lines).orEmpty()
     public fun lines(pro: ProState): List<String> = listOf(
-        "감독 신뢰 ${pro.managerTrust} / ${ProCallUpRules.TRUST_REQUIRED}",
+        "감독의 믿음 ${pro.managerTrust} / ${ProCallUpRules.TRUST_REQUIRED}",
         "종합 평가 ${AbilityDisplayScale.rating(ProCallUpRules.skill(pro.pitcher))} / ${AbilityDisplayScale.rating(ProCallUpRules.SKILL_REQUIRED)}",
         "경험 조건: 2시즌 진입 또는 ${ProCallUpRules.GAMES_REQUIRED}경기 또는 ${ProCallUpRules.STRIKEOUTS_REQUIRED}탈삼진",
         "현재 ${pro.season}시즌 · ${pro.currentStats.games}경기 · ${pro.currentStats.strikeouts}탈삼진",

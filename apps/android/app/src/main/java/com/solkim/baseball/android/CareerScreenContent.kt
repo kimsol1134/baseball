@@ -205,7 +205,7 @@ private fun CoreRebirthChoices(state: GameAggregateState, model: ScreenModel, on
     if (enteringPro && model.id == ScreenId.P015_REBIRTH) {
         model.actions.firstOrNull { it.id == "startLinked" && it.enabled }?.let { CareerActionButton(model.id, it, onAction) }
         val alternatives = model.actions.filter { it.enabled && it.id in setOf("quickRebirth", "customizeRebirth", "finalizeArchive") }
-        if (alternatives.isNotEmpty()) CareerDisclosure("이번 생을 마무리하는 선택", "career.otherPath") {
+        if (alternatives.isNotEmpty()) CareerDisclosure("선수 커리어를 마무리하는 선택", "career.otherPath") {
             val nextLife = alternatives.firstOrNull { it.id == "quickRebirth" }
             var preview by remember(nextLife) { mutableStateOf<RebirthStartPreview?>(null) }
             LaunchedEffect(nextLife) { preview = withContext(Dispatchers.Default) { RebirthStartPreview.resolve(state, nextLife) } }
@@ -240,7 +240,7 @@ private fun CoreRebirthChoices(state: GameAggregateState, model: ScreenModel, on
             Text("${it.label} ${it.value}", style = MaterialTheme.typography.bodySmall)
         }
         if (run != null && CareerUiRules.archive(state).any { it.careerId == run.careerId }) {
-            CareerDisclosure("지난 생의 카드", "rebirth.previousLife") {
+            CareerDisclosure("이전 선수의 카드", "rebirth.previousLife") {
                 LifeCardVisual(state = state, careerId = run.careerId)
                 CareerShareButton(state, model)
             }
@@ -288,11 +288,11 @@ internal fun RebirthPathPicker(state: GameAggregateState, model: ScreenModel, on
     val actions = model.actions.filter { it.enabled }
     val newPaths = actions.filter { it.id.startsWith("rebirthPath:") }
     if (newPaths.isNotEmpty()) {
-        Text("이번 생에는 다른 야구", style = MaterialTheme.typography.titleMedium)
+        Text("새로운 도전의 길", style = MaterialTheme.typography.titleMedium)
         state.meta.retiredProCareers.lastOrNull()?.let { previous ->
             val rows = previous.careerStats
-            if (rows.isNotEmpty() && rows.all { it.completeGames != null && it.shutouts != null }) Text("지난 생의 기록 · 완투 ${rows.sumOf { it.completeGames ?: 0 }}회 · 완봉승 ${rows.sumOf { it.shutouts ?: 0 }}회", style = MaterialTheme.typography.labelSmall)
-            else Text("지난 생의 기록은 앨범에 남아요.", style = MaterialTheme.typography.labelSmall)
+            if (rows.isNotEmpty() && rows.all { it.completeGames != null && it.shutouts != null }) Text("이전 선수의 기록 · 완투 ${rows.sumOf { it.completeGames ?: 0 }}회 · 완봉승 ${rows.sumOf { it.shutouts ?: 0 }}회", style = MaterialTheme.typography.labelSmall)
+            else Text("이전 선수의 기록은 앨범에 남아요.", style = MaterialTheme.typography.labelSmall)
         }
         var selectedPath by rememberSaveable(CareerUiRules.highSchoolCareerId(state)) { mutableStateOf(newPaths.first().id) }
         val chosen = newPaths.firstOrNull { it.id == selectedPath } ?: newPaths.first()
@@ -466,7 +466,7 @@ private fun ViewportCards(
                 ),
                 onExposed = onExposed,
             ) {
-                CareerReadOnlyRow("이번 생의 바람", windLabel(HighSchoolDisplayRules.windIdFor(run.careerId)), "이 해의 분위기는 3년 내내 이어진다.")
+                CareerReadOnlyRow("이번 회차의 바람", windLabel(HighSchoolDisplayRules.windIdFor(run.careerId)), "이 해의 분위기는 3년 내내 이어진다.")
             }
         } else Unit
         ScreenId.P007_RELATIONSHIP -> run?.relationshipEventId?.let { eventId ->
@@ -500,7 +500,7 @@ private fun ViewportCards(
                     ),
                     onExposed = onExposed,
                 ) {
-                    CareerReadOnlyRow("남길 수 있는 세 가지", run.legacyOptions.joinToString(" · ") { SignatureLegacyDisplay.title(it, legacyCopy) ?: "남겨진 유산" }, "하나만 다음 생으로 간다.")
+                    CareerReadOnlyRow("남길 수 있는 세 가지", run.legacyOptions.joinToString(" · ") { SignatureLegacyDisplay.title(it, legacyCopy) ?: "남겨진 유산" }, "하나만 다음 선수에게 이어집니다.")
                 }
             }
             PlayerLegacyExposurePolicy.resolve(state, PlayerLegacyExposureSurface.RECAP)?.let { exposure ->
@@ -517,7 +517,7 @@ private fun ViewportCards(
                     ),
                     onExposed = onExposed,
                 ) {
-                    CareerReadOnlyRow("이 생의 마지막 장", "기록은 남았다", "여기서 고른 하나가 다음 생으로 간다.")
+                    CareerReadOnlyRow("마지막 장의 기록", "기록은 남았다", "여기서 고른 하나가 다음 선수에게 이어집니다.")
                 }
             }
         }
@@ -535,7 +535,7 @@ private fun ViewportCards(
                 ),
                 onExposed = onExposed,
             ) {
-                CareerReadOnlyRow("지난 생의 편지", "기록과 기억이 이어진다", "")
+                CareerReadOnlyRow("이전 선수의 편지", "기록과 기억이 이어진다", "")
             }
         } ?: Unit
         ScreenId.P024_WEEKLY -> CareerUiRules.weekly(state)?.let { weekly ->

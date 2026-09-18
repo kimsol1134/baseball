@@ -2111,7 +2111,7 @@ public class ProKernel(
             phase = ProCareerPhase.COMPLETED,
             selectedLegacyId = candidate.id,
             highSchoolArchiveSettlement = settlement,
-            news = (listOf("${candidate.title}. 이번 생의 유산으로 남긴다.") + state.news).take(30),
+            news = (listOf("${candidate.title}. 다음 선수에게 물려줄 유산으로 남긴다.") + state.news).take(30),
             commitment = "",
         )
         return result(next, state.seed, listOf("pro_legacy_selected", if (settlement != null) "linked_hs_archive_settlement" else "direct_pro_no_archive"))

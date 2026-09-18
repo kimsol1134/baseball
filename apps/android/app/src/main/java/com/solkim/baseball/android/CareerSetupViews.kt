@@ -175,7 +175,7 @@ internal fun ColumnScope.CareerSetupFields(
                 PlayerPortrait(seed = (if (secondLife && state.meta.seedChallenge == null) lineagePortraitSeed(state) else null) ?: finalName, stage = PlayerStage.FRESHMAN, width = 72.dp, modifier = Modifier.testTag("setup.portrait"))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(finalName, verbatim = true, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text(if (carriedName != null && finalName == carriedName) "지난 생의 그 얼굴 그대로." else if (carriedName != null) "이름은 달라도 얼굴은 이어진다. 기억을 이어받은 다른 선수." else "이름을 바꾸면 얼굴도 달라져요",
+                    Text(if (carriedName != null && finalName == carriedName) "이전 선수의 그 얼굴 그대로." else if (carriedName != null) "이름은 달라도 얼굴은 이어져요. 기억을 이어받은 다른 선수." else "이름을 바꾸면 얼굴도 달라져요",
                         style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
                 }
             }
@@ -251,7 +251,7 @@ internal fun ColumnScope.CareerSetupFields(
             Text("선택한 유형의 기본 능력", style = MaterialTheme.typography.labelMedium)
             Column(Modifier.testTag("setup.preset.stats")) {
                 CareerStatTiles(listOf("구위" to "${com.solkim.baseball.application.AbilityDisplayScale.rating(chosenPreset.baseStuff)} / 100", "제구" to "${com.solkim.baseball.application.AbilityDisplayScale.rating(chosenPreset.baseCommand)} / 100",
-                    "무브먼트" to "${com.solkim.baseball.application.AbilityDisplayScale.rating(chosenPreset.baseMovement)} / 100", "체력" to "${com.solkim.baseball.application.AbilityDisplayScale.rating(chosenPreset.baseStamina)} / 100"))
+                    "변화구" to "${com.solkim.baseball.application.AbilityDisplayScale.rating(chosenPreset.baseMovement)} / 100", "체력" to "${com.solkim.baseball.application.AbilityDisplayScale.rating(chosenPreset.baseStamina)} / 100"))
             }
         }
         2 -> {
@@ -278,17 +278,17 @@ internal fun ColumnScope.CareerSetupFields(
             }
         }
         else -> {
-            Text("이번 생의 난이도", style = MaterialTheme.typography.titleSmall)
+            Text("이번 회차의 난이도", style = MaterialTheme.typography.titleSmall)
             listOf(Triple("relaxed", "부드럽게", "라이벌이 약하고 지명선이 낮다."), Triple("standard", "표준", "기본."), Triple("challenging", "혹독하게", "라이벌이 강하고 지명선이 높다. 야구혼을 더 받는다.")).forEach { (id, label, detail) ->
                 SetupOption(label, detail, harshness == id) { harshness = id }
             }
             Text("야구혼이 먼저 키우는 것", style = MaterialTheme.typography.titleSmall)
-            Text("지난 생이 남긴 야구혼을 어느 능력에 먼저 쓸지.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
+            Text("이전 선수가 남긴 야구혼을 어느 능력에 먼저 쓸지 정해요.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
             listOf(Triple("body", "몸 · 구위", "공에 힘이 실린 채 시작한다."), Triple("technique", "기술 · 제구", "초록 구간이 넓은 채 시작한다."), Triple("game", "경기 · 운영", "타자를 읽는 눈을 갖고 시작한다.")).forEach { (id, label, detail) ->
                 SetupOption(label, detail, soulDomain == id) { soulDomain = id }
             }
             Text("야구혼 $soulBalance · 쓰는 중 $boostCost", style = MaterialTheme.typography.titleSmall)
-            Text("야구혼을 써서 이번 생의 출발을 바꾼다.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
+            Text("야구혼을 써서 이번 선수의 시작 능력을 높여요.", style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
             SetupSoulBoost.entries.forEach { boost ->
                 val selected = boost in boosts
                 SetupOption(setupBoostLabel(boost), gameCopy.resolve("controls.setup.boost-cost", GameCopyArgument.Whole(boost.cost.toLong())) + " · " + setupBoostDetail(boost), selected, enabled = selected || boostCost + boost.cost <= soulBalance) {
@@ -362,7 +362,7 @@ private fun setupStepTitle(step: Int): String = when (step) {
     0 -> "어떤 이름으로 불릴까요?"
     1 -> "어떤 투수가 되고 싶나요?"
     2 -> "어떤 공으로 승부할까요?"
-    else -> "이번 생에는 무엇을 이어받을까요?"
+    else -> "이번 회차에는 무엇을 이어받을까요?"
 }
 
 @Composable
@@ -405,7 +405,7 @@ private fun SetupOption(label: String, detail: String, selected: Boolean, enable
 
 private fun setupBoostDetail(boost: SetupSoulBoost): String = when (boost) {
     SetupSoulBoost.TALENT_BREAK -> "가장 낮은 재능의 벽을 한 단계 올린다."
-    SetupSoulBoost.EXTRA_MEMORY -> "지난 생의 기억을 하나 더 가져온다."
+    SetupSoulBoost.EXTRA_MEMORY -> "이전 선수의 기억을 하나 더 가져옵니다."
     SetupSoulBoost.HEAD_START -> "시작 능력에 5를 얹는다."
     SetupSoulBoost.TRAINING_RHYTHM -> "훈련 한 번의 효과가 커진다."
 }

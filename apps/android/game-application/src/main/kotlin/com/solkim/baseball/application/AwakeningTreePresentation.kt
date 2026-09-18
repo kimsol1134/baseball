@@ -45,7 +45,7 @@ public object AwakeningTreePresentation {
         val before = requireNotNull(state.highSchool).run.pitcher
         val id = HighSchoolAwakening.entries.single { it.wire == node.choice.id }
         val after = HighSchoolKernel().previewAwakening(before, id)
-        val labels = listOf("구위", "제구", "무브먼트", "체력")
+        val labels = listOf("구위", "제구", "변화구", "체력")
         val from = listOf(before.stuff, before.command, before.movement, before.stamina)
         val to = listOf(after.stuff, after.command, after.movement, after.stamina)
         val positives = mutableListOf<String>()

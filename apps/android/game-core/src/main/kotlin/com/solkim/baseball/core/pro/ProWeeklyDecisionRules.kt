@@ -66,7 +66,7 @@ public object ProWeeklyDecisionRules {
                 choice("accept_farm", "2군에서 재정비한다", "3주 동안 등판이 없다. 몸이 가벼워지고 부족한 게 채워진다. (능력 +2 · 피로 -25 · 믿음 -6)", if (state.pitcher.stuff <= state.pitcher.command) ProDecisionEffect(stuffDelta = 2, managerTrustDelta = -6, fatigueDelta = -25) else ProDecisionEffect(commandDelta = 2, managerTrustDelta = -6, fatigueDelta = -25)),
                 choice("stay_roster", "현재 자리에서 버틴다", "자리를 지킨다. 감독은 고집이라고 본다. (믿음 -3)", ProDecisionEffect(managerTrustDelta = -3)))
             ProSeasonDecisionType.VETERAN_MENTOR -> listOf(
-                choice("take_mentor", "선배의 조언을 따른다", "변화구와 포수 호흡이 남는다. 3주간 훈련은 느려진다. (무브먼트 +1 · 호흡 +5)", ProDecisionEffect(movementDelta = 1, catcherTrustDelta = 5)),
+                choice("take_mentor", "선배의 조언을 따른다", "변화구와 포수 호흡이 남는다. 3주간 훈련은 느려진다. (변화구 +1 · 호흡 +5)", ProDecisionEffect(movementDelta = 1, catcherTrustDelta = 5)),
                 choice("keep_own_way", "내 방식을 지킨다", "내 훈련대로 간다. 포수는 조금 실망한다. (호흡 -2)", ProDecisionEffect(catcherTrustDelta = -2)))
             else -> error("pro.weekly.type")
         }
@@ -108,7 +108,7 @@ public object ProWeeklyDecisionRules {
         ProSeasonDecisionType.ROTATION_PUSH -> "감독: 3주 잘 버텼다. 퀄리티 스타트 ${value.qualityStarts ?: 0}번, 실점 ${value.runsAllowed ?: 0}. 그 정도면 됐다."
         ProSeasonDecisionType.NEW_PITCH_TRIAL -> "포수: 시험 끝. 흔들리던 제구가 ${value.commandRestored ?: 0}만큼 돌아왔다. 이제 그 공은 네 거야."
         ProSeasonDecisionType.FARM_RESET -> "코치: 3주 만에 다른 투수가 돼서 올라왔다. 감독도 봤다. (믿음 +${value.managerTrustDelta ?: 0})"
-        ProSeasonDecisionType.VETERAN_MENTOR -> "선배: 3주 고생했다. 구위 ${value.stuffDelta ?: 0}, 제구 ${value.commandDelta ?: 0}, 무브먼트 ${value.movementDelta ?: 0}. 남은 건 네가 챙겨."
+        ProSeasonDecisionType.VETERAN_MENTOR -> "선배: 3주 고생했다. 구위 ${value.stuffDelta ?: 0}, 제구 ${value.commandDelta ?: 0}, 변화구 ${value.movementDelta ?: 0}. 남은 건 네가 챙겨."
         else -> "3주가 지났다. 그 선택은 몸 어딘가에 남았다."
     }
 }

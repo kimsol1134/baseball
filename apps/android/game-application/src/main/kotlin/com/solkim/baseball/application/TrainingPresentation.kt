@@ -65,7 +65,7 @@ public object TrainingPresentation {
     public fun metric(focus: TrainingFocus): String = when (focus) {
         TrainingFocus.VELOCITY -> "구위"
         TrainingFocus.COMMAND, TrainingFocus.GAME_PLANNING -> "제구"
-        TrainingFocus.BREAKING_BALL -> "무브먼트"
+        TrainingFocus.BREAKING_BALL -> "변화구"
         TrainingFocus.STAMINA -> "체력"
         TrainingFocus.RECOVERY -> "회복"
     }

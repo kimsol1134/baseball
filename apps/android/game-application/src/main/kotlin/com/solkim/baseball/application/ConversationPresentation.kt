@@ -136,7 +136,7 @@ public object ConversationPresentation {
             "starter_trial" -> lines += "다음 등판: 선발 테스트"
             "training" -> d.supportFocus?.let { lines += "다음 ${TrainingPresentation.title(it)} 지원" }
         }
-        val labels = listOf("구위", "제구", "무브먼트", "체력")
+        val labels = listOf("구위", "제구", "변화구", "체력")
         val old = before.pitcher.let { listOf(it.stuff, it.command, it.movement, it.stamina) }
         val next = after.pitcher.let { listOf(it.stuff, it.command, it.movement, it.stamina) }
         old.indices.forEach { i -> val delta = AbilityDisplayScale.delta(old[i], next[i]); if (delta != 0) lines += "${labels[i]} ${signed(delta)}" }

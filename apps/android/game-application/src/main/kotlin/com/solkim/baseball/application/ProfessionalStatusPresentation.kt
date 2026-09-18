@@ -28,7 +28,7 @@ public object ProfessionalStatusPresentation {
                 ScreenRow("지명 구단", draft.team?.name ?: "지명 구단", listOfNotNull(
                     draft.round?.let { "${it}라운드" }, draft.overallPick?.let { "전체 ${it}순위" }).joinToString(" · ")))
             draft?.outcome == HighSchoolDraftOutcome.UNDRAFTED -> listOf(
-                ScreenRow("다음 단계", "이번 드래프트 미지명", "이번 생의 기록과 이어받을 힘을 남겨요."))
+                ScreenRow("다음 단계", "이번 드래프트 미지명", "이번 회차의 기록과 이어받을 힘을 남겨요."))
             else -> listOf(ScreenRow("다음 단계", "드래프트 발표 전"))
         }
         return ScreenSection("professional-status", "다음 마운드", rows)

@@ -164,7 +164,7 @@ internal fun LifeCardVisual(state: GameAggregateState, careerId: String) {
                     width = 58.dp,
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("${record.lifeNumber}번째 생", style = MaterialTheme.typography.labelMedium, color = BaseballColors.milestone)
+                    Text("${record.lifeNumber}번째 선수", style = MaterialTheme.typography.labelMedium, color = BaseballColors.milestone)
                     Text(record.playerName, verbatim = true, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Text(
                         if (record.drafted) "지명" else "미지명",
@@ -179,7 +179,7 @@ internal fun LifeCardVisual(state: GameAggregateState, careerId: String) {
             CareerDisclosure("전체 성적", "life.details.${record.careerId}") {
                 CareerStatTiles(listOf("볼넷" to record.walks.toString(), "실점" to record.runsAllowed.toString(), "스카우트 평가" to record.draftEvaluation.toString()))
 
-            Text(listOf("구위", "제구", "무브먼트", "체력").zip(record.ratings.map(AbilityDisplayScale::rating)).joinToString(" · ") { (label, value) -> "$label $value" }, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
+            Text(listOf("구위", "제구", "변화구", "체력").zip(record.ratings.map(AbilityDisplayScale::rating)).joinToString(" · ") { (label, value) -> "$label $value" }, style = MaterialTheme.typography.bodySmall, color = BaseballColors.textSecondary)
             lineageLine(state, upToLife = record.lifeNumber)?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = BaseballColors.textTertiary) }
             }
         }

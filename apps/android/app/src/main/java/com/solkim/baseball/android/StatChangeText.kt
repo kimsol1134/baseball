@@ -15,7 +15,7 @@ private val comparison = Regex("(\\d+(?:[.,]\\d+)?)\\s*→\\s*(\\d+(?:[.,]\\d+)?
 private val signedChange = Regex("(?<![0-9A-Za-z])([+−-]\\d+(?:[.,]\\d+)?)(?:[~〜–]([+−-]?\\d+(?:[.,]\\d+)?))?%?")
 
 /** Only called for stat/effect copy, after localization. Never changes the text or saved values. */
-private val metricName = Regex("피로|팔 부담|실점|방어율|부상 위험|fatigue|arm strain|runs allowed|ERA|WHIP|疲労|腕の負担|失点|防御率|구위|제구|무브먼트|체력|신뢰|구속|성장|stuff|control|command|movement|stamina|trust|velocity|球威|制球|変化|スタミナ|信頼", RegexOption.IGNORE_CASE)
+private val metricName = Regex("피로|팔 부담|실점|방어율|부상 위험|fatigue|arm strain|runs allowed|ERA|WHIP|疲労|腕の負担|失点|防御率|구위|제구|무브먼트|변화구|체력|신뢰|구속|성장|stuff|control|command|movement|stamina|trust|velocity|球威|制球|変化|スタミナ|信頼", RegexOption.IGNORE_CASE)
 private val costlyIncrease = setOf("피로", "팔 부담", "실점", "방어율", "부상 위험", "fatigue", "arm strain", "runs allowed", "era", "whip", "疲労", "腕の負担", "失点", "防御率")
 
 internal fun statChangeText(text: String, lowerIsBetter: Boolean? = null): AnnotatedString {

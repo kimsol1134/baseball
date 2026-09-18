@@ -85,7 +85,7 @@ class ConversationExperienceTest {
         val before = unsigned.copy(commitment = k.commitment(unsigned))
         val commitment = before.commitment
         val preview = ProConversationPresentation.preview(before, "42", decision.choices.first().id)
-        assertTrue(preview.any { it.label == "감독 신뢰" && it.delta == 1 })
+        assertTrue(preview.any { it.label == "감독의 믿음" && it.delta == 1 })
         assertTrue(preview.any { it.label == "피로" && it.delta == -3 })
         val after = k.applySeasonDecision(before, "42", decision.id, decision.choices.first().id).state
         assertEquals(preview, ProConversationPresentation.effects(before, after))

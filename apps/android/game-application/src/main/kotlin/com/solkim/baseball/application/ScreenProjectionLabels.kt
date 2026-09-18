@@ -60,8 +60,8 @@ import java.time.temporal.WeekFields
 
 
 internal fun subtitle(id: ScreenId): String = when (id) {
-    ScreenId.P001_OPENING -> "한 구씩, 한 생씩."
-    ScreenId.P002_SETUP -> "이번 생의 이름과 출발점"
+    ScreenId.P001_OPENING -> "한 구씩, 한 선수씩."
+    ScreenId.P002_SETUP -> "선수의 이름과 출발점"
     ScreenId.P003_PROLOGUE -> "편지 한 통, 그리고 첫 공"
     ScreenId.P004_PITCH_TUTORIAL -> "기록에 안 남는 첫 공"
     ScreenId.P005_SCHOOL_SELECTION -> "3년을 보낼 학교"
@@ -98,9 +98,9 @@ internal fun achievementTitle(id: String): String = when (id) {
     HighSchoolAchievementRules.PERFECT_DELIVERY -> "정확한 투구"
     HighSchoolAchievementRules.MAJOR_DEBUT -> "첫 큰 무대"
     HighSchoolAchievementRules.HUNDRED_STRIKEOUTS -> "백 탈삼진"
-    HighSchoolAchievementRules.THIRD_LIFE -> "세 번째 생"
-    HighSchoolAchievementRules.FIFTH_LIFE -> "다섯 번째 생"
-    HighSchoolAchievementRules.TENTH_LIFE -> "열 번째 생"
+    HighSchoolAchievementRules.THIRD_LIFE -> "세 번째 도전"
+    HighSchoolAchievementRules.FIFTH_LIFE -> "다섯 번째 도전"
+    HighSchoolAchievementRules.TENTH_LIFE -> "열 번째 도전"
     HighSchoolAchievementRules.KARMA_RUN -> "이어진 마음"
     HighSchoolAchievementRules.DOUBLE_KARMA -> "두 겹의 마음"
     HighSchoolAchievementRules.AWAKENED_THRICE -> "세 번의 각성"
@@ -115,14 +115,14 @@ internal fun achievementDescription(id: String): String = when (id) {
     HighSchoolAchievementRules.FIRST_STRIKEOUT -> "삼진 하나를 잡는다."
     HighSchoolAchievementRules.CLEAN_INNING -> "직접 던진 등판을 무실점으로 막는다."
     HighSchoolAchievementRules.PERFECT_DELIVERY -> "조준도 타이밍도 완벽에 가까운 한 구를 던진다."
-    HighSchoolAchievementRules.THIRD_LIFE -> "세 번째 생을 시작한다."
-    HighSchoolAchievementRules.FIFTH_LIFE -> "다섯 번째 생을 시작한다."
-    HighSchoolAchievementRules.TENTH_LIFE -> "열 번째 생을 시작한다."
+    HighSchoolAchievementRules.THIRD_LIFE -> "세 번째 선수를 시작한다."
+    HighSchoolAchievementRules.FIFTH_LIFE -> "다섯 번째 선수를 시작한다."
+    HighSchoolAchievementRules.TENTH_LIFE -> "열 번째 선수를 시작한다."
     HighSchoolAchievementRules.KARMA_RUN -> "핸디캡을 하나 걸고 고교 3년을 마친다."
     HighSchoolAchievementRules.DOUBLE_KARMA -> "핸디캡을 둘 걸고 고교 3년을 마친다."
-    HighSchoolAchievementRules.AWAKENED_THRICE -> "한 생에서 각성 셋을 익힌다."
+    HighSchoolAchievementRules.AWAKENED_THRICE -> "한 선수로 각성 셋을 익힌다."
     HighSchoolAchievementRules.FOUR_SCHOOLS -> "서로 다른 학교 네 곳에서 3년을 마친다."
-    HighSchoolAchievementRules.FIVE_DRAFTS -> "지명받은 생을 다섯 번 남긴다."
+    HighSchoolAchievementRules.FIVE_DRAFTS -> "지명받은 선수를 다섯 명 남긴다."
     HighSchoolAchievementRules.MAJOR_DEBUT -> "1군 마운드에 처음 오른다."
     HighSchoolAchievementRules.HUNDRED_STRIKEOUTS -> "프로에서 탈삼진 100개를 넘긴다."
     HighSchoolAchievementRules.HALL_OF_FAME -> "명예의 전당에 이름을 올린다."
@@ -131,7 +131,7 @@ internal fun achievementDescription(id: String): String = when (id) {
 
 internal fun legacyEffect(id: String): String = runCatching {
     val effect = HighSchoolSignatureLegacyRules.definition(id)
-    listOf("구위" to effect.stuff, "제구" to effect.command, "무브먼트" to effect.movement, "체력" to effect.stamina)
+    listOf("구위" to effect.stuff, "제구" to effect.command, "변화구" to effect.movement, "체력" to effect.stamina)
         .filter { it.second > 0 }.sortedByDescending { it.second }.joinToString(" · ") { (label, amount) -> "$label ${if (amount >= 3) "중심" else if (amount == 2) "강화" else "보조"}" }
 }.getOrDefault("")
 
@@ -148,7 +148,7 @@ internal fun trustWord(value: Int): String = when {
     else -> "아직 멀다"
 }
 internal fun reviewReason(state: GameAggregateState): String? = when (ScreenProjection.reviewTrigger(state)) {
-    "third-life" -> "세 번째 생의 결산"
+    "third-life" -> "세 번째 선수의 결산"
     "good-recap" -> "좋은 결산"
     "drafted-reveal-confirmed" -> "드래프트 결과 공개"
     else -> null
@@ -166,7 +166,7 @@ internal fun pitchBoundaryLabel(boundary: PitchBoundary): String = when (boundar
 internal val HighSchoolTrainingFocus.label: String get() = when (this) {
     HighSchoolTrainingFocus.VELOCITY -> "구위"
     HighSchoolTrainingFocus.COMMAND -> "제구"
-    HighSchoolTrainingFocus.BREAKING_BALL -> "무브먼트"
+    HighSchoolTrainingFocus.BREAKING_BALL -> "변화구"
     HighSchoolTrainingFocus.STAMINA -> "체력"
     HighSchoolTrainingFocus.RECOVERY -> "회복"
     HighSchoolTrainingFocus.GAME_PLANNING -> "경기 계획"
@@ -279,10 +279,10 @@ internal fun weeklyTaskTitle(kind: String): String = when (kind) {
     "played_on_two_days" -> "이틀 이상 던지기"
     "chapters_advanced" -> "다음 장으로 넘어가기"
     "different_school_selected" -> "다른 학교에서 시작하기"
-    "next_run_started" -> "다음 생 시작하기"
+    "next_run_started" -> "다음 선수 시작하기"
     "pro_weeks_advanced" -> "프로 주간 보내기"
     "sequence_mastery_triggered" -> "배합 성공하기"
-    "pledge_selected" -> "이번 생의 약속 정하기"
+    "pledge_selected" -> "이번 선수의 목표 정하기"
     else -> "이번 주 과제"
 }
 

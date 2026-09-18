@@ -12,7 +12,7 @@ public fun ScreenModel.localized(copy: GameCopy, state: GameAggregateState): Scr
     fun text(value: String) = player(copy.legacy(value, userTexts))
     return this.copy(title = text(title), subtitle = text(subtitle),
         sections = sections.map { section -> section.copy(title = if (section.id.startsWith("retired:")) section.title else copy.legacy(section.title), rows = section.rows.map {
-            val isPlayerName = it.label in setOf("선수", "이름", "지난 생", "기시감") && it.value in userTexts
+            val isPlayerName = it.label in setOf("선수", "이름", "지난 생", "이전 선수", "기시감") && it.value in userTexts
             it.copy(label = copy.legacy(it.label), value = if (isPlayerName) it.value else if (it.label in setOf("구종", "주 구종", "실전 구종", "연습 구종")) copy.legacy(it.value) else text(it.value), detail = if (section.id == "rebirth" && it.label == "이어지는 힘") state.highSchool?.inheritance?.selectedSignatureLegacyId?.let { id -> SignatureLegacyDisplay.effect(id, copy) } ?: text(it.detail) else text(it.detail))
         }) },
         actions = actions.map { it.copy(label = copy.legacy(it.label), description = if (it.effects.isNotEmpty()) ChoiceEffect.summary(it.effects, copy) else if (it.id.startsWith("selectLegacy:") || it.id.startsWith("selectProLegacy:")) SignatureLegacyDisplay.effect(it.id.substringAfter(':'), copy) ?: text(it.description) else text(it.description)) },

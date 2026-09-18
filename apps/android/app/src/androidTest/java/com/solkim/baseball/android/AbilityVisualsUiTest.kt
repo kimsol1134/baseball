@@ -51,7 +51,7 @@ class AbilityVisualsUiTest {
         compose.onNodeWithTag("ability.current.1").performClick()
         compose.onNodeWithTag("ability.details").assertIsDisplayed()
         compose.onNodeWithTag("ability.compare.1").performClick()
-        compose.onNodeWithText("이전 생 시작 → 이번 생 시작").assertExists()
+        compose.onNodeWithText("이전 선수 시작 → 이번 선수 시작").assertExists()
         capture("ability-rebirth-compare")
         compose.onNodeWithTag("ability.history.chart").performScrollTo().assertIsDisplayed()
         capture("ability-history")

@@ -10,5 +10,5 @@
     <string name="choice_heading_week">이번 주 선택</string>
     <string name="pitch_hold_to_release">누르고 있다가 놓기</string>
     <string name="opening_what_this_is">한 구씩 직접 던지는 환생 야구. 기본 조작은 투구 슬라이더.</string>
-    <string name="settings_auto_release">자동 릴리스는 보조 조작. 기본은 길게 눌러 와인드업.</string>
+    <string name="settings_auto_release">자동 릴리스는 보조 조작이에요. 기본 조작은 버튼을 꾹 눌러 던지는 투구 슬라이더예요.</string>
 </resources>

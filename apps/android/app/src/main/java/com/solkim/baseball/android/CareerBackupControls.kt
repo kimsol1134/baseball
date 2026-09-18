@@ -98,8 +98,8 @@ internal fun CareerBackupControls(state: GameAggregateState, busy: Boolean = fal
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val header = CareerUiRules.header(ready)
             Text(header?.name ?: CareerUiRules.playerName(ready).orEmpty(), verbatim = true)
-            if (header?.isPro == true) Text("${header.lifeNumber}번째 생 · 프로 ${header.season}시즌")
-            else Text("${CareerUiRules.lifeNumber(ready)}번째 생")
+            if (header?.isPro == true) Text("${header.lifeNumber}번째 선수 · 프로 ${header.season}시즌")
+            else Text("${CareerUiRules.lifeNumber(ready)}번째 선수")
             Text("현재 진행 중인 기록이 이 파일의 기록으로 바뀝니다. 현재 기록을 남기려면 먼저 파일로 보관해 주세요.")
         } },
         confirmButton = { TextButton(enabled = !working && !busy, onClick = {

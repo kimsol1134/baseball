@@ -94,7 +94,7 @@ internal fun RecentGrowthNotice(state: GameAggregateState, enabled: Boolean) {
     }
     if (!enabled || receipt == null || receipt.commandId == consumed) return
     val copy = rememberGameCopy()
-    val labels = listOf("구위", "제구", "무브먼트", "체력")
+    val labels = listOf("구위", "제구", "변화구", "체력")
     val lines = labels.indices.mapNotNull { index ->
         val delta = AbilityDisplayScale.delta(receipt.before[index], receipt.after[index])
         if (delta > 0) "${copy.legacy(labels[index])} +$delta" else null

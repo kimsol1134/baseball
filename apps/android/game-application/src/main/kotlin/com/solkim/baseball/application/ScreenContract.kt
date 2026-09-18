@@ -77,8 +77,8 @@ public enum class ScreenId(
     P011_HIGH_SCHOOL_CAREER("P-011", "경기 기록", ScreenGroup.CAREER_CORE),
     P012_TOURNAMENT_LEAGUE("P-012", "대회와 리그", ScreenGroup.CAREER_CORE),
     P013_DRAFT("P-013", "드래프트", ScreenGroup.RECAP_REBIRTH),
-    P014_RUN_RECAP("P-014", "이번 생 결산", ScreenGroup.RECAP_REBIRTH),
-    P015_REBIRTH("P-015", "다음 생", ScreenGroup.RECAP_REBIRTH),
+    P014_RUN_RECAP("P-014", "이번 회차 결산", ScreenGroup.RECAP_REBIRTH),
+    P015_REBIRTH("P-015", "다음 선수", ScreenGroup.RECAP_REBIRTH),
     P016_PRO_CONTRACT("P-016", "프로 계약", ScreenGroup.PRO),
     P017_PRO_WEEK("P-017", "프로 주간", ScreenGroup.PRO),
     P018_PRO_IMPORTANT_GAME("P-018", "프로 중요 경기", ScreenGroup.PRO),
@@ -176,12 +176,12 @@ public object LifeCardProjection {
         } ?: return null
         val lines = listOf(
             "선수: ${record.playerName}",
-            "생: ${record.lifeNumber}번째 생",
+            "생: ${record.lifeNumber}번째 선수",
             "학교: ${record.schoolName ?: "학교 기록 없음"}",
             "드래프트: ${if (record.drafted) "지명" else "미지명"}",
             "평가: ${record.draftEvaluation}",
             "팀: ${ProCatalog.teams.firstOrNull { it.id == record.teamId }?.name ?: "없음"}",
-            "능력: ${listOf("구위", "제구", "무브먼트", "체력").zip(record.ratings.map(AbilityDisplayScale::rating)).joinToString(" · ") { (label, value) -> "$label $value" }}",
+            "능력: ${listOf("구위", "제구", "변화구", "체력").zip(record.ratings.map(AbilityDisplayScale::rating)).joinToString(" · ") { (label, value) -> "$label $value" }}",
             "중요 경기: ${record.importantGames}경기",
             "투구: ${record.pitches}구",
             "삼진: ${record.strikeouts}개",
@@ -195,7 +195,7 @@ public object LifeCardProjection {
         return FrozenLifeCard(
             careerId = record.careerId,
             lifeNumber = record.lifeNumber,
-            title = "${record.playerName} · ${record.lifeNumber}번째 생",
+            title = "${record.playerName} · ${record.lifeNumber}번째 선수",
             text = lines.joinToString("\n"),
             lines = lines,
         )

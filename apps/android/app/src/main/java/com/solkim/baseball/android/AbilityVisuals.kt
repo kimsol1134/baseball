@@ -37,7 +37,7 @@ internal fun RebirthAbilityPreview(state: GameAggregateState, action: ScreenActi
     }
     preview?.let { p ->
         val language = rememberGameCopy().language
-        Text(abilityCopy(language, "이전 생 시작 → 선택한 다음 생", "Previous start → Selected next life", "前世の開始 → 選んだ次の人生"), style = MaterialTheme.typography.labelSmall)
+        Text(abilityCopy(language, "이전 선수 시작 → 선택한 다음 선수", "Previous start → Selected next life", "前世の開始 → 選んだ次の人生"), style = MaterialTheme.typography.labelSmall)
         listOf(listOf(0, 1), listOf(2, 3)).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             row.forEach { i -> AbilityBar(i, p.next[i], p.previous[i], Modifier.weight(1f), tag = "rebirth.preview.$i", showPrevious = true) }
         } }
@@ -47,7 +47,7 @@ internal fun abilityCopy(language: GameLanguage, ko: String, en: String, ja: Str
     GameLanguage.KOREAN -> ko; GameLanguage.JAPANESE -> ja; else -> en
 }
 private fun abilityName(index: Int, language: GameLanguage): String = when(language) {
-    GameLanguage.KOREAN -> listOf("구위", "제구", "무브먼트", "체력")
+    GameLanguage.KOREAN -> listOf("구위", "제구", "변화구", "체력")
     GameLanguage.JAPANESE -> listOf("球威", "制球", "変化", "体力")
     else -> listOf("Stuff", "Command", "Movement", "Stamina")
 }[index]
@@ -151,14 +151,14 @@ internal fun AbilityDetails(state: GameAggregateState, initial: Int = 0, onClose
                 }
                 Column(Modifier.weight(1f, false).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(t("능력 비교", "Compare abilities", "能力を比較"), style = MaterialTheme.typography.titleMedium)
-                    val options = listOf(t(if (current.pro) "입단 후" else "이번 생", "This career", "今のキャリア"), t("환생 전후", "Rebirth", "転生前後"), t("전생 최고", "Past peak", "前世の最高"))
+                    val options = listOf(t(if (current.pro) "입단 후" else "이번 선수", "This career", "今のキャリア"), t("환생 전후", "Rebirth", "転生前後"), t("전생 최고", "Past peak", "前世の最高"))
                     AdaptiveActionRow(Modifier.fillMaxWidth(), equalWidth = true) {
                         options.forEachIndexed { i, title -> FilterChip(selected = comparison == i, onClick = { comparison = i },
                             enabled = i == 0 || if (i == 1) previousStart != null else previousPeak != null,
                             colors = FilterChipDefaults.filterChipColors(selectedContainerColor = BaseballColors.action, selectedLabelColor = BaseballColors.actionInk),
                             label = { Text(title) }, modifier = Modifier.testTag("ability.compare.$i")) }
                     }
-                    Text(when(comparison) { 1 -> t("이전 생 시작 → 이번 생 시작", "Previous start → Current start", "前世の開始 → 今世の開始"); 2 -> t("저장된 전생 최고 → 현재", "Recorded previous peak → Now", "記録された前世の最高 → 現在"); else -> t("시작 능력 → 현재", "Starting ability → Now", "開始時の能力 → 現在") }, style = MaterialTheme.typography.labelSmall)
+                    Text(when(comparison) { 1 -> t("이전 선수 시작 → 이번 선수 시작", "Previous start → Current start", "前世の開始 → 今世の開始"); 2 -> t("저장된 전생 최고 → 현재", "Recorded previous peak → Now", "記録された前世の最高 → 現在"); else -> t("시작 능력 → 현재", "Starting ability → Now", "開始時の能力 → 現在") }, style = MaterialTheme.typography.labelSmall)
                     if (from == null) Text(t("이전 능력 기록이 없어요. 현재부터 기록해요.", "No earlier ability data. Recording begins now.", "以前の能力記録はありません。今から記録します。"), style = MaterialTheme.typography.bodySmall)
                     (0..3).forEach { index -> AbilityBar(index, to[index], from?.get(index), tag = "ability.compare.bar.$index", showPrevious = true, onClick = { selected = index }) }
                     val fourSeam = CareerUiRules.fourSeam(state)

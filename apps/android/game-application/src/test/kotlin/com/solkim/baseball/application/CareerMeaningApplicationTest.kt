@@ -8,9 +8,9 @@ import kotlin.test.*
 class CareerMeaningApplicationTest {
     @Test fun careerMeaningCopyKeepsGoalsAndActualDeltasReadableInEveryLanguage() {
         val sources = listOf("지명 완료 · 입단 계약 전", "프로부터 새로 시작", "직접 2이닝 · 2실점 이하",
-            "선발 · 5회부터 직접", "목표 달성 · 감독 신뢰 +2", "다음 등판: 선발 테스트", "피로 -12",
+            "선발 · 5회부터 직접", "목표 달성 · 감독 신뢰 +2", "목표 달성 · 감독의 믿음 +2", "다음 등판: 선발 테스트", "피로 -12",
             "다음 구위 훈련 지원", "다음 제구 훈련 지원", "다음 변화구 훈련 지원", "다음 체력 훈련 지원", "다음 경기 운영 훈련 지원",
-            "등판 때 주자 2명 승계", "1/6 아웃", "이번 생을 마무리하는 선택")
+            "등판 때 주자 2명 승계", "1/6 아웃", "이번 생을 마무리하는 선택", "선수 커리어를 마무리하는 선택")
         for (language in listOf(GameLanguage.ENGLISH, GameLanguage.JAPANESE)) {
             val copy = GameCopy(language)
             for (source in sources) {

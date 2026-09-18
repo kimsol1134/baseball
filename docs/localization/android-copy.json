@@ -15,7 +15,7 @@
     "ja": "ストアを開けませんでした。Google Playでアプリ名を検索してください。"
   },
   "android.setup.preset-description": {
-    "ko": "%1$s. 구위 %2$d, 제구 %3$d, 무브먼트 %4$d, 체력 %5$d. 능력치는 100점 만점입니다.",
+    "ko": "%1$s. 구위 %2$d, 제구 %3$d, 변화구 %4$d, 체력 %5$d. 능력치는 100점 만점입니다.",
     "en": "%1$s. Stuff %2$d, command %3$d, movement %4$d, stamina %5$d. All abilities are out of 100.",
     "ja": "%1$s。球威 %2$d、制球 %3$d、変化量 %4$d、体力 %5$d。能力値はすべて100点満点です。"
   },
@@ -70,7 +70,7 @@
     "ja": "持ち球を組み立てる"
   },
   "android.setup.legacy-step": {
-    "ko": "다음 생의 계승을 고릅니다",
+    "ko": "다음 선수에게 이어줄 능력을 고릅니다",
     "en": "Choose what carries into this life",
     "ja": "次の人生に引き継ぐ力を選ぶ"
   },
@@ -125,17 +125,17 @@
     "ja": "一球投げて結果を確認すると、次へ進みます。"
   },
   "android.rebirth.quick": {
-    "ko": "빠른 다음 생",
+    "ko": "바로 환생",
     "en": "Quick reincarnation",
     "ja": "すぐに次の人生へ"
   },
   "android.rebirth.custom": {
-    "ko": "다음 생 설정하기",
+    "ko": "다음 선수 설정하기",
     "en": "Customize your next life",
     "ja": "次の人生を設定する"
   },
   "android.rebirth.difficulty": {
-    "ko": "이번 생의 난이도",
+    "ko": "이번 회차의 난이도",
     "en": "This life's difficulty",
     "ja": "今回の人生の難易度"
   },
@@ -225,17 +225,17 @@
     "ja": "3週間の結果・QS %1$d・失点 %2$d"
   },
   "android.pro.followup-mentor": {
-    "ko": "3주간 성장 · 구위 %1$d · 제구 %2$d · 무브먼트 %3$d",
+    "ko": "3주간 성장 · 구위 %1$d · 제구 %2$d · 변화구 %3$d",
     "en": "Three-week growth · Stuff %1$d · Control %2$d · Movement %3$d",
     "ja": "3週間の成長・球威 %1$d・制球 %2$d・変化量 %3$d"
   },
   "android.opening.headline": {
-    "ko": "한 구를 던지고,\n한 생을 남기세요.",
+    "ko": "다시 태어나,\n에이스에 도전하세요.",
     "en": "Throw a pitch.\nLeave a legacy.",
     "ja": "一球を投げ、\n人生の証を残そう。"
   },
   "android.opening.journey": {
-    "ko": "고교에서 배우고, 프로에서 승부하고, 은퇴 뒤에는 다음 생으로 이어집니다.",
+    "ko": "고교 선수로 시작해 프로에 도전하세요. 은퇴 후에는 경험과 능력 일부를 물려받아 다시 시작할 수 있어요.",
     "en": "Learn in high school, compete as a pro, and carry your legacy into the next life.",
     "ja": "高校で学び、プロで勝負し、引退したら次の人生へ引き継ぎます。"
   },
@@ -270,7 +270,7 @@
     "ja": "どんな球で勝負しますか？"
   },
   "android.setup.legacy-question": {
-    "ko": "이번 생에는 무엇을 이어받을까요?",
+    "ko": "이번 선수에게 무엇을 이어줄까요?",
     "en": "What will you carry into this life?",
     "ja": "今回の人生に何を引き継ぎますか？"
   },
@@ -530,7 +530,7 @@
     "ja": "最初からやり直しますか？"
   },
   "android.settings.reset-body": {
-    "ko": "현재 선수, 지난 생의 기록과 계승이 모두 사라진다. 되돌릴 수 없다. 남기고 싶다면 먼저 '%1$@'을 누르자.",
+    "ko": "현재 선수와 이전 선수들의 모든 기록, 계승 혜택이 완전히 삭제됩니다. 삭제된 데이터는 복구할 수 없어요. 데이터를 보존하고 싶다면 먼저 '%1$@'을 눌러 백업해 주세요.",
     "en": "The current player, every past life and everything inherited will be erased. This cannot be undone. To keep them, tap '%1$@' first.",
     "ja": "現在の選手、過去の生の記録と継承がすべて消えます。取り消せません。残したい場合は、先に「%1$@」を押してください。"
   },
@@ -1555,9 +1555,9 @@
     "ja": "習得済み"
   },
   "awakening.tree.complete": {
-    "ko": "이번 생의 선택 완료",
+    "ko": "이번 고교 생활의 각성 완료",
     "en": "All choices made this life",
-    "ja": "今世の選択は完了"
+    "ja": "この選手での選択は完了"
   },
   "awakening.tree.choose": {
     "ko": "이 각성 선택",
@@ -1900,7 +1900,7 @@
     "ja": "課題を一つ達成すると報酬を受け取れます。"
   },
   "career.compact.empty-life": {
-    "ko": "한 생을 마치면 카드가 남아요.",
+    "ko": "선수 커리어를 마치면 카드가 남아요.",
     "en": "Complete a life to keep its card.",
     "ja": "一つの人生を終えるとカードが残ります。"
   },
@@ -1930,7 +1930,7 @@
     "ja": "全成績"
   },
   "career.compact.choose-legacy": {
-    "ko": "다음 생에 가져갈 능력 고르기",
+    "ko": "다음 선수에게 이어줄 능력 고르기",
     "en": "Choose an ability for your next life",
     "ja": "次の人生に持っていく能力を選ぶ"
   },
@@ -2375,7 +2375,7 @@
     "ja": "この球の記録は転生後も残ります。球威と制球は練習で伸ばそう。"
   },
   "companion.ui.dream": {
-    "ko": "이번 생의 작은 꿈",
+    "ko": "이번 선수의 작은 꿈",
     "en": "A small dream for this life",
     "ja": "この人生の小さな夢"
   },
@@ -2395,7 +2395,7 @@
     "ja": "思い出帳を開く"
   },
   "companion.ui.inherit": {
-    "ko": "다음 생으로 이어지는 힘",
+    "ko": "다음 선수에게 이어지는 힘",
     "en": "Strength for the next life",
     "ja": "次の人生へ続く力"
   },
@@ -2495,7 +2495,7 @@
     "ja": "転生する"
   },
   "compact.action.finish": {
-    "ko": "이번 생 마무리",
+    "ko": "선수 커리어 마무리",
     "en": "Finish this life",
     "ja": "この人生を終える"
   },
@@ -2640,7 +2640,7 @@
     "ja": "初回からマウンドへ。各イニング終了時に投げ続けるか選べます。"
   },
   "outing.v2.weekly-pledge": {
-    "ko": "이번 생의 약속 정하기",
+    "ko": "이번 선수의 목표 정하기",
     "en": "Choose a promise for this life",
     "ja": "今回の人生の約束を決める"
   },
@@ -3015,9 +3015,9 @@
     "ja": "今回のドラフトは指名なし"
   },
   "meaning.legacy": {
-    "ko": "이번 생의 기록과 이어받을 힘을 남겨요.",
-    "en": "Keep this life’s records and choose what carries forward.",
-    "ja": "今世の記録と引き継ぐ力を残しましょう。"
+    "ko": "이번 선수의 기록과 이어받을 힘을 남겨요.",
+    "en": "Keep this player’s records and choose what carries forward.",
+    "ja": "この選手の記録と引き継ぐ力を残しましょう。"
   },
   "meaning.waiting": {
     "ko": "드래프트 발표 전",
@@ -3215,7 +3215,7 @@
     "ja": "テスト合格 · 先発の機会を獲得"
   },
   "meaning.goal-earned": {
-    "ko": "목표 달성 · 감독 신뢰 +%lld",
+    "ko": "목표 달성! 감독의 믿음 +%lld",
     "en": "Objective achieved · manager trust +%lld",
     "ja": "目標達成 · 監督の信頼 +%lld"
   },
@@ -3250,7 +3250,7 @@
     "ja": "先発テスト合格。今後の先発機会が開かれました。"
   },
   "meaning.goal-news": {
-    "ko": "등판 목표를 달성했어요. 감독의 신뢰가 올랐어요.",
+    "ko": "등판 목표를 달성했어요. 감독님의 믿음이 올랐어요.",
     "en": "Outing objective achieved. Your manager trusts you more.",
     "ja": "登板目標を達成し、監督の信頼が上がりました。"
   },
@@ -3310,9 +3310,9 @@
     "ja": "会話を終えました。次の日程に備えましょう。"
   },
   "meaning.other-path": {
-    "ko": "이번 생을 마무리하는 선택",
-    "en": "Options for finishing this life",
-    "ja": "今世を終える選択"
+    "ko": "선수 커리어를 마무리하는 선택",
+    "en": "Options for finishing this career",
+    "ja": "選手キャリアを終える選択"
   },
   "meaning.partial-start": {
     "ko": "선발 · %lld회부터 직접",
@@ -3320,32 +3320,32 @@
     "ja": "先発 · %lld回から自分で投球"
   },
   "meaning.delta.trust.plus": {
-    "ko": "신뢰 +%lld",
+    "ko": "믿음 +%lld",
     "en": "Trust +%lld",
     "ja": "信頼 +%lld"
   },
   "meaning.delta.trust.minus": {
-    "ko": "신뢰 -%lld",
+    "ko": "믿음 -%lld",
     "en": "Trust -%lld",
     "ja": "信頼 -%lld"
   },
   "meaning.delta.manager-trust.plus": {
-    "ko": "감독 신뢰 +%lld",
+    "ko": "감독의 믿음 +%lld",
     "en": "Manager trust +%lld",
     "ja": "監督の信頼 +%lld"
   },
   "meaning.delta.manager-trust.minus": {
-    "ko": "감독 신뢰 -%lld",
+    "ko": "감독의 믿음 -%lld",
     "en": "Manager trust -%lld",
     "ja": "監督の信頼 -%lld"
   },
   "meaning.delta.catcher-trust.plus": {
-    "ko": "포수 신뢰 +%lld",
+    "ko": "포수와의 호흡 +%lld",
     "en": "Catcher trust +%lld",
     "ja": "捕手の信頼 +%lld"
   },
   "meaning.delta.catcher-trust.minus": {
-    "ko": "포수 신뢰 -%lld",
+    "ko": "포수와의 호흡 -%lld",
     "en": "Catcher trust -%lld",
     "ja": "捕手の信頼 -%lld"
   },
@@ -3430,7 +3430,7 @@
     "ja": "プロ%lld年目"
   },
   "improve.records.school-life": {
-    "ko": "%lld번째 생 · 고교",
+    "ko": "%lld번째 선수 · 고교",
     "en": "Life %lld · High school",
     "ja": "%lld回目の人生 · 高校"
   },
@@ -3470,7 +3470,7 @@
     "ja": "体を回復する1週間"
   },
   "improve.week.trust": {
-    "ko": "감독의 신뢰를 쌓는 한 주",
+    "ko": "감독님의 믿음을 쌓는 한 주",
     "en": "A week to earn the manager’s trust",
     "ja": "監督の信頼を築く1週間"
   },
@@ -3580,17 +3580,17 @@
     "ja": "効果の詳細"
   },
   "improve.effect.label.trust": {
-    "ko": "신뢰",
+    "ko": "믿음",
     "en": "Trust",
     "ja": "信頼"
   },
   "improve.effect.label.manager": {
-    "ko": "감독 신뢰",
+    "ko": "감독의 믿음",
     "en": "Manager trust",
     "ja": "監督の信頼"
   },
   "improve.effect.label.catcher": {
-    "ko": "포수 신뢰",
+    "ko": "포수와의 호흡",
     "en": "Catcher trust",
     "ja": "捕手の信頼"
   },
@@ -3705,7 +3705,7 @@
     "ja": "%lld回 · %lldアウト · %s"
   },
   "improve.outing.reward": {
-    "ko": "감독 신뢰 +%lld",
+    "ko": "감독의 믿음 +%lld",
     "en": "Manager trust +%lld",
     "ja": "監督の信頼 +%lld"
   },
@@ -3895,7 +3895,7 @@
     "ja": "投手の記録をアルバムに保存しました。"
   },
   "album.copy.31": {
-    "ko": "지난 생과 성장 비교",
+    "ko": "이전 선수와 성장 비교",
     "en": "Compare with a past life",
     "ja": "前世との成長比較"
   },
@@ -4115,7 +4115,7 @@
     "ja": "完投 · 最後のアウトまで投げ抜いた"
   },
   "ace.career.22": {
-    "ko": "이번 생에는 다른 야구",
+    "ko": "이번 회차에는 다른 야구",
     "en": "A different path this life",
     "ja": "今度の人生は違う野球を"
   },
@@ -4165,12 +4165,12 @@
     "ja": "制球型 · チェンジアップ中心 · 効率的な投球"
   },
   "ace.career.32": {
-    "ko": "지난 생의 기록은 앨범에 남아요.",
+    "ko": "이전 선수의 기록은 앨범에 남아요.",
     "en": "Your previous life remains in the album.",
     "ja": "前世の記録はアルバムに残ります。"
   },
   "ace.career.33": {
-    "ko": "전생의 시즌 완투 기록에 도전",
+    "ko": "이전 선수의 시즌 완투 기록에 도전",
     "en": "Chase your previous life’s season complete-game record",
     "ja": "前世のシーズン完投記録に挑戦"
   },
@@ -4215,12 +4215,12 @@
     "ja": "完投%lld回 · 完封%lld回"
   },
   "ace.career.42": {
-    "ko": "지난 생의 기록 · 완투 %lld회 · 완봉승 %lld회",
+    "ko": "이전 선수의 기록 · 완투 %lld회 · 완봉승 %lld회",
     "en": "Previous life · %lld complete games · %lld shutouts",
     "ja": "前世の記録 · 完投%lld回 · 完封%lld回"
   },
   "ace.career.43": {
-    "ko": "이번 시즌 %lld회 · 전생 최고 %lld회",
+    "ko": "이번 시즌 %lld회 · 이전 최고 %lld회",
     "en": "%lld this season · Previous life’s best %lld",
     "ja": "今季%lld回 · 前世の最高%lld回"
   },
@@ -4630,7 +4630,7 @@
     "ja": "一軍昇格の条件"
   },
   "android.r4.6": {
-    "ko": "감독 신뢰 %1$s / %2$s",
+    "ko": "감독의 믿음 %1 / %2",
     "en": "Manager trust %1$s / %2$s",
     "ja": "監督の信頼 %1$s / %2$s"
   },

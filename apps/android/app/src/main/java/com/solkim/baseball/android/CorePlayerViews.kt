@@ -64,7 +64,7 @@ internal fun CorePlayerHeader(state: GameAggregateState, header: CareerHeaderVie
 @Composable
 internal fun CoreGrowthResult(receipt: PlayerGrowthReceipt, compact: Boolean = false, detailsToggle: Boolean = true, modifier: Modifier = Modifier) {
     val copy = rememberGameCopy()
-    val labels = listOf("구위", "제구", "무브먼트", "체력")
+    val labels = listOf("구위", "제구", "변화구", "체력")
     val primary = GrowthFeedbackPresentation.primary(receipt)
     val milestone = GrowthFeedbackPresentation.controlMilestone(receipt)
     var details by remember(receipt.commandId) { mutableStateOf(false) }

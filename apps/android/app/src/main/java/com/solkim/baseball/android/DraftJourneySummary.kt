@@ -43,7 +43,7 @@ internal fun DraftJourneySummary(
                         val awakening = draft.awakeningWires.firstOrNull { after.id.contains("-awakening-$it-") }
                         val cause = if (awakening != null) "각성 ${HighSchoolDisplayRules.awakeningTitle(awakening)}" else when (after.source) { "training" -> "훈련 진행"; "game" -> "경기 진행"; else -> "커리어 진행" }
                         val delta = AbilityDisplayScale.rating(after.ratings[index]) - AbilityDisplayScale.rating(before.ratings[index])
-                        "${after.season}학년 · $cause · ${listOf("구위", "제구", "무브먼트", "체력")[index]} ${if (delta > 0) "+$delta" else delta.toString()}"
+                        "${after.season}학년 · $cause · ${listOf("구위", "제구", "변화구", "체력")[index]} ${if (delta > 0) "+$delta" else delta.toString()}"
                     }
                 }
                 if (drops.isEmpty()) Text("이전의 세부 변경 기록이 없어 정확한 감소 원인은 확인할 수 없어요.")

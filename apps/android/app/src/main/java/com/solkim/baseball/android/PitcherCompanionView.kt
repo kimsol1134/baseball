@@ -128,10 +128,10 @@ internal fun CompanionProfile(
     val inheritedStart = startingRatings
     if (header?.isPro != true && (header?.lifeNumber ?: 1) > 1 && inheritedStart != null && c.previousStart.size == 4) {
         val language = copy.language
-        Text(when (language) { GameLanguage.ENGLISH -> "A stronger beginning"; GameLanguage.JAPANESE -> "前世より強いスタート"; else -> "지난 생보다 강한 출발" },
+        Text(when (language) { GameLanguage.ENGLISH -> "A stronger beginning"; GameLanguage.JAPANESE -> "前世より強いスタート"; else -> "이전 선수보다 강한 출발" },
             verbatim = true, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("companion.rebirthGrowth"))
         val currentStart = inheritedStart
-        val labels = when(language) { GameLanguage.ENGLISH -> listOf("Stuff", "Command", "Movement", "Stamina"); GameLanguage.JAPANESE -> listOf("球威", "制球", "変化", "体力"); else -> listOf("구위", "제구", "무브먼트", "체력") }
+        val labels = when(language) { GameLanguage.ENGLISH -> listOf("Stuff", "Command", "Movement", "Stamina"); GameLanguage.JAPANESE -> listOf("球威", "制球", "変化", "体力"); else -> listOf("구위", "제구", "변화구", "체력") }
         currentStart.indices.chunked(2).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { index ->
@@ -178,7 +178,7 @@ internal fun CompanionProfile(
         }
     } else Text("이 공으로 공식 경기 삼진을 잡으면 별명을 붙일 수 있어요.", style = MaterialTheme.typography.bodySmall)
     if (c.goal.isNotEmpty() || canChooseGoal) {
-    Text("이번 생의 작은 꿈", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    Text("이번 선수의 작은 목표", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
     if (c.goal.isNotEmpty()) {
         Text(copy.resolve("companion.goal.${c.goal}"), verbatim = true)
         Text("${(PitcherCompanionRules.progress(c) - c.goalBaseline).coerceAtLeast(0)} / ${c.goalTarget - c.goalBaseline}", verbatim = true, color = BaseballColors.action, modifier = Modifier.testTag("companion.goal.progress"))
@@ -205,7 +205,7 @@ internal fun CompanionProfile(
     }
     lineage?.let { mastery ->
         run {
-            Text("다음 생으로 이어지는 힘", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("다음 선수에게 이어지는 힘", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(SignatureLegacyDisplay.title(mastery.legacyId, copy).orEmpty(), verbatim = true)
             Text(copy.resolve("companion.lineage", GameCopyArgument.Whole(mastery.rank.toLong()), GameCopyArgument.Whole(mastery.contributions.toLong())), verbatim = true)
             Text(copy.resolve("companion.lineage.effect.${if (mastery.family == "battery" && mastery.rank >= 2) "battery" else mastery.rank}"), verbatim = true, style = MaterialTheme.typography.bodySmall)

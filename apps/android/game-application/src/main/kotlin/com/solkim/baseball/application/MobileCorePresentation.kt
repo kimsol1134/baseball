@@ -125,7 +125,7 @@ public object SignatureLegacyDisplay {
         com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == id }?.title?.let { copy.legacy(it) }
     public fun effect(id: String, copy: GameCopy): String? {
         val value = com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == id } ?: return null
-        return listOf("구위" to value.stuff, "제구" to value.command, "무브먼트" to value.movement, "체력" to value.stamina)
+        return listOf("구위" to value.stuff, "제구" to value.command, "변화구" to value.movement, "체력" to value.stamina)
             .filter { it.second != 0 }.joinToString(" · ") { (label, amount) -> "${copy.legacy(label)} ${if (amount > 0) "+" else ""}$amount" }
     }
 }

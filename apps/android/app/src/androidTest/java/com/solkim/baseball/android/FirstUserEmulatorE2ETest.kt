@@ -263,6 +263,7 @@ class FirstUserEmulatorE2ETest {
                     "사인 사이의 약속",
                     "제구",
                     "구위",
+                    "변화구",
                     "무브먼트",
                     "체력",
                     "회복",
@@ -280,7 +281,7 @@ class FirstUserEmulatorE2ETest {
                             "등판 마치기", "잠시 나가기" -> {
                                 val deadline = System.currentTimeMillis() + 15_000
                                 while (System.currentTimeMillis() < deadline) {
-                                    if (listOf("이번 주 선택", "도착한 편지", "성장 신호", "학교 후보", "승부처", "이 장의 기록", "드래프트", "이번 생", "다음 생", "새로운 감각")
+                                    if (listOf("이번 주 선택", "도착한 편지", "성장 신호", "학교 후보", "승부처", "이 장의 기록", "드래프트", "이번 회차", "다음 선수", "이번 생", "다음 생", "새로운 감각")
                                             .any { hasText(it) || hasContains(it) }
                                     ) {
                                         break

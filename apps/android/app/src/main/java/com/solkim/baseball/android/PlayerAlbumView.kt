@@ -47,7 +47,7 @@ internal fun PlayerAlbumView(state: GameAggregateState, showTitle: Boolean = tru
     fun shareCard(title: String, values: List<Pair<String, String>>, caption: String, game: CareerGameView? = null): AlbumShareCard {
         val detail = game?.let { AlbumPitchingStats.from(it) } ?: pitching
         return AlbumShareCard(copy.legacy(title), page.scope.player,
-        copy.legacy(listOf(page.scope.title, page.affiliation).filter { it.isNotBlank() }.joinToString(" · ")), values.map { copy.legacy(it.first) to it.second }, listOfNotNull(copy.legacy("${page.life}번째 생"),
+        copy.legacy(listOf(page.scope.title, page.affiliation).filter { it.isNotBlank() }.joinToString(" · ")), values.map { copy.legacy(it.first) to it.second }, listOfNotNull(copy.legacy("${page.life}번째 선수"),
             page.signature.takeIf { it.isNotBlank() }?.let { copy.legacy("대표 구종") + " · " + copy.resolve("content.pitch-type.$it.name") },
             copy.legacy(caption, pages.map { it.scope.player }.toSet())).joinToString("\n"), copy.resolve("android.app.name"), line = detail.line, rates = detail.rates)
     }
@@ -100,9 +100,9 @@ internal fun PlayerAlbumView(state: GameAggregateState, showTitle: Boolean = tru
     val completedSchoolIds = CareerUiRules.archive(state).map { "hs:${it.careerId}" }
     val previous = pages.filter { it.scope.id in completedSchoolIds && it.life < page.life }.maxByOrNull { it.life }
     if (page.scope.id in completedSchoolIds && previous != null && page.ratings.size == 4 && previous.ratings.size == 4) {
-        CareerDisclosure("지난 생과 성장 비교", "album.compare") {
+        CareerDisclosure("이전 선수와 성장 비교", "album.compare") {
             Text("같은 고교 기간의 최종 능력 비교", style = MaterialTheme.typography.bodySmall)
-            listOf("구위", "제구", "무브먼트", "체력").forEachIndexed { i, label ->
+            listOf("구위", "제구", "변화구", "체력").forEachIndexed { i, label ->
                 Row { Text(label); Text("  ${AbilityDisplayScale.rating(previous.ratings[i])} → ${AbilityDisplayScale.rating(page.ratings[i])}", verbatim = true) }
             }
         }

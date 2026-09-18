@@ -32,7 +32,7 @@ public object OutingPresentation {
         val reward = minOf(if (trial) 8 else 2, (100 - trust).coerceAtLeast(0))
         return OutingBriefing(title(preview) ?: "등판 상황", "${board.inningText} · ${board.outs}사 · ${PitchScoreboardProjection.situationLine(board.outs, board.runners).substringAfter(' ')}",
             board.scoreText, assignment?.let(::goal) ?: "이번 이닝에 집중해요.",
-            listOfNotNull("선발 기회".takeIf { trial }, "감독 신뢰 +$reward".takeIf { assignment != null && reward > 0 }).joinToString(" · "),
+            listOfNotNull("선발 기회".takeIf { trial }, "감독의 믿음 +$reward".takeIf { assignment != null && reward > 0 }).joinToString(" · "),
             if (pro != null) ProKernel().importantHeadline(pro.seasonTrigger ?: ProSeasonTrigger.STANDINGS_RACE, pro.currentRival, pro.level)
             else preview.highSchool?.run?.currentGameScenario?.narrative.orEmpty(), board.inning, board.outs,
             listOfNotNull(1.takeIf { board.runners.firstOccupied }, 2.takeIf { board.runners.secondOccupied }, 3.takeIf { board.runners.thirdOccupied }), board.scoreDiff, trial, if (assignment != null) reward else 0)
@@ -60,8 +60,8 @@ public object OutingPresentation {
         val goal = assignment(state) ?: return null
         val outs = state.pro?.activePitch?.outs ?: state.highSchool?.activePitch?.outs ?: 0
         return when (goal.status) {
-            OutingGoalStatus.ACHIEVED -> if (goal.goal == OutingGoal.STARTER_TEST) "테스트 통과 · 선발 기회 확보" else if (goal.trustReward > 0) "목표 달성 · 감독 신뢰 +${goal.trustReward}" else "목표 달성"
-            OutingGoalStatus.FAILED -> "목표는 놓쳤지만, 남은 아웃을 잡아보세요."
+            OutingGoalStatus.ACHIEVED -> if (goal.goal == OutingGoal.STARTER_TEST) "테스트 합격! 선발 기회 확보" else if (goal.trustReward > 0) "목표 달성! 감독의 믿음 +${goal.trustReward}" else "목표 달성!"
+            OutingGoalStatus.FAILED -> "목표는 놓쳤지만, 남은 타자를 침착하게 막아보세요."
             OutingGoalStatus.UNFINISHED -> "다음 기회를 준비해요."
             OutingGoalStatus.PENDING -> "${outs.coerceAtMost(goal.targetOuts)}/${goal.targetOuts} 아웃"
         }

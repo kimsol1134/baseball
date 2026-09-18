@@ -85,7 +85,7 @@ internal fun ScreenBuilder.buildP024_WEEKLY() {
 
 
 internal fun ScreenBuilder.buildP025_RECORDS_LEAGUE() {
-        if (state.canEnterPlayerSetup()) addAction("enterSetup", "새로운 야구 인생 시작", "남긴 기록과 야구혼을 간직하고 다음 생에서 시작합니다.", true, listOf(GameCommand.EnterSetup))
+        if (state.canEnterPlayerSetup()) addAction("enterSetup", "새로운 야구 인생 시작", "남긴 기록과 야구혼을 간직하고 다음 선수로 시작합니다.", true, listOf(GameCommand.EnterSetup))
         state.meta.retiredProCareers.filter { state.meta.seedChallenge == null && it.careerId != pro?.careerId }.asReversed().forEach { retired ->
             addSection(ScreenSection("retired:${retired.careerId}", retired.identityName, listOf(
                 ScreenRow("프로 통산", "${retired.careerStats.size}시즌 · ${retired.careerGames()}경기 · ${retired.careerStrikeouts()}탈삼진"),
@@ -98,9 +98,9 @@ internal fun ScreenBuilder.buildP025_RECORDS_LEAGUE() {
         addSection(ScreenSection("records", "기록과 순위", (if (nothingYet) listOf(
             ScreenRow("아직 던진 공이 없다", "첫 등판을 마치면 여기 쌓인다.", ""),
         ) else listOf(
-            ScreenRow("고교 기록", "${run?.performance?.pitches ?: 0}구 · ${run?.performance?.strikeouts ?: 0}탈삼진" + perfectSuffix(run), "이번 생의 투구 기록"),
+            ScreenRow("고교 기록", "${run?.performance?.pitches ?: 0}구 · ${run?.performance?.strikeouts ?: 0}탈삼진" + perfectSuffix(run), "이번 선수의 투구 기록"),
             ScreenRow("프로 기록", "${pro?.careerGames() ?: 0}경기 · ${pro?.careerStrikeouts() ?: 0}탈삼진" + proPerfectSuffix(proCareerPerfect(pro)), "프로 통산 ${pro?.careerStats?.size ?: 0}시즌"),
-            ScreenRow("지난 생", "${highSchool?.archive?.size ?: 0}번", "한 생을 마치면 카드가 남는다."),
+            ScreenRow("이전 선수", "${highSchool?.archive?.size ?: 0}명", "선수 커리어를 마치면 카드가 남는다."),
         )) + standings.map { row ->
             ScreenRow("${row.rank}위 ${row.teamName}", "${row.wins}승 ${row.losses}패", if (row.isPlayerTeam) "내 구단" else "리그 순위")
         }))
@@ -151,7 +151,7 @@ internal fun ScreenBuilder.buildP027_SETTINGS() {
 internal fun ScreenBuilder.buildP028_LIFECARD() {
         val card = LifeCardProjection.selected(state)
         addSection(ScreenSection("life-card", "선수 앨범", if (card == null) listOf(
-            ScreenRow("보관된 생", "아직 없음", "한 생을 마치면 카드가 생긴다."),
+            ScreenRow("보관된 선수", "아직 없음", "선수 커리어를 마치면 카드가 생겨요."),
         ) else card.lines.map { line -> ScreenRow(line.substringBefore(": ", "기록"), line.substringAfter(": ", line)) }))
 }
 
@@ -169,6 +169,6 @@ internal fun ScreenBuilder.buildP029_RETURN_PLAN() {
 
 internal fun ScreenBuilder.buildP030_REVIEW() {
         addSection(ScreenSection("review", "리뷰", listOf(
-            ScreenRow("리뷰", "재밌었다면 한 줄 남겨 주세요.", "다음 생을 만드는 데 큰 힘이 됩니다."),
+            ScreenRow("리뷰", "재밌었다면 한 줄 남겨 주세요.", "다음 업데이트를 만드는 데 큰 힘이 됩니다."),
         )))
 }

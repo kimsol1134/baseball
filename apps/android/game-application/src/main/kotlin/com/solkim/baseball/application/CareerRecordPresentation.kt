@@ -16,7 +16,7 @@ public object CareerRecordPresentation {
     public fun scopes(state: GameAggregateState): List<RecordScope> {
         val hs = state.highSchool
         val schools = (listOfNotNull(hs?.run?.let { RecordScope("hs:${it.careerId}", "고교", it.identity.name) }) +
-            hs?.archive.orEmpty().asReversed().map { RecordScope("hs:${it.careerId}", "${it.lifeNumber}번째 생 · 고교", it.playerName) }).distinctBy { it.id }
+            hs?.archive.orEmpty().asReversed().map { RecordScope("hs:${it.careerId}", "${it.lifeNumber}번째 선수 · 고교", it.playerName) }).distinctBy { it.id }
         val pros = (listOfNotNull(state.pro) + state.meta.retiredProCareers.asReversed()).distinctBy { it.careerId }.flatMap { pro ->
             listOf(RecordScope("pro:${pro.careerId}:all", "프로 통산", pro.identityName)) +
                 (pro.careerStats.map { it.season } + pro.currentStats.season).distinct().sortedDescending().map {

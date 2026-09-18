@@ -17,7 +17,7 @@ public object CareerChoicePresentation {
             val after = kernel.previewAwakening(run.pitcher, node.id)
             val beforeRatings = listOf(run.pitcher.stuff, run.pitcher.command, run.pitcher.movement, run.pitcher.stamina)
             val afterRatings = listOf(after.stuff, after.command, after.movement, after.stamina)
-            val labels = listOf("구위", "제구", "무브먼트", "체력")
+            val labels = listOf("구위", "제구", "변화구", "체력")
             val effects = labels.indices.filter { beforeRatings[it] != afterRatings[it] }.map {
                 "${labels[it]} ${AbilityDisplayScale.rating(beforeRatings[it])} → ${AbilityDisplayScale.rating(afterRatings[it])}"
             }
@@ -83,24 +83,24 @@ public object CareerChoicePresentation {
         val draft = run.draftResult ?: return emptyList()
         val assessment = HighSchoolKernel().draftAssessment(run)
         val gap = draft.evaluationScore - assessment.second
-        val ratings = listOf("구위" to run.pitcher.stuff, "제구" to run.pitcher.command, "무브먼트" to run.pitcher.movement, "체력" to run.pitcher.stamina)
+        val ratings = listOf("구위" to run.pitcher.stuff, "제구" to run.pitcher.command, "변화구" to run.pitcher.movement, "체력" to run.pitcher.stamina)
         val strongest = ratings.maxBy { it.second }.first
         val weakest = ratings.minBy { it.second }.first
         val advice = when {
-            run.armRisk >= 45 -> "다음 생에는 팔이 지치기 전에 쉬자. 무리한 등판은 스카우트도 본다."
-            run.performance.walks > run.performance.strikeouts / 2 -> "다음 생에는 제구부터. 볼넷이 줄면 승부가 편해진다."
-            weakest == "구위" -> "다음 생에는 공에 힘을 더 싣자. 스카우트는 구속부터 본다."
-            weakest == "제구" -> "다음 생에는 코스를 잡자. 초록 구간이 넓어지면 승부가 달라진다."
-            weakest == "무브먼트" -> "다음 생에는 변화구 하나를 완성하자. 결정구가 있어야 삼진이 는다."
-            else -> "다음 생에는 체력을 쌓자. 긴 이닝을 버텨야 평가가 쌓인다."
+            run.armRisk >= 45 -> "다음 회차에는 팔이 지치기 전에 쉬자. 무리한 등판은 스카우트도 본다."
+            run.performance.walks > run.performance.strikeouts / 2 -> "다음 회차에는 제구부터. 볼넷이 줄면 승부가 편해진다."
+            weakest == "구위" -> "다음 회차에는 공에 힘을 더 싣자. 스카우트는 구속부터 본다."
+            weakest == "제구" -> "다음 회차에는 코스를 잡자. 초록 구간이 넓어지면 승부가 달라진다."
+            weakest == "변화구" -> "다음 회차에는 변화구 하나를 완성하자. 결정구가 있어야 삼진이 는다."
+            else -> "다음 회차에는 체력을 쌓자. 긴 이닝을 버텨야 평가가 쌓인다."
         }
         val verdict = if (gap >= 0) "기준보다 ${gap}점 위. 이름이 불렸다." else "${-gap}점이 모자랐다."
         return listOf(
             ScreenSection("draft-reasons", "스카우트의 계산", listOf(
                 ScreenRow("지명 기준 ${assessment.second}점", verdict, assessment.third.joinToString(" · ")),
-                ScreenRow("다음 생의 준비", advice),
+                ScreenRow("다음 선수를 위한 조언", advice),
             )),
-            ScreenSection("life-story", "이번 생에 남긴 것", listOf(
+            ScreenSection("life-story", "이번 선수가 남긴 것", listOf(
                 ScreenRow("나의 강점", strongest, "가장 높이 키운 능력이에요."),
                 ScreenRow("쌓아 온 훈련", "${run.totalTrainingsCompleted}회", "한 번씩 쌓은 훈련이 지금의 선수를 만들었어요."),
                 ScreenRow("마운드의 기록", "${run.performance.strikeouts}삼진 · ${run.performance.walks}볼넷", "직접 치른 승부처의 기록이에요."),
