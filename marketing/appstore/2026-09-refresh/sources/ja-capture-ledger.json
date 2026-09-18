@@ -1,0 +1,415 @@
+{
+  "locale": "ja",
+  "captureLog": "marketing/appstore/2026-09-refresh/sources/ja-markers.txt",
+  "legacyCaptureLog": null,
+  "sources": [
+    {
+      "scene": "pitch",
+      "source": "ja-raw.mp4",
+      "start": 20.75,
+      "take": 4.5,
+      "duration": 4.5,
+      "pixelMatch": {
+        "source": "ja-raw.mp4",
+        "best": 20.5,
+        "from": 20.5,
+        "to": 21.0,
+        "meanPixelError": 2.22078275680542,
+        "nearest": [
+          [
+            20.5,
+            2.22
+          ],
+          [
+            21.0,
+            2.22
+          ],
+          [
+            21.5,
+            13.37
+          ],
+          [
+            23.0,
+            20.74
+          ],
+          [
+            24.0,
+            20.74
+          ],
+          [
+            24.5,
+            20.74
+          ],
+          [
+            25.0,
+            20.74
+          ],
+          [
+            25.5,
+            20.74
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ja/pitch.mp4",
+      "sha256": "a284fb9a3fe75190443aca5da308f434cb0c3656e51b204a57092f1e782897e7",
+      "screenshotSha256": "8b9fc2cceece19bc8f4881f0171a64639248ee63f7b5b4ea40cd71669a541a50"
+    },
+    {
+      "scene": "growth",
+      "source": "ja-raw.mp4",
+      "start": 34.5,
+      "take": 3.5,
+      "duration": 3.5,
+      "pixelMatch": {
+        "source": "ja-raw.mp4",
+        "best": 38.0,
+        "from": 35.0,
+        "to": 40.5,
+        "meanPixelError": 2.1376514434814453,
+        "nearest": [
+          [
+            40.5,
+            2.14
+          ],
+          [
+            40.0,
+            2.14
+          ],
+          [
+            39.5,
+            2.14
+          ],
+          [
+            39.0,
+            2.14
+          ],
+          [
+            38.5,
+            2.14
+          ],
+          [
+            38.0,
+            2.14
+          ],
+          [
+            37.0,
+            2.14
+          ],
+          [
+            37.5,
+            2.14
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ja/growth.mp4",
+      "sha256": "2507a015721df9279e86bc28f46b7db77f8ad7436de526e43041ee53c73bb98a",
+      "screenshotSha256": "dd772f0dfba5f7dcaa413e074f192fb2f4c49e0c7065462eac764212d0ff3c06"
+    },
+    {
+      "scene": "decision",
+      "source": "ja-raw.mp4",
+      "start": 44.1,
+      "take": 2.8,
+      "duration": 3,
+      "pixelMatch": {
+        "source": "ja-raw.mp4",
+        "best": 45.5,
+        "from": 44.0,
+        "to": 49.0,
+        "meanPixelError": 1.9307197332382202,
+        "nearest": [
+          [
+            47.0,
+            1.93
+          ],
+          [
+            45.5,
+            1.93
+          ],
+          [
+            46.0,
+            1.93
+          ],
+          [
+            46.5,
+            1.93
+          ],
+          [
+            49.0,
+            1.93
+          ],
+          [
+            48.5,
+            1.93
+          ],
+          [
+            48.0,
+            1.93
+          ],
+          [
+            47.5,
+            1.93
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ja/decision.mp4",
+      "sha256": "9926c55652a0a2acb8fabde329993bceb8382bb2e51de68e75576292883213a4",
+      "screenshotSha256": "97e98bc639f6ac2fc0120fddd2340a2a9f7fb637398a7943e3da8a4771ca8494"
+    },
+    {
+      "scene": "contract",
+      "source": "ja-raw.mp4",
+      "start": 60.6,
+      "take": 2.8,
+      "duration": 3.5,
+      "pixelMatch": {
+        "source": "ja-raw.mp4",
+        "best": 61.5,
+        "from": 60.5,
+        "to": 76.0,
+        "meanPixelError": 2.1786489486694336,
+        "nearest": [
+          [
+            66.5,
+            2.18
+          ],
+          [
+            73.0,
+            2.18
+          ],
+          [
+            72.5,
+            2.18
+          ],
+          [
+            72.0,
+            2.18
+          ],
+          [
+            71.5,
+            2.18
+          ],
+          [
+            71.0,
+            2.18
+          ],
+          [
+            70.0,
+            2.18
+          ],
+          [
+            69.5,
+            2.18
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ja/contract.mp4",
+      "sha256": "97699da4d72656ba59696eff8134431438ae14734128ad7a16be9496dfa99435",
+      "screenshotSha256": "5520ced53ac182debf623d3dfdb183246b27b344c9f1f82a0b565470425b9eaa"
+    },
+    {
+      "scene": "records",
+      "source": "ja-raw.mp4",
+      "start": 88.6,
+      "take": 2.8,
+      "duration": 3.5,
+      "pixelMatch": {
+        "source": "ja-raw.mp4",
+        "best": 89.5,
+        "from": 88.5,
+        "to": 94.5,
+        "meanPixelError": 2.079040288925171,
+        "nearest": [
+          [
+            89.5,
+            2.08
+          ],
+          [
+            93.5,
+            2.08
+          ],
+          [
+            93.0,
+            2.08
+          ],
+          [
+            92.5,
+            2.08
+          ],
+          [
+            92.0,
+            2.08
+          ],
+          [
+            90.0,
+            2.08
+          ],
+          [
+            91.5,
+            2.08
+          ],
+          [
+            94.0,
+            2.08
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ja/records.mp4",
+      "sha256": "0b4209bb13b91abcff8dbd0a1cb854777839f06173c25bb80deaac1b583b5d09",
+      "screenshotSha256": "1b312d0583d205bc5299151a4a73fe9e6e7f7744f4cba64a5e763e981b8dfec9"
+    },
+    {
+      "scene": "album",
+      "source": "ja-raw.mp4",
+      "start": 107.1,
+      "take": 2.8,
+      "duration": 3,
+      "pixelMatch": {
+        "source": "ja-raw.mp4",
+        "best": 114.5,
+        "from": 107.0,
+        "to": 116.0,
+        "meanPixelError": 2.002828359603882,
+        "nearest": [
+          [
+            116.0,
+            2.0
+          ],
+          [
+            115.0,
+            2.0
+          ],
+          [
+            114.5,
+            2.0
+          ],
+          [
+            115.5,
+            2.0
+          ],
+          [
+            112.5,
+            2.01
+          ],
+          [
+            110.5,
+            2.01
+          ],
+          [
+            111.5,
+            2.01
+          ],
+          [
+            111.0,
+            2.01
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ja/album.mp4",
+      "sha256": "2094cb81bb807e149588380000563bc64e10133b10fdcbb5ee8011046a1a363a",
+      "screenshotSha256": "bd51ab2207447356b4cd9380c788697282ef90eb7b624d8cc2c45db77c638bc4"
+    },
+    {
+      "scene": "legacy",
+      "source": "ja-raw.mp4",
+      "start": 123.6,
+      "take": 2.8,
+      "duration": 3.5,
+      "pixelMatch": {
+        "source": "ja-raw.mp4",
+        "best": 127.5,
+        "from": 123.5,
+        "to": 128.5,
+        "meanPixelError": 2.1470580101013184,
+        "nearest": [
+          [
+            128.5,
+            2.15
+          ],
+          [
+            128.0,
+            2.15
+          ],
+          [
+            127.5,
+            2.15
+          ],
+          [
+            124.5,
+            2.42
+          ],
+          [
+            125.0,
+            2.42
+          ],
+          [
+            125.5,
+            2.42
+          ],
+          [
+            126.0,
+            2.42
+          ],
+          [
+            127.0,
+            2.42
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ja/legacy.mp4",
+      "sha256": "4ed967f2fbbf210ffa02fa0e2a1ddcfafa2f86b369ce72cc8ccb23b1f7d4ef31",
+      "screenshotSha256": "63ea95889e2dc5d55a9f0236910b1af981605c79d887af0cd4b20cbc52f38090"
+    },
+    {
+      "scene": "rebirth",
+      "source": "ja-raw.mp4",
+      "start": 18.6,
+      "take": 1.3999999999999986,
+      "duration": 3.5,
+      "pixelMatch": {
+        "source": "ja-raw.mp4",
+        "best": 18.5,
+        "from": 18.5,
+        "to": 20.0,
+        "meanPixelError": 2.1269571781158447,
+        "nearest": [
+          [
+            20.0,
+            2.13
+          ],
+          [
+            19.5,
+            2.13
+          ],
+          [
+            19.0,
+            2.13
+          ],
+          [
+            18.5,
+            2.13
+          ],
+          [
+            88.5,
+            20.68
+          ],
+          [
+            90.0,
+            20.7
+          ],
+          [
+            89.5,
+            20.7
+          ],
+          [
+            91.0,
+            20.7
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ja/rebirth.mp4",
+      "sha256": "ee054baf3d6ba66ece0bb9598b4f00ae21aea01457472d8f5053c941a464bc99",
+      "screenshotSha256": "87fa5ab072a6aa8e9713be1aba4e6865961b525988ebeec0470a4044b9ed80bd"
+    }
+  ]
+}

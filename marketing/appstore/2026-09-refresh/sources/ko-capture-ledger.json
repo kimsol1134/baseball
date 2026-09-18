@@ -1,0 +1,415 @@
+{
+  "locale": "ko",
+  "captureLog": "marketing/appstore/2026-09-refresh/sources/ko-markers.txt",
+  "legacyCaptureLog": "marketing/appstore/2026-09-refresh/sources/ko-legacy-markers.txt",
+  "sources": [
+    {
+      "scene": "pitch",
+      "source": "ko-opening-raw.mp4",
+      "start": 27.75,
+      "take": 4.5,
+      "duration": 4.5,
+      "pixelMatch": {
+        "source": "ko-opening-raw.mp4",
+        "best": 27.5,
+        "from": 25.5,
+        "to": 28.0,
+        "meanPixelError": 2.198207139968872,
+        "nearest": [
+          [
+            27.5,
+            2.2
+          ],
+          [
+            28.0,
+            2.2
+          ],
+          [
+            25.5,
+            2.2
+          ],
+          [
+            26.0,
+            2.2
+          ],
+          [
+            26.5,
+            2.2
+          ],
+          [
+            27.0,
+            2.2
+          ],
+          [
+            28.5,
+            13.4
+          ],
+          [
+            30.0,
+            20.02
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ko/pitch.mp4",
+      "sha256": "b2f9fa3fe75220a4c9a322823c7b68739c1c3970a92766ca332f362b44b68294",
+      "screenshotSha256": "6305578a6a30aab6c3ac15341b5feb80664fabf3f4d5462d63296e08262573b7"
+    },
+    {
+      "scene": "growth",
+      "source": "ko-raw.mp4",
+      "start": 29.5,
+      "take": 3.5,
+      "duration": 3.5,
+      "pixelMatch": {
+        "source": "ko-raw.mp4",
+        "best": 34.0,
+        "from": 30.0,
+        "to": 35.5,
+        "meanPixelError": 2.065429210662842,
+        "nearest": [
+          [
+            35.5,
+            2.07
+          ],
+          [
+            35.0,
+            2.07
+          ],
+          [
+            34.5,
+            2.07
+          ],
+          [
+            34.0,
+            2.07
+          ],
+          [
+            30.5,
+            2.07
+          ],
+          [
+            33.5,
+            2.07
+          ],
+          [
+            33.0,
+            2.07
+          ],
+          [
+            32.5,
+            2.07
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ko/growth.mp4",
+      "sha256": "c69f2395dc3c8693797e926ac6fc4851a334536f23e1266b753046acb7ae1148",
+      "screenshotSha256": "7ad8b686330ac8e4e91fc8c1e24baf9025bbcfb65e71bc0f7077992b07909253"
+    },
+    {
+      "scene": "decision",
+      "source": "ko-raw.mp4",
+      "start": 39.1,
+      "take": 2.8,
+      "duration": 3,
+      "pixelMatch": {
+        "source": "ko-raw.mp4",
+        "best": 39.0,
+        "from": 39.0,
+        "to": 44.0,
+        "meanPixelError": 1.931199550628662,
+        "nearest": [
+          [
+            39.0,
+            1.93
+          ],
+          [
+            40.5,
+            1.94
+          ],
+          [
+            40.0,
+            1.94
+          ],
+          [
+            39.5,
+            1.94
+          ],
+          [
+            42.0,
+            1.94
+          ],
+          [
+            43.0,
+            1.94
+          ],
+          [
+            43.5,
+            1.94
+          ],
+          [
+            44.0,
+            1.94
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ko/decision.mp4",
+      "sha256": "3246e67071a1cf68be0bcefcead33cfd70a58290e77d64d033a3b08860f59676",
+      "screenshotSha256": "fcae41161bff108684b49c485960cd2a6b3095ce3d99bd22e422bb912cb82c28"
+    },
+    {
+      "scene": "contract",
+      "source": "ko-raw.mp4",
+      "start": 55.6,
+      "take": 2.8,
+      "duration": 3.5,
+      "pixelMatch": {
+        "source": "ko-raw.mp4",
+        "best": 55.5,
+        "from": 55.5,
+        "to": 72.5,
+        "meanPixelError": 2.182790517807007,
+        "nearest": [
+          [
+            55.5,
+            2.18
+          ],
+          [
+            70.5,
+            2.19
+          ],
+          [
+            66.5,
+            2.19
+          ],
+          [
+            66.0,
+            2.19
+          ],
+          [
+            65.5,
+            2.19
+          ],
+          [
+            64.5,
+            2.19
+          ],
+          [
+            64.0,
+            2.19
+          ],
+          [
+            63.5,
+            2.19
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ko/contract.mp4",
+      "sha256": "ebeaf3fedca717e322cfe207aea4cede85176ca065613917fe82ad1b90bfc286",
+      "screenshotSha256": "d0f570d34d3cafad3502326af591c793b8aef1cc94e9fe9f3a23fa66bd29f582"
+    },
+    {
+      "scene": "records",
+      "source": "ko-raw.mp4",
+      "start": 81.1,
+      "take": 2.8,
+      "duration": 3.5,
+      "pixelMatch": {
+        "source": "ko-raw.mp4",
+        "best": 81.0,
+        "from": 81.0,
+        "to": 87.0,
+        "meanPixelError": 2.0747854709625244,
+        "nearest": [
+          [
+            81.0,
+            2.07
+          ],
+          [
+            81.5,
+            2.08
+          ],
+          [
+            82.0,
+            2.08
+          ],
+          [
+            85.5,
+            2.08
+          ],
+          [
+            86.5,
+            2.08
+          ],
+          [
+            87.0,
+            2.08
+          ],
+          [
+            86.0,
+            2.08
+          ],
+          [
+            84.5,
+            2.08
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ko/records.mp4",
+      "sha256": "6c4cddfd8966ee7305529d4810f68277907956311e6a0040efafe254d34c78a2",
+      "screenshotSha256": "26b27aff1be9983cf3c6f9dc3f9bd4985708b4ab13294b67734a9ad4188130b3"
+    },
+    {
+      "scene": "album",
+      "source": "ko-raw.mp4",
+      "start": 95.6,
+      "take": 2.8,
+      "duration": 3,
+      "pixelMatch": {
+        "source": "ko-raw.mp4",
+        "best": 102.5,
+        "from": 95.5,
+        "to": 104.0,
+        "meanPixelError": 2.0205554962158203,
+        "nearest": [
+          [
+            103.0,
+            2.02
+          ],
+          [
+            102.5,
+            2.02
+          ],
+          [
+            103.5,
+            2.02
+          ],
+          [
+            104.0,
+            2.02
+          ],
+          [
+            99.5,
+            2.02
+          ],
+          [
+            99.0,
+            2.02
+          ],
+          [
+            98.5,
+            2.02
+          ],
+          [
+            98.0,
+            2.02
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ko/album.mp4",
+      "sha256": "47e4fba29490ad248ec43e8a382c403084a3fb6ab7a708b45e0b64650845b3a7",
+      "screenshotSha256": "5a2338b512fe9a9da1d26dc1d3980bd876d7e772b654430c5156fb0e3ab800bf"
+    },
+    {
+      "scene": "legacy",
+      "source": "ko-legacy-raw.mp4",
+      "start": 19.1,
+      "take": 2.8,
+      "duration": 3.5,
+      "pixelMatch": {
+        "source": "ko-legacy-raw.mp4",
+        "best": 22.0,
+        "from": 19.0,
+        "to": 23.5,
+        "meanPixelError": 2.029848575592041,
+        "nearest": [
+          [
+            23.5,
+            2.03
+          ],
+          [
+            23.0,
+            2.03
+          ],
+          [
+            22.5,
+            2.03
+          ],
+          [
+            22.0,
+            2.03
+          ],
+          [
+            19.5,
+            2.21
+          ],
+          [
+            20.0,
+            2.21
+          ],
+          [
+            21.0,
+            2.21
+          ],
+          [
+            20.5,
+            2.21
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ko/legacy.mp4",
+      "sha256": "033409dfac07b543ee38eec234e3b849aedee57b36e193d1a91b3377ad472020",
+      "screenshotSha256": "0d789f713e070ca830029dbc6557bcec1d2714b42fbadab29541336b40be163a"
+    },
+    {
+      "scene": "rebirth",
+      "source": "ko-opening-raw.mp4",
+      "start": 20.1,
+      "take": 2.3,
+      "duration": 3.5,
+      "pixelMatch": {
+        "source": "ko-opening-raw.mp4",
+        "best": 22.0,
+        "from": 20.0,
+        "to": 25.0,
+        "meanPixelError": 2.1143181324005127,
+        "nearest": [
+          [
+            25.0,
+            2.11
+          ],
+          [
+            22.0,
+            2.11
+          ],
+          [
+            22.5,
+            2.11
+          ],
+          [
+            23.0,
+            2.11
+          ],
+          [
+            23.5,
+            2.11
+          ],
+          [
+            24.0,
+            2.11
+          ],
+          [
+            24.5,
+            2.11
+          ],
+          [
+            20.0,
+            2.12
+          ]
+        ]
+      },
+      "clip": "apps/promo/public/asc-2026-09/ko/rebirth.mp4",
+      "sha256": "744ed534e98c1bc84abd0dccda82fbe0cbab6d79e063ed01768abf57606bf36d",
+      "screenshotSha256": "5bdc0db402371771ef04e19195fb613236848505473cbecda2c9a3be85f0c3fa"
+    }
+  ]
+}
