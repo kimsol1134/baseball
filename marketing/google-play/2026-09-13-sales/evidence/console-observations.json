@@ -1,0 +1,61 @@
+{
+  "observed_date": "2026-09-13 KST",
+  "source": "Authenticated Play Console via Codex browser",
+  "package": "com.solkim.baseball.android",
+  "grow_overview": {
+    "displayed_period": "지난 28일",
+    "device_impressions": 65,
+    "device_acquisitions": 9,
+    "first_open_devices": 3,
+    "monthly_active_devices": 11,
+    "d7_retention": null,
+    "verified_date_range": "2026-08-15 through 2026-09-11",
+    "impressions_by_source": {
+      "Google Play 탐색": 22,
+      "유료 및 직접": 43
+    },
+    "acquisitions_by_source": {
+      "구체적인 정보 표기 안함": 9
+    },
+    "warning": "유료 및 직접 is a combined source and does not establish paid ad delivery; acquisition source is unspecified."
+  },
+  "listing_report": {
+    "url_date_range": "2026_08_11-2026_09_07",
+    "visitors": 4,
+    "unique_install_clicks": 0,
+    "warning": "This listing report ends before September 10 update; do not use as current post-launch conversion rate."
+  },
+  "quality": {
+    "crash_rate": null,
+    "anr_rate": null,
+    "warning": "Missing metrics do not establish zero crashes."
+  },
+  "changes": {
+    "ko_short_description": "IN_REVIEW: 변경사항을 검토 중입니다.",
+    "ko_full_description": "IN_REVIEW: 변경사항을 검토 중입니다.",
+    "tags": [
+      "로그류",
+      "롤플레잉",
+      "스포츠",
+      "시뮬레이션",
+      "야구"
+    ],
+    "website": "https://baseball-reincarnation.vercel.app/android",
+    "website_status": "변경사항 게시됨"
+  },
+  "ads": {
+    "authorized_total_krw": 50000,
+    "spend_this_task_krw": 0,
+    "state": "BLOCKED_ACCOUNT_LINKING_ERROR",
+    "attempts": [
+      "existing account login in independent browser",
+      "Next from confirmed Android package",
+      "Reload requested by error UI"
+    ],
+    "message": "문제가 발생했습니다 / 계속하려면 Google Ads를 새로고침하세요.",
+    "disabled_controls": [
+      "다음",
+      "건너뛰기"
+    ]
+  }
+}

@@ -1,0 +1,347 @@
+[
+  {
+    "file": "ko-KR/contact-sheet.jpg",
+    "bytes": 208543,
+    "sha256": "ec3b732c74acbb3e2bfa92e7a59f7fb293ab8d0e07048eb9b36d25bf0e36574f"
+  },
+  {
+    "file": "ko-KR/feature-graphic.png",
+    "bytes": 595906,
+    "sha256": "7c1bbc1b6ce2baca4472092db72784e12074b7442d270fc744c1d19c882fc4c8",
+    "width": 1024,
+    "height": 500,
+    "mode": "RGB"
+  },
+  {
+    "file": "ko-KR/screenshot-alt-text.json",
+    "bytes": 571,
+    "sha256": "f18fdd42330961ba4d5c813af1364c51f32846b858640c559410c9a44d4f5a09"
+  },
+  {
+    "file": "ko-KR/screenshots/01.png",
+    "bytes": 277004,
+    "sha256": "c016732b6b200526695917810046215a0da66fb645fa4d6e1e39e2fd475a2432",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ko-KR/screenshots/02.png",
+    "bytes": 182166,
+    "sha256": "bfaf1895322a514adf745212ee4ea95cb0103887fe3a7315c4a1becdf55b588c",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ko-KR/screenshots/03.png",
+    "bytes": 187025,
+    "sha256": "136743a5b86191b0870c963bc029be0372c17a8e4502daac4cf2d70ec2aba7e3",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ko-KR/screenshots/04.png",
+    "bytes": 224819,
+    "sha256": "cd9a5467998ab9c942606a7a78156271ed32786a57eb098ef8b50506fb57edda",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ko-KR/screenshots/05.png",
+    "bytes": 153451,
+    "sha256": "e91b2e10c9d0f9e7a76849b18c485545927344d2f89d7189363ffcba3cadb250",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ko-KR/screenshots/06.png",
+    "bytes": 177689,
+    "sha256": "57f540844948cb86c83a03b184907f445048a1433a5810880163daa7c0f5cc77",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ko-KR/screenshots/07.png",
+    "bytes": 160488,
+    "sha256": "b41a0cb11164a91c196dea3892be5e9dcdb58ab977e813f878ecb75c335a3f99",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ko-KR/screenshots/08.png",
+    "bytes": 179595,
+    "sha256": "d8bd700869490feb0717f9cbd9d31fd241169ce927ef66e066a7f11271621582",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ko-KR/store-listing.txt",
+    "bytes": 2594,
+    "sha256": "c2d0780ed8d871b0f19897575f4fd2ba2b00bd77a0e39a2ccd1e3b46ff49f145"
+  },
+  {
+    "file": "ko-KR/trailer-landscape.mp4",
+    "bytes": 7315253,
+    "sha256": "46b81d72602a4c60dcf7454784c79e47fa3b3933d3ff03062a5352638d133042"
+  },
+  {
+    "file": "ko-KR/trailer-portrait.mp4",
+    "bytes": 11585798,
+    "sha256": "8bafacceb68af8db8d1a7e467b8af89a9f765766f28e1d910a6a0a1246026afe"
+  },
+  {
+    "file": "ko-KR/video-contact-landscape.jpg",
+    "bytes": 122419,
+    "sha256": "a5abb74d73ca70139681f9f020744b3679a0e8af154ae31558d5f2a70e4ac69a"
+  },
+  {
+    "file": "ko-KR/video-contact-portrait.jpg",
+    "bytes": 146833,
+    "sha256": "bfdc02034c14b2968c7e67ebfff967068bbc2ec01986c50db6beb2cc776bb5b7"
+  },
+  {
+    "file": "ko-KR/youtube-thumbnail.png",
+    "bytes": 956418,
+    "sha256": "c046c28d2042a0c6dd0ccd441d57a3a83d08eee60c44de55ca89651c99bcd4f0",
+    "width": 1280,
+    "height": 720,
+    "mode": "RGB"
+  },
+  {
+    "file": "en-US/contact-sheet.jpg",
+    "bytes": 228621,
+    "sha256": "03fa52deca5e9885e3a3fbfbd7426bb15c48c1d40d890cc415380cc830d6fa04"
+  },
+  {
+    "file": "en-US/feature-graphic.png",
+    "bytes": 521558,
+    "sha256": "5fdf1779f4fa747b59c778a8d498e62af74694e0c9228bff32c74e5fa7b4f04a",
+    "width": 1024,
+    "height": 500,
+    "mode": "RGB"
+  },
+  {
+    "file": "en-US/screenshot-alt-text.json",
+    "bytes": 544,
+    "sha256": "14ca18f55bf5ffa23dc179673b837fb2373e38e6ac5c50c457069dac4cb6abfc"
+  },
+  {
+    "file": "en-US/screenshots/01.png",
+    "bytes": 321612,
+    "sha256": "03d7396ba64daed13de74527036b8cca75bb312b8037d5a0fd303959d4920a05",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "en-US/screenshots/02.png",
+    "bytes": 223763,
+    "sha256": "d590251b191627ae5a9bc8ac3007e9f4c02fadb21ee431f4a371f258254198ce",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "en-US/screenshots/03.png",
+    "bytes": 229927,
+    "sha256": "c52cd579a7f83da551aedf21ef258bb1e3a9bed7c7820a3cc94a8deebcb6ed6b",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "en-US/screenshots/04.png",
+    "bytes": 296287,
+    "sha256": "3affac43ca781768f7ec1419b87e8e9e59f2f0d83b4893e688a2f36d175dcbda",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "en-US/screenshots/05.png",
+    "bytes": 215250,
+    "sha256": "b6e9b0bc7c7beb2b149b7218668fb7024cfed3e62423cdae32683773ca6fc5fc",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "en-US/screenshots/06.png",
+    "bytes": 249270,
+    "sha256": "15e397588b6568dd4fde7d7ae44bdb3f0e3a3d76b21ce1f5a64561d0d24b5797",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "en-US/screenshots/07.png",
+    "bytes": 246926,
+    "sha256": "8c64667d2621903466e50ac7b6aeca340bfee08b8c6ea314034545532539b29d",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "en-US/screenshots/08.png",
+    "bytes": 226103,
+    "sha256": "6afbb43c889034dbbdc044288f954ae859913d247b74e34ded77f8d2e6b9947b",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "en-US/store-listing.txt",
+    "bytes": 2015,
+    "sha256": "e69a547048b79d137a38b1b5acb0e120baf8f017693543c053864c32ea90c66a"
+  },
+  {
+    "file": "en-US/trailer-landscape.mp4",
+    "bytes": 8430223,
+    "sha256": "292154df56c796e3881c467f813ab548332553590f90ca43012366bdfd7ce6a5"
+  },
+  {
+    "file": "en-US/trailer-portrait.mp4",
+    "bytes": 13638058,
+    "sha256": "e23af3e417b9076a76aec262ddabb17979064f967f9c0489c3ceaacc48a606f9"
+  },
+  {
+    "file": "en-US/video-contact-landscape.jpg",
+    "bytes": 124569,
+    "sha256": "3d220b7b5fdac63f4b14f79d9884ea26dd83ccd9aa1f1f78a9d8aee6948ef67d"
+  },
+  {
+    "file": "en-US/video-contact-portrait.jpg",
+    "bytes": 158948,
+    "sha256": "517746f68a2ea6790fd183f3fac8ba9ec2a7e4e6843eec8e8b997443dd858eb8"
+  },
+  {
+    "file": "en-US/youtube-thumbnail.png",
+    "bytes": 842183,
+    "sha256": "7219012a7987a635bccb5f11cadd35a8fd2bf6046cd0656f3bcf3a3113b8bd21",
+    "width": 1280,
+    "height": 720,
+    "mode": "RGB"
+  },
+  {
+    "file": "ja-JP/contact-sheet.jpg",
+    "bytes": 219871,
+    "sha256": "313e1e7f84e8ab530257b87fdb0172718a5ac1973833ab8671bb73159075b777"
+  },
+  {
+    "file": "ja-JP/feature-graphic.png",
+    "bytes": 529232,
+    "sha256": "ed0247da38f2629869ed6ea76a50b724939540a6d54f021b8e51675301211cd9",
+    "width": 1024,
+    "height": 500,
+    "mode": "RGB"
+  },
+  {
+    "file": "ja-JP/screenshot-alt-text.json",
+    "bytes": 588,
+    "sha256": "3f7980feabdabc0b72e5074400d204cdbe53e922f4ab01f622674e4df054f1d9"
+  },
+  {
+    "file": "ja-JP/screenshots/01.png",
+    "bytes": 324460,
+    "sha256": "1d9794f4cb0f098e40ca407adf054707fdcffaebd2874c17d833b5279f195d08",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ja-JP/screenshots/02.png",
+    "bytes": 250933,
+    "sha256": "dce7b75b808280fc6f96e0418498c7b3466e30a7c44c055350f714083dfe6567",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ja-JP/screenshots/03.png",
+    "bytes": 268274,
+    "sha256": "22b01c4b6200c8ece21ebcb8405e9ae61ec1f274b5cff4d8eb47b0b1f38bcd74",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ja-JP/screenshots/04.png",
+    "bytes": 312095,
+    "sha256": "76ec6e66c10f22d0287ff03e1dbff3278b3f9bb471be836f846b012861865ccb",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ja-JP/screenshots/05.png",
+    "bytes": 222333,
+    "sha256": "7702e95cd8e3847677103c5fdea507ad80f0c652a5b83e083ca12592864db661",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ja-JP/screenshots/06.png",
+    "bytes": 258649,
+    "sha256": "9b0d0ecfb87dbffe7525e621d428b612c4133f0b5badca502b914fd40a95da98",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ja-JP/screenshots/07.png",
+    "bytes": 249045,
+    "sha256": "d5c8fbe99f2ced2016ef867e5f82e6b199a1a47a0b4cfcb47ad1b7111a27e5ad",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ja-JP/screenshots/08.png",
+    "bytes": 243147,
+    "sha256": "01adfe78496e1e780cdfc1ba4c0f688b26c3bb8a13fd44b5705099f270111431",
+    "width": 1080,
+    "height": 1920,
+    "mode": "RGB"
+  },
+  {
+    "file": "ja-JP/store-listing.txt",
+    "bytes": 2640,
+    "sha256": "66cf4bf7c5652a33d2cb2e82788927c9f7d21beac9181c21c5a449de1617878f"
+  },
+  {
+    "file": "ja-JP/trailer-landscape.mp4",
+    "bytes": 8707260,
+    "sha256": "7edc74e0cf8d7f2c3f23b917cff7c1f579ddc606e2af60e5c79b1d874977f210"
+  },
+  {
+    "file": "ja-JP/trailer-portrait.mp4",
+    "bytes": 13750717,
+    "sha256": "af7aec2b9d0a9c49ccb86a6893c764c91aa9a4103dad50950535ef66b2487325"
+  },
+  {
+    "file": "ja-JP/video-contact-landscape.jpg",
+    "bytes": 120376,
+    "sha256": "6b74f811c3fe8957a1f16e9b0ce9009b915232bc9dd5d7dc86b23e74ae8768bb"
+  },
+  {
+    "file": "ja-JP/video-contact-portrait.jpg",
+    "bytes": 151640,
+    "sha256": "de76245eaa0c3309f1b887e517a6cc1c683ed396b86230b8433fb478a0fcdc80"
+  },
+  {
+    "file": "ja-JP/youtube-thumbnail.png",
+    "bytes": 853380,
+    "sha256": "acd42b09e57008358d227fa00d147fec9d71b6109c1c61f21ce744231f4e0074",
+    "width": 1280,
+    "height": 720,
+    "mode": "RGB"
+  }
+]

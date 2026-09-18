@@ -3,11 +3,11 @@
 User request: production-ready screenshots, Remotion promotional video, and conversion-focused listing copy. Reference successful comparable baseball games. Arc Play Console is signed in.
 
 ## Scope
-- Korean default listing (confirmed in Play Console; no other listing languages currently configured).
-- Eight phone screenshots: 1080×1920 PNG RGB, actual latest Android UI with restrained headlines occupying less than 20%.
+- Korean default listing (confirmed in Play Console); user additionally requested English and Japanese screenshots/videos. Produce full ko-KR / en-US / ja-JP packs and listing copy; no new Console locales will be saved during creation.
+- Eight phone screenshots per language: 1080×1920 PNG RGB, actual latest Android UI with restrained headlines occupying less than 20%.
 - Feature graphic 1024×500 PNG RGB and YouTube thumbnail 1280×720.
 - 30-second portrait 1080×1920 and landscape 1920×1080 MP4, 30 fps, H.264/AAC; authored in existing apps/promo Remotion 4.0.499 project without upgrading pinned dependencies.
-- Korean title/short description/full description, ordering and alt text, sources and upload manifest.
+- Korean, English and Japanese title/short description/full description, ordering and alt text, sources and upload manifest.
 - Prepare locally and inspect Console read-only. No production release or YouTube publication is requested in this creation step.
 
 ## Strategy
