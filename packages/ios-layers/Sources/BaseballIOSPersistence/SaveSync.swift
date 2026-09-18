@@ -10,7 +10,9 @@ public protocol SaveSyncRemoteStoring: AnyObject {
     @discardableResult func synchronize() -> Bool
 }
 
+#if os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)
 extension NSUbiquitousKeyValueStore: SaveSyncRemoteStoring {}
+#endif
 
 /// Shared within the test host so restoring through another SaveSync still exercises the mirror.
 private final class TestRemoteStore: SaveSyncRemoteStoring, @unchecked Sendable {
@@ -61,7 +63,11 @@ public struct SaveSync {
     private let store: any SaveSyncRemoteStoring
     private static let testRemoteStore = TestRemoteStore()
     private static var defaultRemoteStore: any SaveSyncRemoteStoring {
+        #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)
         TestExecution.isRunning() ? testRemoteStore : NSUbiquitousKeyValueStore.default
+        #else
+        testRemoteStore
+        #endif
     }
 
     public init(
@@ -294,6 +300,7 @@ public struct SaveSync {
     public static func observeRemoteChanges(
         _ handler: @escaping @MainActor @Sendable () -> Void
     ) -> NSObjectProtocol {
+        #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)
         NotificationCenter.default.addObserver(
             forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
             object: defaultRemoteStore,
@@ -301,6 +308,15 @@ public struct SaveSync {
         ) { _ in
             Task { @MainActor in handler() }
         }
+        #else
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name("baseball.saveSync.remote-noop"),
+            object: nil,
+            queue: .main
+        ) { _ in
+            Task { @MainActor in handler() }
+        }
+        #endif
     }
 
     /// 앱 시작 때 한 번 호출해 iCloud 쪽 최신값을 끌어온다.

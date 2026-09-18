@@ -14,6 +14,22 @@ final class ProContractDepthSurfaceTests: XCTestCase {
             .deletingLastPathComponent()
     }
 
+    func testAccessibilitySizeKeepsRookieSignInScrollContent() throws {
+        let source = try IOSSourceScan.read("apps/ios/Sources/Features/Pro/ProContractOfferView.swift")
+        XCTAssertGreaterThanOrEqual(
+            source.components(separatedBy: "rookieSignBar(offer)").count - 1,
+            2,
+            "큰 글자에서 고정 바를 끄면 스크롤 끝에 신인 서명이 남아야 한다."
+        )
+        let a11y = try XCTUnwrap(source.range(of: "if typeSize.isAccessibilitySize {"))
+        let a11yTail = source[a11y.lowerBound...]
+        let a11yBlock = String(a11yTail.prefix(420))
+        XCTAssertTrue(
+            a11yBlock.contains("rookieSignBar(offer)"),
+            "접근성 크기 본문에 신인 서명 바가 없다."
+        )
+    }
+
     func testOfferSurfaceExposesInterestBadgeCounterAndSigningBonus() throws {
         let source = try IOSSourceScan.read("apps/ios/Sources/ProContractOfferView.swift")
         XCTAssertTrue(source.contains("pro.contractOffer.interest.\\(interest.level.rawValue)"))

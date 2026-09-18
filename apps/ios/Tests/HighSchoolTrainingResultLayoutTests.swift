@@ -5,6 +5,20 @@ import SimulationCore
 
 /// 훈련 결과가 다음 국면 선택을 덮지 않는지. 소스에 문자열을 찾으면 리팩터에만 깨진다.
 final class HighSchoolTrainingResultLayoutTests: XCTestCase {
+    func testPitchLearningExtrasStayOutsideCollapsedOptionDetail() throws {
+        let source = try IOSSourceScan.typeBody(
+            "TrainingFocusOptionButton",
+            in: "apps/ios/Sources/Features/HighSchool/HighSchoolTrainingViews.swift"
+        )
+        let extras = try XCTUnwrap(source.range(of: "extras()"))
+        let disclosure = try XCTUnwrap(source.range(of: "ProgressiveDisclosure("))
+        XCTAssertLessThan(
+            extras.lowerBound,
+            disclosure.lowerBound,
+            "구종 연구 카드는 접힌 옵션 상세 밖에 있어야 한다."
+        )
+    }
+
     func testNewTrainingResultStaysFullOnFirstDestinationAndCompactsAfterNextAction() {
         XCTAssertFalse(HighSchoolCareerView.trainingResultIsCompact(receiptID: "training-2", spotlightID: "training-1", currentRevision: 5, spotlightRevision: 3))
         XCTAssertFalse(HighSchoolCareerView.trainingResultIsCompact(receiptID: "training-2", spotlightID: "training-2", currentRevision: 5, spotlightRevision: 5))

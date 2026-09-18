@@ -17,6 +17,10 @@ struct OpeningView: View {
     let onStart: () -> Void
     @Environment(\.gameCopyResolver) private var copyResolver
 
+    /// 시작 버튼은 소개 문장과 같은 스크롤에 넣지 않는다. 접근성 XXXL에서 문장이
+    /// 한 화면을 넘기면 유일한 CTA가 접혀 첫 실행과 UI 테스트가 같이 막혔다.
+    static let startBarReserve: CGFloat = 76
+
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .bottom) {
@@ -43,39 +47,50 @@ struct OpeningView: View {
                     .frame(maxHeight: .infinity, alignment: .top)
                     .ignoresSafeArea(edges: .top)
 
-                // 접근성 글자 크기에서는 소개 문구가 한 화면보다 길어진다. 배경 그림은
-                // 고정하되 콘텐츠만 스크롤시켜, 첫 실행의 유일한 진행 버튼이 화면 밖에서
-                // 잠기지 않게 한다. 보통 글자 크기에서는 minHeight가 기존 하단 정렬을 유지한다.
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        GameCopyText(AppCopyKey.openingEyebrow).eyebrowStyle(BaseballTheme.action)
+                VStack(spacing: 0) {
+                    // 배경 그림은 고정하고 소개 문구만 스크롤한다. 보통 글자 크기에서는
+                    // minHeight가 기존 하단 정렬을 유지한다.
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            GameCopyText(AppCopyKey.openingEyebrow).eyebrowStyle(BaseballTheme.action)
 
-                        GameCopyText(.appTitle)
-                            .font(BaseballType.display)
-                            .foregroundStyle(BaseballTheme.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            GameCopyText(.appTitle)
+                                .font(BaseballType.display)
+                                .foregroundStyle(BaseballTheme.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
 
-                        GameCopyText(AppCopyKey.openingSummary)
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            GameCopyText(AppCopyKey.openingSummary)
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(BaseballTheme.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
 
-                        GameCopyText(AppCopyKey.openingDescription)
-                            .font(.subheadline)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        PrimaryPill(
-                            title: copyResolver.resolve(AppCopyKey.openingStart),
-                            identifier: "hs.opening.start",
-                            action: onStart
+                            GameCopyText(AppCopyKey.openingDescription)
+                                .font(.subheadline)
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(BaseballMetrics.gutter)
+                        .padding(.bottom, 8)
+                        .frame(
+                            maxWidth: .infinity,
+                            minHeight: max(0, proxy.size.height - Self.startBarReserve),
+                            alignment: .bottomLeading
                         )
                     }
-                    .padding(BaseballMetrics.gutter)
+                    .scrollIndicators(.hidden)
+
+                    PrimaryPill(
+                        title: copyResolver.resolve(AppCopyKey.openingStart),
+                        identifier: "hs.opening.start",
+                        action: onStart
+                    )
+                    .padding(.horizontal, BaseballMetrics.gutter)
+                    .padding(.top, 8)
                     .padding(.bottom, 8)
-                    .frame(maxWidth: .infinity, minHeight: proxy.size.height, alignment: .bottomLeading)
+                    .background(BaseballTheme.canvas)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("hs.opening.startBar")
                 }
-                .scrollIndicators(.hidden)
             }
         }
         .background(BaseballTheme.canvas)

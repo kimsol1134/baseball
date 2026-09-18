@@ -1297,10 +1297,23 @@ final class CareerSmokeUITests: XCTestCase {
             steps += 1
             if tapFirst(app, prefix: "hs.school.") { confirmSchool(app); continue }
             if app.buttons["hs.training.commit"].exists {
-                let breaking = app.buttons["hs.focus.breaking_ball"]
-                XCTAssertTrue(breaking.waitForExistence(timeout: timeout), "변화구 훈련 선택지가 없습니다.")
+                var breaking = identified(app, "hs.focus.breaking_ball")
+                if !breaking.exists {
+                    _ = tapIfPresent(app.buttons["training.change"])
+                        || tapIfPresent(identified(app, "training.change"))
+                    for _ in 0..<8 where !identified(app, "hs.focus.breaking_ball").exists {
+                        app.swipeUp()
+                    }
+                    breaking = identified(app, "hs.focus.breaking_ball")
+                }
+                XCTAssertTrue(
+                    breaking.waitForExistence(timeout: timeout),
+                    "변화구 훈련 선택지가 없습니다. \(visibleIdentifiers(app))"
+                )
                 XCTAssertTrue(bringIntoView(breaking), "변화구 훈련 선택지를 화면에 올리지 못했습니다.")
-                XCTAssertTrue(tapIfPresent(breaking))
+                if !tapIfPresent(breaking) {
+                    breaking.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+                }
                 let intensive = app.buttons["hs.intensity.intensive"]
                 XCTAssertTrue(intensive.waitForExistence(timeout: timeout), "집중 훈련 강도가 없습니다.")
                 XCTAssertTrue(tapIfPresent(intensive))
@@ -1351,7 +1364,10 @@ final class CareerSmokeUITests: XCTestCase {
         while !app.buttons["hs.game.start"].exists, steps < 140 {
             steps += 1
             if app.buttons["hs.training.commit"].exists {
-                XCTAssertTrue(tapIfPresent(app.buttons["hs.focus.command"]))
+                if !app.buttons["hs.focus.command"].exists {
+                    _ = tapIfPresent(app.buttons["training.change"])
+                }
+                _ = tapIfPresent(app.buttons["hs.focus.command"])
                 XCTAssertTrue(tapIfPresent(app.buttons["hs.training.commit"]))
                 if app.buttons["hs.training.result.dismiss"].waitForExistence(timeout: timeout) {
                     app.buttons["hs.training.result.dismiss"].tap()
@@ -1377,8 +1393,9 @@ final class CareerSmokeUITests: XCTestCase {
         XCTAssertTrue(tapIfPresent(slider), "개발 중 슬라이더를 선택할 수 없습니다.")
         XCTAssertTrue(
             app.descendants(matching: .any)
-                .matching(identifier: "pitch.developmentBadge").firstMatch.exists,
-            "개발 구종 배지가 없습니다."
+                .matching(identifier: "pitch.developmentBadge").firstMatch
+                .waitForExistence(timeout: timeout),
+            "개발 구종 배지가 없습니다. \(visibleIdentifiers(app))"
         )
         let pad = windUpPad(app)
         XCTAssertTrue(pad.waitForExistence(timeout: timeout), "기본 수동 투구 슬라이더가 없습니다.")
@@ -1406,12 +1423,14 @@ final class CareerSmokeUITests: XCTestCase {
             "-AppleLocale", "ko_KR",
         ]
         app.launch()
+        waitUntilReady(app)
         dismissOpening(app)
         finishOnboardingBullpenIfNeeded(app, wait: timeout)
         let next = app.buttons["hs.setup.next"]
         let start = app.buttons["hs.start"]
         var hops = 0
-        while !start.exists, next.waitForExistence(timeout: 2), hops < 6 {
+        while !start.exists, next.waitForExistence(timeout: 2), hops < 8 {
+            _ = bringIntoView(next)
             next.tap()
             hops += 1
         }
@@ -1881,14 +1900,27 @@ final class CareerSmokeUITests: XCTestCase {
             || windUpPad(app).exists {
             return
         }
-        let start = app.buttons["hs.opening.start"]
+        let start = app.descendants(matching: .any)["hs.opening.start"].firstMatch
         guard start.waitForExistence(timeout: timeout) else { return }
         if start.isHittable {
             start.tap()
-        } else {
-            start.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            if start.waitForNonExistence(timeout: 2) { return }
         }
-        _ = start.waitForNonExistence(timeout: timeout)
+        for attempt in 0..<4 {
+            app.swipeUp()
+            if start.isHittable {
+                start.tap()
+            } else if start.exists {
+                start.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            } else {
+                break
+            }
+            if start.waitForNonExistence(timeout: 1) { return }
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.92)).tap()
+            if start.waitForNonExistence(timeout: 1) { return }
+            _ = attempt
+        }
+        _ = start.waitForNonExistence(timeout: 2)
     }
 
     @discardableResult

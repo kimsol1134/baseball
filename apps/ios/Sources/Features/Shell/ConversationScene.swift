@@ -173,8 +173,23 @@ struct ConversationChoiceCard: View {
                 )
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text(verbatim: accessibilityText ?? title))
+        .accessibilityLabel(Text(verbatim: Self.resolvedAccessibilityLabel(
+            override: accessibilityText,
+            title: title,
+            timingLines: timingLines
+        )))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .accessibilityIdentifier(identifier ?? "conversation.choice")
+    }
+
+    /// 시점 안내(즉시 / 3주 뒤)는 카드 본문에 있는데, combine이면 VoiceOver가 제목만 읽는다.
+    private static func resolvedAccessibilityLabel(
+        override: String?,
+        title: String,
+        timingLines: [(systemImage: String, text: String)]
+    ) -> String {
+        let base = override ?? title
+        let timing = timingLines.map(\.text).filter { !$0.isEmpty && !base.contains($0) }
+        return ([base] + timing).joined(separator: ", ")
     }
 }
