@@ -16,12 +16,12 @@ val platformAmplitudeApiKey = sequenceOf("platformAmplitudeApiKey", "phase9Ampli
     .replace("\\", "\\\\")
     .replace("\"", "\\\"")
 val phase10VersionCode = providers.gradleProperty("phase10VersionCode")
-    .orElse("42")
+    .orElse("44")
     .get()
     .toIntOrNull()
     ?.also { require(it > 5) { "versionCode must be higher than the current Play baseline" } }
     ?: error("phase10VersionCode must be an integer")
-val phase10VersionName = providers.gradleProperty("phase10VersionName").orElse("1.0.0").get()
+val phase10VersionName = providers.gradleProperty("phase10VersionName").orElse("1.0.2").get()
 val releaseDistribution = providers.gradleProperty("phase11Distribution").orElse("internal").get()
     .also { require(it in setOf("internal", "production")) { "phase11Distribution must be internal or production" } }
 
