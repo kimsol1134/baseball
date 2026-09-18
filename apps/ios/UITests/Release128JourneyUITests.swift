@@ -15,6 +15,127 @@ final class Release128JourneyUITests: XCTestCase {
         shotIndex = 0
     }
 
+    // Opt-in App Store capture. These entry points use product views and engine-generated
+    // fixtures; no perfect-release override or invented UI is used in the resulting footage.
+    func testAppStoreRefreshKO() throws { try captureStoreRefresh(language: "ko", locale: "ko_KR") }
+    func testAppStoreRefreshEN() throws { try captureStoreRefresh(language: "en", locale: "en_US") }
+    func testAppStoreRefreshJA() throws { try captureStoreRefresh(language: "ja", locale: "ja_JP") }
+    func testAppStoreRefreshLegacyKO() throws { try captureStoreRefresh(language: "ko", locale: "ko_KR", onlyLegacy: true) }
+    func testAppStoreOpeningKO() throws { try captureStoreRefresh(language: "ko", locale: "ko_KR", onlyOpening: true) }
+    func testAppStoreOpeningEN() throws { try captureStoreRefresh(language: "en", locale: "en_US", onlyOpening: true) }
+    func testAppStoreOpeningJA() throws { try captureStoreRefresh(language: "ja", locale: "ja_JP", onlyOpening: true) }
+
+    private func captureStoreRefresh(language: String, locale: String, onlyLegacy: Bool = false, onlyOpening: Bool = false) throws {
+        guard Bundle(for: Self.self).object(forInfoDictionaryKey: "BaseballCaptureMode") as? String == "1" else {
+            throw XCTSkip("App Store capture is opt-in: BASEBALL_CAPTURE_MODE=1")
+        }
+        executionTimeAllowance = 240
+        let root = URL(fileURLWithPath: "/tmp/baseball-asc-refresh/\(language)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        func launchScene(_ arguments: [String]) -> XCUIApplication {
+            let app = XCUIApplication()
+            app.launchArguments = ["-uiTestResetCareer", "-uiTestIsolatedCareer", "-uiTestPromoCapture",
+                "-uiTestStoreCapture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(\(language))",
+                "-AppleLocale", locale] + arguments
+            app.launch()
+            return app
+        }
+        var trace: [String] = []
+        func mark(_ name: String) {
+            let line = "ASC_REFRESH \(language) \(name) \(String(format: "%.3f", Date().timeIntervalSince1970))"
+            print(line)
+            trace.append(line)
+            try? (trace.joined(separator: "\n") + "\n").write(to: root.appendingPathComponent("markers.txt"), atomically: true, encoding: .utf8)
+        }
+        func shot(_ app: XCUIApplication, _ name: String, hold: Double = 2.5) throws {
+            Thread.sleep(forTimeInterval: 0.7)
+            let screenshot = app.screenshot()
+            try screenshot.pngRepresentation.write(to: root.appendingPathComponent("\(name).png"))
+            let attachment = XCTAttachment(screenshot: screenshot)
+            attachment.name = "asc-refresh-\(language)-\(name)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            mark(name)
+            Thread.sleep(forTimeInterval: hold)
+        }
+
+        var app: XCUIApplication
+        if !onlyLegacy {
+        app = launchScene(["-uiTestRebornFixture"])
+        let practice = app.buttons["hs.reborn.practice"]
+        XCTAssertTrue(practice.waitForExistence(timeout: timeout))
+        try shot(app, "rebirth")
+        XCTAssertTrue(bringIntoView(practice))
+        practice.tap()
+        let pad = windUpPad(app)
+        XCTAssertTrue(pad.waitForExistence(timeout: timeout))
+        XCTAssertFalse(app.buttons["pitch.throw"].exists)
+        XCTAssertTrue(bringIntoView(pad))
+        try shot(app, "pitch", hold: 1)
+        mark("throw-start")
+        pad.press(forDuration: 0.45, thenDragTo: pad, withVelocity: .slow, thenHoldForDuration: 0.1)
+        Thread.sleep(forTimeInterval: 1.0)
+        try shot(app, "pitch-result", hold: 3)
+        if onlyOpening { return }
+
+        app = launchScene(["-uiTestCommandMilestoneFixture"])
+        let change = app.buttons["training.change"]
+        XCTAssertTrue(change.waitForExistence(timeout: timeout))
+        change.tap()
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.focus.command"]))
+        mark("training-start")
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.training.commit"]))
+        XCTAssertTrue(app.buttons["hs.training.result.dismiss"].waitForExistence(timeout: timeout))
+        try shot(app, "growth", hold: 4)
+
+        app = launchScene(["-uiTestSeasonDecisionFixture"])
+        XCTAssertTrue(identified(app, "pro.seasonDecision").waitForExistence(timeout: timeout))
+        try shot(app, "decision", hold: 3)
+
+        app = launchScene(["-uiTestDraftedCareerFixture", "-uiTestProCareerJourneyV1"])
+        enterProFromDraftedFixture(app)
+        XCTAssertTrue(identified(app, "pro.contractOffer").waitForExistence(timeout: timeout))
+        try shot(app, "contract", hold: 3)
+
+        func openRecords(_ section: String) throws -> XCUIApplication {
+            let app = launchScene(["-uiTestPopulatedProFixture", "-uiTestRecordSection", section])
+            let titles = ["기록", "Records", "記録"]
+            var tab: XCUIElement?
+            for title in titles {
+                let candidate = app.tabBars.buttons[title]
+                if candidate.waitForExistence(timeout: 2) { tab = candidate; break }
+            }
+            if tab == nil {
+                let candidate = identified(app, "chart.bar")
+                if candidate.waitForExistence(timeout: timeout) { tab = candidate }
+            }
+            let target = try XCTUnwrap(tab)
+            target.tap()
+            Thread.sleep(forTimeInterval: 1.0)
+            return app
+        }
+        app = try openRecords("saber")
+        try shot(app, "records", hold: 3)
+        app = try openRecords("album")
+        try shot(app, "album", hold: 1)
+        let replay = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "album.replay.play.")).firstMatch
+        XCTAssertTrue(replay.waitForExistence(timeout: timeout))
+        mark("replay-start")
+        replay.tap()
+        Thread.sleep(forTimeInterval: 3)
+        }
+
+        app = launchScene(["-uiTestRebornFixture", "-uiTestStopAtLegacy"])
+        let next = identified(app, "hs.draft.result.continue")
+        if next.waitForExistence(timeout: timeout) {
+            XCTAssertTrue(bringIntoView(next))
+            next.tap()
+        }
+        XCTAssertTrue(app.buttons["hs.legacy.confirm"].waitForExistence(timeout: timeout))
+        try shot(app, "legacy", hold: 3)
+        mark("done")
+    }
+
     func testRecordsSaberSectionShowsWithRetiredFixture() throws {
         executionTimeAllowance = 180
         let app = XCUIApplication()
