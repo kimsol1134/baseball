@@ -74,7 +74,7 @@ struct ProSeasonDecisionView: View {
 
             // 원문 산문은 펼침으로 남긴다. 장면 본문을 두 번 읽게 하지 않는다.
             ProgressiveDisclosure(
-                contentID: seenContentID,
+                contentID: "pro.seasonDecision.narrativeToggle",
                 title: copyResolver.resolve(AppCopyKey.conversationSceneDisclosure),
                 summary: "",
                 important: false,
@@ -91,7 +91,6 @@ struct ProSeasonDecisionView: View {
                     }
                 }
             }
-            .accessibilityIdentifier("pro.seasonDecision.narrativeToggle")
 
             // 비가역 경고. 아이콘만 경고색, 문장은 읽는 글 색.
             HStack(alignment: .top, spacing: 6) {

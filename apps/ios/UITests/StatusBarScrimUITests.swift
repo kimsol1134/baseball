@@ -16,9 +16,35 @@ final class StatusBarScrimUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-uiTestResetCareer", "-uiTestAutoRelease", "-baseball.audio.sound", "NO"]
         app.launch()
+        _ = app.descendants(matching: .any)["app.loading.progress"].waitForNonExistence(timeout: 15)
 
-        if app.buttons["hs.opening.start"].waitForExistence(timeout: 10) {
-            app.buttons["hs.opening.start"].tap()
+        let opening = app.buttons["hs.opening.start"]
+        if opening.waitForExistence(timeout: 12) {
+            if opening.isHittable {
+                opening.tap()
+            } else {
+                opening.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+            _ = opening.waitForNonExistence(timeout: 12)
+        }
+        let throwButton = app.buttons["pitch.throw"]
+        if throwButton.waitForExistence(timeout: 4) {
+            let finish = app.buttons["pitch.finish"]
+            var pitches = 0
+            while !finish.exists, pitches < 40 {
+                if app.buttons["pitch.fastForwardBatter"].exists {
+                    app.buttons["pitch.fastForwardBatter"].tap()
+                } else if throwButton.exists {
+                    throwButton.tap()
+                } else if app.buttons["pitch.nextBatter"].exists {
+                    app.buttons["pitch.nextBatter"].tap()
+                } else {
+                    break
+                }
+                pitches += 1
+            }
+            if finish.waitForExistence(timeout: 12) { finish.tap() }
+            _ = finish.waitForNonExistence(timeout: 12)
         }
         let start = app.buttons["hs.start"]
         let next = app.buttons["hs.setup.next"]
@@ -29,7 +55,7 @@ final class StatusBarScrimUITests: XCTestCase {
             next.tap()
             hops += 1
         }
-        XCTAssertTrue(start.waitForExistence(timeout: 12))
+        XCTAssertTrue(start.waitForExistence(timeout: 12), "setup never reached hs.start")
         start.tap()
         XCTAssertTrue(app.buttons["hs.prologue.throw"].waitForExistence(timeout: 12))
 

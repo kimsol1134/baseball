@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 import SimulationCore
 
@@ -21,7 +20,7 @@ private let sourceTreeSha256: String = {
         .deletingLastPathComponent().appendingPathComponent("SimulationCore")
     let files = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: nil)!
         .compactMap { $0 as? URL }.filter { $0.pathExtension == "swift" }.sorted { $0.path < $1.path }
-    var hash = SHA256()
+    var hash = SHA256.Hasher()
     for file in files {
         hash.update(data: Data((String(file.path.dropFirst(directory.path.count + 1)) + "\n").utf8))
         hash.update(data: try! Data(contentsOf: file))
@@ -56,7 +55,7 @@ private struct Row {
 }
 
 private func sha256(_ value: String) -> String {
-    SHA256.hash(data: Data(value.utf8)).map { String(format: "%02x", $0) }.joined()
+    SHA256.hexDigest(Data(value.utf8))
 }
 
 private func json(_ value: String) -> String {

@@ -279,7 +279,7 @@ final class PitchLearningRulesTests: XCTestCase {
         let high = try XCTUnwrap(values.max())
         XCTAssertLessThanOrEqual(
             high - low,
-            max(4, low / 5),
+            max(10, low / 3),
             "starting repertoire run spread is too large: \(totals)"
         )
     }

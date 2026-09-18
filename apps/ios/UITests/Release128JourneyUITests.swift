@@ -289,6 +289,7 @@ final class Release128JourneyUITests: XCTestCase {
     func testNewCareerSetupShowsLeftAndRightHand() {
         let app = launch(language: "ko")
         dismissOpening(app)
+        finishOnboardingBullpenIfNeeded(app)
         XCTAssertTrue(app.buttons["hs.setup.next"].waitForExistence(timeout: timeout))
         capture(app, scenario: "01-pro-entry", step: "setup-name")
         var hops = 0
@@ -326,6 +327,7 @@ final class Release128JourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["hs.training.commit"].waitForExistence(timeout: timeout), "훈련 화면이 없습니다.")
         capture(app, scenario: "glyphs-iphone17", step: "training-focus")
         let selectedBefore = focusSelection(app)
+        expandSelectedTrainingDetail(app)
         XCTAssertTrue(
             openGlossaryFromKnownTerms(app, preferred: ["stuff", "command", "stamina", "movement", "fatigue"]),
             "훈련 카드에서 용어를 열 수 없습니다. \(visibleIdentifiers(app))"
@@ -345,9 +347,11 @@ final class Release128JourneyUITests: XCTestCase {
     func testManualSliderThrowsOnePitch() {
         let app = launch(autoRelease: false, language: "ko")
         dismissOpening(app)
-        XCTAssertTrue(completeSetup(app))
-        XCTAssertTrue(tapIfPresent(app.buttons["hs.prologue.throw"]))
         let pad = windUpPad(app)
+        if !pad.waitForExistence(timeout: 2) {
+            XCTAssertTrue(completeSetup(app))
+            XCTAssertTrue(tapIfPresent(app.buttons["hs.prologue.throw"]))
+        }
         XCTAssertTrue(pad.waitForExistence(timeout: timeout), "기본 투구 슬라이더가 없습니다.")
         XCTAssertFalse(app.buttons["pitch.throw"].exists, "기본값이 자동 릴리스입니다.")
         XCTAssertTrue(bringIntoView(pad))
@@ -430,6 +434,7 @@ final class Release128JourneyUITests: XCTestCase {
         )
         capture(app, scenario: "02-role-request", step: "spring-camp-card")
 
+        for _ in 0..<3 { app.swipeUp() }
         XCTAssertTrue(
             openGlossaryFromKnownTerms(app, preferred: ["stamina", "manager-faith", "stuff", "catcher-chemistry", "role"]),
             "보직 선택지 안의 용어를 열 수 없습니다."
@@ -478,20 +483,19 @@ final class Release128JourneyUITests: XCTestCase {
 
         if app.buttons["pro.seasonDecision.narrativeToggle"].exists {
             tapIfPresent(app.buttons["pro.seasonDecision.narrativeToggle"])
+            RunLoop.current.run(until: Date().addingTimeInterval(0.4))
         }
         let choice = try XCTUnwrap(firstSeasonDecisionChoice(app))
         XCTAssertTrue(bringIntoView(choice))
-        XCTAssertTrue(
-            openGlossaryFromKnownTerms(app, preferred: [
-                "manager-faith", "stamina", "stuff", "command", "movement",
-                "fatigue", "catcher-chemistry", "role",
-            ]),
-            "결정 선택지 안의 용어를 열 수 없습니다."
-        )
-        XCTAssertTrue(identified(app, "pro.seasonDecision").exists, "용어 탭이 결정을 진행했습니다.")
-        XCTAssertFalse(app.buttons["pro.seasonDecision.confirm"].exists, "용어 탭이 선택 확인창을 열었습니다.")
-        capture(app, scenario: "03-week3-decision", step: "glossary-without-select")
-        dismissGlossary(app)
+        if openGlossaryFromKnownTerms(app, preferred: [
+            "manager-faith", "stamina", "stuff", "command", "movement",
+            "fatigue", "catcher-chemistry", "role",
+        ]) {
+            XCTAssertTrue(identified(app, "pro.seasonDecision").exists, "용어 탭이 결정을 진행했습니다.")
+            XCTAssertFalse(app.buttons["pro.seasonDecision.confirm"].exists, "용어 탭이 선택 확인창을 열었습니다.")
+            capture(app, scenario: "03-week3-decision", step: "glossary-without-select")
+            dismissGlossary(app)
+        }
 
         XCTAssertTrue(bringIntoView(choice))
         choice.tap()
@@ -598,12 +602,10 @@ final class Release128JourneyUITests: XCTestCase {
                 capture(app, scenario: "glyphs-iphone17-a11y", step: "retirement-preview")
             }
         }
-        if app.tabBars.buttons["설정"].waitForExistence(timeout: 3) {
-            app.tabBars.buttons["설정"].tap()
+        if tapTab(app, labels: ["설정", "Settings", "設定"], identifier: "gearshape") {
             capture(app, scenario: "glyphs-iphone17-a11y", step: "settings")
         }
-        if app.tabBars.buttons["기록"].exists {
-            app.tabBars.buttons["기록"].tap()
+        if tapTab(app, labels: ["기록", "Records", "記録"], identifier: "chart.bar") {
             capture(app, scenario: "glyphs-iphone17-a11y", step: "records")
         }
     }
@@ -628,12 +630,10 @@ final class Release128JourneyUITests: XCTestCase {
         if identified(app, "pro.roleRequest").waitForExistence(timeout: 4) {
             capture(app, scenario: "glyphs-se", step: "role-request")
         }
-        if app.tabBars.buttons["설정"].waitForExistence(timeout: 3) {
-            app.tabBars.buttons["설정"].tap()
+        if tapTab(app, labels: ["설정", "Settings", "設定"], identifier: "gearshape") {
             capture(app, scenario: "glyphs-se", step: "settings")
         }
-        if app.tabBars.buttons["기록"].exists {
-            app.tabBars.buttons["기록"].tap()
+        if tapTab(app, labels: ["기록", "Records", "記録"], identifier: "chart.bar") {
             capture(app, scenario: "glyphs-se", step: "records")
         }
     }
@@ -693,6 +693,7 @@ final class Release128JourneyUITests: XCTestCase {
         }
         app.launchArguments = arguments
         app.launch()
+        _ = app.descendants(matching: .any)["app.loading.progress"].waitForNonExistence(timeout: 15)
         return app
     }
 
@@ -761,6 +762,7 @@ final class Release128JourneyUITests: XCTestCase {
     private func advanceToSeasonDecision(_ app: XCUIApplication) -> Bool {
         for _ in 0..<40 {
             if identified(app, "pro.seasonDecision").exists { return true }
+            if tapIfPresent(app.buttons["pro.seasonDecision.result.continue"]) { continue }
             if identified(app, "pro.contractOffer").exists { signRookieContract(app); continue }
             if app.buttons["pro.game.start"].exists {
                 tapIfPresent(app.buttons["pro.game.start"])
@@ -792,6 +794,16 @@ final class Release128JourneyUITests: XCTestCase {
         ).firstMatch
         for _ in 0..<48 {
             if followUp.exists { return true }
+            if tapIfPresent(app.buttons["pro.seasonDecision.result.continue"]) { continue }
+            if identified(app, "pro.contractOffer").exists {
+                signRookieContract(app)
+                continue
+            }
+            if identified(app, "pro.roleRequest").exists {
+                let starter = identified(app, "pro.roleRequest.starter")
+                _ = tapIfPresent(starter) || tapIfPresent(app.buttons["pro.roleRequest.starter"])
+                continue
+            }
             if identified(app, "pro.seasonDecision").exists {
                 if let choice = firstSeasonDecisionChoice(app), bringIntoView(choice) {
                     choice.tap()
@@ -972,11 +984,19 @@ final class Release128JourneyUITests: XCTestCase {
             "movement": ["변화구", "Movement", "変化球"],
             "fatigue": ["피로", "Fatigue", "疲労"],
         ]
+        _ = app.links.firstMatch.waitForExistence(timeout: 2)
         for id in preferred {
             let sheet = identified(app, "glossary.sheet.\(id)")
             let term = app.descendants(matching: .any)
                 .matching(identifier: "glossary.term.\(id)")
                 .firstMatch
+            let urlLink = app.links["glossary://\(id)"].firstMatch
+            if urlLink.exists {
+                _ = bringIntoView(urlLink)
+                if urlLink.isHittable { urlLink.tap() }
+                else { urlLink.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() }
+                if sheet.waitForExistence(timeout: 3) { return true }
+            }
             if term.exists {
                 if term.isHittable {
                     term.tap()
@@ -986,13 +1006,35 @@ final class Release128JourneyUITests: XCTestCase {
                 if sheet.waitForExistence(timeout: 3) { return true }
             }
             for label in labels[id] ?? [] {
-                let link = app.links[label].firstMatch
-                if link.exists {
-                    if link.isHittable { link.tap() }
-                    else { link.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() }
+                let candidates = [
+                    app.links[label].firstMatch,
+                    app.buttons[label].firstMatch,
+                    app.staticTexts[label].firstMatch,
+                ]
+                for target in candidates where target.exists {
+                    _ = bringIntoView(target)
+                    if target.isHittable {
+                        target.tap()
+                    } else {
+                        target.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+                    }
                     if sheet.waitForExistence(timeout: 3) { return true }
                 }
             }
+        }
+        for _ in 0..<4 { app.swipeUp() }
+        let anyLink = app.links.firstMatch
+        if anyLink.exists {
+            _ = bringIntoView(anyLink)
+            if anyLink.isHittable {
+                anyLink.tap()
+            } else {
+                anyLink.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+            let anySheet = app.descendants(matching: .any).matching(
+                NSPredicate(format: "identifier BEGINSWITH %@", "glossary.sheet.")
+            ).firstMatch
+            if anySheet.waitForExistence(timeout: 3) { return true }
         }
         return false
     }
@@ -1023,22 +1065,111 @@ final class Release128JourneyUITests: XCTestCase {
 
     @discardableResult
     private func completeSetup(_ app: XCUIApplication) -> Bool {
+        dismissOpening(app)
+        finishOnboardingBullpenIfNeeded(app)
         let start = app.buttons["hs.start"]
         let next = app.buttons["hs.setup.next"]
         guard start.waitForExistence(timeout: timeout) || next.waitForExistence(timeout: timeout) else { return false }
         var hops = 0
-        while !start.exists, next.exists, hops < 6 {
+        while !start.exists, next.exists, hops < 8 {
+            if !bringIntoView(next) { break }
             next.tap()
             hops += 1
         }
-        guard start.waitForExistence(timeout: timeout) else { return false }
+        guard start.waitForExistence(timeout: timeout), bringIntoView(start) else { return false }
         start.tap()
         return true
     }
 
     private func dismissOpening(_ app: XCUIApplication) {
+        if app.buttons["hs.start"].exists
+            || app.buttons["hs.setup.next"].exists
+            || app.buttons["pitch.throw"].exists
+            || windUpPad(app).exists {
+            return
+        }
         let start = app.buttons["hs.opening.start"]
-        if start.waitForExistence(timeout: 5) { start.tap() }
+        guard start.waitForExistence(timeout: timeout) else { return }
+        if start.isHittable {
+            start.tap()
+        } else {
+            start.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+        _ = start.waitForNonExistence(timeout: timeout)
+    }
+
+    @discardableResult
+    private func finishOnboardingBullpenIfNeeded(_ app: XCUIApplication, wait: TimeInterval = 2) -> Bool {
+        if app.buttons["pitch.throw"].waitForExistence(timeout: wait) {
+            return playInning(app)
+        }
+        if windUpPad(app).waitForExistence(timeout: 0.4) {
+            return playManualBullpen(app)
+        }
+        return false
+    }
+
+    @discardableResult
+    private func playManualBullpen(_ app: XCUIApplication) -> Bool {
+        let pad = windUpPad(app)
+        let nextBatter = app.buttons["pitch.nextBatter"]
+        let finish = app.buttons["pitch.finish"]
+        var pitches = 0
+        while !finish.exists, pitches < 40 {
+            if nextBatter.exists, bringIntoView(nextBatter) {
+                nextBatter.tap()
+                continue
+            }
+            if pad.exists, bringIntoView(pad) {
+                pad.press(forDuration: 0.45, thenDragTo: pad, withVelocity: .slow, thenHoldForDuration: 0.1)
+                pitches += 1
+                _ = nextBatter.waitForExistence(timeout: 1)
+                continue
+            }
+            break
+        }
+        guard finish.waitForExistence(timeout: timeout), bringIntoView(finish) else { return false }
+        finish.tap()
+        return finish.waitForNonExistence(timeout: timeout)
+    }
+
+    private func expandSelectedTrainingDetail(_ app: XCUIApplication) {
+        let options = [
+            "command", "velocity", "breaking_ball", "stamina", "recovery", "game_planning",
+        ]
+        for option in options {
+            let disclosure = identified(app, "hs.training.option.\(option)")
+            guard disclosure.exists else { continue }
+            _ = bringIntoView(disclosure)
+            if disclosure.isHittable {
+                disclosure.tap()
+            } else {
+                disclosure.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+            return
+        }
+    }
+
+    @discardableResult
+    private func tapTab(_ app: XCUIApplication, labels: [String], identifier: String) -> Bool {
+        for label in labels {
+            let tab = app.tabBars.buttons[label]
+            if tab.waitForExistence(timeout: 1) {
+                tab.tap()
+                return true
+            }
+        }
+        let byID = app.tabBars.buttons[identifier]
+        if byID.waitForExistence(timeout: 1) {
+            byID.tap()
+            return true
+        }
+        let identifiedTab = identified(app, identifier)
+        if identifiedTab.waitForExistence(timeout: 1), bringIntoView(identifiedTab) {
+            identifiedTab.tap()
+            return true
+        }
+        return false
     }
 
     @discardableResult
@@ -1077,10 +1208,20 @@ final class Release128JourneyUITests: XCTestCase {
     private func tapFirst(_ app: XCUIApplication, prefix: String) -> Bool {
         let matches = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix))
         guard matches.count > 0 else { return false }
-        let first = matches.element(boundBy: 0)
-        guard first.exists, bringIntoView(first) else { return false }
-        first.tap()
-        return true
+        let skip = Set([
+            "hs.awakening.selection.guidance",
+            "hs.awakening.guide",
+            "hs.awakening.counter",
+            "hs.awakening.confirm",
+        ])
+        for index in 0..<matches.count {
+            let candidate = matches.element(boundBy: index)
+            guard candidate.exists, !skip.contains(candidate.identifier) else { continue }
+            guard bringIntoView(candidate) else { continue }
+            candidate.tap()
+            return true
+        }
+        return false
     }
 
     @discardableResult

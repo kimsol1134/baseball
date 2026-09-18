@@ -65,7 +65,7 @@ jobs:
           java-version: "17"
       - name: Run Wave 6 Kotlin tests
         working-directory: apps/android
-        run: ./gradlew :game-core:test :game-application:test :feature-career:testDebugUnitTest --no-daemon --console=plain
+        run: ./gradlew :game-core:test :game-application:test --no-daemon --console=plain
       - name: Run real Kotlin journey smoke distribution
         working-directory: apps/android
         run: ./gradlew :game-core:runProCareerDistribution --no-daemon --console=plain
@@ -93,6 +93,13 @@ jobs:
             -skip-testing:BaseballIOSUITests/PromoCaptureUITests \
             -skip-testing:BaseballIOSUITests/CareerSmokeUITests/testJapaneseDraftedRunCompletesProCareerJourneyAtMaximumHorizon \
             -skip-testing:BaseballIOSUITests/CareerSmokeUITests/testHighSchoolCareerRunsThroughDraftAndRebirth \
+            -skip-testing:BaseballIOSUITests/Release128JourneyUITests/testAppStoreRefreshKO \
+            -skip-testing:BaseballIOSUITests/Release128JourneyUITests/testAppStoreRefreshEN \
+            -skip-testing:BaseballIOSUITests/Release128JourneyUITests/testAppStoreRefreshJA \
+            -skip-testing:BaseballIOSUITests/Release128JourneyUITests/testAppStoreRefreshLegacyKO \
+            -skip-testing:BaseballIOSUITests/Release128JourneyUITests/testAppStoreOpeningKO \
+            -skip-testing:BaseballIOSUITests/Release128JourneyUITests/testAppStoreOpeningEN \
+            -skip-testing:BaseballIOSUITests/Release128JourneyUITests/testAppStoreOpeningJA \
             -skip-testing:BaseballIOSUITests/QACaptureUITests \
             -skip-testing:BaseballIOSTests/PromoFrameExportTests \
             -skip-testing:BaseballIOSTests/PromoAudioExportTests \

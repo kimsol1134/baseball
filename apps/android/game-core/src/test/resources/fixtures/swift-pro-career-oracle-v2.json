@@ -51,15 +51,15 @@
       "output" : {
         "communityPoints" : 6,
         "endorsementAmount" : 10000000,
-        "endorsementTransactionID" : "endorsement:pro-ab7126184308c026:2:season-2-week-6-media_opportunity",
-        "fanSupport" : 46,
+        "endorsementTransactionID" : "endorsement:pro-ab7126184308c026:2:season-2-week-18-media_opportunity",
+        "fanSupport" : 49,
         "mediaChoiceID" : "media_opportunity.fan_together_shoot",
-        "mediaDecisionID" : "season-2-week-6-media_opportunity",
+        "mediaDecisionID" : "season-2-week-18-media_opportunity",
         "mediaObserved" : true,
-        "nextSeed" : "13319230007892082985"
+        "nextSeed" : "8895750794353629454"
       },
-      "outputCanonical" : "mediaDecision=season-2-week-6-media_opportunity|mediaChoice=media_opportunity.fan_together_shoot|endorsement=endorsement:pro-ab7126184308c026:2:season-2-week-6-media_opportunity|amount=10000000|fan=46",
-      "outputSha256" : "42240af780727a4e4470c9af28473396a0c304904afe79341e26691fdc88c755"
+      "outputCanonical" : "mediaDecision=season-2-week-18-media_opportunity|mediaChoice=media_opportunity.fan_together_shoot|endorsement=endorsement:pro-ab7126184308c026:2:season-2-week-18-media_opportunity|amount=10000000|fan=49",
+      "outputSha256" : "22a9b9572e461362814e62f758330983cabed49e790d288fcdf40b86aedccf75"
     },
     {
       "caseID" : "free_agency_market",
@@ -131,25 +131,24 @@
         "commandCounts" : {
           "accept_contract" : 6,
           "acknowledge_settlement" : 20,
-          "apply_season_decision" : 51,
+          "apply_season_decision" : 112,
           "choose_investment" : 19,
           "choose_offseason" : 20,
           "plan_week" : 480,
-          "resolve_important_game" : 68,
+          "resolve_important_game" : 74,
+          "respond_national_team" : 5,
           "review_season" : 20,
           "start" : 1
         },
-        "commandTraceSha256" : "3914cf2070a397c8c4c5dfc89686473093a2bd80969be1f583642ae2e1485291",
+        "commandTraceSha256" : "e496e0da9c77f7cb191419cfdc34e136be606a30146a1eb8adae957f190d2baa",
         "completedAmbitions" : [
-          "enduring_pro",
           "franchise_icon"
         ],
         "completedSeasons" : 20,
         "fanSupport" : 100,
-        "hallOfFameScore" : 41,
+        "hallOfFameScore" : 42,
         "honorKinds" : [
           "retired_number",
-          "ambition_completed",
           "ambition_completed",
           "career_earnings"
         ],
@@ -159,13 +158,6 @@
             "kind" : "retired_number",
             "referenceID" : null,
             "teamID" : "seoul_comets",
-            "value" : null
-          },
-          {
-            "id" : "honor:pro-08ebd032804ef49b:ambition_completed:enduring_pro",
-            "kind" : "ambition_completed",
-            "referenceID" : "enduring_pro",
-            "teamID" : null,
             "value" : null
           },
           {
@@ -180,11 +172,11 @@
             "kind" : "career_earnings",
             "referenceID" : null,
             "teamID" : null,
-            "value" : 5163500000
+            "value" : 6112000000
           }
         ],
         "inputKind" : "real_command_generated",
-        "lastTeamLegacy" : 94,
+        "lastTeamLegacy" : 84,
         "lastTeamSeasons" : 20,
         "phase" : "completed",
         "retiredNumberEligible" : true,
@@ -194,9 +186,9 @@
           "franchise_icon",
           "franchise_icon",
           "franchise_icon",
-          "enduring_pro",
-          "record_book",
-          "record_book"
+          "franchise_icon",
+          "franchise_icon",
+          "franchise_icon"
         ],
         "selectedOffers" : [
           "offer:market:pro-08ebd032804ef49b:1:rookie:seoul_comets:rookie",
@@ -204,12 +196,12 @@
           "offer:market:pro-08ebd032804ef49b:7:renewal:seoul_comets:renewal_long",
           "offer:market:pro-08ebd032804ef49b:11:renewal:seoul_comets:renewal_long",
           "offer:market:pro-08ebd032804ef49b:14:renewal:seoul_comets:renewal_long",
-          "offer:market:pro-08ebd032804ef49b:18:renewal:seoul_comets:renewal_long"
+          "offer:market:pro-08ebd032804ef49b:17:renewal:seoul_comets:renewal_long"
         ],
         "voluntaryRetirement" : false
       },
-      "outputCanonical" : "inputKind=real_command_generated|commands=accept_contract=6,acknowledge_settlement=20,apply_season_decision=51,choose_investment=19,choose_offseason=20,plan_week=480,resolve_important_game=68,review_season=20,start=1|completedSeasons=20|hof=41|team=20:94|ambitions=enduring_pro,franchise_icon|honors=honor:pro-08ebd032804ef49b:retired_number:seoul_comets,honor:pro-08ebd032804ef49b:ambition_completed:enduring_pro,honor:pro-08ebd032804ef49b:ambition_completed:franchise_icon,honor:pro-08ebd032804ef49b:career_earnings:none",
-      "outputSha256" : "c82e62267bae8933c87ebae2ad3cbdf4962ccee24804b3583ecd385d9dee3b0f"
+      "outputCanonical" : "inputKind=real_command_generated|commands=accept_contract=6,acknowledge_settlement=20,apply_season_decision=112,choose_investment=19,choose_offseason=20,plan_week=480,resolve_important_game=74,respond_national_team=5,review_season=20,start=1|completedSeasons=20|hof=42|team=20:84|ambitions=franchise_icon|honors=honor:pro-08ebd032804ef49b:retired_number:seoul_comets,honor:pro-08ebd032804ef49b:ambition_completed:franchise_icon,honor:pro-08ebd032804ef49b:career_earnings:none",
+      "outputSha256" : "3a6cf036310775a420a178f5b2443f418ab6332d65111d845a76af63d57c066a"
     },
     {
       "caseID" : "renewal_market",
@@ -218,16 +210,16 @@
       "inputSha256" : "11ffd824d59a917b6f193844b25c97bbc68c884d7a7091227e806f9a4224c889",
       "output" : {
         "canonicalRows" : [
-          "offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:renewal_long:3:50000000:starter:accessible",
-          "offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:prove_it:1:100000000:starter:stretch"
+          "offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:renewal_long:3:110000000:starter:accessible",
+          "offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:prove_it:1:260000000:starter:stretch"
         ],
         "inputKind" : "real_command_generated",
         "kind" : "renewal",
         "marketID" : "market:pro-08ebd032804ef49b:4:renewal",
         "offerCount" : 2
       },
-      "outputCanonical" : "market:pro-08ebd032804ef49b:4:renewal|renewal|4|94|offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:renewal_long:seoul_comets:3:50000000:-:renewal_long:starter:balanced:major_roster:1:accessible:1;offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:prove_it:seoul_comets:1:100000000:-:prove_it:starter:opportunity:major_roster:1:stretch:1",
-      "outputSha256" : "ce8a0d2da3c2885e02379f24463a9d9dde817f285e5360fca18e268fd241e1fa"
+      "outputCanonical" : "market:pro-08ebd032804ef49b:4:renewal|renewal|4|103|offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:renewal_long:seoul_comets:3:110000000:-:renewal_long:starter:balanced:major_roster:1:accessible:1;offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:prove_it:seoul_comets:1:260000000:-:prove_it:starter:opportunity:major_roster:1:stretch:1",
+      "outputSha256" : "72dbd6129970f79b4536f2571e1b71304ac7110b1de0f5018fbefff699495952"
     },
     {
       "caseID" : "rookie_contract",
@@ -338,7 +330,7 @@
     "timezone" : "UTC"
   },
   "inputSha256" : "70ec6c6305350f07c9c4af316440bd30be7b9c00b6b3304a9cb6fdb967b4f83c",
-  "outputSha256" : "7605ad24de922e5811ec3f8709e464e2bc53d19eaec3353fe917766db17be61b",
+  "outputSha256" : "26d58261b6e130f14881a6248ef83b59553f50e8eb09867cf9957e69c042728c",
   "sourceRevision" : "wave6-swift-semantic-oracle-2026-08-15",
   "sourceRuntime" : "swift"
 }

@@ -374,6 +374,10 @@ struct BaseballApp: App {
                             arguments.contains(Self.autoReleaseLaunchArgument),
                             forKey: PitchControlPreferences.autoReleaseKey
                         )
+                        UserDefaults.standard.set(
+                            CopyDensity.automatic.rawValue,
+                            forKey: CopyDensity.storageKey
+                        )
 #if DEBUG
                         if arguments.contains("-uiTestMissingProFixture") {
                             if highSchool.installDraftedCareerFixtureForUITesting() {

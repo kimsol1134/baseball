@@ -10735,7 +10735,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1 목표, %2, 계승 포인트 보상 %3 추가, 다음 회차 목표로 저장"
+            "value": "%1$@ 목표, %2$@, 계승 포인트 보상 %3$lld 추가, 다음 회차 목표로 저장"
           }
         }
       }
@@ -10867,7 +10867,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "잔액 %1 · 다음 회차 시작 보너스 +%2"
+            "value": "잔액 %1$lldP · 다음 회차 시작 보너스 +%2$lld"
           }
         }
       }
@@ -10977,7 +10977,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "라이벌 %1 — %2 %3 %4 허용"
+            "value": "라이벌 %1$@ — %2$lld타석 %3$lld삼진 %4$lld피안타"
           }
         }
       }
