@@ -1,0 +1,18 @@
+{
+ "as_of": "2026-09-12 KST, console observation during execution",
+ "source": "Authenticated Google Play Console orders, all-time range, both pages (47 account-wide rows), target app only; unrelated test orders excluded",
+ "app_id": "com.solkim.baseball.android",
+ "observed_target_orders": 10,
+ "processed_orders": 9,
+ "refunded_orders": 1,
+ "retained_gross_sales_krw": 39600,
+ "cohorts_by_order_date_kst": [
+  {"date":"2026-09-10","processed":5,"refunded":0,"retained_gross_krw":22000},
+  {"date":"2026-09-11","processed":3,"refunded":1,"retained_gross_krw":13200},
+  {"date":"2026-09-12","processed":1,"refunded":0,"retained_gross_krw":4400}
+ ],
+ "caveats": ["Current order status; later refunds can change totals", "No individual ad or Threads attribution", "Revenue is consumer gross, not net contribution", "Observed refund count is too small to infer stable refund rate"],
+ "account_level_payments_balance_krw":33660,
+ "payments_balance_caveat":"Account-level balance; not used as confirmed target-app unit contribution",
+ "payout_status":"HELD_IDENTITY_VERIFICATION_REQUIRED"
+}

@@ -1,0 +1,27 @@
+{
+  "observed_date": "2026-09-12",
+  "url": "https://baseball-reincarnation.vercel.app/",
+  "html_store_links": [
+    {
+      "text": "App Store에서 받기",
+      "href": "https://apps.apple.com/kr/app/id6794754217?ct=header&pt=official_site&mt=8"
+    },
+    {
+      "text": "App Store에서 받기 · ₩4,400",
+      "href": "https://apps.apple.com/kr/app/id6794754217?ct=hero&pt=official_site&mt=8"
+    },
+    {
+      "text": "App Store에서 받기 · ₩4,400",
+      "href": "https://apps.apple.com/kr/app/id6794754217?ct=detail&pt=official_site&mt=8"
+    },
+    {
+      "text": "App Store에서 받기 · ₩4,400",
+      "href": "https://apps.apple.com/kr/app/id6794754217?ct=final&pt=official_site&mt=8"
+    },
+    {
+      "text": "App Store에서 받기 · ₩4,400",
+      "href": "https://apps.apple.com/kr/app/id6794754217?ct=mobile&pt=official_site&mt=8"
+    }
+  ],
+  "android_mentions_in_html": false
+}
