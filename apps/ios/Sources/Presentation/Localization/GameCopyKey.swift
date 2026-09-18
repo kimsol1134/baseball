@@ -146,6 +146,53 @@ public enum AppCopyKey {
     public static let openingStart = GameCopyKey.localizable("opening.start")
     public static let onboardingBullpenNameCTA = GameCopyKey.localizable("onboarding.bullpen.name-cta")
 
+    /// 저장 내보내기(7-E).
+    public static let settingsExportSave = GameCopyKey.localizable("settings.export-save")
+    public static let settingsExportSaveFooter = GameCopyKey.localizable("settings.export-save.footer")
+
+    /// 실패한 투구에서 나가는 길(7-B).
+    public static let pitchFailureSaved = GameCopyKey.localizable("pitch.failure.saved")
+    public static let pitchFailureUncertain = GameCopyKey.localizable("pitch.failure.uncertain")
+    public static let pitchFailureConfirmResult = GameCopyKey.localizable("pitch.failure.confirm-result")
+    public static let pitchFailureAbandon = GameCopyKey.localizable("pitch.failure.abandon")
+
+    /// 실패 갈래별 문장(7-A). 규칙이 거절한 일에 저장 공간을 말하지 않는다.
+    public static let failureRule = GameCopyKey.localizable("failure.rule")
+    public static let failureStaleState = GameCopyKey.localizable("failure.stale-state")
+    public static let failurePitchState = GameCopyKey.localizable("failure.pitch-state")
+    public static let failureStorageFull = GameCopyKey.localizable("failure.storage-full")
+    public static let failureIO = GameCopyKey.localizable("failure.io")
+    public static let failureIORepeated = GameCopyKey.localizable("failure.io.repeated")
+    public static let failureSaveValidation = GameCopyKey.localizable("failure.save-validation")
+    public static let failureWriteDisabled = GameCopyKey.localizable("failure.write-disabled")
+    public static let failureUnknown = GameCopyKey.localizable("failure.unknown")
+
+    /// 다음 회차의 세 갈래(6-E).
+    public static let rebirthPathTitle = GameCopyKey.localizable("rebirth.path.title")
+    public static let rebirthPathBody = GameCopyKey.localizable("rebirth.path.body")
+    public static let rebirthPathConfirm = GameCopyKey.localizable("rebirth.path.confirm")
+    public static let rebirthPathPrimaryPitch = GameCopyKey.localizable("rebirth.path.primary-pitch")
+    public static let rebirthPathEnduranceTitle = GameCopyKey.localizable("rebirth.path.endurance.title")
+    public static let rebirthPathEnduranceDetail = GameCopyKey.localizable("rebirth.path.endurance.detail")
+    public static let rebirthPathCloserTitle = GameCopyKey.localizable("rebirth.path.closer.title")
+    public static let rebirthPathCloserDetail = GameCopyKey.localizable("rebirth.path.closer.detail")
+    public static let rebirthPathCommandTitle = GameCopyKey.localizable("rebirth.path.command.title")
+    public static let rebirthPathCommandDetail = GameCopyKey.localizable("rebirth.path.command.detail")
+
+    /// 드래프트 직후 "3년의 결과" 한 장(6-C).
+    public static let draftJourneyUndrafted = GameCopyKey.localizable("draft.journey.undrafted")
+    public static let draftJourneyPick = GameCopyKey.localizable("draft.journey.pick")
+    public static let draftJourneyRecord = GameCopyKey.localizable("draft.journey.record")
+    public static let draftJourneyGrowth = GameCopyKey.localizable("draft.journey.growth")
+    public static let draftJourneyEffort = GameCopyKey.localizable("draft.journey.effort")
+    public static let draftJourneyCoachTrusted = GameCopyKey.localizable("draft.journey.coach.trusted")
+    public static let draftJourneyCoachNext = GameCopyKey.localizable("draft.journey.coach.next")
+
+    /// 대화 장면의 공용 문구. 프로 시즌 결정과 고교 관계 사건이 같은 관용구를 쓴다.
+    public static let conversationEyebrow = GameCopyKey.localizable("conversation.eyebrow")
+    public static let conversationResultEyebrow = GameCopyKey.localizable("conversation.result.eyebrow")
+    public static let conversationSceneDisclosure = GameCopyKey.localizable("conversation.scene.disclosure")
+
     public static let prologueFirstLifeTitle = GameCopyKey.localizable("prologue.title.first-life")
     public static let prologueRebirthTitle = GameCopyKey.localizable("prologue.title.rebirth")
     public static let prologueFirstLifeCoachQuote = GameCopyKey.localizable("prologue.coach.quote.first-life")
@@ -352,6 +399,7 @@ public enum AppCopyKey {
     public static let chapterReviewAbilityAccessibility = GameCopyKey.localizable("chapter.review.ability.accessibility")
     public static let chapterReviewNextStoryRival = GameCopyKey.localizable("chapter.review.next-story.rival")
     public static let chapterReviewContinue = GameCopyKey.localizable("chapter.review.continue")
+    public static let chapterReviewClaimGame = GameCopyKey.localizable("chapter.review.claim-game")
 
     public static let chapterReviewKeys: [GameCopyKey] = [
         chapterReviewCardTitle, chapterReviewStatLine, chapterReviewGrowthTitle,
@@ -359,6 +407,7 @@ public enum AppCopyKey {
         chapterReviewGrowthSummary, chapterReviewAbilitiesTitle, chapterReviewAbilityAccessibility,
         chapterReviewNextStoryRival,
         chapterReviewContinue,
+        chapterReviewClaimGame,
     ]
 
     public static let tournamentAceStart = GameCopyKey.localizable("tournament.ace-start")
@@ -847,6 +896,17 @@ public enum AppCopyKey {
     public static let allCases: [GameCopyKey] = [
         tabHighSchool, tabPro, tabCareer, tabRecords, tabSettings,
         openingEyebrow, openingSummary, openingDescription, openingStart, onboardingBullpenNameCTA, prologueFirstSchool,
+        conversationEyebrow, conversationResultEyebrow, conversationSceneDisclosure,
+        draftJourneyUndrafted, draftJourneyPick, draftJourneyRecord, draftJourneyGrowth,
+        draftJourneyEffort, draftJourneyCoachTrusted, draftJourneyCoachNext,
+        settingsExportSave, settingsExportSaveFooter,
+        pitchFailureSaved, pitchFailureUncertain, pitchFailureConfirmResult, pitchFailureAbandon,
+        failureRule, failureStaleState, failurePitchState, failureStorageFull,
+        failureIO, failureIORepeated, failureSaveValidation, failureWriteDisabled, failureUnknown,
+        rebirthPathTitle, rebirthPathBody, rebirthPathConfirm, rebirthPathPrimaryPitch,
+        rebirthPathEnduranceTitle, rebirthPathEnduranceDetail,
+        rebirthPathCloserTitle, rebirthPathCloserDetail,
+        rebirthPathCommandTitle, rebirthPathCommandDetail,
     ] + prologueKeys + [
         actionCancel,
         settingsControlTitle, settingsAutoRelease, settingsAutoReleaseDescription,

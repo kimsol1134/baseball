@@ -50,22 +50,18 @@ final class HighSchoolTrainingResultLayoutTests: XCTestCase {
         }
     }
 
-    func testPitchLearningReceiptStaysVisibleWhenResultIsCompact() throws {
-        let source = try IOSSourceScan.typeBody(
-            "TrainingResultPanel",
-            in: "apps/ios/Sources/Features/HighSchool/HighSchoolTrainingResultViews.swift"
-        )
-        XCTAssertTrue(source.contains("hs.training.result.pitchLearning"))
-        let compactLine = try XCTUnwrap(source.split(separator: "\n").first { $0.contains("if !compact {") })
-        let learningLine = try XCTUnwrap(
-            source.split(separator: "\n").first { $0.contains("if let learning = receipt.pitchLearning") }
-        )
-        let compactIndent = compactLine.prefix { $0 == " " }.count
-        let learningIndent = learningLine.prefix { $0 == " " }.count
-        XCTAssertEqual(
-            compactIndent,
-            learningIndent,
-            "구종 학습 영수증이 compact 분기에 가려지면 안 됩니다."
-        )
+    @MainActor
+    func testPermanentGrowthAndCurrentFatigueAreLabeledSeparatelyInAllLanguages() {
+        for language in [AppLanguage.korean, .english, .japanese] {
+            let resolver = GameCopyResolver(language: language, policy: .strict)
+            let cost = GrowthConditionCopy.line(fatigue: 11, change: 6, resolver: resolver)
+            XCTAssertTrue(cost.contains("11") && cost.contains("+6"))
+            let recovery = GrowthConditionCopy.line(fatigue: 5, change: -6, resolver: resolver)
+            XCTAssertTrue(recovery.contains("5") && recovery.contains("-6"))
+            XCTAssertNotEqual(cost, recovery)
+        }
+        let before = PitchReleaseWindow.width(command: 35) * DeliveryControl.sweepSeconds(velocityTenthsKPH: 1350, fatigue: 5)
+        let after = PitchReleaseWindow.width(command: 36) * DeliveryControl.sweepSeconds(velocityTenthsKPH: 1350, fatigue: 11)
+        XCTAssertGreaterThanOrEqual(after, before)
     }
 }

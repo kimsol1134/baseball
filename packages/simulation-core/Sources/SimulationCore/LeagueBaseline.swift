@@ -133,6 +133,10 @@ public struct ProGameLine: Codable, Equatable, Sendable, Identifiable {
     /// 그때는 "6.1이닝 7K 2BB 2실점"으로도 행이 성립한다.
     public let hits: Int?
     public let homeRuns: Int?
+    /// 이 등판의 자책점. 원장이 없는 경로(구저장본·직접 등판)는 nil — '모른다'이다.
+    public let earnedRuns: Int?
+    /// 완투. 아홉 이닝을 혼자 책임지고 경기가 결정된 날만 참이다. 규칙 13 이전은 nil.
+    public let completeGame: Bool?
 
     public var id: String { "\(season)-\(outingNumber)" }
 
@@ -151,7 +155,9 @@ public struct ProGameLine: Codable, Equatable, Sendable, Identifiable {
         decision: PitchingDecision,
         played: Bool,
         hits: Int? = nil,
-        homeRuns: Int? = nil
+        homeRuns: Int? = nil,
+        earnedRuns: Int? = nil,
+        completeGame: Bool? = nil
     ) {
         self.season = season
         self.week = week
@@ -168,6 +174,8 @@ public struct ProGameLine: Codable, Equatable, Sendable, Identifiable {
         self.played = played
         self.hits = hits
         self.homeRuns = homeRuns
+        self.earnedRuns = earnedRuns
+        self.completeGame = completeGame
     }
 
     /// 없는 키는 nil로 읽는다. 중간 빌드를 태운 내부 테스터의 저장을 보호한다.
@@ -188,6 +196,8 @@ public struct ProGameLine: Codable, Equatable, Sendable, Identifiable {
         played = try container.decodeIfPresent(Bool.self, forKey: .played) ?? false
         hits = try container.decodeIfPresent(Int.self, forKey: .hits)
         homeRuns = try container.decodeIfPresent(Int.self, forKey: .homeRuns)
+        earnedRuns = try container.decodeIfPresent(Int.self, forKey: .earnedRuns)
+        completeGame = try container.decodeIfPresent(Bool.self, forKey: .completeGame)
     }
 
     /// "6.1이닝" 형태. 야구에서 이닝은 3분의 1 단위로 센다.
@@ -209,13 +219,29 @@ public struct ProGameLine: Codable, Equatable, Sendable, Identifiable {
 /// 대신 팀 득점을 실제 분포에서 뽑아 규칙을 적용한다 — 결과의 모양은 같고 비용은 훨씬 싸다.
 /// 등판 결과에 승패를 붙이는 규칙. 밸런스 CLI가 별도 모듈이라 public이다.
 public enum DecisionRules {
+    /// 한 경기의 승패는 한 투수에게만 붙는다.
+    ///
+    /// 구원 투수는 그 경기에 나온 여러 명 중 하나다. 한 경기에 보통 네 명이 나오므로, 승패의
+    /// 주인공이 될 자격을 갖춘 구원 등판 중 실제로 기록이 붙는 비율은 넷에 하나꼴이다.
+    ///
+    /// 이 상수 하나가 두 가지를 동시에 고친다. **구원 승이 아예 없었고**(구원 투수는 세이브와
+    /// 패전만 받을 수 있었다), **패전은 실점한 패전 경기마다 전부 붙었다**(시즌 13~16패).
+    /// 60등판 기준으로 4~6승 3~5패가 되어 실제 불펜 투수의 기록에 들어온다.
+    public static let reliefDecisionShare = 250
+
+    /// - Parameter reliefDecisionDraw: 0–999. 구원 등판의 승패 귀속 추첨. `nil`이면 구원 승이
+    ///   없고 실점한 패전이 전부 패전이 되는 예전 규칙 그대로다(프로 규칙 11 이하).
+    /// - Parameter shortStartSharesTheLoss: 규칙 13 이상. 승리를 받을 수 없는 짧은 선발 등판이
+    ///   패전도 자동으로 받지는 않게 한다. `false`면 예전 규칙 그대로다.
     public static func decide(
         started: Bool,
         isCloser: Bool,
         outs: Int,
         runsAllowed: Int,
         teamRuns: Int,
-        opponentRuns: Int
+        opponentRuns: Int,
+        reliefDecisionDraw: Int? = nil,
+        shortStartSharesTheLoss: Bool = false
     ) -> PitchingDecision {
         let teamWon = teamRuns > opponentRuns
         let teamLost = teamRuns < opponentRuns
@@ -225,15 +251,39 @@ public enum DecisionRules {
                 return outs >= LeagueBaseline.minimumOutsForStarterWin ? .win : .noDecision
             }
             // 선발이 실점했고 팀이 졌으면 패전. 한 점도 안 줬는데 진 경기는 구원 투수의 몫이다.
-            return teamLost && runsAllowed > 0 ? .loss : .noDecision
+            guard teamLost, runsAllowed > 0 else { return .noDecision }
+            // **승리를 받을 수 없는 등판은 패전도 자동으로 받지 않는다.**
+            //
+            // 다섯 이닝을 못 채운 선발은 승리 자격이 없다(위). 그런데 패전에는 그런 문턱이
+            // 없어서, 짧은 등판은 이길 수는 없고 지기만 하는 한쪽 통행이 된다. 규칙 13이
+            // 등판 길이를 감독의 판단에 맡기기 전까지는 선발이 늘 18아웃을 채웠으므로 이
+            // 비대칭이 드러나지 않았다 — 규칙 13이 잠자던 구멍을 지배적인 규칙으로 만들었다.
+            // 실측(시드 11·42·300, 선발 1,580등판): 15아웃 미만 1,020등판이 **0승 417패**이고
+            // 그 경기에서 팀은 399승 503패였다.
+            //
+            // 승패는 한 경기에 한 투수에게만 붙는다(`reliefDecisionShare`와 같은 원칙). 짧은
+            // 등판은 나머지 이닝을 던진 불펜과 그 경기를 나눠 가지므로, 패배의 몫이 더 큰
+            // 쪽이 패전을 받는다. 추첨이 아니라 이미 계산된 실점으로 정하므로 새 상수도,
+            // 새 난수도 없다 — 그리고 **잘 던지면 기록이 달라진다.**
+            if shortStartSharesTheLoss, outs < LeagueBaseline.minimumOutsForStarterWin {
+                return runsAllowed >= opponentRuns - runsAllowed ? .loss : .noDecision
+            }
+            return .loss
         }
 
         if isCloser, teamWon, runsAllowed == 0,
            teamRuns - opponentRuns <= LeagueBaseline.saveLeadCeiling {
             return .save
         }
-        if teamLost, runsAllowed > 0 { return .loss }
-        if teamWon, runsAllowed == 0 { return .noDecision }
+        guard let draw = reliefDecisionDraw else {
+            return teamLost && runsAllowed > 0 ? .loss : .noDecision
+        }
+        let ownsTheDecision = draw < Self.reliefDecisionShare
+        // 팀이 리드를 잡을 때 마운드에 있던 투수가 승리 투수다. 이 시뮬레이션은 경기 안에서
+        // 리드가 언제 바뀌는지를 모델링하지 않으므로, 무실점으로 막은 승리 경기를 후보로 두고
+        // 그중 넷에 하나에 승리를 준다.
+        if teamWon, runsAllowed == 0 { return ownsTheDecision ? .win : .noDecision }
+        if teamLost, runsAllowed > 0 { return ownsTheDecision ? .loss : .noDecision }
         return .noDecision
     }
 }

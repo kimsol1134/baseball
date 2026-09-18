@@ -77,3 +77,14 @@ class PitchDramaCameraTest {
         )
     }
 }
+
+class PitchDramaCameraPerfectTest {
+    @Test fun perfectReleaseShortensTheClipByFifteenPercentBeforeClutch() {
+        val normal = PitchDramaCamera.replayDurationMs(450, reducedMotion = false)
+        val perfect = PitchDramaCamera.replayDurationMs(450, reducedMotion = false, perfect = true)
+        assertEquals(Math.round(normal * PitchDramaCamera.PERFECT_TEMPO), perfect)
+        val clutchPerfect = PitchDramaCamera.replayDurationMs(450, reducedMotion = false, clutch = true, perfect = true)
+        assertEquals(Math.round(perfect * PitchDramaCamera.CLUTCH_TEMPO), clutchPerfect)
+        assertEquals(PitchDramaCamera.REDUCED_MOTION_REPLAY_MS, PitchDramaCamera.replayDurationMs(450, reducedMotion = true, perfect = true))
+    }
+}

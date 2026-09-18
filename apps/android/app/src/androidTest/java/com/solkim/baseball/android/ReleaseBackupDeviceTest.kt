@@ -23,32 +23,32 @@ class ReleaseBackupDeviceTest {
         val store = KotlinGameStore.open(id, CSharpLegacyGameStoreRepository(directory.toPath(), id), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
         val transfer = File(context.getExternalFilesDir(null), "release-backup-transfer.json")
         try {
-            val controller = Phase8Controller(store)
+            val controller = ScreenController(store)
             if (mode == "export") {
-                controller.execute(Phase8ScreenId.P001_OPENING, "enterSetup")
-                controller.execute(Phase8ScreenId.P002_SETUP, "startHighSchool")
-                controller.execute(Phase8ScreenId.P003_PROLOGUE, "beginTutorial")
-                controller.execute(Phase8ScreenId.P003_PROLOGUE, "completeTutorial")
-                controller.execute(Phase8ScreenId.P005_SCHOOL_SELECTION, controller.projection(Phase8ScreenId.P005_SCHOOL_SELECTION).actions.first().id)
+                controller.execute(ScreenId.P001_OPENING, "enterSetup")
+                controller.execute(ScreenId.P002_SETUP, "startHighSchool")
+                controller.execute(ScreenId.P003_PROLOGUE, "beginTutorial")
+                controller.execute(ScreenId.P003_PROLOGUE, "completeTutorial")
+                controller.execute(ScreenId.P005_SCHOOL_SELECTION, controller.projection(ScreenId.P005_SCHOOL_SELECTION).actions.first().id)
                 val target = TrainingPresentation.initialTarget(store.current)
                 val commands = TrainingPresentation.payloads(store.current, controller.context, TrainingFocus.BREAKING_BALL, TrainingIntensity.LIGHT, target, false)
-                controller.execute(Phase8ScreenId.P006_TRAINING, "train:breaking_ball", commands)
+                controller.execute(ScreenId.P006_TRAINING, "train:breaking_ball", commands)
                 transfer.writeBytes(store.exportCareerBackup())
             } else {
                 require(mode == "import")
                 val bytes = transfer.readBytes()
                 val preview = CareerBackup.preview(bytes)
                 store.importCareerBackup(bytes, store.current.revision)
-                assertEquals(preview.highSchool, store.current.highSchool)
+                assertEquals(CareerAccess.school(preview), CareerAccess.school(store.current))
                 assertEquals(id, store.current.installId)
-                val before = store.current.highSchool!!.run.totalTrainingsCompleted
+                val before = CareerAccess.school(store.current)!!.run.totalTrainingsCompleted
                 val commands = TrainingPresentation.payloads(store.current, controller.context, TrainingFocus.COMMAND, TrainingIntensity.LIGHT, null, false)
-                controller.execute(Phase8ScreenId.P006_TRAINING, "train:command", commands)
-                assertEquals(before + 1, store.current.highSchool!!.run.totalTrainingsCompleted)
-                val saved = store.current.highSchool
+                controller.execute(ScreenId.P006_TRAINING, "train:command", commands)
+                assertEquals(before + 1, CareerAccess.school(store.current)!!.run.totalTrainingsCompleted)
+                val saved = CareerAccess.school(store.current)
                 store.close()
                 val reopened = KotlinGameStore.open(id, CSharpLegacyGameStoreRepository(directory.toPath(), id), NativeAuthorityMode.NATIVE_AUTHORITATIVE)
-                try { assertEquals(saved, reopened.current.highSchool) } finally { reopened.close() }
+                try { assertEquals(saved, CareerAccess.school(reopened.current)) } finally { reopened.close() }
             }
         } finally { store.close(); directory.deleteRecursively() }
     }

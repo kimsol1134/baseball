@@ -202,6 +202,15 @@ enum HighSchoolConclusionPresentation {
         )
     }
 
+    @MainActor
+    static func selfMessage(record: LifeRecord, resolver: GameCopyResolver, toNextLife: Bool = false) -> String {
+        guard let signature = record.signatureLegacy else {
+            return resolver.resolve(.localizable(toNextLife ? "loop.letter.to-next-basic" : "loop.letter.self-basic"))
+        }
+        return resolver.resolve(.localizable(toNextLife ? "loop.letter.to-next-body" : "loop.letter.self-body"),
+            arguments: [.userText(localizedSignature(signature, resolver: resolver).title)])
+    }
+
     private static func localizedSignatureEvidence(
         _ legacy: CareerSignatureLegacy,
         resolver: GameCopyResolver

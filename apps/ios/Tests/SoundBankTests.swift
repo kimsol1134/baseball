@@ -56,6 +56,9 @@ final class SoundBankTests: XCTestCase {
         for asset in [
             SoundAsset.batContactHard, .batContactWeak, .batFoul, .gloveCatch,
             .umpireStrike, .umpireStrikeout, .swingMiss, .crowdCheer, .crowdGroan,
+            // 정중앙 릴리스와 비행 공기음. 이 둘이 빠지면 완벽하게 던진 공이 평범한 공과
+            // 같은 소리가 난다.
+            .perfectRelease, .pitchFlight,
         ] {
             XCTAssertTrue(
                 bank.loadedAssets.contains(asset),
@@ -150,6 +153,8 @@ final class SoundBankTests: XCTestCase {
         XCTAssertEqual(SoundAsset.asset(for: .batContact(power: 0.9)), .batContactHard)
         XCTAssertEqual(SoundAsset.asset(for: .batContact(power: 0.2)), .batContactWeak)
         XCTAssertEqual(SoundAsset.asset(for: .gloveCatch), .gloveCatch)
+        XCTAssertEqual(SoundAsset.asset(for: .perfectRelease), .perfectRelease)
+        XCTAssertEqual(SoundAsset.asset(for: .pitchFlight(velocity: 0.8)), .pitchFlight)
         // 화면 피드백 음은 녹음을 쓰지 않는다.
         XCTAssertNil(SoundAsset.asset(for: .uiSelect))
         XCTAssertNil(SoundAsset.asset(for: .growth))

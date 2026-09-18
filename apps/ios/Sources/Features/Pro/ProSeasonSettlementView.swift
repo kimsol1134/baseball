@@ -32,6 +32,7 @@ struct ProSeasonSettlementView: View {
                     GrowthCelebrationView(
                         gains: pendingGains,
                         stageContext: .pro,
+                        fatigue: state.fatigue,
                         onDismiss: onAcknowledgeGains
                     )
                     .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
@@ -51,6 +52,19 @@ struct ProSeasonSettlementView: View {
                                 .accessibilityIdentifier("pro.settlement.saber")
                         }
                     }
+                }
+
+                if let comparison = MobileCareerStore.seasonComparison(state: state) {
+                    CareerComparisonCard(
+                        comparison: comparison,
+                        title: copyResolver.resolve(.seasonComparisonTitle),
+                        subtitle: ProSeasonSettlementCopy.seasonComparisonSubtitle(
+                            previousLabel: comparison.previousLabel,
+                            currentLabel: comparison.currentLabel,
+                            resolver: copyResolver
+                        ),
+                        identifier: "pro.settlement.seasonComparison"
+                    )
                 }
 
                 BaseballCard(title: copyResolver.resolve(.directionTitle)) {
@@ -170,3 +184,4 @@ struct ProSeasonSettlementView: View {
         value >= 0 ? "+\(value)" : String(value)
     }
 }
+

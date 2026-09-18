@@ -13,511 +13,6 @@ import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-public enum class PitchKind(public val wire: String) {
-    FOUR_SEAM("four_seam"),
-    SLIDER("slider"),
-    CURVEBALL("curveball"),
-    CHANGEUP("changeup"),
-}
-
-public enum class PitchIntensity(public val wire: String) {
-    CONTROLLED("controlled"),
-    NORMAL("normal"),
-    MAX_EFFORT("max_effort"),
-}
-
-public enum class PitchUsageRole(public val wire: String) {
-    PRIMARY("primary"),
-    SECONDARY("secondary"),
-    DEVELOPMENT("development"),
-}
-
-public enum class BatSide { RIGHT, LEFT, SWITCH }
-
-public enum class ThrowingHand { RIGHT, LEFT }
-
-public enum class ZoneIntent(public val wire: String) {
-    STRIKE("strike"),
-    EDGE("edge"),
-    CHASE("chase"),
-}
-
-public enum class PitchOutcome(public val wire: String) {
-    BALL("ball"),
-    CALLED_STRIKE("called_strike"),
-    SWINGING_STRIKE("swinging_strike"),
-    FOUL("foul"),
-    IN_PLAY_OUT("in_play_out"),
-    SINGLE("single"),
-    DOUBLE("double"),
-    TRIPLE("triple"),
-    HOME_RUN("home_run"),
-    HIT_BY_PITCH("hit_by_pitch"),
-}
-
-public enum class SelectionQuality(public val wire: String) {
-    POOR("poor"),
-    RISKY("risky"),
-    GOOD("good"),
-    EXCELLENT("excellent"),
-}
-
-public enum class PlateAppearanceResult(public val wire: String) {
-    STRIKEOUT("strikeout"),
-    WALK("walk"),
-    IN_PLAY_OUT("in_play_out"),
-    HIT("hit"),
-}
-
-public enum class PitchAbilityKind(public val wire: String) {
-    POWER("power"),
-    COMMAND("command"),
-    MOVEMENT("movement"),
-    STAMINA("stamina"),
-}
-
-public enum class RivalAdaptationBand(public val wire: String) {
-    NO_DATA("no_data"),
-    WATCHING("watching"),
-    LEARNING("learning"),
-    LOCKED_ON("locked_on"),
-}
-
-public enum class FieldingSector { INFIELD, OUTFIELD, FENCE }
-public enum class DefenseImpact { HELPED_PITCHER, NEUTRAL, HURT_PITCHER }
-public enum class HalfInning { TOP, BOTTOM }
-public enum class AnalysisConfidenceBand { LOW, DEVELOPING, RELIABLE }
-
-public data class PitchZone(val row: Int, val column: Int)
-
-public data class PitchProfileSnapshot(
-    val pitchType: PitchKind,
-    val role: PitchUsageRole,
-    val velocityTenthsKph: Int,
-    val control: Int,
-    val command: Int,
-    val movement: Int,
-    val whiff: Int,
-    val weakContact: Int,
-    val fatigueCost: Int,
-)
-
-/**
- * Growth that continues after a stored 20–80 ability reaches its base ceiling.
- *
- * The gameplay contract intentionally has no design hard cap.  The signed 32-bit
- * saturation is only a cross-platform wire/storage safety boundary and is never
- * presented as a player-facing limit.
- */
-public class AbilityMasterySnapshot(
-    stuff: Int = 0,
-    command: Int = 0,
-    movement: Int = 0,
-    stamina: Int = 0,
-) {
-    public companion object {
-        public const val TECHNICAL_MAXIMUM: Int = Int.MAX_VALUE
-        public val ZERO: AbilityMasterySnapshot = AbilityMasterySnapshot()
-        public const val technicalMaximum: Int = TECHNICAL_MAXIMUM
-        public val zero: AbilityMasterySnapshot = ZERO
-    }
-
-    public val stuff: Int = stuff.coerceIn(0, TECHNICAL_MAXIMUM)
-    public val command: Int = command.coerceIn(0, TECHNICAL_MAXIMUM)
-    public val movement: Int = movement.coerceIn(0, TECHNICAL_MAXIMUM)
-    public val stamina: Int = stamina.coerceIn(0, TECHNICAL_MAXIMUM)
-
-    public fun value(kind: PitchAbilityKind): Int = when (kind) {
-        PitchAbilityKind.POWER -> stuff
-        PitchAbilityKind.COMMAND -> command
-        PitchAbilityKind.MOVEMENT -> movement
-        PitchAbilityKind.STAMINA -> stamina
-    }
-
-    public fun valueFor(kind: PitchAbilityKind): Int = value(kind)
-
-    public fun withValue(kind: PitchAbilityKind, value: Int): AbilityMasterySnapshot = when (kind) {
-        PitchAbilityKind.POWER -> AbilityMasterySnapshot(value, command, movement, stamina)
-        PitchAbilityKind.COMMAND -> AbilityMasterySnapshot(stuff, value, movement, stamina)
-        PitchAbilityKind.MOVEMENT -> AbilityMasterySnapshot(stuff, command, value, stamina)
-        PitchAbilityKind.STAMINA -> AbilityMasterySnapshot(stuff, command, movement, value)
-    }
-
-    public fun replacing(kind: PitchAbilityKind, value: Int): AbilityMasterySnapshot = withValue(kind, value)
-
-    public fun add(kind: PitchAbilityKind, points: Int): AbilityMasterySnapshot {
-        if (points <= 0) return this
-        val next = minOf(TECHNICAL_MAXIMUM.toLong(), value(kind).toLong() + points.toLong()).toInt()
-        return withValue(kind, next)
-    }
-
-    public fun adding(points: Int, to: PitchAbilityKind): AbilityMasterySnapshot = add(to, points)
-
-    override fun equals(other: Any?): Boolean = other is AbilityMasterySnapshot
-        && stuff == other.stuff && command == other.command
-        && movement == other.movement && stamina == other.stamina
-
-    override fun hashCode(): Int = (((stuff * 31 + command) * 31 + movement) * 31 + stamina)
-
-    override fun toString(): String = "AbilityMasterySnapshot(stuff=$stuff, command=$command, movement=$movement, stamina=$stamina)"
-}
-
-public data class PitcherSnapshot(
-    val id: String,
-    val name: String,
-    val stuff: Int,
-    val command: Int,
-    val movement: Int,
-    val stamina: Int,
-    val pitchProfiles: List<PitchProfileSnapshot>? = null,
-    val throwingHand: ThrowingHand = ThrowingHand.RIGHT,
-    /** Missing on old saves; readers use [effectiveMastery] as zero. */
-    val mastery: AbilityMasterySnapshot? = null,
-) {
-    public fun profile(pitchType: PitchKind): PitchProfileSnapshot? =
-        pitchProfiles?.firstOrNull { it.pitchType == pitchType }
-
-    public val effectiveMastery: AbilityMasterySnapshot get() = mastery ?: AbilityMasterySnapshot.ZERO
-}
-
-public data class BatterSnapshot(
-    val id: String,
-    val name: String,
-    val contact: Int,
-    val discipline: Int,
-    val power: Int,
-    val batSide: BatSide = BatSide.RIGHT,
-)
-
-public data class BatterScoutingSnapshot(
-    val hotZone: PitchZone,
-    val coldZone: PitchZone,
-    val pitchStrength: PitchKind,
-    val pitchWeakness: PitchKind,
-    val chaseTendency: Int,
-    val reliability: Int = ScoutingEstimate.TRUSTED_RELIABILITY,
-)
-
-public data class PlateAppearanceContext(
-    val plateAppearanceId: String,
-    val revision: ULong,
-    val inning: Int,
-    val outs: Int,
-    val balls: Int,
-    val strikes: Int,
-    val pitchNumber: Int,
-    val scoreDifferential: Int,
-    val leverage: Int,
-    val fatigue: Int,
-)
-
-public data class PitchCall(
-    val pitchType: PitchKind,
-    val zone: PitchZone,
-    val zoneIntent: ZoneIntent,
-    val intensity: PitchIntensity,
-)
-
-public data class PitchDelivery(
-    val releaseAccuracy: Int,
-    val aimAccuracy: Int,
-) {
-    public val isPerfectRelease: Boolean get() = releaseAccuracy >= PERFECT_RELEASE_THRESHOLD
-
-    public companion object {
-        public const val PERFECT_RELEASE_THRESHOLD: Int = 975
-        public val NEUTRAL: PitchDelivery = PitchDelivery(500, 500)
-    }
-}
-
-public data class RivalPitchObservation(
-    val pitchType: PitchKind,
-    val zone: PitchZone,
-    val zoneIntent: ZoneIntent,
-    val balls: Int,
-    val strikes: Int,
-    val outcome: PitchOutcome,
-)
-
-public data class RivalMemorySnapshot(
-    val matchupId: String,
-    val revision: ULong,
-    val plateAppearancesSeen: Int,
-    val totalPitchesSeen: Int,
-    val recentObservations: List<RivalPitchObservation>,
-)
-
-public data class RivalAdaptationSnapshot(
-    val level: Int,
-    val band: RivalAdaptationBand,
-    val evidenceCount: Int,
-    val detectedPitch: PitchKind?,
-    val detectedZone: PitchZone?,
-    val leanPitch: PitchKind,
-    val leanZone: PitchZone,
-    val pitchReadStrength: Int,
-    val zoneReadStrength: Int,
-    val confidence: Int,
-    val warning: String,
-)
-
-public data class ScoutingReportSnapshot(
-    val reliability: Int,
-    val observationCount: Int,
-    val band: String,
-    val estimatedWeakness: PitchKind,
-    val estimatedColdZone: PitchZone,
-    val estimatedStrength: PitchKind?,
-    val estimatedHotZone: PitchZone?,
-    val estimatedChaseTendency: Int,
-    val chaseTendencyMargin: Int,
-)
-
-public data class PitchRecommendation(
-    val call: PitchCall,
-    val confidence: Int,
-    val reasonCodes: List<String>,
-    val shortReason: String,
-)
-
-public data class PitchPreparation(
-    val seed: String,
-    val revision: ULong,
-    val pitchNumber: Int,
-    val preparationToken: String,
-    val planCommitment: String,
-    val primaryRecommendation: PitchRecommendation,
-    val alternativeRecommendation: PitchRecommendation,
-    val rivalAdaptation: RivalAdaptationSnapshot,
-    val scoutingReport: ScoutingReportSnapshot,
-)
-
-public data class PitchExecution(
-    val targetX: Int,
-    val targetY: Int,
-    val actualX: Int,
-    val actualY: Int,
-    val velocityTenthsKph: Int,
-    val horizontalBreakTenthsCm: Int,
-    val verticalBreakTenthsCm: Int,
-    val executionQuality: Int,
-    val flightTimeMilliseconds: Int,
-    val trajectoryControlX: Int,
-    val trajectoryControlY: Int,
-    val trajectorySeries: List<Int>,
-)
-
-/**
- * Renderer-facing snapshot derived by the authoritative kernel. It contains only the bounded
- * physical flight data needed by Unity; outcome, count, fielding, and persistence stay on the
- * surrounding [PitchSnapshot] and [PitchKernelResult].
- */
-public data class TrajectoryPresentationSnapshot(
-    val pitchType: PitchKind,
-    val presentationSeed: String,
-    val flightDurationMilliseconds: Int,
-    val plateXMm: Int,
-    val plateYMm: Int,
-    val velocityTenthsKph: Int,
-    val trajectorySeries: List<Int>,
-)
-
-public data class BattedBall(
-    val exitVelocityTenthsKph: Int,
-    val launchAngleTenthsDegrees: Int,
-    val directionTenthsDegrees: Int,
-    val contactQuality: Int,
-)
-
-public data class FielderSnapshot(
-    val id: String,
-    val name: String,
-    val position: String,
-    val range: Int,
-    val glove: Int,
-    val arm: Int,
-)
-
-public data class DefenseSnapshot(
-    val infield: Int,
-    val outfield: Int,
-    val arm: Int,
-    val fielders: List<FielderSnapshot>? = null,
-) {
-    public fun fielder(position: String): FielderSnapshot? = fielders?.firstOrNull { it.position == position }
-}
-
-public data class ParkSnapshot(
-    val id: String,
-    val name: String,
-    val hitFactor: Int,
-    val homeRunFactor: Int,
-)
-
-public data class BaserunnerStateSnapshot(
-    val firstOccupied: Boolean,
-    val secondOccupied: Boolean,
-    val thirdOccupied: Boolean,
-    val leadRunnerSpeed: Int,
-) {
-    public val occupiedCount: Int
-        get() = (if (firstOccupied) 1 else 0) + (if (secondOccupied) 1 else 0) +
-            (if (thirdOccupied) 1 else 0)
-
-    public companion object {
-        public val EMPTY: BaserunnerStateSnapshot = BaserunnerStateSnapshot(false, false, false, 50)
-    }
-}
-
-public data class InningStateSnapshot(
-    val inning: Int,
-    val half: HalfInning,
-    val outs: Int,
-)
-
-public data class GameStateSnapshot(
-    val defense: DefenseSnapshot,
-    val park: ParkSnapshot,
-    val runners: BaserunnerStateSnapshot,
-    val runsAllowed: Int,
-    val inningState: InningStateSnapshot? = null,
-) {
-    public companion object {
-        public fun standard(): GameStateSnapshot = GameStateSnapshot(
-            defense = DefenseSnapshot(50, 50, 50),
-            park = ParkSnapshot("neutral-park", "중립 구장", 1000, 1000),
-            runners = BaserunnerStateSnapshot.EMPTY,
-            runsAllowed = 0,
-        )
-    }
-}
-
-public data class FieldingResolutionSnapshot(
-    val neutralOutcome: PitchOutcome,
-    val finalOutcome: PitchOutcome,
-    val sector: FieldingSector,
-    val difficulty: Int,
-    val defenseRating: Int,
-    val defenseAdjustment: Int,
-    val parkAdjustment: Int,
-    val impact: DefenseImpact,
-    val fielderPosition: String?,
-    val fielderName: String?,
-    val landingDistanceTenthsMeters: Int?,
-    val hangTimeMilliseconds: Int?,
-    val apexHeightTenthsMeters: Int?,
-    val ballFlightSeries: List<Int>?,
-    val shortExplanation: String,
-)
-
-public data class StealAttemptSnapshot(
-    val fromBase: Int,
-    val toBase: Int,
-    val runnerSpeed: Int,
-    val catcherArm: Int,
-    val succeeded: Boolean,
-    val shortExplanation: String,
-)
-
-public data class InningTransitionSnapshot(
-    val before: InningStateSnapshot,
-    val after: InningStateSnapshot,
-    val outsRecorded: Int,
-    val doublePlayCompleted: Boolean,
-    val inningEnded: Boolean,
-    val shortExplanation: String,
-)
-
-public data class BaserunnerAdvanceSnapshot(
-    val before: BaserunnerStateSnapshot,
-    val after: BaserunnerStateSnapshot,
-    val runsScored: Int,
-    val shortExplanation: String,
-)
-
-public data class PitchAnalysisEntry(
-    val pitchType: PitchKind,
-    val wasInZone: Boolean,
-    val batterSwung: Boolean,
-    val outcome: PitchOutcome,
-    val selectionQuality: SelectionQuality,
-    val executionQuality: Int,
-    val contactQuality: Int?,
-    val expectedDamage: Int,
-    val actualDamage: Int,
-    val recommendationAccepted: Boolean,
-    val velocityTenthsKph: Int?,
-)
-
-public data class GameLogSnapshot(
-    val gameId: String,
-    val revision: ULong,
-    val totalPitches: Int,
-    val entries: List<PitchAnalysisEntry>,
-)
-
-public data class PitchAbilityReadout(
-    val pitchType: PitchKind,
-    val stuffRating: Int,
-    val commandRating: Int,
-    val movementRating: Int,
-    val staminaRating: Int,
-    val whiffRating: Int,
-    val weakContactRating: Int,
-    val nominalVelocityTenthsKph: Int,
-    val fatigueCost: Int,
-    val effectiveFatigue: Int,
-    val rawFatigue: Int,
-) {
-    public val fatiguePrevented: Int get() = max(0, rawFatigue - effectiveFatigue)
-}
-
-public data class PitchSnapshot(
-    val revision: ULong,
-    val balls: Int,
-    val strikes: Int,
-    val pitchNumber: Int,
-    val ended: Boolean,
-    val result: PlateAppearanceResult?,
-    val outcome: PitchOutcome,
-    val selectionQuality: SelectionQuality,
-    val recommendationAccepted: Boolean,
-    val fatigueAfterPitch: Int,
-    val execution: PitchExecution,
-    val trajectoryPresentation: TrajectoryPresentationSnapshot,
-    val battedBall: BattedBall?,
-    val fieldingResolution: FieldingResolutionSnapshot?,
-    val runnersBefore: BaserunnerStateSnapshot,
-    val runnersAfter: BaserunnerStateSnapshot,
-    val runsScored: Int,
-    val stealAttempt: StealAttemptSnapshot?,
-    val inningTransition: InningTransitionSnapshot,
-    val reasonCodes: List<String>,
-)
-
-public data class PitchKernelEvent(
-    val eventType: String,
-    val sequence: Int,
-)
-
-public data class PitchKernelResult(
-    val revision: ULong,
-    val nextSeed: String,
-    val snapshot: PitchSnapshot,
-    val nextPreparation: PitchPreparation?,
-    val rivalMemory: RivalMemorySnapshot,
-    val rivalAdaptation: RivalAdaptationSnapshot,
-    val gameState: GameStateSnapshot,
-    val gameLog: GameLogSnapshot,
-    val eventHash: String,
-    val events: List<PitchKernelEvent>,
-    val abilityMoment: PitchAbilityKind?,
-) {
-    public val eventTypes: List<String> get() = events.map { it.eventType }
-}
-
-public class PitchKernelException(public val code: String, message: String) : IllegalArgumentException(message)
-
 public object PitchAbilityRules {
     public const val MAXIMUM_PROFILE_VELOCITY_TENTHS_KPH: Int = 1600
     public const val MAXIMUM_EXECUTED_VELOCITY_TENTHS_KPH: Int = 1650
@@ -528,6 +23,10 @@ public object PitchAbilityRules {
         PitchKind.CURVEBALL -> 1370
         PitchKind.CHANGEUP -> 1480
     }
+
+    /** Pre-pitch UI estimate using the same fatigue, effort and mastery rules as delivery. */
+    public fun expectedVelocity(pitcher: PitcherSnapshot, call: PitchCall, fatigue: Int, balancedEffort: Boolean = false): Int =
+        nominalVelocity(pitcher, call.pitchType, call.intensity, fatigue, pitcher.effectiveMastery.stuff, balancedEffort)
 
     public fun readout(pitcher: PitcherSnapshot, call: PitchCall, context: PlateAppearanceContext): PitchAbilityReadout {
         val profile = pitcher.profile(call.pitchType)
@@ -544,7 +43,7 @@ public object PitchAbilityRules {
             weakContactRating = profile?.weakContact ?: 50,
             nominalVelocityTenthsKph = nominalVelocity(
                 pitcher, call.pitchType, call.intensity, context.fatigue,
-                pitcher.effectiveMastery.stuff,
+                pitcher.effectiveMastery.stuff, context.plateAppearanceId.contains(":outing-v2"),
             ),
             fatigueCost = fatigueCost(call.intensity, profile),
             effectiveFatigue = effectiveFatigue(context.fatigue, pitcher.stamina, pitcher.effectiveMastery.stamina),
@@ -594,12 +93,18 @@ public object PitchAbilityRules {
         intensity: PitchIntensity,
         fatigue: Int,
         mastery: Int = 0,
+        balancedEffort: Boolean = false,
     ): Int {
         val profile = pitcher.profile(type)
         val base = profile?.velocityTenthsKph ?: baseVelocity(type) + (pitcher.stuff - 50) * 2
         val pressure = effectiveFatigue(fatigue, pitcher.stamina, pitcher.effectiveMastery.stamina)
         val stuffContribution = MasteryEffectRules.bonusForContribution(max(0, pitcher.stuff - 20), mastery) / 8
-        val raw = base + stuffContribution + intensity(intensity).velocityBonusTenthsKph - pressure
+        val velocityBonus = if (balancedEffort) when (intensity) {
+            PitchIntensity.CONTROLLED -> -25
+            PitchIntensity.NORMAL -> 0
+            PitchIntensity.MAX_EFFORT -> 25
+        } else intensity(intensity).velocityBonusTenthsKph
+        val raw = base + stuffContribution + velocityBonus - pressure
         val ceiling = when (intensity) {
             PitchIntensity.CONTROLLED -> maximumProfileVelocity(type) - 20
             PitchIntensity.NORMAL -> maximumProfileVelocity(type)
@@ -890,7 +395,7 @@ private class RivalMemoryEngine {
 
     private fun observationWeight(observation: RivalPitchObservation): Int = when (observation.outcome) {
         PitchOutcome.SINGLE, PitchOutcome.DOUBLE, PitchOutcome.TRIPLE, PitchOutcome.HOME_RUN -> 6
-        PitchOutcome.FOUL, PitchOutcome.IN_PLAY_OUT -> 4
+        PitchOutcome.FOUL, PitchOutcome.IN_PLAY_OUT, PitchOutcome.REACHED_ON_ERROR -> 4
         PitchOutcome.BALL, PitchOutcome.CALLED_STRIKE, PitchOutcome.HIT_BY_PITCH -> 2
         PitchOutcome.SWINGING_STRIKE -> 1
     }
@@ -941,6 +446,8 @@ private class CatcherRecommendationEngine {
         reliability: Int,
         gameState: GameStateSnapshot?,
         lastPitch: PitchAnalysisEntry?,
+        observations: List<RivalPitchObservation> = emptyList(),
+        legacy: Boolean = false,
     ): Pair<PitchRecommendation, PitchRecommendation> {
         val twoStrikes = context.strikes == 2
         val protectZone = context.balls == 3
@@ -994,7 +501,54 @@ private class CatcherRecommendationEngine {
             reasonCodes = listOf("scouting.avoid_hot_zone", "sequence.change_speed", if (protectZone) "count.avoid_walk" else "count.alternative"),
             shortReason = recommendationReason(listOf("scouting.avoid_hot_zone"), ""),
         )
-        return primary to alternative
+        if (legacy) return primary to alternative
+        // Rank legal targets from actual scouting and recent matchup evidence. No refresh RNG.
+        val recent = observations.takeLast(4)
+        fun target(excluding: PitchZone? = null): PitchZone =
+            BatterScoutingProfileRules.allZones.filter { it != excluding }.maxBy { zone ->
+                var score = if (zone == scouting.coldZone) 45 else 0
+                if (zone == scouting.hotZone) score -= 90
+                if (zone.row == 1 && zone.column == 1) score -= 35
+                if (protectZone || situation.demandsControl) {
+                    if (zone.row == 1 || zone.column == 1) score += 45
+                }
+                if (situation.doublePlayChance || situation.sacrificeFlyRisk) score += zone.row * 25
+                if (twoStrikes && !protectZone && primaryPitch != PitchKind.FOUR_SEAM) score += zone.row * 12
+                recent.forEachIndexed { index, pitch ->
+                    if (pitch.zone == zone) score -= 24 + index * 14
+                }
+                score
+            }
+        val zone = target()
+        val changedLocation = recent.lastOrNull()?.zone != null && recent.last().zone != zone
+        val intent = if (protectZone || situation.demandsControl) ZoneIntent.STRIKE
+            else if (twoStrikes && scouting.chaseTendency >= 50 && batter.discipline < 65) ZoneIntent.CHASE
+            else ZoneIntent.EDGE
+        val reason = when {
+            protectZone -> "볼이 많아. 존 안에서 승부하자."
+            situation.doublePlayChance -> "낮게 던져 땅볼을 노리자."
+            situation.sacrificeFlyRisk -> "뜬공을 줄이게 낮게 가자."
+            mustChange -> "방금 공에 적응했어. 다른 구종으로 가자."
+            changedLocation -> "같은 곳은 읽혀. 이번엔 코스를 바꾸자."
+            intent == ZoneIntent.CHASE -> "두 스트라이크야. 존 밖으로 헛스윙을 노리자."
+            reliability < 60 -> "아직 탐색 중이야. 존 경계로 반응을 보자."
+            zone == scouting.coldZone -> "약점 코스로 먼저 승부하자."
+            else -> "강한 코스를 피해 승부하자."
+        }
+        val playable = pitcher.pitchProfiles?.map { it.pitchType }
+        val otherType = alternative.call.pitchType.takeIf { playable == null || it in playable } ?: primaryPitch
+        val otherZone = target(zone)
+        return primary.copy(
+            call = primary.call.copy(zone = zone, zoneIntent = ZoneIntentRules.clamp(intent, zone),
+                intensity = if (context.fatigue >= 60) PitchIntensity.CONTROLLED else primary.call.intensity),
+            reasonCodes = listOf(if (changedLocation) "sequence.change_location" else "scouting.target", situation.countCode),
+            shortReason = reason,
+        ) to alternative.copy(
+            call = alternative.call.copy(pitchType = otherType, zone = otherZone,
+                zoneIntent = if (protectZone || situation.demandsControl) ZoneIntent.STRIKE else ZoneIntentRules.clamp(ZoneIntent.EDGE, otherZone)),
+            reasonCodes = listOf("sequence.alternative_target"),
+            shortReason = if (otherType != primaryPitch) "다른 구종과 코스로 타이밍을 흔들자." else "같은 구종으로 다른 코스를 찌르자.",
+        )
     }
 
     private fun recommendedPrimaryPitch(
@@ -1058,16 +612,16 @@ private class CatcherRecommendationEngine {
 
     private fun recommendationReason(reasonCodes: List<String>, situationNote: String): String {
         var reason = when {
-            "rival.pattern_detected" in reasonCodes -> "반복 패턴을 읽고 있어 배합을 바꿉니다."
-            "sequence.avoid_repeat" in reasonCodes -> "방금 공과 다른 배합을 요구합니다."
-            "scouting.pitch_weakness" in reasonCodes -> "타자의 약점 구종과 코스를 공략합니다."
-            else -> "강한 코스를 피해 타이밍을 바꿉니다."
+            "rival.pattern_detected" in reasonCodes -> "타자가 우리 패턴을 읽고 있어. 배합을 바꾸자."
+            "sequence.avoid_repeat" in reasonCodes -> "방금 공이랑 다른 걸로 가자."
+            "scouting.pitch_weakness" in reasonCodes -> "이 타자 약점 코스야. 여기로 가자."
+            else -> "강한 코스는 피하고 타이밍을 흔들자."
         }
         reason += when {
-            "build.power" in reasonCodes -> " 강속구형의 포심·구속 강점을 반영한 사인입니다."
-            "build.command" in reasonCodes -> " 정밀 제구형의 코스 반복 정확도를 반영한 사인입니다."
-            "build.movement" in reasonCodes -> " 변화구형의 결정구 움직임을 반영한 사인입니다."
-            "build.stamina" in reasonCodes -> " 이닝 소화형의 효율 좋은 구종을 반영한 사인입니다."
+            "build.power" in reasonCodes -> " 네 포심이면 밀어붙일 수 있어."
+            "build.command" in reasonCodes -> " 네 제구면 구석에 꽂힌다."
+            "build.movement" in reasonCodes -> " 네 결정구면 헛돌린다."
+            "build.stamina" in reasonCodes -> " 힘 아끼는 공으로 가자. 아직 갈 길이 멀어."
             else -> ""
         }
         if (situationNote.isNotEmpty()) reason += " $situationNote"
@@ -1075,11 +629,13 @@ private class CatcherRecommendationEngine {
     }
 }
 
-public class PitchKernel {
+public class PitchKernel(private val legacyRecommendations: Boolean = false, private val professionalBalance: Boolean = false, private val professionalWorkload: Boolean = false, private val schoolBalance: Boolean = false) {
     private val recommendationEngine = CatcherRecommendationEngine()
     private val rivalMemoryEngine = RivalMemoryEngine()
 
-    public fun preparePitch(parameters: PreparePitchParams): PitchPreparation {
+    public fun preparePitch(parameters: PreparePitchParams): PitchPreparation = preparePitchVersion(parameters, legacyRecommendations)
+
+    private fun preparePitchVersion(parameters: PreparePitchParams, legacy: Boolean): PitchPreparation {
         val seed = validate(parameters)
         val adaptation = rivalMemoryEngine.analyze(parameters.rivalMemory, parameters.context)
         val plan = commitBatterPlan(parameters, adaptation, seed)
@@ -1098,6 +654,8 @@ public class PitchKernel {
             reliability,
             parameters.gameState,
             parameters.gameLog?.entries?.lastOrNull(),
+            parameters.rivalMemory?.recentObservations.orEmpty(),
+            legacy,
         )
         val token = preparationToken(parameters, plan.commitment, recommendations.first, recommendations.second)
         return PitchPreparation(
@@ -1144,9 +702,14 @@ public class PitchKernel {
             reliability,
             parameters.gameState,
             parameters.gameLog?.entries?.lastOrNull(),
+            parameters.rivalMemory?.recentObservations.orEmpty(),
+            legacyRecommendations,
         )
         val expectedToken = preparationToken(prepareParameters, plan.commitment, recommendations.first, recommendations.second)
-        if (parameters.preparationToken != expectedToken) {
+        // Accept an exact previous-algorithm token only for the same complete immutable state.
+        // The next preparation always upgrades to current recommendations.
+        if (parameters.preparationToken != expectedToken &&
+            parameters.preparationToken != preparePitchVersion(prepareParameters, true).preparationToken) {
             throw PitchKernelException("invalid_preparation_token", "pitch preparation token is invalid or stale")
         }
         val execution = executePitch(parameters, delivery, seed)
@@ -1161,7 +724,13 @@ public class PitchKernel {
         val count = advanceCount(parameters.context, outcome)
         val nextSeed = deriveNextSeed(seed)
         val revision = parameters.context.revision + 1UL
-        val fatigue = min(100, parameters.context.fatigue + PitchAbilityRules.fatigueCost(parameters.call.intensity, parameters.pitcher.profile(parameters.call.pitchType)))
+        val fatigueGain = if (professionalWorkload) {
+            val ordinal = (parameters.gameLog?.totalPitches ?: 0).toLong()
+            val effort = when (parameters.call.intensity) { PitchIntensity.CONTROLLED -> -150; PitchIntensity.NORMAL -> 0; PitchIntensity.MAX_EFFORT -> 250 }
+            val load = (850 - (parameters.pitcher.stamina - 50) * 5 + effort).coerceIn(450, 1250)
+            (((ordinal + 1) * load) / 1000 - (ordinal * load) / 1000).toInt()
+        } else PitchAbilityRules.fatigueCost(parameters.call.intensity, parameters.pitcher.profile(parameters.call.pitchType))
+        val fatigue = min(100, parameters.context.fatigue + fatigueGain)
         val memory = rivalMemoryEngine.record(
             parameters.rivalMemory,
             parameters.pitcher,
@@ -1386,6 +955,18 @@ public class PitchKernel {
         PreparePitchParams(request.seed, request.pitcher, request.batter, request.scouting, request.context, request.rivalMemory, request.gameState, request.gameLog)
     )
 
+    internal fun prepareLegacy(request: PrepareRequest): PitchPreparation = preparePitchVersion(
+        PreparePitchParams(request.seed, request.pitcher, request.batter, request.scouting,
+            request.context, request.rivalMemory, request.gameState, request.gameLog), true)
+
+    /** Exact compatibility check for a saved preparation; never accepts a token from different state. */
+    public fun matchesPreparation(request: PrepareRequest, token: String): Boolean {
+        val params = PreparePitchParams(request.seed, request.pitcher, request.batter, request.scouting,
+            request.context, request.rivalMemory, request.gameState, request.gameLog)
+        return preparePitchVersion(params, false).preparationToken == token ||
+            prepareLegacy(request).preparationToken == token
+    }
+
     public fun submit(request: SubmitRequest, delivery: PitchDelivery? = null): PitchKernelResult = submitPitch(
         SubmitPitchParams(request.seed, request.pitcher, request.batter, request.scouting, request.context, request.preparationToken, request.call, request.rivalMemory, request.gameState, request.gameLog),
         delivery,
@@ -1566,7 +1147,7 @@ public class PitchKernel {
             parameters.pitcher.effectiveMastery.stamina,
         )
         val effective = clamp(command * 10 - fatiguePressure * 2 - effect.commandPenalty, 100, 900)
-        val spread = clamp(520 - effective / 2, 70, 470)
+        val spread = if (professionalBalance || schoolBalance) clamp(750 - effective / 3, 450, 700) else clamp(520 - effective / 2, 70, 470)
         var offsetX = generator.nextInt(spread * 2 + 1) - spread
         var offsetY = generator.nextInt(spread * 2 + 1) - spread
         val wildChance = clamp(
@@ -1600,7 +1181,7 @@ public class PitchKernel {
             parameters.call.pitchType,
             parameters.call.intensity,
             parameters.context.fatigue,
-            parameters.pitcher.effectiveMastery.stuff,
+            parameters.pitcher.effectiveMastery.stuff, parameters.context.plateAppearanceId.contains(":outing-v2"),
         ) +
             generator.nextInt(21) - 10 + releaseShift * 10 / 500 + if (delivery?.isPerfectRelease == true) 6 else 0
         val velocity = min(PitchAbilityRules.MAXIMUM_EXECUTED_VELOCITY_TENTHS_KPH, rawVelocity)
@@ -1714,21 +1295,25 @@ public class PitchKernel {
         val fastball = parameters.call.pitchType == PitchKind.FOUR_SEAM
         val heightMatch = if (fastball && landed.row == 0) 55 else if (fastball && landed.row == 2) -30 else if (!fastball && landed.row == 2) 50 else if (!fastball && landed.row == 0) -55 else 0
         val platoon = platoonContactBonus(parameters.pitcher.throwingHand, parameters.batter.batSide, parameters.call.pitchType)
+        // A single saturating edge prevents correlated ratings from multiplying whiffs.
+        val rawEdge = difficulty + velocityEdge + speedGap + heightMatch
+        val contactEdge = if (professionalBalance || schoolBalance) 30 + ((rawEdge - 30) * 145 / (145 + abs(rawEdge - 30))) else rawEdge
         val contactChance = clamp(
-            790 + (parameters.batter.contact - 50) * 6 + (if (pitchMatched) 90 else -70) + (if (zoneMatched) 50 else -35) +
+            (if (professionalBalance || schoolBalance) 865 else 790) + (parameters.batter.contact - 50) * 6 + (if (pitchMatched) 90 else -70) + (if (zoneMatched) 50 else -35) +
                 (if (pitchMatched) capped / 5 else 0) + plan.bias.contact + platoon + scoutingContact -
-                (difficulty + velocityEdge + speedGap + heightMatch),
+                contactEdge,
             120,
             940,
         )
         if (generator.nextInt(1000) >= contactChance) return Resolution(PitchOutcome.SWINGING_STRIKE, null)
-        val foulChance = clamp(470 + (effectiveProfileMovement - parameters.batter.contact) * 3 + plan.bias.foul, 260, 620)
+        val foulChance = clamp((if (professionalBalance || schoolBalance) 350 else 470) + (effectiveProfileMovement - parameters.batter.contact) * 3 + plan.bias.foul, 260, 620)
         if (generator.nextInt(1000) < foulChance) return Resolution(PitchOutcome.FOUL, null)
+        val centerMistake = if (schoolBalance && wasInZone) (180 - max(abs(execution.actualX), abs(execution.actualY))).coerceAtLeast(0) / 3 else 0
         val contactQuality = clamp(
-            429 + (parameters.batter.power - 50) * 3 + (parameters.batter.contact - 50) * 2 + (if (pitchMatched) 90 else -70) +
+            centerMistake + (if (schoolBalance) 475 else if (professionalBalance) 450 else 429) + (parameters.batter.power - 50) * 3 + (parameters.batter.contact - 50) * 2 + (if (pitchMatched) 90 else -70) +
                 (if (zoneMatched) 45 else -35) + (if (pitchMatched) capped / 8 else 0) -
-                (effectiveWeakContact - 50) * 2 - (effectiveMovement - 50) -
-                (effectiveProfileMovement - 50) - powerSpecialization / 2 -
+                (if (professionalBalance || schoolBalance) (effectiveWeakContact - 50) / 2 else (effectiveWeakContact - 50) * 2) - (if (professionalBalance || schoolBalance) (effectiveMovement - 50) / 3 else effectiveMovement - 50) -
+                (if (professionalBalance || schoolBalance) (effectiveProfileMovement - 50) / 3 else effectiveProfileMovement - 50) - powerSpecialization / (if (professionalBalance || schoolBalance) 5 else 2) -
                 max(0, execution.executionQuality - 500) / 5 + scoutingQuality -
                 max(0, execution.velocityTenthsKph - 1400) / 5 - heightMatch / 2 + generator.nextInt(301) - 150,
             0,
@@ -1737,7 +1322,10 @@ public class PitchKernel {
         val pull = pullShift(parameters.batter.batSide, landed.column)
         val exitVelocity = clamp(1000 + contactQuality * 3 / 4 + (parameters.batter.power - 50) * 6 + generator.nextInt(181) - 90, 700, 1900)
         val launchAngle = clamp(-100 + generator.nextInt(521) + (contactQuality - 450) / 8 + (1 - landed.row) * 55, -150, 520)
-        val quality = battedQuality(exitVelocity, launchAngle)
+        val quality = if ((professionalBalance || schoolBalance) && exitVelocity < (if (schoolBalance) 1510 else 1545)) {
+            val fit = if (launchAngle < 90) 30 + max(0, launchAngle + 150) / 5 else max(0, 240 - abs(launchAngle - 170) * 7 / 10 - if (launchAngle > 340) launchAngle - 340 else 0)
+            (exitVelocity * 7 / 10 + fit - 600).coerceIn(0, 758)
+        } else battedQuality(exitVelocity, launchAngle)
         return Resolution(
             BattedBallBands.outcome(quality),
             BattedBall(exitVelocity, launchAngle, -450 + max(0, pull) + generator.nextInt(901 - abs(pull)), quality),
@@ -1771,6 +1359,7 @@ public class PitchKernel {
         PitchOutcome.FOUL -> CountAdvance(context.balls, min(2, context.strikes + 1), null)
         PitchOutcome.IN_PLAY_OUT -> CountAdvance(context.balls, context.strikes, PlateAppearanceResult.IN_PLAY_OUT)
         PitchOutcome.SINGLE, PitchOutcome.DOUBLE, PitchOutcome.TRIPLE, PitchOutcome.HOME_RUN -> CountAdvance(context.balls, context.strikes, PlateAppearanceResult.HIT)
+        PitchOutcome.REACHED_ON_ERROR -> CountAdvance(context.balls, context.strikes, PlateAppearanceResult.REACHED_ON_ERROR)
         PitchOutcome.HIT_BY_PITCH -> CountAdvance(context.balls, context.strikes, PlateAppearanceResult.WALK)
     }
 
@@ -1842,6 +1431,11 @@ public class PitchKernel {
         if (sector == FieldingSector.INFIELD && (final == PitchOutcome.DOUBLE || final == PitchOutcome.HOME_RUN)) final = PitchOutcome.SINGLE
         else if (sector == FieldingSector.OUTFIELD && final == PitchOutcome.HOME_RUN) final = PitchOutcome.DOUBLE
         if (final == PitchOutcome.DOUBLE && sector != FieldingSector.INFIELD && isTripleShape(ball) && generator.nextInt(1000) < 245) final = PitchOutcome.TRIPLE
+        // Model a routine grounder mishandled with first base open. Existing runners hold,
+        // so earned-run reconstruction never needs speculative advancement on this error.
+        if (professionalBalance && final == PitchOutcome.IN_PLAY_OUT && sector == FieldingSector.INFIELD &&
+            ball.launchAngleTenthsDegrees < 90 && !gameState.runners.firstOccupied &&
+            generator.nextInt(1000) < (110 - defenseRating).coerceIn(20, 90)) final = PitchOutcome.REACHED_ON_ERROR
         val impact = when {
             outcomeValue(final) < outcomeValue(neutral) -> DefenseImpact.HELPED_PITCHER
             outcomeValue(final) > outcomeValue(neutral) -> DefenseImpact.HURT_PITCHER
@@ -1927,7 +1521,7 @@ public class PitchKernel {
     private fun isTripleShape(ball: BattedBall): Boolean = abs(ball.directionTenthsDegrees) >= 250 && ball.launchAngleTenthsDegrees in 120..280
 
     private fun outcomeValue(outcome: PitchOutcome): Int = when (outcome) {
-        PitchOutcome.SINGLE -> 1
+        PitchOutcome.SINGLE, PitchOutcome.REACHED_ON_ERROR -> 1
         PitchOutcome.DOUBLE -> 2
         PitchOutcome.TRIPLE -> 3
         PitchOutcome.HOME_RUN -> 4
@@ -1984,6 +1578,8 @@ public class PitchKernel {
             } else if (doublePlayCompleted) {
                 after = BaserunnerStateSnapshot(false, runners.secondOccupied, runners.thirdOccupied, runners.leadRunnerSpeed)
             }
+        } else if (result == PlateAppearanceResult.REACHED_ON_ERROR) {
+            after = runners.copy(firstOccupied = true)
         } else if (result == PlateAppearanceResult.WALK) {
             runs = if (runners.firstOccupied && runners.secondOccupied && runners.thirdOccupied) 1 else 0
             after = BaserunnerStateSnapshot(true, runners.secondOccupied || runners.firstOccupied, runners.thirdOccupied || (runners.firstOccupied && runners.secondOccupied), runners.leadRunnerSpeed)

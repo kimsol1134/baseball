@@ -120,7 +120,9 @@ public enum ProCareerPersistence {
             schemaVersion: schemaVersion,
             syncRevision: syncRevision,
             pendingInjuryEvent: state.pendingInjuryEvent,
-            acknowledgedInjuryEventID: state.acknowledgedInjuryEventID
+            acknowledgedInjuryEventID: state.acknowledgedInjuryEventID,
+            replays: state.replays,
+            commandReceipts: state.commandReceipts
         )
     }
 
@@ -159,7 +161,9 @@ public enum ProCareerPersistence {
             careerOrigin: record.origin,
             syncedRevision: record.effectiveRevision,
             pendingInjuryEvent: record.pendingInjuryEvent,
-            acknowledgedInjuryEventID: record.acknowledgedInjuryEventID
+            acknowledgedInjuryEventID: record.acknowledgedInjuryEventID,
+            replays: record.replays,
+            commandReceipts: record.commandReceipts
         )
     }
 }

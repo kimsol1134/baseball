@@ -1,4 +1,5 @@
 import SwiftUI
+import SimulationCore
 import BaseballIOSDomain
 
 /// 능력이 올랐을 때만 나타나는 성장 카드. 올라간 값과 "다음 단계까지 얼마"를 함께 보여 줘서
@@ -10,103 +11,53 @@ enum GrowthStageContext {
 
 struct GrowthCelebrationView: View {
     let gains: [AbilityGain]
-    /// 대성공 훈련 — 성장이 두 배로 붙은 날. 조용한 축하 대신 잭팟 연출을 쓴다.
     var jackpot: Bool = false
     var stageContext: GrowthStageContext = .highSchool
+    var fatigue: Int? = nil
     let onDismiss: () -> Void
-
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.gameCopyResolver) private var copyResolver
+    @State private var showsDetails = false
     @State private var appeared = false
-
-    private var orderedGains: [AbilityGain] {
-        gains.sorted { AbilityDisplayScale.displayDelta(before: $0.before, after: $0.after)
-            > AbilityDisplayScale.displayDelta(before: $1.before, after: $1.after) }
+    private var milestone: AbilityGain? { gains.first { $0.ability == .command && PitchReleaseWindow.crossesMilestone(before: $0.before, after: $0.after) } }
+    private var primary: AbilityGain? { milestone ?? gains.max { ($0.after - $0.before) < ($1.after - $1.before) } }
+    private var notable: Bool { milestone != nil || jackpot }
+    private var accent: Color { notable ? BaseballTheme.milestone : BaseballTheme.action }
+    private var headline: String {
+        if milestone != nil { return copyResolver.resolve(.localizable("loop.growth.milestone")) }
+        guard let primary else { return copyResolver.resolve(.growthTitle) }
+        return copyResolver.resolve(.localizable("loop.growth.row"), arguments: [.userText(copyResolver.resolve(primary.ability.displayCopyToken)),
+            .integer(AbilityDisplayScale.displayRating(primary.before)), .integer(AbilityDisplayScale.displayRating(primary.after))])
     }
-
-    private var accent: Color { jackpot ? BaseballTheme.milestone : BaseballTheme.action }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Image(systemName: jackpot ? "sparkles" : "arrow.up.right.circle.fill")
-                    .foregroundStyle(accent)
-                Text(verbatim: copyResolver.resolve(jackpot ? .growthJackpotTitle : .growthTitle))
-                    .font(BaseballType.sectionTitle)
-                    .foregroundStyle(jackpot ? BaseballTheme.milestone : BaseballTheme.textPrimary)
-                Spacer()
-                Button(action: onDismiss) {
-                    Text(verbatim: copyResolver.resolve(.growthClose))
+                Image(systemName: notable ? "sparkles" : "arrow.up.right").foregroundStyle(accent).accessibilityHidden(true)
+                Text(verbatim: headline).font(notable ? .title3.weight(.bold) : .headline).foregroundStyle(accent)
+                Spacer(minLength: 0)
+                Button(copyResolver.resolve(.growthClose), action: onDismiss).frame(minHeight: BaseballMetrics.minimumTapTarget)
+            }
+            if let milestone { ControlWindowPreview(command: milestone.after, beforeCommand: milestone.before, showsLegend: false, titleKey: "loop.growth.base-window") }
+            if jackpot { Text(verbatim: copyResolver.resolve(.growthJackpotTitle)).font(BaseballType.annotation).foregroundStyle(BaseballTheme.milestone) }
+            if let fatigue { Text(verbatim: GrowthConditionCopy.line(fatigue: fatigue, change: 0, resolver: copyResolver)).detailStyle() }
+            Button(copyResolver.resolve(.localizable("mobile.core.growth-details"))) { showsDetails.toggle() }
+                .font(BaseballType.annotation).frame(minHeight: BaseballMetrics.minimumTapTarget)
+            if showsDetails {
+                ForEach(gains) { gain in
+                    Text(verbatim: HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver)).detailStyle()
                 }
-                    .font(.subheadline.weight(.semibold))
-                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
-            }
-
-            // 데스크톱 훈련 결과 화면처럼 오른 값을 큰 숫자로 먼저 보여 주고,
-            // 게이지는 그 아래에서 사다리 위 위치를 보충한다.
-            // 같은 값을 큰 숫자와 게이지로 두 번 적으면 축하가 아니라 오류로 보인다
-            // (QA P2-1). 큰 숫자 + "다음 단계까지"만 남긴다.
-            ForEach(Array(orderedGains.prefix(1))) { gain in
-                if gain.ability == .command {
-                    Text(verbatim: HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver))
-                        .font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(accent)
-                } else {
-                StatTile(
-                    label: copyResolver.resolve(gain.ability.displayCopyToken),
-                    value: "\(AbilityDisplayScale.displayRating(gain.after))",
-                    previousValue: "\(AbilityDisplayScale.displayRating(gain.before))",
-                    caption: RatingScale.nextStep(gain.after).map { step in
-                        copyResolver.resolve(
-                            .growthNextStep,
-                            arguments: [
-                                .integer(max(
-                                    0,
-                                    AbilityDisplayScale.displayRating(step.minimum)
-                                        - AbilityDisplayScale.displayRating(gain.after)
-                                )),
-                                .userText(MetaPresentation.ratingMeaning(
-                                    step,
-                                    context: stageContext,
-                                    resolver: copyResolver
-                                )),
-                            ]
-                        )
-                    },
-                    tone: accent
-                )
+                if milestone == nil, let command = gains.first(where: { $0.ability == .command }) {
+                    ControlWindowPreview(command: command.after, beforeCommand: command.before, titleKey: "loop.growth.base-window")
                 }
-            }
-            if let commandGain = gains.first(where: { $0.ability == .command }), commandGain.after != commandGain.before {
-                ControlWindowPreview(command: commandGain.after, beforeCommand: commandGain.before)
-            }
-            if orderedGains.count > 1 {
-                DisclosureGroup(copyResolver.resolve(.localizable("mobile.core.growth-details"))) {
-                    ForEach(Array(orderedGains.dropFirst())) { gain in
-                        StatTile(label: copyResolver.resolve(gain.ability.displayCopyToken),
-                            value: "\(AbilityDisplayScale.displayRating(gain.after))",
-                            previousValue: "\(AbilityDisplayScale.displayRating(gain.before))", tone: accent)
-                    }
-                }
-            }
-            if jackpot {
-                Text(verbatim: copyResolver.resolve(.growthJackpotBody))
-                    .font(BaseballType.detail.weight(.semibold))
-                    .foregroundStyle(BaseballTheme.milestone)
             }
         }
-        .padding(BaseballMetrics.gutter)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(jackpot ? BaseballTheme.milestone.opacity(0.14) : BaseballTheme.actionSoft, in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
-        .overlay {
-            RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius)
-                .stroke(accent, lineWidth: jackpot ? 2 : 1)
-        }
-        .scaleEffect(appeared || reduceMotion ? 1 : (jackpot ? 0.85 : 0.96))
+        .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+        .background(notable ? BaseballTheme.milestone.opacity(0.12) : BaseballTheme.surface,
+            in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
         .opacity(appeared || reduceMotion ? 1 : 0)
         .onAppear {
-            // 잭팟은 더 크게 튀어나온다 — 같은 스프링이면 대성공이 대성공으로 안 읽힌다.
-            withAnimation(reduceMotion ? nil : .spring(response: jackpot ? 0.5 : 0.4, dampingFraction: jackpot ? 0.55 : 0.8)) { appeared = true }
-            if jackpot { GameAudio.shared.play(.milestone) }
+            withAnimation(notable && !reduceMotion ? .easeOut(duration: 0.3) : nil) { appeared = true }
+            if notable { GameAudio.shared.play(.milestone) }
         }
         .accessibilityElement(children: .contain)
     }

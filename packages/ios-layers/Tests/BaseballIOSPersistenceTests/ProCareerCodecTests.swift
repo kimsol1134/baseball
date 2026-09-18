@@ -63,6 +63,114 @@ final class ProCareerCodecTests: XCTestCase {
         XCTAssertNil(record.deletedRevision)
     }
 
+    /// **자책점은 이어 던지기를 건너서도 이어져야 한다.** 원장 토큰이 저장을 왕복하지
+    /// 못하면 복구한 등판의 자책점이 통째로 '모른다'가 된다(이식 계획 2-D).
+    func testRunLedgerTokenSurvivesTheSaveRoundTrip() throws {
+        let ledger = PitchRunLedger(bases: [1, -1, 0], runs: 3, earnedRuns: 2, inheritedScored: 1, virtualOuts: 1)
+        var state = ProCareerPersistedState.empty
+        state.result = try fixtureResult()
+        state.gameResume = resume(runLedgerToken: ledger.token())
+
+        let record = ProCareerPersistence.record(
+            from: state,
+            schemaVersion: ProCareerPersistence.legacySchemaVersion,
+            syncRevision: 1
+        )
+        let restored = ProCareerPersistence.materialize(record)
+        let token = try XCTUnwrap(restored.gameResume?.runLedgerToken)
+        XCTAssertEqual(PitchRunLedger.decode(token), ledger)
+    }
+
+    /// 원장이 없던 체크포인트는 그대로 열린다. 새 필드는 optional이고, 없으면 계속 모른다다.
+    func testAResumeWrittenBeforeTheLedgerStillOpens() throws {
+        var state = ProCareerPersistedState.empty
+        state.result = try fixtureResult()
+        state.gameResume = resume(runLedgerToken: nil)
+        let restored = ProCareerPersistence.materialize(
+            ProCareerPersistence.record(
+                from: state,
+                schemaVersion: ProCareerPersistence.legacySchemaVersion,
+                syncRevision: 1
+            )
+        )
+        XCTAssertNotNil(restored.gameResume)
+        XCTAssertNil(restored.gameResume?.runLedgerToken)
+    }
+
+    /// **앨범은 저장을 왕복해야 앨범이다.** 재생이 저장에서 빠지면 다시 볼 수 없다.
+    func testReplaysSurviveTheSaveRoundTrip() throws {
+        let replay = AlbumReplay(
+            id: "pa-1-p7", season: 3, week: 8, outingNumber: 2, pitchNumber: 7,
+            pitchType: .slider, velocityTenthsKPH: 1_331, outcome: .swingingStrike,
+            result: .strikeout, perfectRelease: true, trajectory: [0, 1, 2, 3, 4, 5, 6, 7]
+        )
+        var state = ProCareerPersistedState.empty
+        state.result = try fixtureResult()
+        state.replays = [replay]
+
+        let restored = ProCareerPersistence.materialize(
+            ProCareerPersistence.record(
+                from: state,
+                schemaVersion: ProCareerPersistence.legacySchemaVersion,
+                syncRevision: 1
+            )
+        )
+        XCTAssertEqual(restored.replays, [replay])
+    }
+
+    /// 영수증도 저장을 왕복해야 한다. 빠지면 앱을 다시 켠 뒤 같은 명령이 다시 적용된다.
+    func testCommandReceiptsSurviveTheSaveRoundTrip() throws {
+        let receipt = CommandReceiptRetention.id(revision: 12, operation: "important-game:3:8")
+        var state = ProCareerPersistedState.empty
+        state.result = try fixtureResult()
+        state.commandReceipts = [receipt]
+        let restored = ProCareerPersistence.materialize(
+            ProCareerPersistence.record(
+                from: state,
+                schemaVersion: ProCareerPersistence.legacySchemaVersion,
+                syncRevision: 1
+            )
+        )
+        XCTAssertEqual(restored.commandReceipts, [receipt])
+        XCTAssertFalse(
+            CommandReceiptRetention.accepts(receipt, at: 12, seen: restored.commandReceipts ?? []),
+            "왕복한 영수증이 같은 명령을 막지 못합니다"
+        )
+    }
+
+    /// 앨범이 없던 저장은 그대로 열린다. 새 필드는 optional이고 없으면 앨범이 빈 것뿐이다.
+    func testASaveWrittenBeforeTheAlbumStillOpens() throws {
+        var state = ProCareerPersistedState.empty
+        state.result = try fixtureResult()
+        let restored = ProCareerPersistence.materialize(
+            ProCareerPersistence.record(
+                from: state,
+                schemaVersion: ProCareerPersistence.legacySchemaVersion,
+                syncRevision: 1
+            )
+        )
+        XCTAssertNil(restored.replays)
+    }
+
+    private func resume(runLedgerToken: String?) -> PitchResumeState {
+        PitchResumeState(
+            scenarioID: "pa-1", seed: "seed", batterIndex: 1, stageKind: "between",
+            stageMessage: nil, fatigue: 30,
+            gameState: GameStateSnapshot(
+                defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 50, fielders: []),
+                park: ParkSnapshot(id: "p", name: "구장", hitFactor: 1_000, homeRunFactor: 1_000),
+                runners: BaserunnerStateSnapshot(firstOccupied: true, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 52),
+                runsAllowed: 3,
+                inningState: InningStateSnapshot(inning: 7, half: .top, outs: 1)
+            ),
+            gameLog: GameLogSnapshot(gameID: "pa-1", revision: 0, totalPitches: 20, entries: []),
+            rivalMemory: nil, pitches: 20, strikeouts: 2, consecutiveStrikeouts: 0,
+            walks: 1, runsAllowed: 3, expectedDamage: 400, actualDamage: 380,
+            recommendationAccepted: 10, outsRecorded: 6, rivalOutcomes: [],
+            runLedgerToken: runLedgerToken
+        )
+    }
+
     func testInjuryWrapperKeepsSchemaFiveAfterEngineEventClears() throws {
         let legacy = try resultWithoutMastery(fixtureResult())
         let event = ProInjuryEventSnapshot(

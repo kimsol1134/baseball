@@ -1,0 +1,47 @@
+{
+  "ko": {
+    "originalSeconds": 10.502656,
+    "keptSeconds": [
+      [
+        0,
+        4
+      ],
+      [
+        7.802656,
+        10.502656
+      ]
+    ],
+    "speed": 1,
+    "note": "Montage cut removes a result-hold/wait interval. Input and animation playback are not sped up."
+  },
+  "en": {
+    "originalSeconds": 9.6909,
+    "keptSeconds": [
+      [
+        0,
+        4
+      ],
+      [
+        6.990899999999999,
+        9.6909
+      ]
+    ],
+    "speed": 1,
+    "note": "Montage cut removes a result-hold/wait interval. Input and animation playback are not sped up."
+  },
+  "ja": {
+    "originalSeconds": 9.728089,
+    "keptSeconds": [
+      [
+        0,
+        4
+      ],
+      [
+        7.0280890000000005,
+        9.728089
+      ]
+    ],
+    "speed": 1,
+    "note": "Montage cut removes a result-hold/wait interval. Input and animation playback are not sped up."
+  }
+}

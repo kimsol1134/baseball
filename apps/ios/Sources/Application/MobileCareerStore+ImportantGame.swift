@@ -31,6 +31,10 @@ extension MobileCareerStore {
             $0.gameResume = nil
         }
         let session = PitchSession(state: result.snapshot, seed: sessionSeed)
+        // 재생에 새길 좌표. 앨범이 기록 화면의 등판 행과 이어 붙는 열쇠다.
+        session.replaySeason = result.snapshot.season
+        session.replayWeek = result.snapshot.week
+        session.replayOutingNumber = (result.snapshot.gameLines?.count ?? 0) + 1
         session.start()
         attachCheckpoint(session)
         pitchSession = session
@@ -93,10 +97,13 @@ extension MobileCareerStore {
         let beforeRevision = result.snapshot.revision
         let beforeState = result.snapshot
         let summary = Self.importantGameSummary(report)
+        // 이번 등판이 남긴 공을 저장과 같은 트랜잭션에 태운다.
+        stagedReplays = session.capturedReplays
         let didSettle = perform(
             summary: summary,
             cue: report.runsAllowed == 0 ? .success : .setback,
-            clearGameResumeOnSuccess: true
+            clearGameResumeOnSuccess: true,
+            operation: "important-game:\(result.snapshot.season):\(result.snapshot.week)"
         ) {
             try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report))
         }
@@ -156,6 +163,23 @@ extension MobileCareerStore {
 
     nonisolated static func retirementDurationText(completedSeasons: Int) -> String {
         return completedSeasons > 0 ? "\(completedSeasons)시즌" : "프로 첫 시즌"
+    }
+
+    /// 실패 뒤 **저장이 확인된** 등판을 재실행 없이 마무리한다(7-B).
+    ///
+    /// 같은 리포트를 다시 얹지 않는 것이 요점이다. 디스크에서 현재 상태를 다시 읽고,
+    /// 그 상태가 살아 있으면 세션만 닫는다 — 이미 기록된 이닝을 두 번 반영하지 않는다.
+    @discardableResult
+    func confirmSavedImportantGame() -> Bool {
+        guard pitchSession != nil else { return false }
+        guard case .live = restore() else { return false }
+        pitchSession = nil
+        lastActionFailure = nil
+        loadState = .ready
+        lastSummary = "저장된 등판 결과를 불러왔습니다."
+        feedbackCue = .neutral
+        feedbackTrigger += 1
+        return true
     }
 
     @discardableResult

@@ -175,7 +175,7 @@ class FirstUserEmulatorE2ETest {
                     "불펜에서만 연습한다",
                     "2군에서 재정비한다",
                     "내 방식을 지킨다",
-                    "결과 화면으로",
+                    "등판 마치기",
                     "기록 보관하기",
                     "프로 무대로 가기",
                     "계약 서명",
@@ -232,8 +232,8 @@ class FirstUserEmulatorE2ETest {
                     "드래프트 결과 확인",
                     "유산 후보 보기",
                     "기록 보관하기",
-                    "드래프트 결과 확인 완료",
-                    "결산 확인 완료",
+                    "이 순간을 기억한다",
+                    "3년, 여기까지",
                     "끝까지 듣기",
                     "내 뜻 설명하기",
                     "정면 승부하기",
@@ -245,16 +245,16 @@ class FirstUserEmulatorE2ETest {
                     "흔들리지 않는 릴리스",
                     "첫 공 스트라이크",
                     "위기 속 평정",
-                    "스카우트 앞의 침착함",
+                    "압박 속 침착함",
                     "사라지는 변화구",
                     "넓게 휘는 슬라이더",
                     "커브의 시계",
                     "멈춘 체인지업",
-                    "싱커 터널",
+                    "포심·체인지업 연계",
                     "배터리 호흡",
                     "투 스트라이크 설계",
-                    "견제 리듬",
-                    "주자 흐름 읽기",
+                    "일정한 투구 리듬",
+                    "위기 관리",
                     "마운드에 남은 불꽃",
                     "미트 끝의 지도",
                     "손끝에 남은 궤적",
@@ -263,6 +263,7 @@ class FirstUserEmulatorE2ETest {
                     "사인 사이의 약속",
                     "제구",
                     "구위",
+                    "변화구",
                     "무브먼트",
                     "체력",
                     "회복",
@@ -277,10 +278,10 @@ class FirstUserEmulatorE2ETest {
                                     device.wait(Until.hasObject(By.text("계약 서명")), 3_000) ||
                                     device.wait(Until.hasObject(By.text("이번 주")), 3_000)
                             }
-                            "결과 화면으로", "잠시 나가기" -> {
+                            "등판 마치기", "잠시 나가기" -> {
                                 val deadline = System.currentTimeMillis() + 15_000
                                 while (System.currentTimeMillis() < deadline) {
-                                    if (listOf("다음 선택", "이번 주 선택", "도착한 편지", "성장 신호", "학교 후보", "승부처", "이 장의 기록", "드래프트", "이번 생", "다음 생", "새로운 감각")
+                                    if (listOf("이번 주 선택", "도착한 편지", "성장 신호", "학교 후보", "승부처", "이 장의 기록", "드래프트", "이번 회차", "다음 선수", "이번 생", "다음 생", "새로운 감각")
                                             .any { hasText(it) || hasContains(it) }
                                     ) {
                                         break
@@ -306,14 +307,14 @@ class FirstUserEmulatorE2ETest {
                     Log.i(TAG, "step=$step tap school by 고")
                     return true
                 }
-                if (tapLast("← 이야기")) {
+                if (tapLast("← 내 투수")) {
                     Log.i(TAG, "step=$step back to story")
                     return true
                 }
                 return false
             }
 
-            assertTrue("opening or player setup", waitText("다시 도전하는 야구 인생") || waitText("선수 이름"))
+            assertTrue("opening or player setup", waitText("야구 못하면 또 환생함") || waitText("선수 이름"))
             if (hasText("시작하기")) {
                 tapText("시작하기")
             }
@@ -322,11 +323,9 @@ class FirstUserEmulatorE2ETest {
             val name = device.findObject(UiSelector().className(EditText::class.java.name).instance(0))
             name.click()
             name.setText("민서준")
-            repeat(2) {
-                if (!hasText("다음")) UiScrollable(UiSelector().scrollable(true)).scrollIntoView(UiSelector().text("다음"))
-                tapText("다음")
-                device.waitForIdle()
-            }
+            if (!hasText("다음")) UiScrollable(UiSelector().scrollable(true)).scrollIntoView(UiSelector().text("다음"))
+            tapText("다음")
+            device.waitForIdle()
             if (hasText("힘으로 승부하는 투수")) {
                 device.findObject(By.text("힘으로 승부하는 투수")).click()
             }
@@ -336,7 +335,7 @@ class FirstUserEmulatorE2ETest {
             tapText("이 투수로 시작하기")
             assertTrue(
                 "prologue or tutorial",
-                waitText("투구 연습하기") || waitText("연습 시작") || waitText("도착한 편지"),
+                waitText("첫 공 던지기") || waitText("연습 시작") || waitText("도착한 편지"),
             )
 
             fun storyFingerprint(): String =

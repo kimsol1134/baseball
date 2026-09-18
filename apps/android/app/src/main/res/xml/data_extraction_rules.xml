@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup disableIfNoEncryptionCapabilities="true">
+        <include domain="external" path="save/save.json" />
+        <include domain="external" path="save/save.bak.1" />
+        <include domain="external" path="save/save.bak.2" />
+        <include domain="external" path="save/save.bak.3" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="external" path="save/save.json" />
+        <include domain="external" path="save/save.bak.1" />
+        <include domain="external" path="save/save.bak.2" />
+        <include domain="external" path="save/save.bak.3" />
+    </device-transfer>
+</data-extraction-rules>

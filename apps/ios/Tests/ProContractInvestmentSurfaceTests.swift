@@ -28,10 +28,18 @@ final class ProContractInvestmentSurfaceTests: XCTestCase {
         XCTAssertTrue(flow.contains("selectable: market.kind != .rookie,"))
         XCTAssertTrue(flow.contains("enabled: goalSelectionComplete"))
         XCTAssertTrue(flow.contains("if market.kind == .rookie, let offer"))
-        // 1.2.9: iOS 26에서 confirmationDialog가 팝오버로 떠 취소가 안 보여 알럿으로 바꿨다.
-        // 계약 수락에 명시적 확인 단계가 있다는 계약은 그대로다.
-        XCTAssertTrue(flow.contains(".alert(") || flow.contains(".confirmationDialog("))
-        XCTAssertTrue(flow.contains("career.acceptContract(\n                            marketID: market.id"))
+        // 6-D: 확인을 모달에서 같은 화면의 확인 블록으로 옮겼다(iOS 26에서는 알럿마저
+        // 팝오버로 떠 취소가 잘렸다). **계약 수락에 명시적 확인 단계가 있다**는 계약은 그대로다.
+        let offerScreen = try IOSSourceScan.typeBody(
+            "ProContractOfferView",
+            in: "apps/ios/Sources/ProContractOfferView.swift"
+        )
+        XCTAssertFalse(offerScreen.contains(".alert("))
+        XCTAssertFalse(offerScreen.contains(".confirmationDialog("))
+        XCTAssertTrue(flow.contains("private func confirmBlock(_ market: ProContractMarket)"))
+        XCTAssertTrue(flow.contains("identifier: \"pro.contractOffer.confirm.accept\""))
+        XCTAssertTrue(flow.contains("pro.contractOffer.confirm.cancel"))
+        XCTAssertTrue(flow.contains("career.acceptContract("))
         XCTAssertTrue(flow.contains("identifier: \"\\(prefix).duration\""))
         XCTAssertTrue(flow.contains("identifier: \"\\(prefix).annualSalary\""))
         XCTAssertTrue(flow.contains("identifier: \"\\(prefix).guarantee\""))
@@ -91,7 +99,9 @@ final class ProContractInvestmentSurfaceTests: XCTestCase {
         XCTAssertTrue(source.contains(".disabled(!enabled)"))
         XCTAssertTrue(source.contains("guard enabled else { return }"))
         XCTAssertTrue(source.contains("enabled ? .contractOfferReview : .contractOfferAmbitionRequired"))
-        XCTAssertTrue(source.contains(".disabled(!goalSelectionComplete)"))
+        // 목표를 고르기 전에는 서명이 열리지 않는다(모달이 사라진 뒤에도 같은 규칙).
+        XCTAssertTrue(source.contains("enabled: goalSelectionComplete"))
+        XCTAssertTrue(source.contains("guard goalSelectionComplete else { return }"))
         XCTAssertTrue(source.contains("pendingOfferID = nil\n                selectedAmbition = nil"))
     }
 

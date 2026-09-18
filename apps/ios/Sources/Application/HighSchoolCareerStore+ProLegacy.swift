@@ -6,6 +6,50 @@ import BaseballIOSPersistence
 extension HighSchoolCareerStore {
     // MARK: - 프로 커리어의 계승
 
+    /// An old deletion or interrupted handoff may leave only the high-school entry receipt.
+    /// Unknown/unreadable pro data is never treated as an absent career.
+    func canRecoverMissingProCareer(_ pro: MobileCareerStore) -> Bool {
+        loadState == .ready && pro.loadState == .needsSetup && pro.state == nil
+            && hasEnteredPro && state?.phase == .completed
+            && inheritance.lifeNumber == state?.lifeNumber
+            && state?.draftResult?.outcome == .drafted
+    }
+
+    @discardableResult
+    func recoverMissingProCareer(_ pro: MobileCareerStore) -> Bool {
+        guard canRecoverMissingProCareer(pro) else { return false }
+        // Re-read before acting: a delayed remote pro save may have arrived since rendering.
+        pro.restoreOrCreateCareer()
+        reloadFromSync()
+        guard canRecoverMissingProCareer(pro), let current = result else { return false }
+        let previous = capturePersisted()
+        do {
+            let opened = try engine.openLegacy(.init(seed: current.nextSeed, state: current.snapshot))
+            updatePersisted { $0.result = opened }
+            if usesSignatureLegacyRules {
+                let candidates = signatureLegacyCandidates(for: opened.snapshot)
+                guard candidates.count == Self.signatureLegacyCandidateCount(for: opened.snapshot) else {
+                    replacePersisted(previous)
+                    return false
+                }
+                updatePersisted { $0.frozenSignatureLegacyCandidates = candidates }
+            }
+            guard save() else {
+                replacePersisted(previous)
+                loadState = .failed("유산 선택을 준비하지 못했습니다. 기록은 그대로 남아 있습니다. 다시 시도해 주세요.")
+                return false
+            }
+            // Keep the entry receipt and all accumulated rewards. Only the surviving high-school
+            // evidence is used; missing pro statistics and bonuses are not fabricated.
+            CareerTelemetry.log(.screenStallRecovered, ["context": "high_school_missing_pro"])
+            return true
+        } catch {
+            replacePersisted(previous)
+            loadState = .failed(error.localizedDescription)
+            return false
+        }
+    }
+
     /// 프로 저장에 적힌 원본 고교와 현재 고교 회차가 같은지 확인한다. 필드가 없던 구버전
     /// 프로 저장은 고교 쪽 진입 영수증과 동일한 선수 신원까지 맞을 때만 안전하게 연결한다.
     func canAttachProLegacy(

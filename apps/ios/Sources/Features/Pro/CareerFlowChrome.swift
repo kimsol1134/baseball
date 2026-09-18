@@ -7,6 +7,7 @@ struct ResultBanner: View {
     let cue: FeedbackCue
     var onDismiss: (() -> Void)? = nil
     @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var tone: BaseballCardTone {
         switch cue {
@@ -25,26 +26,31 @@ struct ResultBanner: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: symbol).foregroundStyle(tone.accent).font(BaseballType.annotation)
-            // localization-safe: resolved-copy
-            Text(summary)
-                .font(.subheadline)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityElement(children: onDismiss == nil ? .combine : .contain)
-        .overlay(alignment: .topTrailing) {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: 10))
+        layout {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: symbol).foregroundStyle(tone.accent).font(BaseballType.annotation)
+                // localization-safe: resolved-copy
+                Text(summary)
+                    .font(.subheadline)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             if let onDismiss {
                 Button(action: onDismiss) {
                     Text(verbatim: copyResolver.resolve(AppCopyKey.noticeDismiss))
                         .font(BaseballType.annotation.weight(.semibold))
+                        .fixedSize()
+                        .frame(minWidth: BaseballMetrics.minimumTapTarget, minHeight: BaseballMetrics.minimumTapTarget)
                 }
                 .accessibilityLabel(copyResolver.resolve(AppCopyKey.noticeDismiss))
                 .accessibilityIdentifier("pro.notice.banner.dismiss")
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: onDismiss == nil ? .combine : .contain)
     }
 }
 

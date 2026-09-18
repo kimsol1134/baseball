@@ -19,6 +19,10 @@ enum GameAudioCue: Equatable {
     case growth
     case milestone
     case uiSelect
+    /// 정중앙 릴리스. 잘 던진 공과 완벽하게 던진 공을 귀로 가른다.
+    case perfectRelease
+    /// 비행 중 공기음. 구속(0~1)이 클수록 크게 깔린다.
+    case pitchFlight(velocity: Double)
 }
 
 /// 게임 오디오. 녹음 음원이 있으면 그것을, 없으면 절차 합성을 쓴다.
@@ -204,6 +208,9 @@ final class GameAudio {
         case .batContact(let power): 0.7 + 0.3 * Float(min(1, max(0, power)))
         case .crowdCheer, .crowdGroan: 0.8
         case .pitchRelease: 0.5
+        // 공기음은 배경이다. 판정을 알리는 소리들보다 확실히 아래에 깔린다.
+        case .pitchFlight(let velocity): 0.18 + 0.22 * Float(min(1, max(0, velocity)))
+        case .perfectRelease: 0.9
         default: 0.85
         }
     }
@@ -434,6 +441,26 @@ final class GameAudio {
                 .noise(duration: 1.7, attack: 0.28, gain: 0.154, centerHz: 340, bandwidth: 1.8, curve: 1.2, pan: -0.4),
                 .noise(duration: 1.4, attack: 0.34, gain: 0.092, centerHz: 700, bandwidth: 2.0, curve: 1.3,
                        delay: 0.1, pan: 0.4),
+            ]
+
+        case .perfectRelease:
+            // 음원이 없을 때의 대체. 맑은 종 하나와 그 위의 배음 — 다른 어떤 큐와도 겹치지
+            // 않는 음색이라야 "이번 것은 달랐다"가 귀로 전해진다.
+            return [
+                .tone(duration: 0.42, attack: 0.002, gain: 0.22, frequencyHz: 1_318, shape: .sine),
+                .tone(duration: 0.30, attack: 0.002, gain: 0.10, frequencyHz: 2_637, shape: .sine),
+                .tone(duration: 0.55, attack: 0.004, gain: 0.07, frequencyHz: 880, shape: .sine, delay: 0.03),
+            ]
+
+        case .pitchFlight(let velocity):
+            // 공기를 가르는 소리. 구속이 오를수록 커지고 위쪽으로 쓸린다.
+            let speed = min(1, max(0, velocity))
+            return [
+                .noise(
+                    duration: 0.26 - 0.06 * speed, attack: 0.03,
+                    gain: 0.018 + 0.022 * speed,
+                    centerHz: 1_500 + 900 * speed, bandwidth: 2.6, pan: 0.1
+                ),
             ]
 
         case .growth:

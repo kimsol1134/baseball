@@ -33,7 +33,7 @@ class ProCareerFixtureTest {
         val rows = root.objectValue("expected").array("rows").values
         assertEquals(20, rows.size)
         val canonical = StringBuilder()
-        val kernel = ProKernel()
+        val kernel = ProKernel(gameplayRulesVersion = 10)
         rows.forEach { value ->
             val row = value.asObject()
             val seed = row.string("seed")

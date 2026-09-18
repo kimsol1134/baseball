@@ -236,7 +236,7 @@ struct AppShell: View {
             isOnboarding: hidesTabBarForOnboarding,
             hasPitchSession: highSchool.pitchSession != nil,
             hasTutorialSession: highSchool.tutorialSession != nil
-        ) || Self.isChoicePhase(highSchool.state?.phase)
+        ) || Self.hidesFloatingTabBarForPhase(highSchool.state?.phase)
     }
 
     private var hidesCareerTabBar: Bool {
@@ -253,6 +253,8 @@ struct AppShell: View {
                 onSkipToPro: highSchool.archive.isEmpty ? nil : { showsProSkipSetup = true },
                 onOpenDraftForecast: { showsDraftForecastSheet = true },
                 hasEnteredPro: pro.loadState == .ready || highSchool.hasEnteredPro,
+                onRecoverMissingPro: highSchool.canRecoverMissingProCareer(pro)
+                    ? { _ = highSchool.recoverMissingProCareer(pro) } : nil,
                 weekly: weekly
             )
             .toolbar(.hidden, for: .navigationBar)
@@ -330,9 +332,13 @@ struct AppShell: View {
     /// 학교·관계·각성처럼 카드 하나를 골라야 넘어가는 국면에는 탭 바를 감춘다.
     /// 페르소나 플레이테스트에서 목표 카드 아래쪽을 누르면 떠 있는 탭 바의 '프로' 탭이
     /// 먼저 먹어 프로 허브로 튕겼고, 학교 카드는 탭 바 위로 한 줄만 보였다(2026-09-03 보고서 §2-1).
-    static func isChoicePhase(_ phase: HighSchoolCareerPhase?) -> Bool {
+    ///
+    /// 장 정산도 같은 성격이다 — 읽고 한 번 누르고 넘어가는 화면인데, 주 버튼 "다음 이야기로"가
+    /// 떠 있는 탭 바(y 791~874) 아래에 놓여 초록이 비쳐 보이고 그 자리를 누르면 기록 탭이
+    /// 먼저 먹었다(QA 2026-09-12 F-02). 고교 8장마다 지나가는 화면이라 빈도가 높다.
+    static func hidesFloatingTabBarForPhase(_ phase: HighSchoolCareerPhase?) -> Bool {
         switch phase {
-        case .schoolSelection, .relationship, .awakening: true
+        case .schoolSelection, .relationship, .awakening, .chapterReview: true
         default: false
         }
     }
@@ -986,7 +992,6 @@ private struct ProCareerTabs: View {
 private struct CareerFailureView: View {
     let message: String
     let career: MobileCareerStore
-    @State private var confirmingReset = false
     @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
@@ -997,26 +1002,18 @@ private struct CareerFailureView: View {
                 Image(systemName: "exclamationmark.triangle")
             }
         } description: {
-            GameCopyText(verbatim: message)
+            // 갈래를 아는 실패는 그 갈래의 문장을 쓴다. 커널이 던진 영어 설명이나
+            // "저장 공간을 확보해 주세요"가 아무 실패에나 붙지 않게 한다(7-A).
+            GameCopyText(verbatim: career.lastActionFailure.map {
+                CareerFailureCopy.message(
+                    for: $0,
+                    repeated: career.lastFailureRepeated,
+                    resolver: copyResolver
+                )
+            } ?? message)
         } actions: {
             PrimaryPill(title: copyResolver.resolve(AppCopyKey.errorRetry), identifier: "pro.retry") {
                 career.retryRestoreOrReturn()
-            }
-            Button(copyResolver.resolve(AppCopyKey.errorReset), role: .destructive) {
-                confirmingReset = true
-            }
-            .font(BaseballType.detail.weight(.semibold))
-            .accessibilityIdentifier("pro.restart")
-            .alert(
-                copyResolver.resolve(AppCopyKey.errorDeleteTitle),
-                isPresented: $confirmingReset
-            ) {
-                Button(copyResolver.resolve(AppCopyKey.errorDeleteAction), role: .destructive) {
-                    _ = career.deleteCareer()
-                }
-                Button(copyResolver.resolve(AppCopyKey.errorCancel)) { confirmingReset = false }
-            } message: {
-                GameCopyText(AppCopyKey.errorDeleteMessage)
             }
         }
         .background(BaseballTheme.canvas)

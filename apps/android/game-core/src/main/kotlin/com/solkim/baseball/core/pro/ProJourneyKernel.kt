@@ -235,7 +235,7 @@ public object ProJourneyKernel {
     ): ProCareerJourneyState {
         val id = "settlement:$careerId:$season"
         if (state.lastSettlement?.id == id) return state
-        require(state.lastSettlement == null || state.lastSettlement.season < season) { "pro.journey.settlement_order" }
+        require(state.lastSettlement == null || requireNotNull(state.lastSettlement).season < season) { "pro.journey.settlement_order" }
         require(state.finances.transactions.none { it.id == "salary:$careerId:$season" }) { "pro.journey.salary_duplicate" }
         val salaryTransaction = ProFinanceTransaction("salary:$careerId:$season", season, ProFinanceTransactionKind.SALARY, salary)
         val merchandiseTransaction = if (merchandise == 0L) null else ProFinanceTransaction("merchandise:$careerId:$season", season, ProFinanceTransactionKind.MERCHANDISE, merchandise)

@@ -112,7 +112,10 @@ internal object SeedChallengeCodec {
         require(value is JsonValue.Obj && value.entries.keys == setOf("schemaVersion", "seed", "life", "presetId", "returnStage", "returnPitch", "hadHighSchool", "returnActiveCareerId", "returnArchiveIds", "returnGameCount")) { "challenge.session_fields" }
         require((value["schemaVersion"] as? JsonValue.Num)?.raw == "1") { "challenge.session_version" }
         fun str(key: String) = (value[key] as? JsonValue.Str)?.value ?: error("challenge.session.$key")
-        val pitch = value["returnPitch"].let { if (it == JsonValue.Null) null else GameAggregateCodec.decodePitch(it as JsonValue.Obj) }
+        val pitch = value["returnPitch"].let {
+            if (it == JsonValue.Null) null
+            else GameAggregateCodec.decodePitch(it as JsonValue.Obj)
+        }
         return SeedChallengeSession(SeedChallengeCode(str("seed"), (value["life"] as JsonValue.Num).raw.toInt()), str("presetId"),
             GameStage.entries.single { it.wire == str("returnStage") }, pitch, (value["hadHighSchool"] as JsonValue.Bool).value,
             value["returnActiveCareerId"].let { if (it == JsonValue.Null) null else (it as JsonValue.Str).value },

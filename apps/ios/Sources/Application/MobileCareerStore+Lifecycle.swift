@@ -163,6 +163,10 @@ extension MobileCareerStore {
 
 #if DEBUG
     /// 포스트시즌 전력·전적·연투·타자 적응 UI를 긴 커리어 진행 없이 검증한다.
+    ///
+    /// 신인 계약을 실제로 받은 스냅숏 위에 가을 시리즈만 얹는다. 예전에 여정을
+    /// 지우고 계약 없이 국면만 바꾸면 종료 화면 확인이 `missing_contract`로
+    /// 막혔다 — 시즌 리뷰 픽스처와 같은 이유다.
     @discardableResult
     func installPostseasonFixtureForUITesting() -> Bool {
         do {
@@ -174,7 +178,21 @@ extension MobileCareerStore {
                 startingRepertoire: PitchLearningRules.recommendedSelection(presetID: preset.id),
                 engine: engine
             )
-            let opponent = ProCareerEngine.proTeams.first { $0.id != base.snapshot.team.id }
+            guard let market = base.snapshot.journeyState?.pendingContractMarket,
+                  let offer = market.offers.first else {
+                loadState = .failed("UI 테스트용 포스트시즌 픽스처에 신인 계약 시장이 없습니다.")
+                return false
+            }
+            let signedContract = try engine.acceptContract(.init(
+                seed: base.nextSeed,
+                state: base.snapshot,
+                expectedRevision: base.snapshot.revision,
+                marketID: market.id,
+                offerID: offer.id,
+                ambition: .franchiseIcon
+            ))
+            let snapshot = signedContract.snapshot
+            let opponent = ProCareerEngine.proTeams.first { $0.id != snapshot.team.id }
                 ?? ProCareerEngine.proTeams[1]
             let rival = ProRivalBatter(
                 id: "pro-rival-seoul",
@@ -192,7 +210,7 @@ extension MobileCareerStore {
                 .init(round: .final, gameNumber: 4, teamRuns: 1, opponentRuns: 3, directlyPlayed: true, playerPitches: 18, playerOuts: 3, playerRunsAllowed: 1),
             ]
             let memory = RivalMemorySnapshot(
-                matchupID: "\(base.snapshot.pitcher.id):bench:\(opponent.id)",
+                matchupID: "\(snapshot.pitcher.id):bench:\(opponent.id)",
                 revision: 6,
                 plateAppearancesSeen: 3,
                 totalPitchesSeen: 6,
@@ -224,7 +242,7 @@ extension MobileCareerStore {
                 gameHistory: history
             )
 
-            var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(base.snapshot)) as! [String: Any]
+            var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(snapshot)) as! [String: Any]
             object["phase"] = ProCareerPhase.importantGame.rawValue
             object["week"] = 24
             object["level"] = ProLevel.major.rawValue
@@ -234,7 +252,6 @@ extension MobileCareerStore {
             object["seasonTrigger"] = ProSeasonTrigger.autumnFinal.rawValue
             object["currentRival"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(rival))
             object["postseason"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(postseason))
-            object.removeValue(forKey: "journeyState")
             let decoded = try JSONDecoder().decode(
                 ProCareerSnapshot.self,
                 from: JSONSerialization.data(withJSONObject: object)
@@ -242,7 +259,7 @@ extension MobileCareerStore {
             let signed = engine.resignFixtureForTesting(decoded)
             let fixture = ProCareerResult(
                 snapshot: signed,
-                nextSeed: "2026090101",
+                nextSeed: signedContract.nextSeed,
                 events: ["ui_postseason_fixture"]
             )
             updatePersisted {

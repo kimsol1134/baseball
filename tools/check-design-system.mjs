@@ -70,6 +70,8 @@ for (const path of filesUnder(windowsSource)) {
 // iOS 셸도 같은 규칙을 따른다. 색은 DesignSystem.swift 한 곳에서만 정의하고, 글자 크기는
 // 고정값 대신 Dynamic Type 역할 스타일을 쓴다. 이 검사가 없던 동안 AppShell.swift에
 // hex 리터럴 30여 개가 쌓였다(DOC-IOS-PAID §1.3 G6).
+const fixedFontAllowlist = new Set(["CareerShareCard.swift"]);
+
 const swiftColorPatterns = [
   [/0x[0-9A-Fa-f]{6}(?![0-9A-Fa-f_])/g, "중앙 토큰 밖의 원시 색상 값"],
   [/(?:UIColor|Color)\(\s*(?:red|white|hue):/g, "중앙 토큰 밖의 직접 색상 생성"],
@@ -87,7 +89,12 @@ for (const path of filesUnder(iosSource, new Set([".swift"]))) {
   }
   // 숫자 뒤에 곧바로 `,`나 `)`가 오는 것만 잡는다. `13 * scale`처럼 배율에 곱한 값은
   // Canvas 장면 좌표계에 비례하는 크기라 Dynamic Type 대상이 아니다(PitchDramaView).
-  const fixedFonts = [...source.matchAll(/\.system\(size:\s*([0-9.]+)\s*[,)]/g)].map((match) => match[1]);
+  //
+  // 공유 카드는 360×450 고정 캔버스를 3배로 구워 내보내는 **이미지**다. 기기 글자 크기를
+  // 따라가면 칸이 무너지고 내보낸 그림이 기기마다 달라진다 — Dynamic Type 대상이 아니다.
+  const fixedFonts = fixedFontAllowlist.has(path.split("/").pop())
+    ? []
+    : [...source.matchAll(/\.system\(size:\s*([0-9.]+)\s*[,)]/g)].map((match) => match[1]);
   if (fixedFonts.length > 0) {
     failures.push(`${label}: Dynamic Type 밖의 고정 글자 크기 — ${[...new Set(fixedFonts)].join(", ")}`);
   }

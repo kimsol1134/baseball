@@ -316,7 +316,7 @@ struct CareerTotals: View {
             Text(verbatim: copyResolver.resolve(.totalsTitle))
                 .font(.headline)
             VStack(spacing: 10) {
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.totalsGames), value: "\(totals.games)")
                     Metric(
                         title: copyResolver.resolve(.totalsInnings),
@@ -324,7 +324,7 @@ struct CareerTotals: View {
                     )
                     Metric(title: copyResolver.resolve(.totalsStrikeouts), value: "\(totals.strikeouts)", tone: .positive)
                 }
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.totalsRecord), value: GameLineFormat.record(wins: totals.wins, losses: totals.losses, saves: totals.saves))
                     Metric(
                         title: copyResolver.resolve(.totalsRA9),
@@ -335,7 +335,7 @@ struct CareerTotals: View {
                 // 피안타·볼넷·WHIP. "13년차인데 통산 피안타가 없다"는 리뷰 — 기록 자체는
                 // 쌓이고 있었지만 보여 주는 화면이 없었다. 피안타는 2026-08 중순부터
                 // 기록되므로 그 전 시즌 몫은 빠질 수 있다.
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.totalsHits), value: "\(totals.hits)")
                     Metric(title: copyResolver.resolve(.totalsWalks), value: "\(totals.walks)")
                     Metric(
@@ -343,7 +343,10 @@ struct CareerTotals: View {
                         value: GameFormatters.whip(hits: totals.hits, walks: totals.walks, outs: totals.outs, language: copyResolver.language)
                     )
                 }
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
+                    Metric(title: copyResolver.resolve(RecordUICopyKey.saberERA),
+                           value: ProCareerPresentation.eraText(seasons: ProCareerPresentation.recordedSeasons(state)))
+                        .accessibilityIdentifier("pro.retirement.career.era")
                     Metric(
                         title: copyResolver.resolve(.totalsWAR),
                         value: careerWAR.warText,
@@ -351,8 +354,8 @@ struct CareerTotals: View {
                             : careerWAR.warTone == .worse ? .negative
                             : .standard
                     )
+                    .accessibilityIdentifier("pro.retirement.career.war")
                 }
-                .accessibilityIdentifier("pro.retirement.career.war")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

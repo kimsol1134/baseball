@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Support — Mound Reborn",
-  description: "Support information for Mound Reborn on iOS.",
+  description: "Support information for Mound Reborn on iOS and Android.",
   alternates: {
     canonical: "/en/support",
     languages: { "ko-KR": "/support", "en-US": "/en/support" },
@@ -28,20 +28,21 @@ const sections = [
     title: "Saves and changing devices",
     paragraphs: [
       "Your iOS progress is stored on your device and may also be synchronized through iCloud. To continue on another device, use the same Apple Account and make sure iCloud is enabled for the app.",
+      "Android progress is saved on your current device. Android and iPhone saves do not sync with each other.",
       "Before resetting game data or deleting the app, confirm that any progress you want to keep is available on the intended device. Locally deleted data may not be recoverable.",
     ],
   },
   {
     title: "Purchases and refunds",
     paragraphs: [
-      "Mound Reborn is a one-time paid app with no in-app purchases. Purchases and refunds follow Apple's App Store process.",
+      "Mound Reborn is a one-time paid app with no in-app purchases. Android purchases and refunds follow Google Play policies; iPhone purchases and refunds follow Apple's App Store process.",
       "To request a refund or review your purchase history, visit reportaproblem.apple.com while signed in with the Apple Account used for the purchase.",
     ],
   },
   {
     title: "Report a problem",
     paragraphs: [
-      "Email us with your iPhone model, iOS version, app version and build, selected app language, and the steps that led to the problem. A screenshot can help us identify the cause.",
+      "Email us with your device model, operating system version, app version and build, selected app language, and the steps that led to the problem. A screenshot can help us identify the cause.",
       "Do not send a player name, original seed, save file, contact information, or other sensitive information. We will ask only for the minimum information needed to investigate.",
     ],
   },
@@ -53,7 +54,7 @@ export default function EnglishSupportPage() {
       <header className="legal-head">
         <p className="legal-kicker">Support</p>
         <h1>We're here to help with Mound Reborn</h1>
-        <p className="legal-lede">Support information for the English iOS edition.</p>
+        <p className="legal-lede">Support information for the iOS and Android editions.</p>
         <p><a href="/support" lang="ko">한국어로 보기</a></p>
       </header>
 

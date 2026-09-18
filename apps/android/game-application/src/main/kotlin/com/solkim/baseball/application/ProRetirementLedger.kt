@@ -66,7 +66,8 @@ public object ProRetirementLedger {
             val linked = pro.startMode == ProStartMode.LINKED && pro.sourceHighSchoolCareerId == highSchool.run.careerId
             val legacy = pro.selectedLegacyId?.takeIf { linked }
             if (legacy != null) {
-                val discoveries = (highSchool.archive.mapNotNull { it.selectedSignatureLegacyId } + legacy).distinct()
+                val discoveries = highSchool.archive.mapNotNull { if (it.careerId == highSchool.run.careerId) legacy else it.selectedSignatureLegacyId } +
+                    listOfNotNull(legacy.takeIf { highSchool.archive.none { it.careerId == highSchool.run.careerId } })
                 next = next.copy(selectedSignatureLegacyId = legacy,
                     unlockedSignatureLegacyIds = (inherited.unlockedSignatureLegacyIds + legacy).distinct(),
                     lineageMasteries = HighSchoolLineageRules.masteries(discoveries),

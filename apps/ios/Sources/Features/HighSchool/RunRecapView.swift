@@ -154,17 +154,17 @@ struct RunRecapView: View {
                             .font(BaseballType.detail.weight(.semibold))
                     }
                     if onQuickRebirth != nil {
-                        Text(verbatim: copyResolver.resolve(.localizable(
-                            recap.record.strikeouts > 0 ? "mobile.polish.personal-best-goal" : "mobile.polish.first-outing-goal"
-                        ), arguments: recap.record.strikeouts > 0 ? [.integer(recap.record.strikeouts)] : []))
-                            .font(BaseballType.detail.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.action)
+                        Text(verbatim: copyResolver.resolve(.localizable("loop.reborn.next")))
+                            .font(BaseballType.detail).foregroundStyle(BaseballTheme.action)
                             .accessibilityIdentifier("hs.recap.nextChallenge")
                     }
                     Button(copyResolver.resolve(.localizable("mobile.core.career-details"))) { showsRecapDetails.toggle() }
                         .frame(minHeight: BaseballMetrics.minimumTapTarget)
                         .accessibilityIdentifier("hs.recap.details")
                     if showsRecapDetails {
+                    if recap.record.strikeouts > 0 {
+                        Text(verbatim: copyResolver.resolve(.localizable("mobile.polish.personal-best-goal"), arguments: [.integer(recap.record.strikeouts)])).detailStyle()
+                    }
                     Text(
                         verbatim: copyResolver.resolve(
                             .recapTitle,
@@ -192,7 +192,8 @@ struct RunRecapView: View {
                     }
 
                     let legacy = LegacyPresentation.playerLegacy(for: recap.record, resolver: copyResolver)
-                    PlayerLegacyQuote(legacy: legacy)
+                    PlayerLegacyQuote(legacy: legacy, heading: copyResolver.resolve(.localizable("loop.letter.to-next-self")),
+                        farewellOverride: HighSchoolConclusionPresentation.selfMessage(record: recap.record, resolver: copyResolver, toNextLife: true))
                         .opacity(revealed >= stamps.count ? 1 : 0)
                         .accessibilityHidden(!Self.legacyIsVisible(
                             revealed: revealed,

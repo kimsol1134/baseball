@@ -20,7 +20,7 @@ public data class NextAppearanceCue(val trainings: Int, val choices: Int) {
             for (chapter in current until schedule.trainingsByChapter.size) {
                 val milestones = schedule.milestonesByChapter[chapter]
                 if (chapter > current) trainings += schedule.trainingsByChapter[chapter]
-                else if (run.phase == HighSchoolPhase.TRAINING) trainings += (schedule.trainingsByChapter[chapter] - run.chapterTrainingCount).coerceAtLeast(0)
+                else if (run.phase == HighSchoolPhase.TRAINING) trainings += TrainingPresentation.remaining(state)
                 val start = when {
                     chapter > current || run.phase == HighSchoolPhase.TRAINING -> 0
                     run.phase == HighSchoolPhase.CHAPTER_REVIEW -> milestones.size
@@ -101,14 +101,17 @@ public data class RebirthStartPreview(
     val previousLife: Int, val nextLife: Int, val previousStrikeouts: Int,
 ) {
     public companion object {
-        public fun resolve(state: GameAggregateState, action: Phase8ActionModel?): RebirthStartPreview? {
-            if (action?.id != "quickRebirth" || !action.enabled) return null
+        public fun resolve(state: GameAggregateState, action: ScreenActionModel?): RebirthStartPreview? {
+            if (action == null || !action.enabled || (action.id != "quickRebirth" && !action.id.startsWith("rebirthPath:"))) return null
             val before = state.highSchool ?: return null
-            val command = (action.payloads.singleOrNull()?.envelope?.command as? GameCommand.HighSchool)?.command
-                as? com.solkim.baseball.core.highschool.HighSchoolPhase4Command.BeginRebirth ?: return null
+            val command = (action.payloads.firstOrNull()?.envelope?.command as? GameCommand.HighSchool)?.command ?: return null
             if (before.run.phase != HighSchoolPhase.COMPLETED || before.archive.none { it.careerId == before.run.careerId }) return null
-            val next = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel()
-                .beginRebirth(before, command.seed, command.dayKey).state
+            val kernel = com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel()
+            val next = when (command) {
+                is com.solkim.baseball.core.highschool.HighSchoolPhase4Command.BeginRebirth -> kernel.beginRebirth(before, command.seed, command.dayKey).state
+                is com.solkim.baseball.core.highschool.HighSchoolPhase4Command.ConfigureRebirth -> kernel.beginRebirth(before, command.seed, command.dayKey, command.setup).state
+                else -> return null
+            }
             fun ratings(p: com.solkim.baseball.core.highschool.HighSchoolPitcher) = listOf(p.stuff, p.command, p.movement, p.stamina)
             return RebirthStartPreview(ratings(before.startingPitcher), ratings(next.startingPitcher),
                 before.run.lifeNumber, next.run.lifeNumber, before.run.performance.strikeouts)
@@ -118,9 +121,38 @@ public data class RebirthStartPreview(
 
 /** Resolve effect labels individually so Japanese never receives phrase-fragment translation. */
 public object SignatureLegacyDisplay {
+    public fun title(id: String, copy: GameCopy): String? =
+        com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == id }?.title?.let { copy.legacy(it) }
     public fun effect(id: String, copy: GameCopy): String? {
         val value = com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == id } ?: return null
-        return listOf("구위" to value.stuff, "제구" to value.command, "무브먼트" to value.movement, "체력" to value.stamina)
+        return listOf("구위" to value.stuff, "제구" to value.command, "변화구" to value.movement, "체력" to value.stamina)
             .filter { it.second != 0 }.joinToString(" · ") { (label, amount) -> "${copy.legacy(label)} ${if (amount > 0) "+" else ""}$amount" }
+    }
+}
+
+public object GrowthFeedbackPresentation {
+    public fun primary(receipt: PlayerGrowthReceipt): Int? = if (controlMilestone(receipt)) 1 else (0..3)
+        .filter { receipt.before[it] != receipt.after[it] }.maxByOrNull { receipt.after[it] - receipt.before[it] }
+    public fun controlMilestone(receipt: PlayerGrowthReceipt): Boolean = PitchReleaseWindow.crossesMilestone(receipt.before[1], receipt.after[1])
+    public fun condition(copy: GameCopy, fatigue: Int, change: Int): String = when {
+        change > 0 -> copy.resolve("loop.condition.up", GameCopyArgument.Whole(fatigue.toLong()), GameCopyArgument.Whole(change.toLong()))
+        change < 0 -> copy.resolve("loop.condition.down", GameCopyArgument.Whole(fatigue.toLong()), GameCopyArgument.Whole(change.toLong()))
+        else -> copy.resolve("loop.condition.current", GameCopyArgument.Whole(fatigue.toLong()))
+    }
+}
+
+public data class RebirthContinuity(val previousName: String?, val samePlayer: Boolean, val legacyTitle: String?, val games: Int, val strikeouts: Int) {
+    public companion object {
+        public fun resolve(state: GameAggregateState): RebirthContinuity? {
+            val hs = state.highSchool ?: return null
+            if (hs.run.lifeNumber <= 1 || hs.challenge.active || state.meta.seedChallenge != null) return null
+            val previous = hs.archive.lastOrNull { it.lifeNumber < hs.run.lifeNumber }
+            val legacy = hs.inheritance.selectedSignatureLegacyId?.let { id ->
+                com.solkim.baseball.core.highschool.HighSchoolSignatureLegacyRules.definitions.firstOrNull { it.id == id }?.title
+            }
+            return RebirthContinuity(previous?.playerName, previous?.let { sameName(it.playerName, hs.run.identity.name) } ?: true,
+                legacy, previous?.importantGames ?: 0, previous?.strikeouts ?: 0)
+        }
+        public fun sameName(previous: String, current: String): Boolean = previous.trim().isNotEmpty() && previous.trim().equals(current.trim(), ignoreCase = true)
     }
 }

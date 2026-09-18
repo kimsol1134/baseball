@@ -21,7 +21,8 @@ enum GameAudioMapping {
             if !isStrikeout { cues.append(.umpireStrike) }
         case .foul:
             cues.append(.batFoul)
-        case .inPlayOut, .single, .double, .triple, .homeRun:
+        case .inPlayOut, .single, .double, .triple, .homeRun, .reachedOnError:
+            // 실책 출루도 방망이에 맞은 공이다. 소리는 타구 강도를 그대로 따른다.
             cues.append(.batContact(power: contactPower(snapshot.battedBall)))
         case .hitByPitch:
             // 몸에 맞는 공은 방망이 소리가 아니다 — 저역만 남긴 둔탁한 충돌음(빗맞음
@@ -39,6 +40,9 @@ enum GameAudioMapping {
         case .walk:
             cues.append(.crowdGroan)
         case .hit:
+            cues.append(.crowdGroan)
+        case .reachedOnError:
+            // 잡을 수 있던 공이 빠졌다. 홈 관중의 소리는 안타를 맞았을 때와 같다.
             cues.append(.crowdGroan)
         case .none:
             if snapshot.runsScored > 0 { cues.append(.crowdGroan) }

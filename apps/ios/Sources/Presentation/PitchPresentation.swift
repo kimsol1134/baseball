@@ -118,6 +118,9 @@ enum PitchPresentation {
     }
 
     static func scenarioDetail(_ scenario: PitchScenario, resolver: GameCopyResolver) -> String {
+        if case .tutorial = scenario.presentationContext, scenario.maximumPitches == 1 {
+            return resolver.resolve(.localizable("loop.reborn.practice-note"))
+        }
         guard resolver.language != .korean else { return scenario.detail }
         switch scenario.presentationContext {
         case .tutorial:
@@ -211,6 +214,7 @@ enum PitchPresentation {
         case .triple: .feedbackTriple
         case .homeRun: .feedbackHomeRun
         case .hitByPitch: .feedbackHitByPitch
+        case .reachedOnError: .feedbackReachedOnError
         }
         return resolver.resolve(key)
     }

@@ -397,3 +397,55 @@ struct PrologueAbilityGauge: View {
 }
 
 /// 학교 선택.
+
+/// Returning lives get their real choices before optional narrative. Practice uses the existing
+/// neutral-condition bullpen and never changes the archived life or grants training growth.
+struct RebornReadyCard<History: View>: View {
+    let state: HighSchoolCareerSnapshot
+    let previous: LifeRecord?
+    let onContinue: () -> Void
+    let onPractice: () -> Void
+    @ViewBuilder let history: () -> History
+    @Environment(\.gameCopyResolver) private var copyResolver
+    @State private var showsMemories = false
+
+    private var samePlayer: Bool { previous.map { PlayerContinuityRules.sameName($0.playerName, state.identity.name) } ?? true }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(verbatim: copyResolver.resolve(.localizable(samePlayer ? "loop.reborn.same" : "loop.reborn.different")))
+                .font(.title2.weight(.bold)).accessibilityIdentifier("hs.reborn.title")
+            Text(verbatim: copyResolver.resolve(.localizable("loop.reborn.next"))).detailStyle()
+            PrimaryButton(title: copyResolver.resolve(.localizable("loop.reborn.continue")),
+                identifier: "hs.reborn.continue", action: onContinue)
+            Button(copyResolver.resolve(.localizable("loop.reborn.practice")), action: onPractice)
+                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                .accessibilityIdentifier("hs.reborn.practice")
+            if let legacy = previous?.signatureLegacy {
+                Text(verbatim: copyResolver.resolve(.localizable("loop.reborn.inherited"), arguments: [
+                    .userText(HighSchoolConclusionPresentation.localizedSignature(legacy, resolver: copyResolver).title)]))
+                    .font(BaseballType.detail).foregroundStyle(BaseballTheme.milestone)
+            }
+            if !state.karmas.isEmpty {
+                Text(verbatim: copyResolver.resolve(.localizable("loop.reborn.handicaps"), arguments: [.integer(state.karmas.count)]))
+                    .detailStyle(BaseballTheme.warning)
+            }
+            if previous != nil {
+                Button(copyResolver.resolve(.localizable(samePlayer ? "loop.reborn.memories" : "loop.reborn.other-record"))) { showsMemories.toggle() }
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget).accessibilityIdentifier("hs.reborn.memories")
+                if showsMemories {
+                    history()
+                    let wind = CareerWindPresentationCatalog.descriptor(for: state.careerWind)
+                    if !wind.effectDescriptors.isEmpty {
+                        EffectChipFlow {
+                            ForEach(Array(wind.effectDescriptors.enumerated()), id: \.offset) { _, effect in
+                                let text = copyResolver.resolve(effect.token)
+                                EffectChip(text: text, tone: PrologueCard.windEffectTone(text), systemImage: "wind")
+                            }
+                        }
+                    }
+                }
+            }
+        }.accessibilityElement(children: .contain)
+            .accessibilityIdentifier("hs.reborn.ready")
+    }
+}

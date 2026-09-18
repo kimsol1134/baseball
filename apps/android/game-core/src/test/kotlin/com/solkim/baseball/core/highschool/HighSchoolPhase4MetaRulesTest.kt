@@ -105,7 +105,7 @@ class HighSchoolPhase4MetaRulesTest {
         )
         val prepared = kernel.prepareReturnPlan(eligibleState, "2026-08-09", 4).state
         assertEquals(first.receiptId, prepared.returnPlan!!.receiptId)
-        assertEquals(first.experimentVariant, prepared.returnPlan.experimentVariant)
+        assertEquals(first.experimentVariant, prepared.returnPlan!!.experimentVariant)
     }
 
     @Test

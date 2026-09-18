@@ -261,7 +261,10 @@ final class PresentationTests: XCTestCase {
         XCTAssertEqual(presentation.accessibilitySummary, "")
     }
 
-    func testRelationshipChoiceShowsOnlyTitleAndKeepsDetailAccessible() {
+    /// 선택의 대가는 **고르기 전에** 보여야 한다. 예전에는 설명이 보조 기술에만 남아 있어
+    /// 눈으로 읽는 사람에게는 제목 한 줄뿐이었다(6-A). 정책은 두 값을 그대로 나눠 주고,
+    /// 카드가 둘 다 그린다.
+    func testRelationshipChoiceKeepsTitleAndDetailSeparate() {
         let presentation = RelationshipCardPresentationPolicy.choice(
             title: "먼저 듣는다",
             detail: "포수의 설명을 끝까지 듣고 믿음을 쌓습니다."
@@ -274,17 +277,166 @@ final class PresentationTests: XCTestCase {
         )
     }
 
-    func testRelationshipCardRendersPolicyOutputInsteadOfDuplicateRawCopy() throws {
+    /// 고교와 프로가 같은 대화 관용구를 쓴다. 한쪽만 고치면 같은 게임 안에서 대화가
+    /// 두 모양이 된다(6-A).
+    func testBothConversationSurfacesShareTheSameStage() throws {
         let relationshipCard = try IOSSourceScan.typeBody(
             "RelationshipCard",
             in: "apps/ios/Sources/HighSchoolRelationshipViews.swift"
         )
+        let proDecision = try IOSSourceScan.typeBody(
+            "ProSeasonDecisionView",
+            in: "apps/ios/Sources/ProSeasonDecisionView.swift"
+        )
 
-        XCTAssertTrue(relationshipCard.contains("Text(verbatim: scene.visibleLine)"))
+        for body in [relationshipCard, proDecision] {
+            XCTAssertTrue(body.contains("ConversationStage("))
+            XCTAssertTrue(body.contains("ConversationChoiceCard("))
+        }
+        // 대사는 한 번만 보인다.
+        XCTAssertTrue(relationshipCard.contains("line: sceneLine"))
         XCTAssertFalse(relationshipCard.contains("Text(verbatim: summary)"))
-        XCTAssertTrue(relationshipCard.contains("Text(verbatim: choice.visibleLine)"))
-        XCTAssertFalse(relationshipCard.contains("Text(verbatim: choiceDetail)"))
-        XCTAssertTrue(relationshipCard.contains("detail: choice.accessibilityDetail"))
+        // 확인 알럿은 돌아오지 않는다 — iOS 26에서 팝오버로 떠 취소가 잘렸다.
+        XCTAssertFalse(proDecision.contains(".alert("))
+        XCTAssertFalse(proDecision.contains(".confirmationDialog("))
+    }
+
+    /// 7-E. 저장이 거듭 실패할 때 안내하는 그 자리가 실제로 있어야 한다 — 문구만 있고
+    /// 기능이 없으면 그 안내는 거짓말이다.
+    @MainActor
+    func testSettingsCanActuallyExportTheSave() throws {
+        let highSchool = HighSchoolCareerStore(saveWriter: { _ in true })
+        XCTAssertTrue(highSchool.installTrainingFixtureForUITesting())
+        let pro = MobileCareerStore(saveWriter: { _ in true }, configuration: .production)
+
+        let bundle = try XCTUnwrap(SaveExport.bundle(highSchool: highSchool, pro: pro))
+        XCTAssertFalse(bundle.isEmpty)
+        let url = try XCTUnwrap(SaveExport.writeTemporaryFile(bundle))
+        addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+        let written = try Data(contentsOf: url)
+        XCTAssertFalse(written.isEmpty)
+
+        // 담긴 것은 저장 원본 그대로다 — 다시 해석하지 않으므로 스키마가 올라가도 깨지지 않는다.
+        let decoded = try JSONDecoder().decode(SaveExportBundle.self, from: written)
+        XCTAssertNotNil(decoded.highSchool)
+
+        // 내보내기는 **읽기만 한다.** 저장을 건드리면 마지막 사본마저 위험해진다.
+        XCTAssertEqual(highSchool.state?.phase, .training)
+        XCTAssertNil(highSchool.lastActionFailure)
+
+        // 반복 실패 안내가 가리키는 자리가 이것이다.
+        let korean = GameCopyResolver(language: .korean, policy: .releaseSafe)
+        let advice = korean.resolve(AppCopyKey.failureIORepeated)
+        XCTAssertTrue(advice.contains("설정"), advice)
+        XCTAssertTrue(
+            korean.resolve(AppCopyKey.settingsExportSave).contains("파일"),
+            "안내와 실제 항목이 같은 것을 가리켜야 한다"
+        )
+    }
+
+    /// 7-A. 규칙이 거절한 일은 **커리어를 못 쓰게 만들지 않고**, 저장 공간을 탓하지도 않는다.
+    @MainActor
+    func testARuleRejectionDoesNotBlankTheCareerOrBlameStorage() throws {
+        let store = MobileCareerStore(saveWriter: { _ in true }, configuration: .production)
+        XCTAssertTrue(store.installLiveSeasonDecisionFixtureForUITesting())
+        let decision = try XCTUnwrap(store.state?.pendingDecision)
+
+        // 없는 선택지 → 커널이 거절한다.
+        store.applySeasonDecision(decisionID: decision.id, choiceID: "missing-choice")
+        // 화면 자체를 못 쓰게 만들지 않는다. (스토어가 인자 검증에서 먼저 멈추므로
+        // 국면은 그대로다.)
+        XCTAssertEqual(store.state?.phase, .seasonDecision)
+
+        // 커널까지 닿는 규칙 거절: 국면은 맞는데 그 결정에 없는 선택지다.
+        // (국면이 어긋난 경우는 규칙이 아니라 상태 충돌이라 다른 갈래로 간다.)
+        let pending = try XCTUnwrap(store.result)
+        _ = store.perform(operation: "bad-choice") {
+            try store.engine.applySeasonDecision(.init(
+                seed: pending.nextSeed,
+                state: pending.snapshot,
+                decisionID: decision.id,
+                choiceID: "no-such-choice"
+            ))
+        }
+        let failure = try XCTUnwrap(store.lastActionFailure)
+        XCTAssertEqual(failure.kind, .rule)
+        XCTAssertFalse(failure.kind.isStorageFailure)
+        XCTAssertNotEqual(store.loadState, .failed(""), "규칙 거절이 커리어를 닫으면 안 된다")
+        if case .failed = store.loadState {
+            XCTFail("규칙 거절이 loadState를 실패로 뒤집었다")
+        }
+
+        let korean = GameCopyResolver(language: .korean, policy: .releaseSafe)
+        let message = CareerFailureCopy.message(for: failure, resolver: korean)
+        XCTAssertFalse(message.contains("저장 공간"), message)
+    }
+
+    /// 3년의 결과는 지명 결과가 먼저다. 신분 카드(이름·학교·얼굴)는 회차 카드가 이미
+    /// 보여 주므로 여기서 되풀이하지 않는다(6-C).
+    func testDraftJourneyLeadsWithTheDestinationAndDoesNotRepeatTheIdentityCard() throws {
+        let peak = try IOSSourceScan.typeBody(
+            "DraftPeakResultView",
+            in: "apps/ios/Sources/HighSchoolDraftLegacyViews.swift"
+        )
+
+        let destination = try XCTUnwrap(peak.range(of: "draftDestination(draft)"))
+        let score = try XCTUnwrap(peak.range(of: "hs.bestEvaluation"))
+        XCTAssertLessThan(
+            destination.lowerBound, score.lowerBound,
+            "지명 구단이 평가 점수보다 먼저 와야 한다"
+        )
+        for identifier in [
+            "hs.draft.journey.record",
+            "hs.draft.journey.effort",
+            "hs.draft.journey.build",
+            "hs.draft.journey.coach",
+        ] {
+            XCTAssertTrue(peak.contains(identifier), identifier)
+        }
+        XCTAssertFalse(peak.contains("LifeCardPreview"), "회차 카드를 여기서 다시 그리지 않는다")
+    }
+
+    /// 환생 경로도 같은 규칙이다 — 고르는 일은 명령이 아니고, 기존 이어가기는 남는다(6-E).
+    func testRebirthPathSeparatesChoosingFromStartingAndKeepsTheExistingRoute() throws {
+        let completion = try IOSSourceScan.typeBody(
+            "CompletionCard",
+            in: "apps/ios/Sources/HighSchoolDraftLegacyViews.swift"
+        )
+
+        XCTAssertTrue(completion.contains("ConversationChoiceCard("))
+        XCTAssertTrue(completion.contains("identifier: \"hs.rebirthPath.confirm\""))
+        // 카드를 눌러도 명령은 없다. 시작은 확인 버튼 한 곳에서만 부른다.
+        XCTAssertEqual(completion.components(separatedBy: "onRebirthPath(").count - 1, 1)
+        // 기존 "이어가기" 버튼은 그대로 남는다.
+        XCTAssertTrue(completion.contains("identifier: \"hs.rebirth\""))
+        XCTAssertFalse(completion.contains("career.startRebirth("), "화면이 직접 회차를 시작하지 않는다")
+    }
+
+    /// 계약도 같은 규칙을 따른다 — 고르는 일은 명령이 아니고, 확인은 모달이 아니라
+    /// 같은 화면 아래에 열린다(6-D).
+    func testContractOfferSeparatesSelectionFromSigningWithoutAModal() throws {
+        let contract = try IOSSourceScan.typeBody(
+            "ProContractOfferView",
+            in: "apps/ios/Sources/ProContractOfferView.swift"
+        )
+
+        XCTAssertFalse(contract.contains(".alert("))
+        XCTAssertFalse(contract.contains(".confirmationDialog("))
+        XCTAssertTrue(contract.contains("identifier: \"pro.contractOffer.confirm.accept\""))
+        XCTAssertTrue(contract.contains("pro.contractOffer.confirm.cancel"))
+        // 카드를 누르는 일은 선택만 바꾼다. `acceptContract`는 확인 블록에서 한 번만 부른다.
+        XCTAssertEqual(contract.components(separatedBy: "career.acceptContract(").count - 1, 1)
+    }
+
+    /// 미리보기는 선언된 효과가 아니라 커널을 돌려 본 결과를 쓴다(6-B).
+    func testProDecisionChipsAskTheKernel() throws {
+        let proDecision = try IOSSourceScan.typeBody(
+            "ProSeasonDecisionView",
+            in: "apps/ios/Sources/ProSeasonDecisionView.swift"
+        )
+
+        XCTAssertTrue(proDecision.contains("ProConversationPresentation.preview("))
+        XCTAssertTrue(proDecision.contains("ProCareerPresentation.conversationChips("))
     }
 
     /// App Store build에서 SwiftUICore가 TrainingCard의 `ForEach` item closure를

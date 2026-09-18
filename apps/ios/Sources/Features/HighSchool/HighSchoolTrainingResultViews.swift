@@ -67,137 +67,91 @@ struct TrainingResultPanel: View {
     var compact: Bool = false
     let onDismiss: () -> Void
     @Environment(\.gameCopyResolver) private var copyResolver
+    @State private var showsDetails = false
 
+    private var commandMilestone: AbilityGain? {
+        receipt.gains.first { $0.ability == .command && PitchReleaseWindow.crossesMilestone(before: $0.before, after: $0.after) }
+    }
+    private var primary: AbilityGain? {
+        commandMilestone ?? receipt.gains.max { ($0.after - $0.before) < ($1.after - $1.before) }
+    }
     private var grew: Bool { receipt.gains.contains { $0.after > $0.before } }
-    private var accent: Color {
-        if receipt.bloom != nil || receipt.jackpot { return BaseballTheme.milestone }
-        return grew ? BaseballTheme.action : BaseballTheme.textSecondary
+    private var notable: Bool { commandMilestone != nil || receipt.bloom != nil || receipt.jackpot }
+    private var accent: Color { notable ? BaseballTheme.milestone : grew ? BaseballTheme.action : BaseballTheme.textSecondary }
+    private var headline: String {
+        if commandMilestone != nil { return copyResolver.resolve(.localizable("loop.growth.milestone")) }
+        guard let gain = primary else { return HighSchoolPresentation.localizedTrainingResultHeadline(receipt, resolver: copyResolver) }
+        return copyResolver.resolve(.localizable("loop.growth.row"), arguments: [
+            .userText(copyResolver.resolve(gain.ability.displayCopyToken)),
+            .integer(AbilityDisplayScale.displayRating(gain.before)), .integer(AbilityDisplayScale.displayRating(gain.after))])
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: receipt.bloom != nil ? "sparkles"
-                      : grew ? "arrow.up.right.circle.fill" : "checkmark.circle")
+            HStack(alignment: .center, spacing: 8) {
+                Image(systemName: notable ? "sparkles" : grew ? "arrow.up.right" : "checkmark")
+                    .foregroundStyle(accent).accessibilityHidden(true)
+                Text(verbatim: headline)
+                    .font(notable && !compact ? .title3.weight(.bold) : .headline)
                     .foregroundStyle(accent)
-                Text(HighSchoolPresentation.localizedTrainingResultTitle(receipt, resolver: copyResolver))
-                    .font(.subheadline.weight(.heavy))
-                    .foregroundStyle(accent)
-                if receipt.opportunityHit {
-                    Text(copyResolver.resolve(AppCopyKey.trainingResultOpportunityBadge))
-                        .font(.caption2.weight(.heavy))
-                        .foregroundStyle(BaseballTheme.milestone)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(BaseballTheme.milestone.opacity(0.22), in: Capsule())
-                }
+                    .accessibilityIdentifier("hs.training.result.headline")
                 Spacer(minLength: 0)
                 Button(copyResolver.resolve(AppCopyKey.trainingResultDismiss), action: onDismiss)
-                    .font(BaseballType.detail.weight(.bold))
-                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .font(BaseballType.detail).frame(minHeight: BaseballMetrics.minimumTapTarget)
                     .accessibilityIdentifier("hs.training.result.dismiss")
             }
-
-            // 오른 값이 주인공이다. 큰 글자 한 줄이면 스치듯 봐도 읽힌다.
-            Text(HighSchoolPresentation.localizedTrainingResultHeadline(receipt, resolver: copyResolver))
-                .font(.title3.weight(.heavy))
-                .foregroundStyle(grew ? accent : BaseballTheme.textSecondary)
-                .accessibilityIdentifier("hs.training.result.headline")
-
-            if !compact {
-                let risen = receipt.gains.filter { $0.after > $0.before }
-                if risen.isEmpty {
-                    StatTile(
-                        label: copyResolver.resolve(AppCopyKey.trainingResultNoGain),
-                        value: "0",
-                        caption: copyResolver.resolve(AppCopyKey.trainingResultNoGain),
-                        tone: BaseballTheme.textTertiary
-                    )
-                } else {
-                    HStack(alignment: .top, spacing: 10) {
-                        ForEach(risen) { gain in
-                            if gain.ability == .command {
-                                Text(verbatim: HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver))
-                                    .font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(accent)
-                            } else {
-                            StatTile(
-                                label: copyResolver.resolve(gain.ability.displayCopyToken),
-                                value: "\(AbilityDisplayScale.displayRating(gain.after))",
-                                previousValue: "\(AbilityDisplayScale.displayRating(gain.before))",
-                                caption: nil,
-                                tone: accent,
-                                animatesChange: true
-                            )
-                            }
-                        }
-                    }
-                }
-
-                if let bloom = receipt.bloom {
-                    Text(HighSchoolPresentation.localizedTrainingResultBloom(bloom, resolver: copyResolver))
-                        .proseLeadStyle()
-                }
+            if !compact, let commandMilestone {
+                ControlWindowPreview(command: commandMilestone.after, beforeCommand: commandMilestone.before,
+                    showsLegend: false, titleKey: "loop.growth.base-window")
             }
-
-            if let commandGain = receipt.gains.first(where: { $0.ability == .command }), commandGain.after != commandGain.before {
-                ControlWindowPreview(command: commandGain.after, beforeCommand: commandGain.before, compact: compact)
+            if !compact, let bloom = receipt.bloom {
+                Text(HighSchoolPresentation.localizedTrainingResultBloom(bloom, resolver: copyResolver)).detailStyle()
+            } else if receipt.jackpot {
+                Text(HighSchoolPresentation.localizedTrainingResultTitle(receipt, resolver: copyResolver))
+                    .font(BaseballType.annotation).foregroundStyle(BaseballTheme.milestone)
             }
+            // Permanent growth and the current cost remain separate even after changing phase.
+            Text(verbatim: GrowthConditionCopy.line(fatigue: receipt.fatigueAfter, change: receipt.fatigueChange, resolver: copyResolver))
+                .font(BaseballType.detail).foregroundStyle(receipt.fatigueChange > 0 ? BaseballTheme.warning : BaseballTheme.textSecondary)
+                .accessibilityIdentifier("hs.training.result.condition")
             if let learning = receipt.pitchLearning {
-                GameCopyText(
-                    AppCopyKey.trainingResultPitchLearning,
-                    arguments: [
-                        .userText(PitchCopy.localized(learning.pitchType, resolver: copyResolver)),
-                        .integer(learning.practiceCreditsAfter - learning.practiceCreditsBefore),
-                        .integer(learning.practiceCreditsAfter),
-                        .integer(CareerDisplayRules.pitchLearningPracticeCap),
-                    ]
-                )
-                .font(BaseballType.annotation.weight(.semibold).monospacedDigit())
-                .foregroundStyle(
-                    learning.justCompleted || learning.justUnlockedForGames
-                        ? BaseballTheme.milestone : BaseballTheme.information
-                )
-                .accessibilityIdentifier("hs.training.result.pitchLearning")
+                GameCopyText(AppCopyKey.trainingResultPitchLearning, arguments: [
+                    .userText(PitchCopy.localized(learning.pitchType, resolver: copyResolver)),
+                    .integer(learning.practiceCreditsAfter - learning.practiceCreditsBefore),
+                    .integer(learning.practiceCreditsAfter), .integer(CareerDisplayRules.pitchLearningPracticeCap)])
+                    .font(BaseballType.annotation).foregroundStyle(learning.justCompleted || learning.justUnlockedForGames ? BaseballTheme.milestone : BaseballTheme.textSecondary)
+                    .accessibilityIdentifier("hs.training.result.pitchLearning")
             }
-
-            if !compact {
-                if let primary = receipt.gains.filter({ $0.after > $0.before }).max(by: { ($0.after - $0.before) < ($1.after - $1.before) }) {
-                    let key: String = switch primary.ability {
-                    case .stuff: "mobile.polish.growth-stuff"
-                    case .command: "mobile.polish.growth-command"
-                    case .movement: "mobile.polish.growth-movement"
-                    case .stamina: "mobile.polish.growth-stamina"
-                    }
-                    Text(verbatim: copyResolver.resolve(.localizable(key))).font(BaseballType.detail.weight(.semibold))
+            Button(copyResolver.resolve(.localizable("loop.growth.details"))) { showsDetails.toggle() }
+                .font(BaseballType.annotation).frame(minHeight: BaseballMetrics.minimumTapTarget)
+                .accessibilityIdentifier("hs.training.result.details")
+            if showsDetails {
+                ForEach(receipt.gains) { gain in
+                    Text(verbatim: HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver)).detailStyle()
                 }
-                DisclosureGroup(copyResolver.resolve(.localizable("mobile.polish.training-details"))) {
-                    Text(HighSchoolPresentation.localizedTrainingResultDetail(receipt, resolver: copyResolver)).detailStyle()
+                if commandMilestone == nil, let gain = receipt.gains.first(where: { $0.ability == .command }) {
+                    ControlWindowPreview(command: gain.after, beforeCommand: gain.before, titleKey: "loop.growth.base-window")
                 }
-
-                // 피로는 훈련의 가격이다. 결과와 같은 자리에서 보여야 다음 강도를 고를 수 있다.
-                EffectChip(
-                    text: HighSchoolPresentation.localizedTrainingFatigue(receipt, resolver: copyResolver),
-                    tone: receipt.fatigueAfter >= 70 ? .cost : .neutral,
-                    systemImage: "battery.50"
-                )
+                Text(verbatim: copyResolver.resolve(.localizable("loop.condition.explanation"))).detailStyle()
+                Text(HighSchoolPresentation.localizedTrainingResultDetail(receipt, resolver: copyResolver)).detailStyle()
             }
         }
-        .padding(compact ? 10 : BaseballMetrics.gutter)
+        .padding(compact ? 10 : 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            (receipt.bloom != nil || receipt.jackpot
-             ? BaseballTheme.milestone.opacity(0.14)
-             : grew ? BaseballTheme.actionSoft : BaseballTheme.surface),
-            in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius)
-                .stroke(accent, lineWidth: receipt.bloom != nil || receipt.jackpot ? 2 : 1)
-        }
+        .background(notable ? BaseballTheme.milestone.opacity(0.12) : BaseballTheme.surface,
+            in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("hs.training.result")
-        .onAppear {
-            if receipt.bloom != nil || receipt.jackpot { GameAudio.shared.play(.milestone) }
-        }
+        .onChange(of: receipt) { _, _ in showsDetails = false }
+        .onAppear { if notable && !compact { GameAudio.shared.play(.milestone) } }
+    }
+}
+
+/// Explicitly describes current condition; the growth comparison itself uses a fixed condition.
+enum GrowthConditionCopy {
+    static func line(fatigue: Int, change: Int, resolver: GameCopyResolver) -> String {
+        let key = change > 0 ? "loop.condition.up" : change < 0 ? "loop.condition.down" : "loop.condition.current"
+        return resolver.resolve(.localizable(key), arguments: change == 0 ? [.integer(fatigue)] : [.integer(fatigue), .integer(change)])
     }
 }
 

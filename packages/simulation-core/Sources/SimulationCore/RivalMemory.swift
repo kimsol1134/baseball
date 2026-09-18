@@ -339,7 +339,8 @@ public struct RivalMemoryEngine: Sendable {
     private func observationWeight(_ observation: RivalPitchObservation) -> Int {
         switch observation.outcome {
         case .single, .double, .triple, .homeRun: 6
-        case .foul, .inPlayOut: 4
+        // 실책 출루는 결국 배트에 맞혀 인플레이가 된 공이다. 범타와 같은 무게로 읽는다.
+        case .foul, .inPlayOut, .reachedOnError: 4
         case .ball, .calledStrike, .hitByPitch: 2
         case .swingingStrike: 1
         }

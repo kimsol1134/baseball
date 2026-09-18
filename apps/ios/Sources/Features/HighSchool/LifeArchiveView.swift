@@ -121,6 +121,21 @@ struct LifeArchiveSection: View {
                 if !records.isEmpty {
                     PlayerLineageRibbon(records: orderedRecords)
                         .padding(.bottom, 10)
+                    // **환생의 값은 더 높이 가는 것이 아니라 더 일찍 가는 것이다.**
+                    // 계승 상한이 +16에서 멈추므로 달라지는 것은 끝점이 아니라 출발점이고,
+                    // 그것은 1회차와 이번 회차를 나란히 놓아야 보인다(성장 곡선 계획 G-5).
+                    if let lineage = MobileCareerStore.lineageComparison(records: records) {
+                        CareerComparisonCard(
+                            comparison: lineage,
+                            title: copyResolver.resolve(.lineageComparisonTitle),
+                            subtitle: copyResolver.resolve(
+                                .lineageComparisonLives,
+                                arguments: [.integer(lineage.previousLabel), .integer(lineage.currentLabel)]
+                            ),
+                            identifier: "archive.lineageComparison"
+                        )
+                        .padding(.bottom, 10)
+                    }
                     VStack(alignment: .leading, spacing: 6) {
                         Text(verbatim: copyResolver.resolve(LegacyUICopyKey.masteryArchiveHeading))
                             .eyebrowStyle(BaseballTheme.information)

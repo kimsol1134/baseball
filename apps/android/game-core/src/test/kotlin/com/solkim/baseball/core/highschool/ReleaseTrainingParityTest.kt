@@ -4,7 +4,6 @@ import com.solkim.baseball.core.pitch.*
 import com.solkim.baseball.model.*
 import java.nio.file.*
 import kotlin.test.*
-import org.junit.Assume.assumeTrue
 
 class ReleaseTrainingParityTest {
     private fun values(s: HighSchoolState): List<String> {
@@ -14,12 +13,10 @@ class ReleaseTrainingParityTest {
             p.pitchProfiles.sortedBy { it.pitchType.wire }.joinToString(";") { "${it.pitchType.wire}:${it.role.wire}:${it.velocityTenthsKph}:${it.control}:${it.command}:${it.movement}:${it.whiff}:${it.weakContact}:${it.fatigueCost}" })
     }
     @Test fun allPresetsLearningPitchesFocusAndIntensityMatchCurrentSwift() {
-        val path = Path.of("../../../artifacts/android-compose/release-gate/swift-release-parity.json")
-        assumeTrue("Generate current Swift evidence with release gate", Files.exists(path))
-        val root = StrictJson.parseUtf8(Files.readAllBytes(path)) as JsonValue.Obj
+        val root = com.solkim.baseball.core.SwiftReleaseReference.read()
         val cases = (root["training"] as JsonValue.Arr).values.map { it as JsonValue.Obj }
         assertEquals(216, cases.size)
-        val core = HighSchoolKernel()
+        val core = HighSchoolKernel(balanceRulesVersion = 4)
         for (row in cases) {
             fun text(key: String) = (row[key] as JsonValue.Str).value
             fun expected(key: String) = (row[key] as JsonValue.Arr).values.map { (it as JsonValue.Str).value }

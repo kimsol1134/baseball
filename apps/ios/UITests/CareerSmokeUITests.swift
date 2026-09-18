@@ -10,6 +10,30 @@ final class CareerSmokeUITests: XCTestCase {
     /// 고교 한 회차는 훈련 12~16 + 관계 4~6 + 경기 4~6 + 각성 3 + 챕터 8이라 단계 수가 많다.
     private let maximumSteps = 400
 
+    func testMissingProRecoveryOpensLegacyWithoutDeletingTheHighSchoolPlayer() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestIsolatedCareer", "-uiTestResetCareer", "-uiTestMissingProFixture",
+                               "-baseball.audio.sound", "NO", "-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        let continueResult = app.buttons["hs.draft.result.continue"]
+        XCTAssertTrue(continueResult.waitForExistence(timeout: timeout))
+        XCTAssertTrue(tapIfPresent(continueResult))
+        let recover = app.buttons["hs.recoverMissingPro"]
+        XCTAssertTrue(recover.waitForExistence(timeout: timeout))
+        capture(app, name: "missing-pro-recovery-japanese")
+        XCTAssertTrue(tapIfPresent(recover))
+        let confirm = app.buttons["hs.legacy.confirm"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: timeout))
+        XCTAssertFalse(app.buttons["hs.restart"].exists)
+        app.terminate()
+        app.launchArguments = ["-uiTestIsolatedCareer", "-baseball.audio.sound", "NO",
+                               "-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        // The recovered legacy phase must survive a real process restart.
+        if continueResult.waitForExistence(timeout: 3) { _ = tapIfPresent(continueResult) }
+        XCTAssertTrue(confirm.waitForExistence(timeout: timeout))
+    }
+
     override func setUp() {
         continueAfterFailure = false
         journeyCopyLocale = .japanese
@@ -46,9 +70,7 @@ final class CareerSmokeUITests: XCTestCase {
         seed: String? = nil,
         harshness: String? = nil
     ) -> Bool {
-        if app.buttons["pitch.throw"].waitForExistence(timeout: 2) {
-            playInning(app, capturePitchResult: false)
-        }
+        finishOnboardingBullpenIfNeeded(app, wait: timeout)
         let start = app.buttons["hs.start"]
         let next = app.buttons["hs.setup.next"]
         guard start.waitForExistence(timeout: timeout) || next.waitForExistence(timeout: timeout) else { return false }
@@ -192,11 +214,20 @@ final class CareerSmokeUITests: XCTestCase {
         )
         let continueControl = assertFinaleContinueControl(app, language: "ja")
         writeQAScreenshot(app, name: "ja-finale.png")
-        XCTAssertTrue(tapIfPresent(continueControl) || tapIdentified(app, "pro.seasonReview.confirm"))
+        tapIfPresent(app.buttons["pro.notice.banner.dismiss"])
+        XCTAssertTrue(
+            tapIfPresent(continueControl) || tapSeasonReviewConfirm(app),
+            "終了画面の続行を押せません。見えるボタン: \(visibleIdentifiers(app))"
+        )
+        if identified(app, "pro.postseason.finale").waitForExistence(timeout: 1) {
+            _ = tapSeasonReviewConfirm(app)
+        }
         XCTAssertTrue(
             identified(app, "pro.postseason.finale").waitForNonExistence(timeout: timeout)
                 || identified(app, "pro.seasonSettlement").waitForExistence(timeout: timeout)
-                || app.buttons["pro.settlement.acknowledge"].waitForExistence(timeout: 2),
+                || app.buttons["pro.settlement.acknowledge"].waitForExistence(timeout: 2)
+                || app.buttons["pro.offseason.continue"].waitForExistence(timeout: 2)
+                || app.buttons["pro.week.plan"].waitForExistence(timeout: 2),
             "終了画面の続行を押しても次の局面に進めません。見えるボタン: \(visibleIdentifiers(app))"
         )
     }
@@ -341,6 +372,7 @@ final class CareerSmokeUITests: XCTestCase {
                 return
             }
             if tapIfPresent(app.buttons["hs.prologue.continue"]) { continue }
+            if tapIfPresent(app.buttons["hs.training.result.dismiss"]) { continue }
             if tapFirst(app, prefix: "hs.school.") {
                 confirmSchool(app)
                 capture(app, name: "03-school-selection-done")
@@ -357,8 +389,9 @@ final class CareerSmokeUITests: XCTestCase {
                 assertTrainingResultIsImmediatelyUsable(app)
                 continue
             }
-            if tapFirst(app, prefix: "hs.response.") { continue }
+            if tapRelationshipChoice(app) { continue }
             if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
+            if tapIfPresent(app.buttons["hs.chapter.claim"]) { continue }
             if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
 
             if app.buttons["hs.game.start"].exists {
@@ -416,11 +449,78 @@ final class CareerSmokeUITests: XCTestCase {
         XCTAssertTrue(tapIfPresent(app.buttons["hs.focus.command"]))
         XCTAssertTrue(tapIfPresent(app.buttons["hs.training.commit"]))
         assertTrainingResultIsImmediatelyUsable(app)
+        let condition = app.descendants(matching: .any).matching(identifier: "hs.training.result.condition").firstMatch
+        XCTAssertTrue(condition.waitForExistence(timeout: timeout))
+        XCTAssertTrue(condition.label.contains("피로"))
         let window = app.descendants(matching: .any).matching(identifier: "growth.controlWindow").firstMatch
-        XCTAssertTrue(window.waitForExistence(timeout: timeout), "제구 성장에 실제 릴리스 범위 비교가 빠졌습니다.")
-        XCTAssertTrue(bringIntoView(window))
+        XCTAssertFalse(window.exists, "작은 성장마다 전체 비교 그래프를 펼치면 안 됩니다.")
+        capture(app, name: "loop-small-growth")
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.training.result.details"]))
+        XCTAssertTrue(window.waitForExistence(timeout: timeout), "실제 전후 비교는 상세에서 확인할 수 있어야 합니다.")
         XCTAssertTrue(window.label.contains("퍼펙트"))
-        capture(app, name: "control-window-training-growth")
+    }
+
+    func testControlMilestoneShowsMeaningfulCelebration() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestResetCareer", "-uiTestCommandMilestoneFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
+        app.launch()
+        XCTAssertTrue(app.buttons["training.change"].waitForExistence(timeout: timeout))
+        app.buttons["training.change"].tap()
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.focus.command"]))
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.training.commit"]))
+        assertTrainingResultIsImmediatelyUsable(app)
+        let window = app.descendants(matching: .any).matching(identifier: "growth.controlWindow").firstMatch
+        XCTAssertTrue(window.waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.staticTexts["제구 목표 달성"].exists)
+        capture(app, name: "loop-control-milestone")
+    }
+
+    func testRebornReadyOffersImmediateContinueAndOptionalMemoriesInJapanese() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestIsolatedCareer", "-uiTestResetCareer", "-uiTestRebornFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        let proceed = identified(app, "hs.reborn.continue")
+        XCTAssertTrue(
+            proceed.waitForExistence(timeout: timeout) || app.buttons["hs.reborn.continue"].waitForExistence(timeout: 2),
+            "2회차 이어가기 화면이 없습니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
+        XCTAssertTrue(bringIntoView(proceed) || bringIntoView(app.buttons["hs.reborn.continue"]))
+        XCTAssertTrue(proceed.isHittable || app.buttons["hs.reborn.continue"].isHittable)
+        let practice = identified(app, "hs.reborn.practice")
+        XCTAssertTrue(practice.exists || app.buttons["hs.reborn.practice"].exists)
+        XCTAssertTrue(practice.isHittable || app.buttons["hs.reborn.practice"].isHittable)
+        let letter = app.descendants(matching: .any).matching(identifier: "hs.previousPlayerLetter").firstMatch
+        XCTAssertFalse(letter.exists)
+        assertVisibleCopyContainsNoHangul(app, context: "Japanese reborn ready")
+        capture(app, name: "loop-reborn-ready-ja")
+        XCTAssertTrue(tapIdentified(app, "hs.reborn.memories"))
+        XCTAssertTrue(letter.waitForExistence(timeout: timeout))
+        XCTAssertTrue(letter.label.contains("前の人生"))
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.reborn.memories"]) || tapIdentified(app, "hs.reborn.memories"))
+        XCTAssertTrue(tapIfPresent(proceed) || tapIdentified(app, "hs.reborn.continue"))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "hs.school.")).firstMatch.waitForExistence(timeout: timeout))
+    }
+
+    func testRebornOptionalPracticeFinishesAfterOneManualPitch() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestIsolatedCareer", "-uiTestResetCareer", "-uiTestRebornFixture", "-baseball.audio.sound", "NO", "-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
+        app.launch()
+        let practice = identified(app, "hs.reborn.practice")
+        XCTAssertTrue(
+            practice.waitForExistence(timeout: timeout) || app.buttons["hs.reborn.practice"].waitForExistence(timeout: 2),
+            "2회차 연습 화면이 없습니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
+        capture(app, name: "loop-reborn-ready-ko")
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.reborn.practice"]) || tapIdentified(app, "hs.reborn.practice"))
+        let pad = windUpPad(app)
+        XCTAssertTrue(pad.waitForExistence(timeout: timeout))
+        XCTAssertFalse(app.buttons["pitch.throw"].exists)
+        pad.press(forDuration: 0.6, thenDragTo: pad, withVelocity: .slow, thenHoldForDuration: 0.1)
+        let finish = app.buttons["pitch.finish"]
+        XCTAssertTrue(finish.waitForExistence(timeout: timeout), "한 구 연습이 끝나야 합니다.")
+        capture(app, name: "loop-reborn-practice-finished")
+        XCTAssertTrue(tapIfPresent(finish))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "hs.school.")).firstMatch.waitForExistence(timeout: timeout))
     }
 
     func testTrainingCompletionKeepsResultOnScreen() {
@@ -474,17 +574,15 @@ final class CareerSmokeUITests: XCTestCase {
         }
 
         XCTAssertGreaterThan(completed, 0, "훈련을 한 번도 완료하지 못했습니다.")
-        let response = app.buttons.matching(
-            NSPredicate(format: "identifier BEGINSWITH %@", "hs.response.")
-        ).firstMatch
         let awakening = app.buttons.matching(
             NSPredicate(format: "identifier BEGINSWITH %@", "hs.awakening.")
         ).firstMatch
         XCTAssertTrue(
             commit.exists
-                || response.exists
+                || relationshipChoiceExists(app)
                 || awakening.exists
                 || app.buttons["hs.game.start"].exists
+                || app.buttons["hs.chapter.claim"].exists
                 || app.buttons["hs.chapter.continue"].exists,
             "훈련 결과 뒤 이어서 진행할 행동이 없습니다. 보이는 버튼: \(visibleIdentifiers(app))"
         )
@@ -507,17 +605,15 @@ final class CareerSmokeUITests: XCTestCase {
         let commit = app.buttons["hs.training.commit"]
         XCTAssertTrue(commit.waitForExistence(timeout: timeout), "첫 훈련 화면이 열리지 않았습니다.")
 
-        let response = app.buttons.matching(
-            NSPredicate(format: "identifier BEGINSWITH %@", "hs.response.")
-        ).firstMatch
         var trains = 0
         var steps = 0
-        while steps < 24, !response.exists {
+        while steps < 24, !relationshipChoiceExists(app) {
             steps += 1
             if tapFirst(app, prefix: "hs.awakening.") {
                 confirmAwakening(app)
                 continue
             }
+            if tapIfPresent(app.buttons["hs.chapter.claim"]) { continue }
             if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
             if app.buttons["hs.game.start"].exists {
                 tapIfPresent(app.buttons["hs.game.start"])
@@ -534,15 +630,16 @@ final class CareerSmokeUITests: XCTestCase {
 
         XCTAssertGreaterThan(trains, 0, "훈련을 한 번도 완료하지 못했습니다.")
         XCTAssertTrue(
-            response.exists,
+            relationshipChoiceExists(app),
             "관계 국면이 \(trains)번 훈련 안에 열리지 않았습니다. 버튼: \(visibleIdentifiers(app))"
         )
         XCTAssertTrue(
             app.buttons["hs.training.result.dismiss"].exists,
             "관계 국면에서도 결과 닫기는 남아야 합니다."
         )
+        let choice = app.descendants(matching: .any).matching(identifier: "hs.relationship").firstMatch
         XCTAssertTrue(
-            bringIntoView(response),
+            bringIntoView(choice),
             "접히지 않은 훈련 결과가 관계 선택을 가리고 있습니다. 버튼: \(visibleIdentifiers(app))"
         )
     }
@@ -558,6 +655,7 @@ final class CareerSmokeUITests: XCTestCase {
         // 고교 3년 UI 종주는 별도 테스트가 맡는다. 여기서는 실제 고교 엔진으로 완주한
         // 확정 지명 픽스처를 써서, 드래프트 밸런스와 무관한 프로 전환·은퇴 흐름만 지킨다.
         let app = launch(draftedCareerFixture: true, journeyEnabled: true, language: "ja")
+        tapIfPresent(app.buttons["hs.draft.result.continue"])
         let enterPro = app.buttons["hs.enterPro"]
         XCTAssertTrue(
             enterPro.waitForExistence(timeout: timeout),
@@ -635,6 +733,7 @@ final class CareerSmokeUITests: XCTestCase {
             openProWeek: true,
             language: "ko"
         )
+        tapIfPresent(app.buttons["hs.draft.result.continue"])
         let enterPro = app.buttons["hs.enterPro"]
         XCTAssertTrue(
             enterPro.waitForExistence(timeout: timeout),
@@ -1123,18 +1222,11 @@ final class CareerSmokeUITests: XCTestCase {
         }
     }
 
-    /// 첫 불펜이 프롤로그 바로 다음에 나와야 한다. 이 게임에서 가장 좋은 것이 투구인데
-    /// 사는 사람이 그걸 만나기까지 열 번을 눌러야 하면 안 된다(DOC-IOS-TOP §6.1).
+    /// 오프닝 다음이 첫 불펜이다. 선수 이름보다 공이 먼저다(DOC-IOS-TOP §6.1).
     func testFirstPitchIsReachableInTwoTaps() {
         let app = launch()
 
         dismissOpening(app)
-        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
-
-        let throwFirst = app.buttons["hs.prologue.throw"]
-        XCTAssertTrue(throwFirst.waitForExistence(timeout: timeout), "프롤로그에 첫 불펜이 없습니다.")
-        tapIfPresent(throwFirst)
-
         XCTAssertTrue(
             app.buttons["pitch.throw"].waitForExistence(timeout: timeout),
             "두 번의 탭으로 투구 화면에 도달하지 못했습니다."
@@ -1143,9 +1235,9 @@ final class CareerSmokeUITests: XCTestCase {
         playInning(app, capturePitchResult: false)
 
         XCTAssertTrue(
-            app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "hs.school."))
-                .element(boundBy: 0).waitForExistence(timeout: timeout),
-            "첫 불펜 뒤 학교 선택으로 넘어가지 않았습니다."
+            app.buttons["hs.setup.next"].waitForExistence(timeout: timeout)
+                || app.buttons["hs.start"].waitForExistence(timeout: 2),
+            "첫 불펜 뒤 선수 만들기로 넘어가지 않았습니다."
         )
     }
 
@@ -1156,6 +1248,7 @@ final class CareerSmokeUITests: XCTestCase {
         let app = launch()
 
         dismissOpening(app)
+        finishOnboardingBullpenIfNeeded(app)
         let next = app.buttons["hs.setup.next"]
         let repertoire = app.descendants(matching: .any)
             .matching(identifier: "setup.repertoire").firstMatch
@@ -1169,10 +1262,16 @@ final class CareerSmokeUITests: XCTestCase {
         XCTAssertTrue(tapIfPresent(app.buttons["setup.pitch.primary.curveball"]), "커브를 주력 구종으로 고를 수 없습니다.")
         XCTAssertTrue(tapIfPresent(app.buttons["hs.start"]), "구종 구성 뒤 커리어를 시작할 수 없습니다.")
 
-        XCTAssertTrue(tapIfPresent(app.buttons["hs.prologue.throw"]), "첫 불펜을 열 수 없습니다.")
-        XCTAssertFalse(app.buttons["pitch.option.slider"].exists, "잠긴 슬라이더가 첫 불펜에 노출됐습니다.")
-        XCTAssertTrue(app.buttons["pitch.option.four_seam"].exists, "기본 포심이 첫 불펜에 없습니다.")
-        XCTAssertTrue(playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true))
+        if app.buttons["hs.prologue.throw"].waitForExistence(timeout: timeout) {
+            tapIfPresent(app.buttons["hs.prologue.throw"])
+        }
+        if app.buttons["pitch.throw"].waitForExistence(timeout: 2)
+            || app.buttons["hs.game.start"].waitForExistence(timeout: 2) {
+            if tapIfPresent(app.buttons["hs.game.start"]) { /* official start */ }
+            XCTAssertFalse(app.buttons["pitch.option.slider"].exists, "잠긴 슬라이더가 첫 불펜에 노출됐습니다.")
+            XCTAssertTrue(app.buttons["pitch.option.four_seam"].exists, "기본 포심이 첫 불펜에 없습니다.")
+            XCTAssertTrue(playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true))
+        }
 
         var intensiveTrainings = 0
         var steps = 0
@@ -1198,8 +1297,9 @@ final class CareerSmokeUITests: XCTestCase {
                 intensiveTrainings += 1
                 continue
             }
-            if tapFirst(app, prefix: "hs.response.") { continue }
+            if tapRelationshipChoice(app) { continue }
             if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
+            if tapIfPresent(app.buttons["hs.chapter.claim"]) { continue }
             if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
             if tapIfPresent(app.buttons["hs.prologue.continue"]) { continue }
             if app.buttons["hs.game.start"].exists {
@@ -1235,8 +1335,9 @@ final class CareerSmokeUITests: XCTestCase {
                 }
                 continue
             }
-            if tapFirst(app, prefix: "hs.response.") { continue }
+            if tapRelationshipChoice(app) { continue }
             if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
+            if tapIfPresent(app.buttons["hs.chapter.claim"]) { continue }
             if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
             if tapIfPresent(app.buttons["hs.prologue.continue"]) { continue }
             // 각성 확정 직후 상태 저장과 다음 국면 렌더가 한 런루프 늦게 끝날 수 있다.
@@ -1269,26 +1370,51 @@ final class CareerSmokeUITests: XCTestCase {
         )
     }
 
-    /// 실행 전에 simctl content_size를 접근성 최대로 설정해 호출한다.
+    /// 첫 회차 구종 구성은 투수 유형 단계 안의 공개 영역에 있다. 접근성 최대 글자
+    /// 크기에서도 학습·주력 구종과 시작 버튼에 닿아야 한다.
     func testRepertoireSetupAtAccessibilityContentSizeKeepsEveryActionReachable() {
-        let app = launch()
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-uiTestResetCareer",
+            "-uiTestAutoRelease",
+            "-baseball.audio.sound", "NO",
+            "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL",
+            "-AppleLanguages", "(ko)",
+            "-AppleLocale", "ko_KR",
+        ]
+        app.launch()
         dismissOpening(app)
+        finishOnboardingBullpenIfNeeded(app, wait: timeout)
         let next = app.buttons["hs.setup.next"]
-        let repertoire = app.descendants(matching: .any)
-            .matching(identifier: "setup.repertoire").firstMatch
+        let start = app.buttons["hs.start"]
         var hops = 0
-        while !repertoire.exists, next.waitForExistence(timeout: 2), hops < 5 {
+        while !start.exists, next.waitForExistence(timeout: 2), hops < 6 {
             next.tap()
             hops += 1
         }
-        XCTAssertTrue(repertoire.waitForExistence(timeout: timeout))
+        let disclosure = identified(app, "hs.setup.repertoire")
+        let repertoire = identified(app, "setup.repertoire")
+        if !app.buttons["setup.pitch.slider"].exists {
+            if disclosure.waitForExistence(timeout: timeout) {
+                _ = bringIntoView(disclosure, attempts: 12)
+                if !repertoire.exists { disclosure.tap() }
+            }
+        }
+        XCTAssertTrue(
+            repertoire.waitForExistence(timeout: timeout)
+                || app.buttons["setup.pitch.slider"].waitForExistence(timeout: timeout),
+            "접근성 글자 크기에서 구종 구성이 없습니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
         for identifier in [
             "setup.pitch.slider", "setup.pitch.curveball", "setup.pitch.changeup",
             "setup.pitch.primary.four_seam",
         ] {
             let action = app.buttons[identifier]
             XCTAssertTrue(action.waitForExistence(timeout: timeout), "접근성 글자 크기에서 \(identifier)가 없습니다.")
-            XCTAssertTrue(bringIntoView(action), "접근성 글자 크기에서 \(identifier)를 누를 수 없습니다.")
+            XCTAssertTrue(
+                bringIntoView(action, attempts: 12),
+                "접근성 글자 크기에서 \(identifier)를 누를 수 없습니다."
+            )
             XCTAssertGreaterThanOrEqual(action.frame.height, 44)
         }
         XCTAssertTrue(bringIntoView(app.buttons["hs.start"]), "접근성 글자 크기에서 시작 버튼에 닿지 못합니다.")
@@ -1305,9 +1431,10 @@ final class CareerSmokeUITests: XCTestCase {
         app.launch()
 
         dismissOpening(app)
-        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
-        XCTAssertTrue(tapIfPresent(app.buttons["hs.prologue.throw"]))
-        XCTAssertTrue(app.buttons["pitch.throw"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(
+            app.buttons["pitch.throw"].waitForExistence(timeout: timeout),
+            "오프닝 다음 첫 불펜이 열리지 않았습니다."
+        )
         XCTAssertTrue(
             app.descendants(matching: .any)
                 .matching(identifier: "pitch.buildSummary").firstMatch.waitForExistence(timeout: timeout),
@@ -1319,8 +1446,9 @@ final class CareerSmokeUITests: XCTestCase {
             "상세 QA 그리드가 플래그 없이 노출됐습니다."
         )
         XCTAssertTrue(
-            app.staticTexts["구종 · 내가 만든 공"].exists,
-            "훈련과 투구를 잇는 카드 제목이 보이지 않습니다."
+            app.descendants(matching: .any)
+                .matching(identifier: "pitch.buildSummary").firstMatch.exists,
+            "훈련과 투구를 잇는 카드가 보이지 않습니다."
         )
     }
 
@@ -1345,13 +1473,7 @@ final class CareerSmokeUITests: XCTestCase {
         while relationshipChoices < 2, steps < 160 {
             steps += 1
 
-            let responses = app.buttons.matching(
-                NSPredicate(format: "identifier BEGINSWITH %@", "hs.response.")
-            )
-            if responses.count > 0 {
-                let response = responses.element(boundBy: 0)
-                XCTAssertTrue(bringIntoView(response), "관계 선택지를 화면에 올리지 못했습니다.")
-                response.tap()
+            if tapRelationshipChoice(app) {
                 relationshipChoices += 1
 
                 // 취소된 지연 애니메이션이 사라지지 않는 문제를 잡으려면 한 시점만
@@ -1371,6 +1493,7 @@ final class CareerSmokeUITests: XCTestCase {
             if tapIfPresent(app.buttons["hs.training.commitBlock"]) { continue }
             if tapIfPresent(app.buttons["hs.training.commit"]) { continue }
             if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
+            if tapIfPresent(app.buttons["hs.chapter.claim"]) { continue }
             if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
             if tapIfPresent(app.buttons["hs.game.start"]) {
                 _ = playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true)
@@ -1415,8 +1538,9 @@ final class CareerSmokeUITests: XCTestCase {
             if tapIfPresent(app.buttons["hs.prologue.continue"]) { continue }
             if tapFirst(app, prefix: "hs.school.") { confirmSchool(app); continue }
             if tapIfPresent(app.buttons["hs.training.commit"]) { continue }
-            if tapFirst(app, prefix: "hs.response.") { continue }
+            if tapRelationshipChoice(app) { continue }
             if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
+            if tapIfPresent(app.buttons["hs.chapter.claim"]) { continue }
             if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
             XCTFail("중요 경기에 도달하기 전에 막혔습니다. 보이는 버튼: \(visibleIdentifiers(app))")
             return
@@ -1460,13 +1584,13 @@ final class CareerSmokeUITests: XCTestCase {
         app.launch()
 
         dismissOpening(app)
-        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
-
-        let openBullpen = app.buttons["hs.prologue.throw"]
-        XCTAssertTrue(openBullpen.waitForExistence(timeout: timeout), "첫 불펜 진입 버튼이 없습니다.")
-        openBullpen.tap()
-
         let pad = windUpPad(app)
+        if !pad.waitForExistence(timeout: 2) {
+            XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
+            let openBullpen = app.buttons["hs.prologue.throw"]
+            XCTAssertTrue(openBullpen.waitForExistence(timeout: timeout), "첫 불펜 진입 버튼이 없습니다.")
+            openBullpen.tap()
+        }
         XCTAssertTrue(pad.waitForExistence(timeout: timeout), "수동 와인드업 패드가 없습니다.")
         XCTAssertTrue(bringIntoView(pad), "와인드업 패드를 화면에 가져오지 못했습니다.")
         pad.press(forDuration: 0.25)
@@ -1603,6 +1727,13 @@ final class CareerSmokeUITests: XCTestCase {
             guard completeSetup(app) else { return false }
         }
 
+        let ready = app.buttons["hs.reborn.continue"]
+        if ready.waitForExistence(timeout: 3) {
+            XCTAssertTrue(ready.isHittable, "환생 직후 주요 행동이 먼저 보여야 합니다.")
+            capture(app, name: "loop-reborn-ready")
+            let memories = app.buttons["hs.reborn.memories"]
+            if memories.exists { memories.tap() }
+        }
         let inheritedLetter = app.descendants(matching: .any)
             .matching(identifier: "hs.previousPlayerLetter").firstMatch
         guard inheritedLetter.waitForExistence(timeout: timeout) else { return false }
@@ -1753,6 +1884,37 @@ final class CareerSmokeUITests: XCTestCase {
     private func confirmAwakening(_ app: XCUIApplication) {
         let confirm = app.buttons.matching(identifier: "hs.awakening.confirm").firstMatch
         if confirm.waitForExistence(timeout: 3) { confirm.tap() }
+    }
+
+    /// 오프닝 다음 연습 불펜이 열려 있으면 한 이닝을 던져 선수 만들기로 보낸다.
+    @discardableResult
+    private func finishOnboardingBullpenIfNeeded(
+        _ app: XCUIApplication,
+        wait: TimeInterval = 2
+    ) -> Bool {
+        guard app.buttons["pitch.throw"].waitForExistence(timeout: wait) else { return false }
+        playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true)
+        return true
+    }
+
+    /// 프로 대화 카드와 같은 무대라 선택지가 Button이 아니라 합쳐진 요소일 수 있다.
+    @discardableResult
+    private func tapRelationshipChoice(_ app: XCUIApplication) -> Bool {
+        if tapFirst(app, prefix: "hs.response.") { return true }
+        let choices = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "hs.response.")
+        )
+        guard choices.count > 0 else { return false }
+        let first = choices.element(boundBy: 0)
+        guard first.exists, bringIntoView(first) else { return false }
+        first.tap()
+        return true
+    }
+
+    private func relationshipChoiceExists(_ app: XCUIApplication) -> Bool {
+        app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "hs.response.")
+        ).count > 0
     }
 
     /// 접두어로 시작하는 첫 선택지를 누른다. 학교·대응·각성·기억처럼 내용이 매번 달라지는

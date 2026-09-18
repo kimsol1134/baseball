@@ -30,7 +30,7 @@ public object PitchScoreboardProjection {
             else -> "${-scoreDiff}점 뒤짐"
         }
         val inningText = "${context.inning.coerceAtLeast(0)}회"
-        val situationText = situationLine(context.outs, runners)
+        val situationText = pressureLine(scoreDiff, runners) ?: situationLine(context.outs, runners)
         val outingLine = outingLine(state)
         val accessibility = listOfNotNull(
             scoreText,
@@ -56,6 +56,16 @@ public object PitchScoreboardProjection {
             runners = runners,
             accessibilityLabel = accessibility,
         )
+    }
+
+    /** Leading runners score first; identify the actual tying/go-ahead runner. */
+    public fun pressureLine(lead: Int, runners: BaserunnerStateSnapshot): String? {
+        val bases = listOfNotNull(3.takeIf { runners.thirdOccupied }, 2.takeIf { runners.secondOccupied }, 1.takeIf { runners.firstOccupied })
+        return when {
+            lead == 0 && bases.isNotEmpty() -> "역전 주자 ${bases.first()}루"
+            lead > 0 && lead <= bases.size -> "동점 주자 ${bases[lead - 1]}루"
+            else -> null
+        }
     }
 
     public fun situationLine(outs: Int, runners: BaserunnerStateSnapshot): String {
@@ -120,17 +130,18 @@ public object PitchScoreboardProjection {
     private fun outingLine(state: GameAggregateState): String? {
         val pro = state.pro?.activePitch
         if (pro != null && pro.pitches > 0) {
-            return formatOuting(pro.outs, pro.strikeouts, pro.walks, pro.runsAllowed, pro.pitches)
+            return formatOuting(pro.outs, pro.strikeouts, pro.walks, pro.runsAllowed, pro.pitches, pro.perfectReleases)
         }
         val hs = state.highSchool?.activePitch
         if (hs != null && hs.pitches > 0) {
-            return formatOuting(hs.outs, hs.strikeouts, hs.walks, hs.runsAllowed, hs.pitches)
+            return formatOuting(hs.outs, hs.strikeouts, hs.walks, hs.runsAllowed, hs.pitches, hs.perfectReleases)
         }
         return null
     }
 
-    private fun formatOuting(outs: Int, strikeouts: Int, walks: Int, runs: Int, pitches: Int): String {
+    private fun formatOuting(outs: Int, strikeouts: Int, walks: Int, runs: Int, pitches: Int, perfect: Int = 0): String {
         val innings = "${outs / 3}.${outs % 3}"
-        return "${innings}이닝 · ${strikeouts}탈삼진 ${walks}볼넷 ${runs}실점 · ${pitches}구"
+        val base = "${innings}이닝 · ${strikeouts}탈삼진 ${walks}볼넷 ${runs}실점 · ${pitches}구"
+        return if (perfect > 0) "$base · 퍼펙트 $perfect" else base
     }
 }

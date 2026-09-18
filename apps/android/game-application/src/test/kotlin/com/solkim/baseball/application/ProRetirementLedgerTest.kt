@@ -47,7 +47,7 @@ class ProRetirementLedgerTest {
         assertEquals(highSchool.inheritance.automaticSoulEarned, settled.highSchool!!.inheritance.automaticSoulEarned)
         assertTrue(settled.highSchool!!.inheritance.soulPoints > highSchool.inheritance.soulPoints)
         assertEquals(GameStage.HIGH_SCHOOL, settled.stage)
-        assertEquals(Phase8ScreenId.P003_PROLOGUE, Phase8ScreenProjection.preferredScreen(settled))
+        assertEquals(ScreenId.P003_PROLOGUE, ScreenProjection.preferredScreen(settled))
     }
 
     @Test fun walletOnlyInheritanceCannotTurnUnspentCurrencyIntoFreeRatings() {

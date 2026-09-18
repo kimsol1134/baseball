@@ -1,0 +1,4 @@
+file '/Users/solkim/Dev/baseball/marketing/google-ads/2026-09-12-first-test/clip-a.mp4'
+file '/Users/solkim/Dev/baseball/marketing/google-ads/2026-09-12-first-test/training.mp4'
+file '/Users/solkim/Dev/baseball/marketing/google-ads/2026-09-12-first-test/rebirth.mp4'
+file '/Users/solkim/Dev/baseball/marketing/google-ads/2026-09-12-first-test/cta.mp4'

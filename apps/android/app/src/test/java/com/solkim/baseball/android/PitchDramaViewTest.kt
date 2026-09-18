@@ -12,9 +12,9 @@ import org.junit.Test
 class PitchDramaViewTest {
 
     @Test fun stableReleaseFeedbackMatchesTheVisibleGreenThreshold() {
-        assertEquals("안정 릴리스", releaseTimingLabel(820))
-        assertEquals("안정 구간에 가까웠어요", releaseTimingLabel(819))
-        assertEquals("안정 릴리스 · 조준은 흔들렸어요", releaseTimingLabel(820, 500))
+        assertEquals("릴리스 좋았다", releaseTimingLabel(820))
+        assertEquals("타이밍이 살짝 어긋났다", releaseTimingLabel(819))
+        assertEquals("릴리스는 좋았다. 조준이 흔들렸다", releaseTimingLabel(820, 500))
         assertEquals("★ 퍼펙트 릴리스", releaseTimingLabel(975))
         assertFalse(releaseTimingLabel(974).contains("퍼펙트"))
     }
@@ -23,7 +23,7 @@ class PitchDramaViewTest {
     fun plateFiguresConstantsAreValid() {
         assertTrue("batter aspect ratio must be positive", PlateFigures.BATTER_ASPECT > 0f)
         assertTrue("catcher aspect ratio must be positive", PlateFigures.CATCHER_ASPECT > 0f)
-        assertEquals(PlateFigures.ASSET_OPACITY, 0.13f, 0.001f)
+        assertEquals(0.5f, PlateFigures.ASSET_OPACITY, 0.001f)
     }
 
     @Test
@@ -97,15 +97,15 @@ class PitchDramaViewTest {
     }
 
     @Test
-    fun resultFreezeZoneAlphasMatchIosReadability() {
+    fun resultFreezeZoneAlphasMatchTheVisiblePlate() {
         assertEquals(0.85f, RESULT_ZONE_STROKE_ALPHA, 0.001f)
-        assertEquals(0.40f, RESULT_ZONE_GRID_ALPHA, 0.001f)
-        assertEquals(0.50f, LIVE_ZONE_STROKE_ALPHA, 0.001f)
-        assertEquals(0.16f, LIVE_ZONE_GRID_ALPHA, 0.001f)
+        assertEquals(0.80f, RESULT_ZONE_GRID_ALPHA, 0.001f)
+        assertEquals(0.85f, LIVE_ZONE_STROKE_ALPHA, 0.001f)
+        assertEquals(0.80f, LIVE_ZONE_GRID_ALPHA, 0.001f)
         assertEquals(0.85f, zoneStrokeAlpha(PitchOutcome.BALL, 1f, 0f), 0.001f)
-        assertEquals(0.40f, zoneGridAlpha(PitchOutcome.BALL, 1f), 0.001f)
-        assertEquals(0.50f, zoneStrokeAlpha(PitchOutcome.BALL, 0.1f, 0f), 0.001f)
-        assertEquals(0.16f, zoneGridAlpha(PitchOutcome.BALL, 0.1f), 0.001f)
+        assertEquals(0.80f, zoneGridAlpha(PitchOutcome.BALL, 1f), 0.001f)
+        assertEquals(0.85f, zoneStrokeAlpha(PitchOutcome.BALL, 0.1f, 0f), 0.001f)
+        assertEquals(0.80f, zoneGridAlpha(PitchOutcome.BALL, 0.1f), 0.001f)
         assertEquals(1.0f, zoneStrokeAlpha(PitchOutcome.CALLED_STRIKE, 0.1f, 1f), 0.001f)
     }
 
@@ -120,7 +120,10 @@ class PitchDramaViewTest {
         assertFalse(keepFullIncomingTrail(PitchOutcome.CALLED_STRIKE, 0.1f))
         assertTrue(RESULT_LANDING_DOT_RADIUS_DP in 4f..6f)
         assertTrue(RESULT_LANDING_RING_RADIUS_DP > RESULT_LANDING_DOT_RADIUS_DP)
-        assertEquals(0.18f, RESULT_TRAIL_START_ALPHA, 0.001f)
+        // The trail fades in toward the plate so the crossing point, which is what the call reads,
+        // stays the brightest thing on the freeze.
+        assertEquals(0.08f, RESULT_TRAIL_START_ALPHA, 0.001f)
         assertEquals(0.90f, RESULT_TRAIL_END_ALPHA, 0.001f)
+        assertTrue(RESULT_TRAIL_END_ALPHA > RESULT_TRAIL_START_ALPHA * 8f)
     }
 }

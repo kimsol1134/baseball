@@ -65,7 +65,10 @@ public object ProJourneyStateCodec {
         "offseasonTransition" to nullable(state.offseasonTransition, ::encodeTransition),
         "retirementHonors" to arr(state.retirementHonors, ::encodeHonor),
         "migration" to encodeMigration(state.migration),
-    ).let { encoded -> if (state.recoveryYearPending == null) encoded else obj(*(encoded.entries.toList() + ("recoveryYearPending" to JsonValue.Bool(state.recoveryYearPending))).toTypedArray()) }
+    ).let { encoded ->
+        val recoveryYearPending = state.recoveryYearPending
+        if (recoveryYearPending == null) encoded else obj(*(encoded.entries.toList() + ("recoveryYearPending" to JsonValue.Bool(recoveryYearPending))).toTypedArray())
+    }
 
     private fun decodeState(value: JsonValue.Obj): ProCareerJourneyState {
         requireExact(value, setOf("rulesVersion", "activeGoal", "goalHistory", "pendingContractMarket", "contractHistory", "teamRecords", "recognitions", "reputation", "finances", "activeSeasonBenefit", "lastSettlement", "settlementAcknowledged", "offseasonTransition", "retirementHonors", "migration") + if ("recoveryYearPending" in value.entries) setOf("recoveryYearPending") else emptySet(), "pro.journey.payload")
@@ -182,7 +185,8 @@ public object ProJourneyStateCodec {
             "lastMerchandiseTier" to nullable(value.lastMerchandiseTier) { str(it.wire) },
             "endorsementSeasons" to ints(value.endorsementSeasons),
         )
-        if (value.overseasInterest != null) fields["overseasInterest"] = JsonValue.Bool(value.overseasInterest)
+        val overseasInterest = value.overseasInterest
+        if (overseasInterest != null) fields["overseasInterest"] = JsonValue.Bool(overseasInterest)
         return JsonValue.Obj(fields)
     }
 

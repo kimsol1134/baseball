@@ -28,10 +28,13 @@
     "render:asc:en": "npm run render:asc-preview:en && npm run prepare:asc-preview:en && npm run render:asc-screenshots:69:en && npm run render:asc-screenshots:65:en && npm run finalize:asc:en",
     "render:trailer": "remotion render Trailer out/trailer.mp4 --codec=h264 --crf=20",
     "render:loop": "remotion render HeroLoop out/hero-loop.mp4 --codec=h264 --crf=23",
-    "render:poster": "remotion still Trailer out/poster.png --frame=300"
+    "render:poster": "remotion still Trailer out/poster.png --frame=300",
+    "studio:play-store": "remotion studio src/play-2026-09/index.tsx --public-dir=public/play-2026-09 --no-open --port=3337",
+    "render:play-store": "node scripts/render-play-store.mjs"
   },
   "dependencies": {
     "@remotion/cli": "4.0.499",
+    "@remotion/fonts": "4.0.499",
     "@remotion/media": "4.0.499",
     "@remotion/sfx": "4.0.499",
     "@remotion/transitions": "4.0.499",

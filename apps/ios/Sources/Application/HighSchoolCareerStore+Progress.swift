@@ -296,6 +296,10 @@ extension HighSchoolCareerStore {
         if let line = result?.snapshot.news.first { note(line) }
     }
 
+    func claimChapterGame() {
+        perform { try engine.claimChapterGame(.init(seed: $0.nextSeed, state: $0.snapshot)) }
+    }
+
     func advanceChapter() {
         let beforeRevision = result?.snapshot.revision
         perform { try engine.advanceChapter(.init(seed: $0.nextSeed, state: $0.snapshot)) }

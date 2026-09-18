@@ -10,7 +10,22 @@ struct ChapterReviewCard: View {
     let gains: [String: Int]
     let trainingCount: Int
     let onContinue: () -> Void
+    let onClaim: (() -> Void)?
     @Environment(\.gameCopyResolver) private var copyResolver
+
+    init(
+        state: HighSchoolCareerSnapshot,
+        gains: [String: Int],
+        trainingCount: Int,
+        onContinue: @escaping () -> Void,
+        onClaim: (() -> Void)? = nil
+    ) {
+        self.state = state
+        self.gains = gains
+        self.trainingCount = trainingCount
+        self.onContinue = onContinue
+        self.onClaim = onClaim
+    }
 
     var body: some View {
         let title = HighSchoolPresentation.localizedChapterReviewTitle(state.chapter, resolver: copyResolver)
@@ -94,7 +109,18 @@ struct ChapterReviewCard: View {
                 Text(verbatim: rivalLine)
                     .detailStyle()
             }
-            PrimaryButton(title: continueAction, identifier: "hs.chapter.continue", action: onContinue)
+            if let onClaim,
+               HighSchoolGameplayRules.usesChapterLiveOuting(state.balanceVersion),
+               state.chapter.number < 8,
+               state.chapterGameClaimed != true {
+                PrimaryButton(
+                    title: copyResolver.resolve(AppCopyKey.chapterReviewClaimGame),
+                    identifier: "hs.chapter.claim",
+                    action: onClaim
+                )
+            } else {
+                PrimaryButton(title: continueAction, identifier: "hs.chapter.continue", action: onContinue)
+            }
         }
     }
 }

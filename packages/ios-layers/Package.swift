@@ -32,7 +32,8 @@ let package = Package(
         .testTarget(
             name: "BaseballIOSDomainTests",
             dependencies: [
-                "BaseballIOSDomain"
+                "BaseballIOSDomain",
+                .product(name: "SimulationCore", package: "simulation-core")
             ]
         ),
         .testTarget(

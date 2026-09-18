@@ -359,6 +359,10 @@ public enum PlateAppearanceResult: String, Codable, Sendable {
     case walk
     case inPlayOut = "in_play_out"
     case hit
+    /// The batter reached because the defense missed a play they should have made. Neither a hit
+    /// nor an out, and the only plate appearance whose run responsibility is unearned, so it needs
+    /// its own bucket rather than borrowing one of the four above.
+    case reachedOnError = "reached_on_error"
 }
 
 public struct PitchExecution: Codable, Equatable, Sendable {

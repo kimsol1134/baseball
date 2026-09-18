@@ -29,6 +29,15 @@ final class MobileCareerStore {
     /// 화면이 같이 갱신된다. 디스크 왕복만 `ProCareerPersistedState`로 모은다.
     private var durableResult: ProCareerResult?
     private var durableGameResume: PitchResumeState?
+    /// 앨범에 남은 재생. 커리어 진행과 무관한 증거라 스냅샷 밖에 산다.
+    private var durableReplays: [AlbumReplay]?
+    /// 이번 등판이 남긴 재생. 저장이 성공할 때 앨범으로 접히고 비워진다 — 저장이
+    /// 실패하면 앨범도 움직이지 않아야 화면과 디스크가 어긋나지 않는다.
+    var stagedReplays: [AlbumReplay] = []
+    /// 이미 적용한 명령의 영수증.
+    private var durableCommandReceipts: [String]?
+    /// 이번 저장에 태울 명령. 저장이 성공할 때 영수증으로 남고 비워진다.
+    var stagedCommandOperation: String?
     private var durableSourceHighSchoolCareerID: String?
     private var durableCareerOrigin: ProCareerOrigin?
     private var durableSyncedRevision: UInt64 = 0
@@ -43,9 +52,40 @@ final class MobileCareerStore {
             careerOrigin: durableCareerOrigin,
             syncedRevision: durableSyncedRevision,
             pendingInjuryEvent: durablePendingInjuryEvent,
-            acknowledgedInjuryEventID: durableAcknowledgedInjuryEventID
+            acknowledgedInjuryEventID: durableAcknowledgedInjuryEventID,
+            replays: durableReplays,
+            commandReceipts: durableCommandReceipts
         )
     }
+
+    /// 이 명령을 지금 적용해도 되는가. 두 번 눌린 버튼과 옛 화면에서 온 명령을 막는다.
+    func acceptsCommand(_ operation: String) -> Bool {
+        guard let revision = result?.snapshot.revision else { return true }
+        return CommandReceiptRetention.accepts(
+            CommandReceiptRetention.id(revision: revision, operation: operation),
+            at: revision,
+            seen: durableCommandReceipts ?? []
+        )
+    }
+
+    /// 저장에 태울 영수증을 만든다. 실제 보관은 저장이 성공한 뒤다.
+    func receipt(for operation: String, at revision: UInt64) -> String {
+        CommandReceiptRetention.id(revision: revision, operation: operation)
+    }
+
+    /// 앨범 예산을 적용해 접는다. 담기지 않은 공은 조용히 버려진다 — 기존 재생은 지우지 않는다.
+    func foldingStagedReplays(into state: ProCareerPersistedState) -> ProCareerPersistedState {
+        guard !stagedReplays.isEmpty else { return state }
+        var next = state
+        var album = state.replays ?? []
+        for replay in stagedReplays {
+            album = AlbumReplayRules.appending(replay, to: album)
+        }
+        next.replays = album
+        return next
+    }
+
+    var replays: [AlbumReplay] { durableReplays ?? [] }
 
     func updatePersisted(_ body: (inout ProCareerPersistedState) -> Void) {
         var next = capturePersisted()
@@ -61,6 +101,8 @@ final class MobileCareerStore {
         assign(&durableSyncedRevision, next.syncedRevision)
         assign(&durablePendingInjuryEvent, next.pendingInjuryEvent)
         assign(&durableAcknowledgedInjuryEventID, next.acknowledgedInjuryEventID)
+        assign(&durableReplays, next.replays)
+        assign(&durableCommandReceipts, next.commandReceipts)
     }
 
     private func assign<T: Equatable>(_ storage: inout T, _ next: T) {
@@ -85,6 +127,16 @@ final class MobileCareerStore {
     var careerOrigin: ProCareerOrigin? { durableCareerOrigin }
     /// 진행 중인 중요 경기. `importantGame` 단계에서만 존재한다.
     var pitchSession: PitchSession?
+    /// 마지막 명령이 실패한 **이유**. 화면은 여기서 문장을 고른다 — 규칙이 거절한 일에
+    /// "저장 공간을 확보하라"고 말하지 않기 위해서다(7-A).
+    var lastActionFailure: CareerActionFailure?
+    @ObservationIgnored var failureRepetition = CareerActionFailureRepetition()
+    /// 같은 실패가 같은 자리에서 되풀이됐는가. 두 번째부터는 다른 말을 한다.
+    var lastFailureRepeated = false
+
+    /// 방금 확정한 시즌 결정이 남긴 것. 화면에 결과를 **같은 자리에** 남기기 위한 값이라
+    /// 저장에 들어가지 않는다. 플레이어가 "계속"을 누르면 사라진다.
+    var lastSeasonDecisionReceipt: ProSeasonDecisionReceipt?
 
     @ObservationIgnored let engine: ProCareerEngine
     @ObservationIgnored let featureConfiguration: AppFeatureConfiguration
@@ -101,7 +153,8 @@ final class MobileCareerStore {
     }
 
     init(
-        sync: SaveSync = SaveSync(key: "baseball-mobile-pro-v1.json"),
+        sync: SaveSync = SaveSync(key: "baseball-mobile-pro-v2.json",
+                                 migratingFrom: "baseball-mobile-pro-v1.json"),
         weekly: WeeklyProgramStore = .shared,
         saveWriter: ((Data) -> Bool)? = nil,
         configuration: AppFeatureConfiguration = .production

@@ -17,6 +17,8 @@
 | `bat-foul.wav` | 파울 팁 | 정타(`bat-contact-hard`)와 같은 녹음에서 파생 — 고역 통과 1.5kHz×2 + 90ms 절단. 빗맞아 스치면 "딱" 대신 "틱"이 되는 물리를 흉내 낸다 | **CC0** | 불필요 |
 | `swing-miss.wav` | 헛스윙 | [Freesound 59995](https://freesound.org/people/qubodup/sounds/59995/) · qubodup, "stick cutting air" — 막대가 실제로 공기를 가르는 녹음 | **CC0** | 불필요 |
 | `pitch-release` | 릴리스 | — | — | — |
+| `perfect-release.wav` | 정중앙 릴리스 전용 종 | [Freesound 218851](https://freesound.org/people/kellyconidi/sounds/218851) · kellyconidi, "highbell" | **CC0** | 불필요 |
+| `pitch-flight.wav` | 비행 중 공기음(구속 비례) | [Freesound 60007](https://freesound.org/people/qubodup/sounds/60007) · qubodup, "Swipe Whoosh" | **CC0** | 불필요 |
 | `umpire-strike.wav` | 스트라이크 콜 | [Freesound 625473](https://freesound.org/people/jcookvoice/sounds/625473/) · jcookvoice — "Strike three, you're out"에서 첫 단어("Strike!")만. **whisper로 부분 컷을 전사해 단어 경계를 확정했다** — "three!"의 어택(5.20초)이 물리지 않게 5.195초에서 끊었다. 봉투 모양만 보고 자르면 "Strike three"를 매 스트라이크마다 외치게 된다(실제로 한 번 그랬다) | **CC0** | 불필요 |
 | `umpire-strikeout.wav` | 삼진 확정 풀콜 | 같은 녹음의 "Strike three! You're out!" 한 호흡(4.88–6.80초)을 통째로. 낱개 "Strike!"+"You're out!"을 이어 붙였다가, 원본에 심판이 실제로 이어 지른 테이크가 있는데 스티칭할 이유가 없어 교체했다. 최종본 whisper 전사로 내용 재확인 | **CC0** | 불필요 |
 | `menu-theme.mp3` | 메뉴·커리어 화면 BGM(이어 재생) | Lyria 3 생성 ("After the Lights") — 펠트 피아노 & 어쿠스틱 기타 네오클래시컬 포스트록 | **자체 생성 음원** (상용 권리 보유) | 불필요 |

@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+import { hasMixedPlaceholderAddressing } from "./lib/copy-format.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const catalogs = {
@@ -51,6 +52,10 @@ for (const file of files) {
         continue;
       }
       const sig = signature(ko);
+      if ([ko, en, ja].some(hasMixedPlaceholderAddressing)) {
+        failures.push(`${file}: ${key} — 위치 지정 플레이스홀더와 순차 플레이스홀더를 섞을 수 없음`);
+        continue;
+      }
       if (signature(en) !== sig || signature(ja) !== sig) {
         failures.push(`${file}: ${key} — 플레이스홀더 서명 불일치 (ko=${sig} en=${signature(en)} ja=${signature(ja)})`);
         continue;

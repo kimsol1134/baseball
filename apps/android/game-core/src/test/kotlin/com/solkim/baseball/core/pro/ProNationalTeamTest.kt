@@ -21,7 +21,7 @@ class ProNationalTeamTest {
         assertEquals(seed, result.nextSeed)
         assertEquals(ProCareerPhase.OFFSEASON_DECISION, result.state.phase)
         assertEquals(fanBefore - 2, result.state.journeyState?.reputation?.fanSupport)
-        assertEquals("국가대표 소집을 정중히 거절했습니다.", result.state.news.first())
+        assertEquals("국가대표 소집을 정중히 거절했다.", result.state.news.first())
         assertTrue(result.events.contains("pro_national_team_called"))
         assertNull(result.state.nationalTournament)
         val roundTripped = ProStateCodec.decode(ProStateCodec.encode(result.state))
@@ -32,8 +32,8 @@ class ProNationalTeamTest {
     fun recordedLegacyCallSurvivesEligibilityUpdateAndCanBeAnswered() {
         val issued = eligibleCall(seed = "940101", fanSupport = 60).state
         val legacy = issued.copy(pitcher = issued.pitcher.copy(stuff = 20, command = 20, movement = 20, stamina = 20),
-            awards = listOf("시즌 1 탈삼진상"), journeyState = issued.journeyState!!.copy(reputation = issued.journeyState.reputation.copy(fanSupport = 0),
-                recognitions = issued.journeyState.recognitions.filterNot { it.season == issued.season && it.kind == ProCareerRecognitionKind.AWARD }), commitment = "")
+            awards = listOf("시즌 1 탈삼진상"), journeyState = issued.journeyState!!.copy(reputation = issued.journeyState!!.reputation.copy(fanSupport = 0),
+                recognitions = issued.journeyState!!.recognitions.filterNot { it.season == issued.season && it.kind == ProCareerRecognitionKind.AWARD }), commitment = "")
         assertFalse(ProKernel.shouldOfferNationalTeam(legacy))
         val signed = legacy.copy(commitment = kernel.commitment(legacy))
         val restored = ProStateCodec.decode(ProStateCodec.encode(signed))

@@ -1,0 +1,16 @@
+{
+  "submitted_date_kst": "2026-09-12",
+  "status": "SUBMITTED_PENDING_CASE_ID",
+  "channel": "Google Play Console > Help > Create support ticket",
+  "topic": "수익 창출 > 수익 창출 관리 > 기타",
+  "app_id": "com.solkim.baseball.android",
+  "attachment": "솔매터_사업자등록증.pdf",
+  "lease_uploaded": false,
+  "confirmation": "티켓 제출됨. 영업일 기준 2일 이내에 이메일로 답변해 드리겠습니다. 일부 티켓은 시간이 더 걸릴 수 있습니다.",
+  "case_id": null,
+  "case_id_display": "케이스 ID 대기 중",
+  "support_url": "https://play.google.com/console/u/0/developers/5198814359992339237/help-and-support?app=4973220489799176676&formSubmitted=true",
+  "ai_suggestion": "Automatic recommendation suggested a new organization developer account and app transfer, with personal verification for old balance. This was not accepted as a human-confirmed resolution; selected '아니요, 지원 티켓 만들기'.",
+  "account_changes_performed": false,
+  "next_step": "Await human support response before deciding payment profile or app transfer changes."
+}

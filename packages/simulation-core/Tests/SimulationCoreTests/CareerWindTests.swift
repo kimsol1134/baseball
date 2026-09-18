@@ -210,8 +210,8 @@ final class CareerWindTests: XCTestCase {
         heat = try engine.commitTraining(.init(
             seed: heat.nextSeed, state: heat.snapshot, focus: .velocity, intensity: .intensive
         ))
-        // 구위 집중 훈련 15 + 구위형 피로 1 + 긴 여름 2.
-        XCTAssertEqual(heat.snapshot.lastTraining?.fatigueChange, 18)
+        // 구위 집중 훈련 11(v6에서 15에서 내렸다) + 구위형 피로 1 + 긴 여름 2.
+        XCTAssertEqual(heat.snapshot.lastTraining?.fatigueChange, 14)
         heat = try engine.commitTraining(.init(
             seed: heat.nextSeed, state: heat.snapshot, focus: .recovery, intensity: .standard
         ))

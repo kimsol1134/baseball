@@ -1221,10 +1221,10 @@ final class LocalizationCoverageTests: XCTestCase {
             ImportantGamePresentationCatalog.scenarioIDs,
             HighSchoolContentCatalog.scenarios.map(\.id)
         )
-        XCTAssertEqual(ImportantGamePresentationCatalog.scenarioDescriptors.count, 30)
+        XCTAssertEqual(ImportantGamePresentationCatalog.scenarioDescriptors.count, 31)
         XCTAssertEqual(
             Set(ImportantGamePresentationCatalog.scenarioDescriptors.map(\.scenarioID)).count,
-            30
+            31
         )
         for scenario in HighSchoolContentCatalog.scenarios {
             let descriptor = ImportantGamePresentationCatalog.descriptor(for: scenario.id)
@@ -1703,8 +1703,10 @@ final class LocalizationCoverageTests: XCTestCase {
             (.pitchType, ["포심", "슬라이더", "커브", "체인지업"]),
             (.pitchIntensity, ["힘 빼고", "보통", "전력"]),
             (.pitchUsage, ["주력 구종", "보조 구종", "개발 구종"]),
-            (.batterSide, ["우타", "좌타", "우타"]),
-            (.pitchOutcome, ["볼", "루킹 스트라이크", "헛스윙", "파울", "인플레이 아웃", "안타", "2루타", "3루타", "홈런", "몸에 맞는 공"]),
+            (.batterSide, ["우타", "좌타", "양타"]),
+            // PitchOutcome 11개. 프로 규칙 12가 `reachedOnError`(실책 출루)를 single과 double 사이에
+            // 넣었다 — 이 배열은 enum 선언 순서를 그대로 따라간다.
+            (.pitchOutcome, ["볼", "루킹 스트라이크", "헛스윙", "파울", "인플레이 아웃", "안타", "실책 출루", "2루타", "3루타", "홈런", "몸에 맞는 공"]),
             (.zoneIntent, ["존 안으로", "존 경계", "존 밖 유인"]),
             (.highSchoolPhase, ["다시 태어남", "학교 선택", "훈련", "사람들", "고교 공식 경기", "각성", "이야기 마무리", "드래프트", "새 선수에게 남길 것", "완료"]),
             (.trainingFocus, ["구위", "제구", "변화구", "체력", "회복", "승부 설계"]),
@@ -1773,7 +1775,7 @@ final class LocalizationCoverageTests: XCTestCase {
             AppCopyKey.prologueInheritedStartTitle: "계보가 바꾼 시작",
             AppCopyKey.prologueInheritedStartJourney: "%@의 마지막 %lld → 이번 선수의 시작 %lld (%@)",
             AppCopyKey.prologueInheritedStartTotal: "시작에 스며든 계승 성장 %@",
-            AppCopyKey.prologueInheritedStartSoul: "야구혼과 이전 선수의 기억",
+            AppCopyKey.prologueInheritedStartSoul: "야구혼과 지난 생의 기억",
             AppCopyKey.prologueInheritedStartBoost: "환생 상점 부스트",
             AppCopyKey.prologueInheritedStartSource: "%@ · %@",
             AppCopyKey.prologueAbilityTalent: "재능 %@",
@@ -2421,6 +2423,7 @@ final class LocalizationCoverageTests: XCTestCase {
             AppCopyKey.chapterReviewAbilityAccessibility: ["%@ %lld. 재능 %@, 한계 %lld. %@", "%@ %lld. Talent %@, ceiling %lld. %@."],
             AppCopyKey.chapterReviewNextStoryRival: ["다음 이야기 — 상대는 더 강해집니다. %@도 이 시기를 지켜봤습니다.", "Next story — the competition gets tougher. %@ was watching this stretch too."],
             AppCopyKey.chapterReviewContinue: ["다음 이야기로", "Continue to the next story"],
+            AppCopyKey.chapterReviewClaimGame: ["정규 경기 등판", "Take the regular start"],
             AppCopyKey.tournamentAceStart: ["에이스 등판 — %@", "Ace start — %@"],
             AppCopyKey.tournamentDash: ["—", "—"],
             AppCopyKey.tournamentNationalNote: ["전국 8팀. 스카우트들은 이런 무대의 공 하나를 오래 기억합니다.", "Eight teams from across the country. Scouts remember a single pitch on a stage like this."],
@@ -2945,7 +2948,7 @@ final class LocalizationCoverageTests: XCTestCase {
             AppCopyKey.setupSeedError: "숫자 시드나 카드에 적힌 공유 코드를 그대로 입력해 주세요.",
             AppCopyKey.setupSeedChallengeSummary: "기록 없는 도전 — %lld번째 선수와 같은 조건을 계승 도움 없이 엽니다. 결과는 선수 기록·계승 포인트에 남지 않습니다.",
             AppCopyKey.setupSeedSummary: "숫자만 입력하면 지금 만들 %lld번째 선수의 조건입니다. 카드와 똑같이 도전하려면 카드의 공유 코드를 입력하세요.",
-            AppCopyKey.setupStadiumCaption: "이 이름이 3년 동안 이 구장에서 불립니다.",
+            AppCopyKey.setupStadiumCaption: "3년을 보낼 구장입니다.",
             AppCopyKey.setupRebirthCaption: "전생의 기억이 새 이름을 기다립니다.",
             AppCopyKey.setupInheritanceTitle: "가져온 것",
             AppCopyKey.setupInheritancePoints: "계승 포인트 %lld",
@@ -2955,13 +2958,13 @@ final class LocalizationCoverageTests: XCTestCase {
             AppCopyKey.setupInheritanceEmptyMemories: "가져온 기억이 없습니다.",
             AppCopyKey.setupInheritanceLegacy: "대표 유산 · %@",
             AppCopyKey.setupInheritanceShopTitle: "계승 상점",
-            AppCopyKey.setupInheritanceShopDescription: "계승 포인트는 이전 선수의 커리어가 다음 선수에게 남긴 보상입니다. 여기서 이번 고교 3년에 적용할 규칙을 사고, 이미 쌓인 자동 성장 보너스는 줄지 않습니다.",
+            AppCopyKey.setupInheritanceShopDescription: "이전 회차에서 모은 계승 포인트로 이번 선수의 성장 혜택을 고릅니다. 이미 쌓인 자동 성장 보너스는 줄지 않아요.",
             AppCopyKey.setupBoostTalentBreakTitle: "재능 돌파",
             AppCopyKey.setupBoostTalentBreakDetail: "가장 낮은 재능 등급이 한 단계 열린 채 시작합니다.",
             AppCopyKey.setupBoostExtraMemoryTitle: "넓어진 유산의 시야",
             AppCopyKey.setupBoostExtraMemoryDetail: "이번 선수가 은퇴할 때 대표 유산 후보를 하나 더 발견합니다.",
             AppCopyKey.setupBoostHeadStartTitle: "조기 성장",
-            AppCopyKey.setupBoostHeadStartDetail: "자동 스며듦 상한 너머로 +5가 추가로 스며듭니다.",
+            AppCopyKey.setupBoostHeadStartDetail: "선수의 능력치 자동 성장 한계가 +5 더 늘어납니다.",
             AppCopyKey.setupBoostTrainingRhythmTitle: "성장 리듬",
             AppCopyKey.setupBoostTrainingRhythmDetail: "이번 고교 3년의 훈련 대성공 확률이 16% → 26%가 됩니다.",
             AppCopyKey.setupBoostCost: "%lldP",
@@ -2973,9 +2976,9 @@ final class LocalizationCoverageTests: XCTestCase {
             AppCopyKey.setupRepertoireDescription: "실전 구종 3개로 시작합니다. 남은 한 구종은 훈련과 실전으로 배웁니다.",
             AppCopyKey.setupRepertoireFourSeam: "기본 구종 · 처음부터 사용",
             AppCopyKey.setupRepertoireLearning: "고교에서 배울 구종",
-            AppCopyKey.setupRepertoireLearningHint: "불펜 반복이 끝날 때까지 공식 경기에서는 사용할 수 없습니다.",
+            AppCopyKey.setupRepertoireLearningHint: "불펜에서 연습을 마칠 때까지는 공식 경기에서 던질 수 없어요.",
             AppCopyKey.setupRepertoirePrimary: "주력 구종",
-            AppCopyKey.setupRepertoirePrimaryHint: "포수가 우선해서 배합하지만 결과에 숨은 보정은 없습니다.",
+            AppCopyKey.setupRepertoirePrimaryHint: "포수가 이 구종을 자주 추천하지만, 던졌을 때 특별한 보너스가 붙지는 않아요.",
             AppCopyKey.setupRepertoireSliderDetail: "헛스윙 · 2스트라이크 결정구 · 몰리면 장타 위험",
             AppCopyKey.setupRepertoireCurveballDetail: "속도 차 · 큰 낙차 · 초반 제구 위험",
             AppCopyKey.setupRepertoireChangeupDetail: "범타 · 반대손 타자 대응 · 초반 헛스윙은 낮음",
@@ -2988,7 +2991,7 @@ final class LocalizationCoverageTests: XCTestCase {
             AppCopyKey.setupSoulDomainTitle: "자동 성장 포인트 %lldP를 어디에",
             AppCopyKey.setupSoulDomainRule: "고른 쪽에 절반이 먼저 가고, 나머지는 가장 낮은 능력부터 채웁니다. 재능의 한계는 넘지 않습니다.",
             AppCopyKey.setupHandicapLabel: "핸디캡",
-            AppCopyKey.setupHandicapDescription: "최대 2개. 고르면 이번 고교 3년이 어려워집니다. 대신 새 선수가 이어받는 힘이 커집니다. 지금 +%lld%%",
+            AppCopyKey.setupHandicapDescription: "최대 2개. 이번 3년이 어려워지는 대신 다음 회차에 쓸 계승 포인트를 더 많이 받습니다. (현재 +%lld%%)",
             AppCopyKey.setupKarmaReward: "+%lld%%",
             AppCopyKey.setupSeedValidation: "시드 입력을 확인해 주세요 — %@",
             AppCopyKey.setupStartChallenge: "기록 없는 도전 시작",

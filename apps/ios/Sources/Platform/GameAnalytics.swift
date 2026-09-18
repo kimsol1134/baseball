@@ -280,6 +280,8 @@ enum GameAnalytics {
         case screenStallDetected = "screen_stall_detected"
         /// 멈춘 화면을 복구 버튼으로 빠져나왔다. detected 대비 복구율을 본다.
         case screenStallRecovered = "screen_stall_recovered"
+        /// 투구가 무너진 자리와 저장 확인 결과(7-B). 속성은 전부 저카디널리티다.
+        case pitchFailed = "pitch_failed"
         /// 은퇴 후 '다음 선수 준비'가 실패했다. `reason`으로 저장 실패와 연결 붕괴를 나눈다.
         case legacyHandoffFailed = "legacy_handoff_failed"
     }
@@ -301,7 +303,7 @@ enum GameAnalytics {
     /// 앱 시작 시 한 번. 설정이 없으면 조용히 꺼진 채 남는다.
     static func configure() {
         // UI 테스트의 기계 플레이가 대시보드에 섞이면 퍼널이 거짓말이 된다.
-        guard !isUITest(arguments: ProcessInfo.processInfo.arguments) else {
+        guard !TestExecution.isRunning(), !isUITest(arguments: ProcessInfo.processInfo.arguments) else {
             amplitude = nil
             enabled = false
             return
@@ -376,7 +378,7 @@ enum GameAnalytics {
 
     static func log(_ event: Event, _ properties: [String: Any] = [:]) {
         eventSinkForTesting?(event, properties)
-        guard enabled else { return }
+        guard !TestExecution.isRunning(), enabled else { return }
         let reserved = Set(context.properties.keys).union(amplitudeOnlyProperties.keys)
         let collisions = reserved.intersection(properties.keys)
         assert(collisions.isEmpty, "Analytics context keys are reserved: \(collisions.sorted())")

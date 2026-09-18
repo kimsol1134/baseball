@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import SimulationCore
 import BaseballIOSDomain
 
 enum CareerShareCardKind: String, Equatable, CaseIterable, Sendable {
@@ -28,6 +29,10 @@ struct CareerShareCardModel: Equatable, Sendable {
     let summary: String
     let season: Int
     let hasMedal: Bool
+    /// 기록표. 카드가 지표를 골라 보여 주면 "잘한 것만 고른 표"가 되므로, 프로 카드는
+    /// **정해진 칸이 전부 있는 표**를 함께 싣는다. 고교 카드는 비어 있다.
+    var counting: [CareerRecordEntry] = []
+    var rates: [CareerRecordEntry] = []
 }
 
 enum CareerShareCardLayout {
@@ -124,6 +129,8 @@ struct CareerShareCard: View {
 
             statsBlock
 
+            recordTable
+
             badgeRow
                 .frame(
                     maxWidth: .infinity,
@@ -162,6 +169,42 @@ struct CareerShareCard: View {
                 .strokeBorder(BaseballTheme.border.opacity(0.6), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    /// 기록지. 없는 값은 `—`다 — 0으로 적으면 없던 일이 있었던 일이 된다.
+    @ViewBuilder
+    private var recordTable: some View {
+        if !model.counting.isEmpty {
+            VStack(alignment: .leading, spacing: 3) {
+                entryRow(model.counting)
+                if !model.rates.isEmpty {
+                    entryRow(model.rates)
+                }
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(BaseballTheme.surface.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("share.recordTable")
+        }
+    }
+
+    private func entryRow(_ entries: [CareerRecordEntry]) -> some View {
+        HStack(spacing: 0) {
+            ForEach(entries) { entry in
+                VStack(spacing: 1) {
+                    Text(verbatim: entry.abbreviation)
+                        .font(.system(size: 7, weight: .semibold))
+                        .foregroundStyle(BaseballTheme.textTertiary)
+                    Text(verbatim: entry.value ?? "—")
+                        .font(.system(size: 9, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                }
+                .frame(maxWidth: .infinity)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            }
+        }
     }
 
     @ViewBuilder

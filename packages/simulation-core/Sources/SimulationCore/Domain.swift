@@ -403,6 +403,9 @@ public enum PitchOutcome: String, Codable, CaseIterable, Sendable {
     case foul
     case inPlayOut = "in_play_out"
     case single
+    /// A routine ball the defense mishandled. The batter is on first and nobody is charged with a
+    /// hit — the professional balance pass produces it so earned runs have an unearned side.
+    case reachedOnError = "reached_on_error"
     case double
     case triple
     case homeRun = "home_run"

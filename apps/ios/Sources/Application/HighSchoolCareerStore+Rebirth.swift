@@ -299,19 +299,30 @@ extension HighSchoolCareerStore {
     /// `save()`가 진행 없이는 아무것도 쓰지 않아서, "다시 태어나기"를 누른 순간부터
     /// 새 선수 생성 완료까지 계승분(야구혼·기억·아카이브)이 메모리에만 있었다 —
     /// 그 사이가 하필 이름을 고민하는 화면이라, 앱이 내려가면 회차 전체가 1회차로 리셋됐다.
-    func beginNextLife() {
+    @discardableResult
+    func beginNextLife() -> Bool {
+        if result == nil, loadState == .needsSetup { return true }
+        guard let state, state.phase == .completed,
+              inheritance.lifeNumber > state.lifeNumber else { return false }
+        let previous = capturePersisted()
         updatePersisted {
             $0.result = nil
+            $0.gameResume = nil
+            $0.pendingGameCompletion = nil
+            $0.enteredProCareerID = nil
             $0.selectedSignatureLegacyID = nil
             $0.careerStartingPitcher = nil
             $0.signatureLegacyRulesVersion = nil
             $0.frozenSignatureLegacyCandidates = nil
         }
-        pitchSession = nil
-        pendingGains = []
-        trainingReceipt = nil
+        guard save() else {
+            replacePersisted(previous)
+            loadState = .failed("새 선수의 시작을 준비하지 못했습니다. 기록은 그대로 남아 있습니다. 다시 시도해 주세요.")
+            return false
+        }
+        clearLiveSession()
         loadState = .needsSetup
-        save()
+        return true
     }
 
     /// 지난 회차와 같은 설정으로 곧장 다음 회차를 연다. 설정을 다시 물을 것이 없으면 nil.
@@ -324,7 +335,7 @@ extension HighSchoolCareerStore {
     /// This runs at new-life creation; existing lives and archived faces are never rewritten.
     nonisolated static func continuedPortraitSeed(playerName: String, previous: LifeRecord?) -> String? {
         guard let previous,
-              previous.playerName.trimmingCharacters(in: .whitespacesAndNewlines) == playerName.trimmingCharacters(in: .whitespacesAndNewlines)
+              PlayerContinuityRules.sameName(previous.playerName, playerName)
         else { return nil }
         return previous.portraitSeed
     }
@@ -401,6 +412,40 @@ extension HighSchoolCareerStore {
             seedOverride: seed,
             entryPoint: entryPoint
         )
+    }
+
+    /// 세 갈래 중 하나로 다음 회차를 시작한다.
+    ///
+    /// 이름·지역·난이도·업보·이어받은 힘은 지난 회차 설정 그대로 두고, **프리셋과 구종만**
+    /// 갈아 끼운다(6-E). 기존 "이어가기"는 그대로 남는다 — 이 경로는 추가지 대체가 아니다.
+    func startRebirth(path: RebirthPath, entryPoint: String) {
+        guard canChooseRebirthPath,
+              let preset = path.preset,
+              let last = lastSetup,
+              let seed = quickRebirthSeed() else { return }
+        startCareer(
+            preset: preset,
+            playerName: last.playerName,
+            region: last.region,
+            difficulty: CareerDifficultySnapshot(
+                careerHarshness: DifficultyLevel(rawValue: last.harshness) ?? .standard),
+            karmas: last.karmas,
+            soulDomain: last.soulDomain,
+            startingRepertoire: path.repertoire,
+            throwingHand: last.throwingHand,
+            seedOverride: seed,
+            entryPoint: entryPoint
+        )
+    }
+
+    /// 길을 고를 수 있는 회차인가. "이어가기"와 같은 조건이다 — 도전 런이 아니고, 지난
+    /// 회차 설정이 남아 있으며, 되돌아갈 아카이브가 있다.
+    ///
+    /// `quickRebirthSeed()`를 부르지 않는다. 그 함수는 시드를 **예약해 저장**하므로,
+    /// 화면을 그리는 것만으로 값이 쓰이면 안 된다.
+    var canChooseRebirthPath: Bool {
+        guard quickRebirthPreset != nil, let previous = archive.first else { return false }
+        return previous.lifeNumber < inheritance.lifeNumber
     }
 
     /// 이 정산이 별점을 물어도 좋은 회차인가. 순수 함수라 테스트할 수 있다.
@@ -635,4 +680,12 @@ struct RebirthStartPreview: Equatable {
     let previousLife: Int
     let nextLife: Int
     let previousStrikeouts: Int
+}
+
+enum PlayerContinuityRules {
+    nonisolated static func sameName(_ previous: String, _ current: String) -> Bool {
+        let previous = previous.trimmingCharacters(in: .whitespacesAndNewlines)
+        let current = current.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !previous.isEmpty && previous.localizedCaseInsensitiveCompare(current) == .orderedSame
+    }
 }

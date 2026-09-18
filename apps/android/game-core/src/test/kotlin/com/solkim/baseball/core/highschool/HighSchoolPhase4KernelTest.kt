@@ -21,6 +21,107 @@ import kotlin.test.assertTrue
 class HighSchoolPhase4KernelTest {
     private val kernel = HighSchoolPhase4Kernel()
 
+    @Test fun fullInningRotatesBattersPreservesStateAndComplementsRegularOuting() {
+        val ready = setupImportantGame()
+        val regular = kernel.commitShadowState(ready.copy(run = HighSchoolKernel().resignShadowState(ready.run.copy(chapterGameClaimed = true))))
+        var state = kernel.reserveImportantGame("77423", regular).state
+        assertEquals(0, state.activePitch!!.context.outs)
+        val batters = mutableSetOf<String>()
+        var guard = 0
+        while (!state.activePitch!!.ended && guard++ < 80) {
+            batters += state.currentBatter().id
+            val before = state.activePitch!!
+            val prep = kernel.prepareActivePitch(state)
+            state = kernel.submitPitch(state, before.sessionId, prep.primaryRecommendation.call, PitchDelivery(800, 800)).state
+            assertEquals(before.pitches + 1, state.activePitch!!.pitches)
+            assertTrue(state.activePitch!!.runsAllowed >= before.runsAllowed)
+            state = HighSchoolPhase4StateCodec.decode(HighSchoolPhase4StateCodec.encode(state))
+        }
+        assertTrue(guard < 80)
+        assertTrue(batters.size >= 2, "An outing must continue to the next batter")
+        val firstInning = state.activePitch!!
+        if (firstInning.context.fatigue < 90) {
+            val resumed = kernel.continueOuting(state).state
+            assertEquals(firstInning.pitches, resumed.activePitch!!.pitches)
+            assertEquals(firstInning.context.fatigue, resumed.activePitch!!.context.fatigue)
+            assertEquals(firstInning.context.inning + 1, resumed.activePitch!!.context.inning)
+            state = HighSchoolPhase4StateCodec.decode(HighSchoolPhase4StateCodec.encode(resumed))
+            while (!state.activePitch!!.ended && guard++ < 120) {
+                val prep = kernel.prepareActivePitch(state)
+                state = kernel.submitPitch(state, state.activePitch!!.sessionId, prep.primaryRecommendation.call, PitchDelivery(800, 800)).state
+            }
+            assertTrue(guard < 120)
+        }
+        val direct = state.activePitch!!
+        val finished = kernel.finishImportantGame(state).state
+        val parts = finished.seasonLog.filter { it.gameNumber == direct.gameNumber }
+        assertEquals(2, parts.size)
+        assertEquals(direct.outs, parts.single { it.played }.outs)
+        assertTrue(parts.single { !it.played }.outs > 0)
+        assertEquals(0, parts.single { !it.played }.perfectReleases)
+        assertEquals(direct.outs + parts.single { !it.played }.outs,
+            finished.run.performance.outs - ready.run.performance.outs + finished.run.automaticOuts - ready.run.automaticOuts)
+    }
+
+    @Test fun effortGapIsFiveKphAndSeasonEvidenceImprovesDraftEvaluation() {
+        val state = setupImportantGame()
+        val pitcher = state.run.toPitcherSnapshot()
+        for (type in PitchKind.entries) {
+            fun speed(intensity: PitchIntensity, balanced: Boolean) = com.solkim.baseball.core.pitch.PitchAbilityRules.expectedVelocity(
+                pitcher, PitchCall(type, PitchZone(1, 1), ZoneIntent.STRIKE, intensity), 20, balanced)
+            assertEquals(50, speed(PitchIntensity.MAX_EFFORT, true) - speed(PitchIntensity.CONTROLLED, true))
+            assertTrue(speed(PitchIntensity.MAX_EFFORT, false) - speed(PitchIntensity.CONTROLLED, false) > 200)
+        }
+        val good = state.run.copy(automaticOuts = 240, automaticRunsAllowed = 10)
+        val poor = good.copy(automaticRunsAllowed = 80)
+        assertTrue(HighSchoolKernel().draftAssessment(good).first > HighSchoolKernel().draftAssessment(poor).first)
+    }
+
+    @Test fun firstLifeManualOutingDistribution() {
+        for (preset in HighSchoolContentCatalog.presets) {
+        val ready = setupImportantGame(preset.id)
+        val regular = kernel.commitShadowState(ready.copy(run = HighSchoolKernel().resignShadowState(ready.run.copy(chapterGameClaimed = true))))
+        for (accuracy in listOf(450, 750, 1000)) {
+            var outs = 0; var hits = 0; var walks = 0; var strikeouts = 0; var runs = 0
+            repeat(30) { index ->
+                var state = kernel.reserveImportantGame((77_423 + index * 37).toString(), regular).state
+                var guard = 0
+                while (!state.activePitch!!.ended && guard++ < 90) {
+                    val prep = kernel.prepareActivePitch(state)
+                    state = kernel.submitPitch(state, state.activePitch!!.sessionId, prep.primaryRecommendation.call, PitchDelivery(accuracy, accuracy)).state
+                }
+                assertTrue(guard < 90)
+                val line = state.activePitch!!
+                outs += line.outs; hits += line.hits; walks += line.walks; strikeouts += line.strikeouts; runs += line.runsAllowed
+            }
+            println("OUTING_DISTRIBUTION preset=${preset.id} accuracy=$accuracy outs=$outs hits=$hits walks=$walks strikeouts=$strikeouts runs=$runs")
+            assertTrue(hits > 0, "Accurate delivery must not imply invulnerability")
+        }
+    }
+    }
+
+    @Test fun variedScoutingAndOldReservedGameBothRemainPlayable() {
+        val ready = setupImportantGame()
+        val profiles = HighSchoolContentCatalog.rivals.map { ready.run.copy(rival = it).toScoutingSnapshot() }
+        assertTrue(profiles.map { it.coldZone }.distinct().size >= 3)
+        assertTrue(profiles.map { it.pitchWeakness }.distinct().size >= 2)
+        assertTrue(profiles.all { it.coldZone != it.hotZone })
+        val reserved = kernel.reserveImportantGame("918220", ready).state
+        val session = requireNotNull(reserved.activePitch)
+        val oldRequest = com.solkim.baseball.core.pitch.PitchKernel.PrepareRequest(
+            session.seed, reserved.run.toPitcherSnapshot(), reserved.run.toBatterSnapshot(),
+            reserved.run.legacyScoutingSnapshot(), session.context.toPitchContext(),
+            session.memory.toRivalMemory().copy(matchupId = "${reserved.run.toPitcherSnapshot().id}:${reserved.run.toBatterSnapshot().id}"), session.game.toGameState(), session.log.toGameLog())
+        val oldPreparation = com.solkim.baseball.core.pitch.PitchKernel().prepareLegacy(oldRequest)
+        val oldSaved = kernel.commitShadowState(reserved.copy(activePitch = session.copy(preparationToken = oldPreparation.preparationToken)))
+        val restored = HighSchoolPhase4StateCodec.decode(HighSchoolPhase4StateCodec.encode(oldSaved))
+        val newRecommendation = kernel.prepareActivePitch(restored)
+        val played = kernel.submitPitch(restored, session.sessionId, newRecommendation.primaryRecommendation.call).state
+        assertTrue(played.activePitch!!.pitches > session.pitches)
+        val tampered = restored.copy(activePitch = restored.activePitch!!.copy(preparationToken = "invalid"))
+        assertFailsWith<IllegalArgumentException> { kernel.prepareActivePitch(tampered) }
+    }
+
     @Test
     fun eightChapterVerticalsCompleteAcrossSeedsAndRestartAtDurableBoundaries() {
         repeat(8) { offset ->
@@ -76,6 +177,12 @@ class HighSchoolPhase4KernelTest {
             }
             assertTrue(guard < 500, "seed=$seed did not complete")
             assertEquals(8, result.state.run.chapter.number, "seed=$seed")
+            val automatic = result.state.seasonLog.filter { !it.played && it.careerId == result.state.run.careerId }
+            assertEquals(result.state.run.automaticOuts, automatic.sumOf { it.outs })
+            assertEquals(result.state.run.automaticRunsAllowed, automatic.sumOf { it.runsAllowed })
+            assertTrue(result.state.run.selectedAwakenings.size <= 2)
+            assertTrue(result.state.run.automaticOuts > 90, "A complete career needs a season workload")
+            println("CAREER_BALANCE seed=$seed autoOuts=${result.state.run.automaticOuts} manualOuts=${result.state.run.performance.outs} skills=${result.state.run.selectedAwakenings.size} draft=${result.state.run.draftResult?.outcome} score=${result.state.run.draftResult?.evaluationScore}")
             assertTrue(result.state.run.performance.importantGamesCompleted in 4..6, "seed=$seed")
             assertTrue(result.state.completedGameCounter == result.state.run.performance.importantGamesCompleted.toULong())
             if (result.state.run.phase == HighSchoolPhase.COMPLETED && result.state.run.draftResult?.outcome == HighSchoolDraftOutcome.DRAFTED) {
@@ -520,7 +627,7 @@ class HighSchoolPhase4KernelTest {
                     signingBonus = 210_000_000,
                     firstSeasonGoal = "퓨처스 선발 10경기와 볼넷률 8% 이하",
                     evaluationBreakdown = listOf("능력 45", "관계 +2"),
-                    summary = "지명 구단 · 서울 코메츠. 구위와 고교 경기 기록에서 높은 평가를 받았습니다.",
+                    summary = "지명 구단 · 서울 코메츠. 구위와 고교 경기 기록이 스카우트를 움직였다.",
                 ),
             ),
         )
@@ -592,6 +699,56 @@ class HighSchoolPhase4KernelTest {
         assertFailsWith<IllegalArgumentException> { kernel.validateSavedState(tampered) }
     }
 
+    @Test
+    fun claimedChapterGameCountsLikeAnImportantGameAndReplacesOneAutomaticLine() {
+        var result = kernel.reserveImportantGame("918220", setupImportantGame())
+        result = finishReservedGame(result, "918220")
+        while (result.state.run.phase != HighSchoolPhase.CHAPTER_REVIEW) {
+            result = when (result.state.run.phase) {
+                HighSchoolPhase.RELATIONSHIP -> kernel.resolveRelationship("918220", result.state, HighSchoolRelationshipResponse.LISTEN)
+                HighSchoolPhase.AWAKENING -> kernel.chooseAwakening("918220", result.state, result.state.run.awakeningOptions.first())
+                HighSchoolPhase.IMPORTANT_GAME -> finishReservedGame(result, "918220")
+                HighSchoolPhase.TRAINING -> kernel.commitTraining("918220", result.state, HighSchoolTrainingFocus.COMMAND, HighSchoolTrainingIntensity.STANDARD)
+                else -> error("phase=${result.state.run.phase}")
+            }
+        }
+        val review = restart(result).state
+        val gamesBefore = review.run.performance.importantGamesCompleted
+        val untouched = kernel.advanceChapter("918220", review).state
+        assertEquals(review.run.automaticGames + 2, untouched.run.automaticGames)
+
+        val claimed = restart(kernel.claimChapterGame("918220", review)).state
+        assertEquals(HighSchoolPhase.IMPORTANT_GAME, claimed.run.phase)
+        assertTrue(claimed.run.chapterGameClaimed)
+        assertTrue(claimed.run.currentGameScenarioId!!.startsWith("regular-"))
+        assertEquals(review.run.milestoneIndex, claimed.run.milestoneIndex)
+
+        var game = kernel.reserveImportantGame("918220", claimed)
+        var preparation = game.preparation ?: error("preparation missing")
+        var guard = 0
+        while (game.state.activePitch?.ended != true && guard++ < 80) {
+            game = kernel.submitPitch(game.state, game.state.activePitch!!.sessionId, preparation.primaryRecommendation.call, PitchDelivery(990, 900))
+            game = restart(game)
+            preparation = game.preparation ?: break
+        }
+        val pitchesThrown = game.state.activePitch!!.pitches
+        assertEquals(pitchesThrown, game.state.activePitch!!.perfectReleases, "every 990 release is perfect")
+        val finished = restart(kernel.finishImportantGame(game.state)).state
+        assertEquals(HighSchoolPhase.CHAPTER_REVIEW, finished.run.phase)
+        assertTrue(finished.run.chapterGameClaimed)
+        assertEquals(gamesBefore + 1, finished.run.performance.importantGamesCompleted)
+        assertEquals(pitchesThrown, finished.run.performance.perfectReleases)
+        assertTrue(finished.seasonLog.last().regular)
+        assertEquals(pitchesThrown, finished.seasonLog.last().perfectReleases)
+        assertFailsWith<IllegalArgumentException> { kernel.claimChapterGame("918220", finished) }
+
+        val advanced = restart(kernel.advanceChapter("918220", finished)).state
+        assertEquals(review.run.automaticGames + 1, advanced.run.automaticGames, "one automatic line is replaced by the claimed game")
+        assertEquals(false, advanced.run.chapterGameClaimed)
+        assertEquals(HighSchoolPhase.TRAINING, advanced.run.phase)
+        assertEquals(pitchesThrown, advanced.run.performance.perfectReleases)
+    }
+
     private fun restart(result: HighSchoolPhase4Result): HighSchoolPhase4Result =
         result.copy(state = HighSchoolPhase4StateCodec.decode(HighSchoolPhase4StateCodec.encode(result.state)))
 
@@ -603,8 +760,8 @@ class HighSchoolPhase4KernelTest {
         return kernel.chooseSchool("918220", result.state, HighSchoolSchoolId.HAEDONG_POWER).state
     }
 
-    private fun setupImportantGame(): HighSchoolPhase4State {
-        var result = kernel.start(HighSchoolPhase4StartRequest("918220", "power_prospect", "user", "2026-W33", "2026-08-14"))
+    private fun setupImportantGame(preset: String = "power_prospect"): HighSchoolPhase4State {
+        var result = kernel.start(HighSchoolPhase4StartRequest("918220", preset, "user", "2026-W33", "2026-08-14"))
         result = kernel.completePrologue("918220", kernel.beginTutorial(result.state).state)
         result = kernel.chooseSchool("918220", result.state, HighSchoolSchoolId.HAEDONG_POWER)
         while (result.state.run.phase == HighSchoolPhase.TRAINING) {

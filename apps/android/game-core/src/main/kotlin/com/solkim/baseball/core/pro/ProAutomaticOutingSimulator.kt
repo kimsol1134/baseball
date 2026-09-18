@@ -28,6 +28,8 @@ import kotlin.math.max
 /** Automatic Pro games use the same Kotlin PitchKernel as the interactive boundary. */
 internal class ProAutomaticOutingSimulator(
     private val pitch: PitchKernel = PitchKernel(),
+    private val modernPitching: Boolean = true,
+    private val professionalBalance: Boolean = false,
 ) {
     internal data class Line(
         val outs: Int,
@@ -39,6 +41,7 @@ internal class ProAutomaticOutingSimulator(
         val homeRuns: Int,
         val doubles: Int = 0,
         val triples: Int = 0,
+        val earnedRuns: Int? = null,
     )
 
     /**
@@ -56,18 +59,21 @@ internal class ProAutomaticOutingSimulator(
         batterOffset: Int = 0,
         callPolicy: AutoCallPolicy = AutoCallPolicy.PERFECT,
         diverseScouting: Boolean = false,
+        delivery: com.solkim.baseball.core.pitch.PitchDelivery? = null,
+        fullStart: Boolean = false,
+        priorOuts: Int = 0, priorPitches: Int = 0, priorRuns: Int = 0,
     ): Line {
         val rng = SplitMix64(baseSeed)
         val fielders = listOf(
             "pitcher", "catcher", "first_base", "second_base", "third_base", "shortstop",
             "left_field", "center_field", "right_field",
         ).map { position -> FielderSnapshot("week-$position", position, position, 50, 50, 50) }
-        var inning = InningStateSnapshot(1, HalfInning.TOP, 0)
+        var inning = InningStateSnapshot(if (fullStart) priorOuts / 3 + 1 else 1, HalfInning.TOP, 0)
         var runners = BaserunnerStateSnapshot(false, false, false, 52)
         var runsOnBoard = 0
         var currentFatigue = startingFatigue.coerceIn(0, 95)
         var benchMemory: RivalMemorySnapshot? = null
-        var carriedLog = GameLogSnapshot("week-outing", 0UL, 0, emptyList())
+        var carriedLog = GameLogSnapshot("week-outing", 0UL, priorPitches, emptyList())
         var outsTotal = 0
         var strikeouts = 0
         var walks = 0
@@ -77,14 +83,18 @@ internal class ProAutomaticOutingSimulator(
         var homeRuns = 0
         var doubles = 0
         var triples = 0
+        var scoring = com.solkim.baseball.core.pitch.PitchRunLedger()
+        var lastGame: GameStateSnapshot? = null
+        var lastSeed = baseSeed.toString()
         var plateAppearanceIndex = 0
-        val extensionOuts = if (outsTarget >= 18) starterExtensionOuts(pitcher) else 0
-        val effectiveOutsTarget = outsTarget + extensionOuts
-        val effectivePitchCap = pitchCap + extensionOuts * 4
+        val extensionOuts = if (!fullStart && outsTarget >= 18) starterExtensionOuts(pitcher) else 0
+        val effectiveOutsTarget = if (fullStart) 27 - priorOuts else outsTarget + extensionOuts
+        val effectivePitchCap = if (fullStart) 125 - priorPitches else pitchCap + extensionOuts * 4
 
         while (outsTotal < effectiveOutsTarget && pitches < effectivePitchCap && plateAppearanceIndex < 60) {
+            if (fullStart && !ProOutingUsageRules.canContinue(pitcher, outsTotal + priorOuts, pitches + priorPitches, currentFatigue, runsAllowed + priorRuns, true)) break
             plateAppearanceIndex += 1
-            val batter = BatterSnapshot(
+            val legacyBatter = BatterSnapshot(
                 id = "week-batter-$plateAppearanceIndex",
                 name = "상대 타선",
                 contact = (50 + batterOffset + rng.nextInt(9) - 4).coerceIn(20, 80),
@@ -92,6 +102,7 @@ internal class ProAutomaticOutingSimulator(
                 power = (50 + batterOffset + rng.nextInt(9) - 4).coerceIn(20, 80),
                 batSide = if (rng.nextInt(100) < 32) BatSide.LEFT else BatSide.RIGHT,
             )
+            val batter = if (professionalBalance) ProfessionalLineup.batter("lineup-$baseSeed", plateAppearanceIndex, batterOffset) else legacyBatter
             val hotZone = com.solkim.baseball.core.pitch.PitchZone(rng.nextInt(3), rng.nextInt(3))
             val mirrored = com.solkim.baseball.core.pitch.PitchZone(2 - hotZone.row, 2 - hotZone.column)
             val weaknessDraw = rng.nextInt(2)
@@ -132,7 +143,7 @@ internal class ProAutomaticOutingSimulator(
             var memory = benchMemory
             val outsBefore = absoluteOuts(inning)
             var context = PlateAppearanceContext(
-                plateAppearanceId = "week-pa-$plateAppearanceIndex",
+                plateAppearanceId = "week-pa-$plateAppearanceIndex" + if (modernPitching) ":outing-v2" else "",
                 revision = 0UL,
                 inning = inning.inning,
                 outs = inning.outs,
@@ -144,7 +155,7 @@ internal class ProAutomaticOutingSimulator(
                 fatigue = currentFatigue,
             )
             var seedText = maxOf(1UL, rng.next() shr 1).toString()
-            var preparation = pitch.prepare(
+            var preparation = prepare(
                 PitchKernel.PrepareRequest(seedText, pitcher, batter, scouting, context, memory, game, carriedLog),
             )
             val missThisPa = if (callPolicy == AutoCallPolicy.PERFECT) {
@@ -164,12 +175,15 @@ internal class ProAutomaticOutingSimulator(
                         seedText, pitcher, batter, scouting, context,
                         preparation.preparationToken, call,
                         memory, game, carriedLog,
-                    ),
+                    ), delivery,
                 )
                 val snapshot = result.snapshot
+                if (professionalBalance) scoring = scoring.advance(snapshot)
+                lastGame = result.gameState
+                lastSeed = result.nextSeed
                 pitches += 1
                 if (snapshot.result == PlateAppearanceResult.STRIKEOUT) strikeouts += 1
-                if (snapshot.result == PlateAppearanceResult.WALK) walks += 1
+                if (snapshot.result == PlateAppearanceResult.WALK && (!professionalBalance || snapshot.outcome != PitchOutcome.HIT_BY_PITCH)) walks += 1
                 if (snapshot.result == PlateAppearanceResult.HIT) {
                     hits += 1
                     when (snapshot.outcome) {
@@ -190,6 +204,7 @@ internal class ProAutomaticOutingSimulator(
                     inning = result.gameState.inningState ?: inning
                     runners = result.gameState.runners
                     outsTotal += max(0, absoluteOuts(inning) - outsBefore)
+                    if (fullStart) inning = InningStateSnapshot(minOf(9, (outsTotal + priorOuts) / 3 + 1), HalfInning.TOP, outsTotal % 3)
                     break
                 }
                 seedText = result.nextSeed
@@ -202,11 +217,18 @@ internal class ProAutomaticOutingSimulator(
                     pitchNumber = context.pitchNumber + 1,
                     fatigue = currentFatigue,
                 )
-                preparation = result.nextPreparation ?: break
+                preparation = if (modernPitching) result.nextPreparation ?: break else pitch.prepareLegacy(PitchKernel.PrepareRequest(seedText, pitcher, batter, scouting, context, memory, game, carriedLog))
             }
         }
-        return Line(outsTotal, strikeouts, walks, runsAllowed, pitches, hits, homeRuns, doubles, triples)
+        if (professionalBalance && lastGame != null) {
+            scoring = settleReliefRuns(pitch, lastGame!!, scoring, lastSeed)
+            runsAllowed = scoring.runs
+        }
+        return Line(outsTotal, strikeouts, walks, runsAllowed, pitches, hits, homeRuns, doubles, triples, if (professionalBalance) scoring.earnedRuns else null)
     }
+
+    private fun prepare(request: PitchKernel.PrepareRequest): com.solkim.baseball.core.pitch.PitchPreparation =
+        if (modernPitching) pitch.prepare(request) else pitch.prepareLegacy(request)
 
     private fun starterExtensionOuts(pitcher: PitcherSnapshot): Int {
         val edge = max(0, pitcher.stamina - maxOf(pitcher.stuff, pitcher.command, pitcher.movement))

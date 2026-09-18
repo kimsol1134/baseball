@@ -63,9 +63,15 @@ struct DeliveryControl: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.dynamicTypeSize) private var typeSize
     /// 접근성 글자 크기에서 안내 문구가 커지면 92pt 고정 패드 안에서 겹친다 —
     /// 패드가 글자를 따라 자란다(3차 패널 P1, Dynamic Type).
     @ScaledMetric(relativeTo: .body) private var padHeight: CGFloat = 92
+    /// 패드 높이의 상한. 접근성 글자에서 그대로 두면 200pt까지 자라 화면의 절반을 먹고,
+    /// 구종 줄과 구속 행이 스크롤 밖으로 밀려난다(QA 2026-09-12 F-06). 140pt면 손가락에
+    /// 넉넉하면서 본문이 남는다.
+    private static let maximumPadHeight: CGFloat = 140
+    private var clampedPadHeight: CGFloat { min(padHeight, Self.maximumPadHeight) }
     @State private var heldCommandRating = PitchReleaseWindow.baselineCommand
     @State private var isPressing = false
     @State private var meter: Double = 0
@@ -105,12 +111,16 @@ struct DeliveryControl: View {
         return reduceMotion ? seconds * 1.5 : seconds
     }
 
+    /// 미터 속도 변화가 손에 잡히기 시작하는 피로. 20이면 왕복이 약 5% 빨라진다.
+    private static let fatigueTempoThreshold = 20
+
     private var tempoLabel: String {
-        switch velocityTenthsKPH {
-        case 1_400...: copyResolver.resolve(.deliveryTempoFast)
-        case ..<1_230: copyResolver.resolve(.deliveryTempoSlow)
-        default: copyResolver.resolve(.deliveryTempoNormal)
-        }
+        let tempo = sweepSeconds <= 0.90 ? copyResolver.resolve(.deliveryTempoFast)
+            : sweepSeconds >= 1.06 ? copyResolver.resolve(.deliveryTempoSlow) : copyResolver.resolve(.deliveryTempoNormal)
+        // 피로 1에서 미터가 빨라지는 폭은 5ms다 — 읽을 수 없는 차이를 "피로 영향"이라고
+        // 부르면 라벨이 거짓말이 된다(QA 2026-09-12 F-13a). 실제로 손에 잡히는 구간부터 말한다.
+        let meterAffected = fatigue >= Self.fatigueTempoThreshold
+        return copyResolver.resolve(.localizable(meterAffected ? "loop.meter.tired" : "loop.meter.rested"), arguments: [.userText(tempo)])
     }
 
     /// 조준을 최대로 흔들 수 있는 반경(pt). 이 거리에서 aimAccuracy가 0이 된다.
@@ -160,19 +170,28 @@ struct DeliveryControl: View {
 
     private var manual: some View {
         VStack(spacing: 10) {
-            HStack {
-                Text(verbatim: copyResolver.resolve(
-                    .localizable("control.window.title")
-                ))
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                Spacer(minLength: 0)
-                Text(verbatim: tempoLabel + " · " + GameFormatters.velocity(
-                    tenthsKPH: velocityTenthsKPH,
-                    language: copyResolver.language
-                ))
-                    .font(.caption.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(BaseballTheme.milestone)
+            // 큰 글씨에서 두 문구가 한 줄을 나눠 쓰면 둘 다 "제구 · 안정…"으로 잘려
+            // 릴리스 창을 읽을 수 없었다(QA 2026-09-12 F-06). 좁으면 세로로 쌓는다.
+            let windowTitle = Text(verbatim: copyResolver.resolve(.localizable("control.window.title")))
+                .font(.caption.weight(.bold))
+                .foregroundStyle(BaseballTheme.textSecondary)
+            let tempo = Text(verbatim: tempoLabel)
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(BaseballTheme.milestone)
+            Group {
+                if typeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 2) {
+                        windowTitle.fixedSize(horizontal: false, vertical: true)
+                        tempo.fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HStack {
+                        windowTitle
+                        Spacer(minLength: 0)
+                        tempo
+                    }
+                }
             }
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("pitch.releaseTempo")
@@ -205,7 +224,7 @@ struct DeliveryControl: View {
                 // 하나가 "적당히 초록"과 "정확히 가운데"를 다른 목표로 만든다.
                 Capsule()
                     .fill(BaseballTheme.milestone)
-                    .frame(width: max(3, proxy.size.width * Self.perfectBandWidth))
+                    .frame(width: proxy.size.width * Self.perfectBandWidth)
                     .offset(x: proxy.size.width * (0.5 - Self.perfectBandWidth / 2))
                     .shadow(color: BaseballTheme.milestone.opacity(inPerfectBand ? 0.9 : 0),
                             radius: inPerfectBand ? 6 : 0)
@@ -213,20 +232,21 @@ struct DeliveryControl: View {
                     .fill(inPerfectBand ? BaseballTheme.milestone
                           : isPressing ? BaseballTheme.action : BaseballTheme.border)
                     .frame(width: 6)
-                    .offset(x: (proxy.size.width - 6) * meter)
+                    .offset(x: min(max(0, proxy.size.width - 6), max(0, proxy.size.width * meter - 3)))
             }
             .overlay { Capsule().stroke(BaseballTheme.border.opacity(0.6), lineWidth: 1) }
         }
         .frame(height: 16)
+        .transaction { $0.animation = nil }
     }
 
     /// 미터 전체 폭 대비 퍼펙트 구간의 너비. `delivery(meter:…)`의 선형 환산에서
     /// `releaseAccuracy >= perfectReleaseThreshold`인 구간과 정확히 같아야 화면이 거짓말을 하지 않는다.
-    private static let perfectBandWidth = Double(1_000 - PitchDelivery.perfectReleaseThreshold) / 1_000
+    private static let perfectBandWidth = PitchReleaseWindow.perfectWidth
 
     /// 지금 손을 떼면 퍼펙트인가.
     private var inPerfectBand: Bool {
-        isPressing && abs(meter - 0.5) <= Self.perfectBandWidth / 2
+        isPressing && PitchReleaseWindow.containsPerfect(meter: meter)
     }
 
     private var gesturePad: some View {
@@ -257,14 +277,14 @@ struct DeliveryControl: View {
                     .foregroundStyle(onTarget && inPerfectBand ? BaseballTheme.milestone
                                      : onTarget && inSweetSpot ? BaseballTheme.action
                                      : BaseballTheme.textSecondary)
-                    .offset(y: padHeight * 0.39)
+                    .offset(y: clampedPadHeight * 0.39)
             } else {
                 Text(verbatim: copyResolver.resolve(showHoldHint ? .deliveryHoldLonger : .deliveryHold))
                     .font(.headline)
                     .foregroundStyle(BaseballTheme.actionInk)
             }
         }
-        .frame(height: padHeight)
+        .frame(height: clampedPadHeight)
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -310,6 +330,7 @@ struct DeliveryControl: View {
         Haptics.shared.windUpBegan()
         driver.start(
             sweepSeconds: sweepSeconds,
+            commandRating: heldCommandRating,
             swayAmplitude: swayAmplitude,
             tension: tension,
             hapticsEnabled: hapticsEnabled,
@@ -335,7 +356,8 @@ struct DeliveryControl: View {
             onEdge: {
                 Haptics.shared.meterEdge()
                 onMeterEdge()
-            }
+            },
+            onApproachingRelease: { Haptics.shared.approachingRelease() }
         )
     }
 
@@ -380,9 +402,8 @@ struct DeliveryControl: View {
 
     /// 미터 위치와 조준 이탈을 0~1000 정확도로 옮긴다. 순수 함수라 테스트할 수 있다.
     static func delivery(meter: Double, aim: CGSize, aimRadius: CGFloat, commandRating: Int = PitchReleaseWindow.baselineCommand) -> PitchDelivery {
-        // 미터 0.5가 완벽. 멀어질수록 선형으로 떨어진다.
-        let releaseError = min(1, abs(meter - 0.5) * 2)
-        let release = Int(((1 - releaseError) * 1_000).rounded())
+        // 표시된 주황색 구간과 같은 경계로 판정한다. 경계 밖 반올림은 퍼펙트가 아니다.
+        let release = PitchReleaseWindow.rawAccuracy(meter: meter)
         let distance = min(Double(aimRadius), sqrt(Double(aim.width * aim.width + aim.height * aim.height)))
         let aimScore = Int(((1 - distance / Double(aimRadius)) * 1_000).rounded())
         return PitchDelivery(
@@ -397,7 +418,7 @@ struct DeliveryControl: View {
         // 정중앙 릴리스는 별도 등급이다. 아래 평균 점수는 조준이 흔들리면 850 밑으로
         // 떨어지므로, 타이밍을 완벽히 맞힌 사실이 그 평균에 묻혀 사라졌다.
         if delivery.isPerfectRelease {
-            return ("퍼펙트 릴리스 — 제대로 긁혔다", .milestone)
+            return ("퍼펙트 릴리스 — 손끝에 제대로 감겼다!", .milestone)
         }
         if delivery.releaseAccuracy >= PitchReleaseWindow.stableReleaseThreshold {
             return delivery.aimAccuracy < 650 ? ("안정 릴리스 · 조준은 흔들렸어요", .warning) : ("안정 릴리스", .positive)
@@ -436,12 +457,12 @@ struct DeliveryControl: View {
         guard min(release, aim) < 700 else { return nil }
         if release <= aim {
             return release < 400
-                ? "미터를 크게 놓쳤습니다 — 초록 구간에서 떼세요"
-                : "미터를 살짝 놓쳤습니다"
+                ? "타이밍을 크게 놓쳤어요! 게이지가 초록 구간에 올 때 손을 떼세요"
+                : "타이밍이 살짝 빗나갔어요"
         }
         return aim < 400
-            ? "조준이 크게 흔들렸습니다 — 손가락을 과녁에 머무르게 하세요"
-            : "조준이 살짝 흔들렸습니다"
+            ? "조준이 크게 빗나갔어요! 손가락을 목표 위치에 잘 유지해 보세요"
+            : "조준이 살짝 빗나갔어요"
     }
 
 
@@ -479,6 +500,8 @@ final class MeterDriver {
     private var value: Double = 0
     private var rising = true
     private var sweepSeconds: Double = 1
+    /// 릴리스 감속의 폭을 정하는 제구. 성장하면 정중앙에 더 오래 머문다.
+    private var commandRating: Int = PitchReleaseWindow.baselineCommand
     private var swayAmplitude: CGFloat = 0
     private var tension: Double = 0
     private var hapticsEnabled = true
@@ -488,6 +511,12 @@ final class MeterDriver {
     private var phases: [Double] = [0, 0, 0, 0]
     private var onTick: ((Double, CGSize) -> Void)?
     private var onEdge: (() -> Void)?
+    private var onApproachingRelease: (() -> Void)?
+    /// 이번 왕복에서 예고를 이미 울렸는지. 한 번 지나가는 동안 한 번만 친다.
+    private var warnedLeg: Double = -1
+
+    /// 정중앙 도착 몇 초 전에 예고할지. 사람이 반응해서 손을 뗄 수 있는 최소 시간이다.
+    static let releaseWarningLead = 0.11
 
     /// 조준 흔들림의 주기(Hz). 서로 나누어떨어지지 않아야 같은 자리로 돌아오지 않는다.
     /// 규칙적으로 돌면 몇 번 던져 보고 외워 버려서 다시 쉬워진다.
@@ -495,6 +524,7 @@ final class MeterDriver {
 
     func start(
         sweepSeconds: Double,
+        commandRating: Int = PitchReleaseWindow.baselineCommand,
         swayAmplitude: CGFloat,
         tension: Double = 0,
         hapticsEnabled: Bool = true,
@@ -502,10 +532,12 @@ final class MeterDriver {
         heartbeatSignal: MoundHeartbeatSignal? = nil,
         disturbanceSeed: UInt64 = 0,
         onTick: @escaping (Double, CGSize) -> Void,
-        onEdge: @escaping () -> Void
+        onEdge: @escaping () -> Void,
+        onApproachingRelease: @escaping () -> Void = {}
     ) {
         stop()
         self.sweepSeconds = max(0.2, sweepSeconds)
+        self.commandRating = commandRating
         self.swayAmplitude = swayAmplitude
         self.tension = min(1, max(0, tension))
         self.hapticsEnabled = hapticsEnabled
@@ -514,6 +546,8 @@ final class MeterDriver {
         self.disturbanceSeed = disturbanceSeed
         self.onTick = onTick
         self.onEdge = onEdge
+        self.onApproachingRelease = onApproachingRelease
+        warnedLeg = -1
         // 매 투구마다 위상을 새로 뽑는다. 고정하면 항상 같은 궤적이라 외울 수 있다.
         phases = (0..<4).map { _ in Double.random(in: 0..<(2 * .pi)) }
         value = 0
@@ -530,6 +564,7 @@ final class MeterDriver {
         link = nil
         onTick = nil
         onEdge = nil
+        onApproachingRelease = nil
         heartbeatSignal = nil
     }
 
@@ -554,23 +589,30 @@ final class MeterDriver {
         lastTimestamp = link.timestamp
         // 한 프레임이 크게 밀려도(백그라운드 복귀 등) 미터가 순간이동하지 않게 묶는다.
         let step = min(0.1, delta)
+        let previousLeg = (elapsed / sweepSeconds).rounded(.down)
         elapsed += step
-        let progress = step / sweepSeconds
-
-        if rising {
-            value += progress
-            if value >= 1 { value = 1; rising = false; onEdge?() }
-        } else {
-            value -= progress
-            if value <= 0 { value = 0; rising = true; onEdge?() }
+        // 주기와 초록 구간의 시간은 그대로 두고 릴리스 지점 부근에서만 바늘이 느려진다.
+        // 끝점 통과는 왕복 다리(leg)가 바뀌는 순간이므로 값이 아니라 시간으로 센다.
+        value = PitchReleaseWindow.meterPosition(
+            elapsed: elapsed, sweepSeconds: sweepSeconds, command: commandRating)
+        let currentLeg = (elapsed / sweepSeconds).rounded(.down)
+        if currentLeg != previousLeg {
+            rising = Int(currentLeg) % 2 == 0
+            onEdge?()
+        }
+        // 도착 시각으로 예고한다. 곡선이 바뀌어도 가운데 도달 시각은 같으므로 어긋나지 않는다.
+        let remaining = PitchReleaseWindow.secondsToRelease(elapsed: elapsed, sweepSeconds: sweepSeconds)
+        if remaining <= Self.releaseWarningLead, warnedLeg != currentLeg {
+            warnedLeg = currentLeg
+            onApproachingRelease?()
         }
         let visibleMeter = MoundMeterDisturbance.position(
             base: value,
             at: link.timestamp,
             effectiveTension: tension,
             beatTimes: heartbeatSignal?.beatTimes ?? [],
-            hapticsEnabled: hapticsEnabled,
             reduceMotion: reduceMotion,
+            commandRating: commandRating,
             seed: disturbanceSeed
         )
         // `visibleMeter` is the value stored by DeliveryControl and later passed to

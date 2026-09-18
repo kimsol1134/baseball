@@ -1,0 +1,34 @@
+{
+  "asOf": "2026-09-10",
+  "channel": "https://studio.youtube.com/channel/UCeI3SyV6mvb-ZAtvEIIzKAQ",
+  "visibility": "unlisted",
+  "madeForKids": false,
+  "videos": {
+    "ko-KR": {
+      "youtubeId": "fQiix0qgAGc",
+      "watchUrl": "https://www.youtube.com/watch?v=fQiix0qgAGc",
+      "shortUrl": "https://youtu.be/fQiix0qgAGc",
+      "source": "ko-KR/trailer-landscape.mp4",
+      "title": "야구 못하면 또 환생함 | 한 구는 손끝으로, 인생은 내 선택으로"
+    },
+    "en-US": {
+      "youtubeId": "dhC3FlNexwE",
+      "watchUrl": "https://www.youtube.com/watch?v=dhC3FlNexwE",
+      "shortUrl": "https://youtu.be/dhC3FlNexwE",
+      "source": "en-US/trailer-landscape.mp4",
+      "title": "Mound Reborn | Your pitch. Your choices. Your baseball life."
+    },
+    "ja-JP": {
+      "youtubeId": "ZMNRhP6_GwE",
+      "watchUrl": "https://www.youtube.com/watch?v=ZMNRhP6_GwE",
+      "shortUrl": "https://youtu.be/ZMNRhP6_GwE",
+      "source": "ja-JP/trailer-landscape.mp4",
+      "title": "野球がダメならまた転生 | 一球は指先で。人生は選択で。"
+    }
+  },
+  "playListingWired": {
+    "ko-KR": true,
+    "en-US": true,
+    "ja-JP": true
+  }
+}

@@ -6,6 +6,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+import { hasMixedPlaceholderAddressing } from "./lib/copy-format.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const schemaPath = join(root, "docs/localization/ios-copy-schema.json");
@@ -370,6 +371,16 @@ if (!existsSync(schemaPath)) {
 
 const schema = readJSON(schemaPath);
 const failures = validateSchema(schema);
+// The schema is an inventory snapshot. Inspect the shipped catalogs as well, including new keys.
+for (const name of ["Localizable", "GameContent"]) {
+  const catalog = readJSON(join(root, `apps/ios/Sources/Presentation/Localization/${name}.xcstrings`));
+  for (const [key, entry] of Object.entries(catalog.strings)) {
+    for (const [language, translation] of Object.entries(entry.localizations ?? {})) {
+      const value = translation.stringUnit?.value ?? "";
+      if (hasMixedPlaceholderAddressing(value)) failures.push(`mixed positional/sequential placeholders: ${name}.${key} (${language})`);
+    }
+  }
+}
 if (schemaOnly) {
   failures.push(...validateCatalogs(schema));
   failures.push(...validateInfoPlist());

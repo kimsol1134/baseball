@@ -1,0 +1,431 @@
+{
+  "remotionVersion": "4.0.499",
+  "screenshots": [
+    {
+      "locale": "ko",
+      "size": "6.9",
+      "path": "ko-KR/screenshots-6.9/01.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "bad689dcef4df68796773f3b78418d072d4ad972d64fa3b53f6dd6854d325610"
+    },
+    {
+      "locale": "ko",
+      "size": "6.9",
+      "path": "ko-KR/screenshots-6.9/02.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "547879946d95cd0405cc2422d52c3a23e5a1a14cba844f9ae3ef38c7c8ceba05"
+    },
+    {
+      "locale": "ko",
+      "size": "6.9",
+      "path": "ko-KR/screenshots-6.9/03.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "bd7a13e3fd6001ebc7576dde1f6588afc6b948bf68ce29c7c32be72c81844957"
+    },
+    {
+      "locale": "ko",
+      "size": "6.9",
+      "path": "ko-KR/screenshots-6.9/04.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "3bf1bdafdf7bf689b32be662d44e87e413fedf155e30104dd06d8ee3e38f2f90"
+    },
+    {
+      "locale": "ko",
+      "size": "6.9",
+      "path": "ko-KR/screenshots-6.9/05.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "cfa3ec4733caa53003a7587a799d04b276bda96393428bc9149eb212793c62e1"
+    },
+    {
+      "locale": "ko",
+      "size": "6.9",
+      "path": "ko-KR/screenshots-6.9/06.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "3ab8b16ed688fcdc50c84e79918a8aaed6bf7fd2b70396caf8aa9096496b500c"
+    },
+    {
+      "locale": "ko",
+      "size": "6.9",
+      "path": "ko-KR/screenshots-6.9/07.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "1c5eb528523dc2417d893008f9dd792e9f3d50d2e9b808ea27abedcf372c872e"
+    },
+    {
+      "locale": "ko",
+      "size": "6.9",
+      "path": "ko-KR/screenshots-6.9/08.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "ab3eb382dd768372a177731ef40a2d4110ec43280d7535847624019a283b1cb6"
+    },
+    {
+      "locale": "ko",
+      "size": "6.5",
+      "path": "ko-KR/screenshots-6.5/01.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "a6bddd4d73bbe9f8dd844dbb82c352c42010e21a10aff29695a9b32525018e6a"
+    },
+    {
+      "locale": "ko",
+      "size": "6.5",
+      "path": "ko-KR/screenshots-6.5/02.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "3dff3ebf8fa5a36706782fd74d21d691dec0c8501b7871a1bdf6da5d7f88ccca"
+    },
+    {
+      "locale": "ko",
+      "size": "6.5",
+      "path": "ko-KR/screenshots-6.5/03.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "f3bbddacefeaca8ded79a5440f83120ceebe3368d4cfbb1ae911a4eefde773e4"
+    },
+    {
+      "locale": "ko",
+      "size": "6.5",
+      "path": "ko-KR/screenshots-6.5/04.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "1f497381ae8c30d30c6f9088c8db9493dba66eee3178090ead74d4d7af1bc6d9"
+    },
+    {
+      "locale": "ko",
+      "size": "6.5",
+      "path": "ko-KR/screenshots-6.5/05.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "4b63f590e00a8b0d1e3c635aeb5885791866bc9781996d4e238fb0fedbdf62ac"
+    },
+    {
+      "locale": "ko",
+      "size": "6.5",
+      "path": "ko-KR/screenshots-6.5/06.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "427441aa3f63473efcdf3305b270164c84c65763c50c94c4eb4bbfd323a6c6fc"
+    },
+    {
+      "locale": "ko",
+      "size": "6.5",
+      "path": "ko-KR/screenshots-6.5/07.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "e7a1a3cd5ca752fb5d7a50bbc1847f04cb8c5c09bfed31f976869431360a553a"
+    },
+    {
+      "locale": "ko",
+      "size": "6.5",
+      "path": "ko-KR/screenshots-6.5/08.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "8616b18dc0b10240e7c3d0dd9b6d64e7f377a729691ee553cee25e4a85ded8d9"
+    },
+    {
+      "locale": "en",
+      "size": "6.9",
+      "path": "en-US/screenshots-6.9/01.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "be6f213a71367b80d7ca0a233f7a9bcd5bd667a4f5294343aa8fd4b38be6242f"
+    },
+    {
+      "locale": "en",
+      "size": "6.9",
+      "path": "en-US/screenshots-6.9/02.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "57a4c690e59bb5822b28e0fe079eff749d261865b35ef4125065b0eb10a0aa87"
+    },
+    {
+      "locale": "en",
+      "size": "6.9",
+      "path": "en-US/screenshots-6.9/03.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "413f9d99d5ad218a20739ec26e73e96c9f20c4426f1a08d07cd69b4253e46988"
+    },
+    {
+      "locale": "en",
+      "size": "6.9",
+      "path": "en-US/screenshots-6.9/04.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "33a128c542c18f67f75a580f908c1c1bb7606942ea6052c88508e811c6582733"
+    },
+    {
+      "locale": "en",
+      "size": "6.9",
+      "path": "en-US/screenshots-6.9/05.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "56750bff1dd054a7f59b8bb304701e7c36814efa3061bf5be2ec012e799974c5"
+    },
+    {
+      "locale": "en",
+      "size": "6.9",
+      "path": "en-US/screenshots-6.9/06.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "04bd3db96572e2f1b39c5a4520cc1c937e7bb53a4e50f9faf0cedbaa307a5ccb"
+    },
+    {
+      "locale": "en",
+      "size": "6.9",
+      "path": "en-US/screenshots-6.9/07.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "451110f2439e15fad77f1fb753d85a92662ac9c976898757ad668b05d42a5ab4"
+    },
+    {
+      "locale": "en",
+      "size": "6.9",
+      "path": "en-US/screenshots-6.9/08.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "2e5e48c989e8ff026057db0958c29e2155bbd91e5a32a2923e7f351a00f6e16b"
+    },
+    {
+      "locale": "en",
+      "size": "6.5",
+      "path": "en-US/screenshots-6.5/01.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "a0c3ed2e46e6acc66f778c022428240bc20db4a3ed02861d5b626dcbaddcb819"
+    },
+    {
+      "locale": "en",
+      "size": "6.5",
+      "path": "en-US/screenshots-6.5/02.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "cd80eccc0951f535dd545603fab3dc4d84bf3cf57c25ba2d32cc6856d5b9f4a8"
+    },
+    {
+      "locale": "en",
+      "size": "6.5",
+      "path": "en-US/screenshots-6.5/03.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "fe22de7cb44534402e01ed8afdc4bc3cad4dc07beae93086a4b1c378dc278ae0"
+    },
+    {
+      "locale": "en",
+      "size": "6.5",
+      "path": "en-US/screenshots-6.5/04.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "90d67d95097ebaff337295d7cac0e288d5cb549ea8d150c66ce1322afc1bbce6"
+    },
+    {
+      "locale": "en",
+      "size": "6.5",
+      "path": "en-US/screenshots-6.5/05.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "bdf2ca2eb66c8b8536fd1801e65aa7f4f117e682d123e13c0dde3154ab305663"
+    },
+    {
+      "locale": "en",
+      "size": "6.5",
+      "path": "en-US/screenshots-6.5/06.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "5e27adb77d23a3249ac08130cd76f322faf67090a0d9eb36ebabfa4ba1eb2b40"
+    },
+    {
+      "locale": "en",
+      "size": "6.5",
+      "path": "en-US/screenshots-6.5/07.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "5e40225eadc6754330a605ee8ee4b27b0a78fffbfbf49d5cd37781e36c383275"
+    },
+    {
+      "locale": "en",
+      "size": "6.5",
+      "path": "en-US/screenshots-6.5/08.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "c9a8f37184707593c291bfb233a0d29fd9f53f19fe3f1f2e60ebfa71a5ff2637"
+    },
+    {
+      "locale": "ja",
+      "size": "6.9",
+      "path": "ja-JP/screenshots-6.9/01.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "e27d3e21e6ae71dd02de58240175edd92f78e4a70a17119af94065f050735766"
+    },
+    {
+      "locale": "ja",
+      "size": "6.9",
+      "path": "ja-JP/screenshots-6.9/02.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "1091f790462ac03906454ee42267bfd9f3b999c400a9998efd3f27f2e5282e51"
+    },
+    {
+      "locale": "ja",
+      "size": "6.9",
+      "path": "ja-JP/screenshots-6.9/03.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "8374785c31540a6288e40a75092e97d0587f72d1a93ba84d922f5697522f5981"
+    },
+    {
+      "locale": "ja",
+      "size": "6.9",
+      "path": "ja-JP/screenshots-6.9/04.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "3c2d2a22850bf2c03e66325b09f826ae03f195fb07d0e2bed9458768b258e843"
+    },
+    {
+      "locale": "ja",
+      "size": "6.9",
+      "path": "ja-JP/screenshots-6.9/05.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "7596136d31bbe372e4d91e39b04bf2f39c023a666a6dc00b6a09a14275cf22e4"
+    },
+    {
+      "locale": "ja",
+      "size": "6.9",
+      "path": "ja-JP/screenshots-6.9/06.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "f02f2ac92936c621062d5908d6aead1a84d0335986f5cc7560b0a1f2c35d4890"
+    },
+    {
+      "locale": "ja",
+      "size": "6.9",
+      "path": "ja-JP/screenshots-6.9/07.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "b6e4022b1e022d0ec7a474b124cdefa1a073d0236387a13c7ec6032a0e502713"
+    },
+    {
+      "locale": "ja",
+      "size": "6.9",
+      "path": "ja-JP/screenshots-6.9/08.png",
+      "width": 1320,
+      "height": 2868,
+      "sha256": "f78fe0d57162c6e07cdb4e3e29e90f0d5c9c06540792d906bf49e9408d8342cb"
+    },
+    {
+      "locale": "ja",
+      "size": "6.5",
+      "path": "ja-JP/screenshots-6.5/01.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "b74bd475f066e443d0f0e8fc4633965016a465af7cd0a43f484f2c101774c3bf"
+    },
+    {
+      "locale": "ja",
+      "size": "6.5",
+      "path": "ja-JP/screenshots-6.5/02.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "aab7cc0857d943d3abd390c383ab3e79818b6bb0229d75a44eaed3f639e4dd07"
+    },
+    {
+      "locale": "ja",
+      "size": "6.5",
+      "path": "ja-JP/screenshots-6.5/03.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "9ce1948265dea15b71789cabe7920577c96091dff27e22c912a40c84fe9c17e1"
+    },
+    {
+      "locale": "ja",
+      "size": "6.5",
+      "path": "ja-JP/screenshots-6.5/04.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "10aada66da3b74a4367f6bd4dbba69ae14b5878a905b705928942272695bd4c5"
+    },
+    {
+      "locale": "ja",
+      "size": "6.5",
+      "path": "ja-JP/screenshots-6.5/05.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "86f35d45a1a1eed8d0f262d94566f4088ecf8b4eb6cd8d983e73533273c4ab0c"
+    },
+    {
+      "locale": "ja",
+      "size": "6.5",
+      "path": "ja-JP/screenshots-6.5/06.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "12912a6af1823e0bd64ae88fe81996cc3d39bacaf59e23f4567911a8329e6524"
+    },
+    {
+      "locale": "ja",
+      "size": "6.5",
+      "path": "ja-JP/screenshots-6.5/07.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "4947a59cb24f093006555fafe1a5eb2d169990121d07d262d75c05d08da5965f"
+    },
+    {
+      "locale": "ja",
+      "size": "6.5",
+      "path": "ja-JP/screenshots-6.5/08.png",
+      "width": 1284,
+      "height": 2778,
+      "sha256": "b97c283791d260e9c06ab0a470d8179447477d9853dc659cd3bf0b2482aab067"
+    }
+  ],
+  "previews": [
+    {
+      "locale": "ko",
+      "path": "ko-KR/preview/app-preview-ko-886x1920.mp4",
+      "duration": "28.000000",
+      "videoCodec": "h264",
+      "audioCodec": "aac",
+      "sampleRate": "48000",
+      "bytes": 34328981,
+      "sha256": "f8b0d5184d8275e270ba65c8fc6cd55f057558626d416af6cd4bbab8ac49076a",
+      "posterTime": "00:00:01.500",
+      "poster": "ko-KR/preview/poster.png",
+      "posterSha256": "fb48aac4ea092889fe97eab5bde20915a6af87fb40934b0a7158ee05959d980d"
+    },
+    {
+      "locale": "en",
+      "path": "en-US/preview/app-preview-en-886x1920.mp4",
+      "duration": "28.000000",
+      "videoCodec": "h264",
+      "audioCodec": "aac",
+      "sampleRate": "48000",
+      "bytes": 34380711,
+      "sha256": "614fe081566f804f5c4058849632566e8a21ad8329ac579fe09ee61cb10639db",
+      "posterTime": "00:00:01.500",
+      "poster": "en-US/preview/poster.png",
+      "posterSha256": "ea5187b6338f6bd50d0f98783c6fd442a46ae8de0a19c9cea10118e5230ff786"
+    },
+    {
+      "locale": "ja",
+      "path": "ja-JP/preview/app-preview-ja-886x1920.mp4",
+      "duration": "28.000000",
+      "videoCodec": "h264",
+      "audioCodec": "aac",
+      "sampleRate": "48000",
+      "bytes": 34297910,
+      "sha256": "ad476cbea3da954d9634ce2a624723db9349edf07c99e4c47d5ccdc1d2dfc5d2",
+      "posterTime": "00:00:01.500",
+      "poster": "ja-JP/preview/poster.png",
+      "posterSha256": "9d406be387c1321baf0ee57d48a8cb6bcc7d0215acefb1eb5f44d3ce0ad21848"
+    }
+  ],
+  "submission": "not submitted"
+}

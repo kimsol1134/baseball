@@ -47,7 +47,7 @@ public object CareerShareCopy {
             append("${pro.careerGames()}경기")
             append(" · ")
             append("${pro.careerStrikeouts()}탈삼진")
-            pro.hallOfFameScore?.let { append(" · 명예의 전당 $it") }
+            pro.hallOfFameScore?.let { append(if (it >= 70) " · 명예의 전당 헌액" else " · 명예의 전당까지 ${70 - it}점") }
         }
     }
 

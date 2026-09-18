@@ -12,6 +12,17 @@ public protocol SaveSyncRemoteStoring: AnyObject {
 
 extension NSUbiquitousKeyValueStore: SaveSyncRemoteStoring {}
 
+/// Shared within the test host so restoring through another SaveSync still exercises the mirror.
+private final class TestRemoteStore: SaveSyncRemoteStoring, @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [String: Data] = [:]
+
+    func data(forKey key: String) -> Data? { lock.withLock { values[key] } }
+    func set(_ value: Any?, forKey key: String) { lock.withLock { values[key] = value as? Data } }
+    func removeObject(forKey key: String) { lock.withLock { values[key] = nil } }
+    func synchronize() -> Bool { true }
+}
+
 /// 기기 사이로 진행을 옮기는 계층.
 ///
 /// 이전에는 `Application Support`의 파일 하나가 전부라, 앱을 지우면 회차·기억·업적이 모두
@@ -43,18 +54,30 @@ public struct SaveSync {
     /// 저장 파일 이름이자 iCloud 키.
     public let key: String
 
+    /// Import only when this generation has no local, remote or backup data. Never write
+    /// back to the old key: an older app cannot preserve fields introduced by this generation.
+    private let legacyKey: String?
+    private let directory: URL?
     private let store: any SaveSyncRemoteStoring
+    private static let testRemoteStore = TestRemoteStore()
+    private static var defaultRemoteStore: any SaveSyncRemoteStoring {
+        TestExecution.isRunning() ? testRemoteStore : NSUbiquitousKeyValueStore.default
+    }
 
     public init(
         key: String,
-        store: any SaveSyncRemoteStoring = NSUbiquitousKeyValueStore.default
+        migratingFrom legacyKey: String? = nil,
+        directory: URL? = nil,
+        store: (any SaveSyncRemoteStoring)? = nil
     ) {
         self.key = key
-        self.store = store
+        self.legacyKey = legacyKey == key ? nil : legacyKey
+        self.directory = directory
+        self.store = store ?? Self.defaultRemoteStore
     }
 
     private var storageRoot: URL {
-        let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let root = directory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         return root
     }
@@ -83,17 +106,26 @@ public struct SaveSync {
     /// 현재 로컬 파일을 두 세대까지 보존한 뒤 새 값을 원자적으로 쓰고 iCloud에도 올린다.
     @discardableResult
     public func write(_ data: Data) -> Bool {
+        writing(data) == nil
+    }
+
+    /// 실패의 **이유**까지 돌려준다. 성공이면 nil.
+    ///
+    /// `Bool`만으로는 화면이 공간 부족과 권한 오류를 구분할 수 없어, 어느 쪽이든
+    /// "저장 공간을 확보해 주세요"라고 말했다(1.2.x 리뷰). 공간 부족은 파일 시스템이
+    /// 그렇게 말했을 때만 그렇게 부른다.
+    public func writing(_ data: Data) -> SaveWriteFailure? {
         do {
             if let current = try? Data(contentsOf: fileURL), current != data {
                 try preserveAsNewestBackup(current)
             }
             try data.write(to: fileURL, options: .atomic)
         } catch {
-            return false
+            return SaveWriteFailure.from(error)
         }
         store.set(data, forKey: key)
         store.synchronize()
-        return true
+        return nil
     }
 
     public func clear() {
@@ -143,7 +175,9 @@ public struct SaveSync {
             [(local, .local), (remote, .remote)].compactMap { data, source in
                 data.map { ($0, source) }
             } + backups.map { ($0, .backup) }
-        guard !allCandidates.isEmpty else { return .missing }
+        guard !allCandidates.isEmpty else {
+            return importLegacyIfNeeded(revision: revision, conflictPriority: conflictPriority)
+        }
 
         let valid = allCandidates.filter { revision($0.data) != nil }
         guard var winner = valid.first else { return .unreadable }
@@ -172,6 +206,37 @@ public struct SaveSync {
             store.set(winner.data, forKey: key)
             store.synchronize()
         }
+        return .value(winner.data, source: winner.source)
+    }
+
+    private func importLegacyIfNeeded(
+        revision: (Data) -> UInt64?,
+        conflictPriority: (Data) -> Int
+    ) -> RecoveryRead {
+        guard let legacyKey else { return .missing }
+        // Read raw candidates rather than calling the old key's readRecovering: recovery
+        // heals its cloud mirror, which would change the old app's copy during an upgrade.
+        let legacyLocal = try? Data(contentsOf: storageRoot.appendingPathComponent(legacyKey))
+        let legacyRemote = store.data(forKey: legacyKey)
+        let legacyBackups = ["\(legacyKey).backup-1", "\(legacyKey).backup-2"].compactMap {
+            try? Data(contentsOf: storageRoot.appendingPathComponent($0))
+        }
+        let candidates: [(data: Data, source: ReadSource)] =
+            [(legacyLocal, .local), (legacyRemote, .remote)].compactMap { data, source in
+                data.map { ($0, source) }
+            } + legacyBackups.map { ($0, .backup) }
+        guard !candidates.isEmpty else { return .missing }
+        let valid = candidates.filter { revision($0.data) != nil }
+        guard var winner = valid.first else { return .unreadable }
+        for candidate in valid.dropFirst() {
+            if Self.preferredData(local: winner.data, remote: candidate.data,
+                                  revision: revision, conflictPriority: conflictPriority) != winner.data {
+                winner = candidate
+            }
+        }
+        // Do not expose an imported career until its new local copy is durable. Keep every
+        // old byte (including recovery copies) available if importing fails.
+        guard writing(winner.data) == nil else { return .unreadable }
         return .value(winner.data, source: winner.source)
     }
 
@@ -231,7 +296,7 @@ public struct SaveSync {
     ) -> NSObjectProtocol {
         NotificationCenter.default.addObserver(
             forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: NSUbiquitousKeyValueStore.default,
+            object: defaultRemoteStore,
             queue: .main
         ) { _ in
             Task { @MainActor in handler() }
@@ -240,6 +305,6 @@ public struct SaveSync {
 
     /// 앱 시작 때 한 번 호출해 iCloud 쪽 최신값을 끌어온다.
     public static func prime() {
-        NSUbiquitousKeyValueStore.default.synchronize()
+        defaultRemoteStore.synchronize()
     }
 }

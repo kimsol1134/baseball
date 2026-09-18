@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/launch_background" />
+    <!-- Match the iOS LaunchScreenV2 240-point centered logo. -->
+    <item android:width="240dp" android:height="240dp" android:gravity="center"
+        android:drawable="@drawable/launch_logo" />
+</layer-list>

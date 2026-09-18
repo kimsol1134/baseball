@@ -125,6 +125,7 @@ public data class PitchDurableState(
 }
 
 public data class GameSettingsState(
+    /** Accessibility opt-in. New games, resets, and missing save fields keep the pitch slider. */
     val autoReleaseEnabled: Boolean = false,
     val soundEnabled: Boolean = true,
     val musicEnabled: Boolean = true,
@@ -171,9 +172,16 @@ public data class GameMetaState(
     val standaloneSoulBalance: Int = 0,
     val seedChallenge: SeedChallengeSession? = null,
     val playerGrowth: PlayerGrowthReceipt? = null,
+    val abilityHistory: List<AbilityHistoryPoint> = emptyList(),
+    val companion: PitcherCompanion? = null,
+    val album: List<PlayerAlbumPage> = emptyList(),
 ) {
     public fun validate() {
+        abilityHistory.forEach { it.validate() }
+        require(abilityHistory.map { it.id }.distinct().size == abilityHistory.size) { "history.duplicate" }
         playerGrowth?.validate()
+        companion?.validate()
+        PlayerAlbum.validate(album)
         require(completedGameCount >= 0UL) { "meta.completed_games" }
         listOf(achievementIds, weeklyReceiptIds, returnPlanReceiptIds, decisionReceiptIds, lifeArchiveCareerIds)
             .forEach { values -> require(values.distinct().size == values.size && values.all(String::isNotBlank)) { "meta.receipts" } }
@@ -206,13 +214,19 @@ public data class GameCommandReceipt(
     }
 }
 
-public data class GameAggregateState(
+/**
+ * Application aggregate. Career snapshots are module-internal; production UI reads
+ * [CareerUiRules] and presentation DTOs. :app tests go through test-fixture [CareerAccess]
+ * and [withCareers]. Kernels that mutate them live in :game-core.
+ */
+@ConsistentCopyVisibility
+public data class GameAggregateState internal constructor(
     val aggregateVersion: Int = CURRENT_AGGREGATE_VERSION,
     val revision: ULong,
     val installId: String,
     val stage: GameStage,
-    val highSchool: HighSchoolPhase4State? = null,
-    val pro: ProState? = null,
+    internal val highSchool: HighSchoolPhase4State? = null,
+    internal val pro: ProState? = null,
     val meta: GameMetaState = GameMetaState(),
     val pitch: PitchDurableState? = null,
     val settings: GameSettingsState = GameSettingsState(),
@@ -295,7 +309,7 @@ public data class GameAggregateState(
                 pitchValue, settings.toString(), analytics, receiptsValue, deleted,
             ).joinToString("|") + (if (meta.retiredProCareers.isNotEmpty() || meta.standaloneSoulBalance != 0) {
                 "|retired-pro:${meta.retiredProCareers.joinToString(",") { it.commitment }}|pro-wallet:${meta.standaloneSoulBalance}"
-            } else "") + (if (meta.seedChallenge != null) "|seed-challenge:${meta.seedChallenge}" else "")
+            } else "") + (if (meta.abilityHistory.isNotEmpty()) "|ability-history:${AbilityHistory.encode(meta.abilityHistory)}" else "") + (if (meta.album.isNotEmpty()) "|album:${PlayerAlbumCodec.encode(meta.album)}" else "") + (if (meta.seedChallenge != null) "|seed-challenge:${meta.seedChallenge}" else "")
         )
     }
 
@@ -342,6 +356,7 @@ public sealed interface GameCommand {
     /** Clears a previously consumed presentation snapshot before the next pitch input. */
     public data class ClearPitchPresentation(public val sessionId: String) : GameCommand
     /** Compose-owned durable settings; production persistence remains guarded by the store mode. */
+    public data class UpdateCompanion(val operation: String, val value: String) : GameCommand
     public data class UpdateSettings(public val settings: GameSettingsState) : GameCommand
     public data class SetPitchHoldCall(public val sessionId: String, public val holdCall: Boolean) : GameCommand
     public data class RecordAnalytics(
@@ -362,6 +377,7 @@ public data class GameCommandEnvelope(
     public fun validate() {
         require(schema == GAME_COMMAND_SCHEMA && schemaVersion == 1) { "game.command.schema" }
         require(commandId.isNotBlank() && commandId.length <= 128) { "game.command.id" }
+        CommandReceiptRetention.validate(commandId, expectedRevision)
         require(sessionId.isNotBlank() && sessionId.length <= 128) { "game.command.session" }
         when (val value = command) {
             is GameCommand.ReservePitch -> require(value.sessionId == sessionId) { "game.command.session_mismatch" }
@@ -378,6 +394,7 @@ public data class GameCommandEnvelope(
             GameCommand.ResetProgress,
             is GameCommand.HighSchool,
             is GameCommand.Pro,
+            is GameCommand.UpdateCompanion,
             is GameCommand.UpdateSettings,
             is GameCommand.RecordAnalytics -> Unit
             is GameCommand.ClearPitchPresentation -> require(value.sessionId == sessionId) { "game.command.session_mismatch" }

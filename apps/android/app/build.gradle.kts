@@ -5,11 +5,14 @@ plugins {
     alias(libs.plugins.firebase.crashlytics) apply false
 }
 
-val phase9ExternalSdkEnabled = providers.gradleProperty("phase9ExternalSdks")
-    .map { it.equals("true", ignoreCase = true) }
-    .orElse(false)
-    .get()
-val phase9AmplitudeApiKey = providers.gradleProperty("phase9AmplitudeApiKey").orElse("").get()
+val platformExternalSdkEnabled = sequenceOf("platformExternalSdks", "phase9ExternalSdks")
+    .map { providers.gradleProperty(it).orNull }
+    .firstOrNull { !it.isNullOrBlank() }
+    .equals("true", ignoreCase = true)
+val platformAmplitudeApiKey = sequenceOf("platformAmplitudeApiKey", "phase9AmplitudeApiKey")
+    .map { providers.gradleProperty(it).orNull }
+    .firstOrNull { !it.isNullOrBlank() }
+    .orEmpty()
     .replace("\\", "\\\\")
     .replace("\"", "\\\"")
 val phase10VersionCode = providers.gradleProperty("phase10VersionCode")
@@ -55,12 +58,13 @@ val phase10SigningConfigured = listOf(
     phase10KeyPassword,
 ).all { it != null }
 
-if (phase9ExternalSdkEnabled) {
+if (platformExternalSdkEnabled) {
     apply(plugin = "com.google.gms.google-services")
     apply(plugin = "com.google.firebase.crashlytics")
 }
 
 android {
+    sourceSets.getByName("androidTest").assets.srcDir("../game-application/src/test/resources/regression")
     namespace = "com.solkim.baseball.android"
     compileSdk = 36
 
@@ -73,8 +77,8 @@ android {
         versionCode = phase10VersionCode
         versionName = phase10VersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("boolean", "PHASE9_EXTERNAL_SDKS_ENABLED", phase9ExternalSdkEnabled.toString())
-        buildConfigField("String", "PHASE9_AMPLITUDE_API_KEY", "\"$phase9AmplitudeApiKey\"")
+        buildConfigField("boolean", "PLATFORM_EXTERNAL_SDKS_ENABLED", platformExternalSdkEnabled.toString())
+        buildConfigField("String", "PLATFORM_AMPLITUDE_API_KEY", "\"$platformAmplitudeApiKey\"")
         buildConfigField("String", "NATIVE_AUTHORITY_MODE", "\"nativeShadowReadOnly\"")
         buildConfigField("boolean", "PHASE10_PRODUCTION_BUILD", "false")
         buildConfigField("boolean", "QA_NATIVE_STORE", "false")
@@ -98,13 +102,19 @@ android {
         debug {
             // Isolated launch QA leaves any existing development career untouched.
             applicationIdSuffix = when {
+                providers.gradleProperty("baseballReviewQa").orNull == "true" -> ".review.compose.qa"
+                providers.gradleProperty("baseballAuditQa").orNull == "true" -> ".audit.compose.qa"
+                providers.gradleProperty("baseballResetQa").orNull == "true" -> ".reset.compose.qa"
                 providers.gradleProperty("baseballCoreQa").orNull == "true" -> ".core.compose.qa"
                 providers.gradleProperty("baseballLaunchQa").orNull == "true" -> ".compose.qa"
                 else -> ".compose.dev"
             }
             versionNameSuffix = "-migration"
-            val nativeQa = providers.gradleProperty("baseballLaunchQa").orNull == "true" &&
-                providers.gradleProperty("baseballQaNativeStore").orNull == "true"
+            // The release build is native-authoritative, so QA must be able to run in that mode too.
+            // Reset QA especially: erasing progress is a write, and a shadow read-only store cannot do it.
+            val nativeQa = providers.gradleProperty("baseballQaNativeStore").orNull == "true" &&
+                (providers.gradleProperty("baseballLaunchQa").orNull == "true" ||
+                    providers.gradleProperty("baseballResetQa").orNull == "true")
             buildConfigField("boolean", "QA_NATIVE_STORE", nativeQa.toString())
             buildConfigField("String", "NATIVE_AUTHORITY_MODE", if (nativeQa) "\"nativeAuthoritative\"" else "\"nativeShadowReadOnly\"")
             buildConfigField("boolean", "PHASE10_PRODUCTION_BUILD", "false")
@@ -145,6 +155,7 @@ dependencies {
     implementation(project(":game-model"))
     implementation(project(":platform"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.browser)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.foundation)
@@ -153,6 +164,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.junit)
+    androidTestImplementation(testFixtures(project(":game-application")))
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)

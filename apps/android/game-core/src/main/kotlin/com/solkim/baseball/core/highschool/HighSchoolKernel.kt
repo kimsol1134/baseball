@@ -13,240 +13,13 @@ import com.solkim.baseball.core.pitch.ThrowingHand
 import kotlin.math.max
 import kotlin.math.min
 
-/** Immutable player setup copied from the Swift/C# high-school career contract. */
-public data class HighSchoolIdentity(
-    val name: String = "민서준",
-    val throwingHand: String = "right",
-    val bodyType: String = "balanced",
-    val region: String = "서울",
-)
+public object HighSchoolGameplayRules { public const val CURRENT: Int = 7; public const val SWIFT_REFERENCE: Int = 4 }
 
-public data class HighSchoolDifficulty(
-    val careerHarshness: String = "standard",
-    val informationClarity: String = "standard",
-    val simulationDifficulty: String = "standard",
-    val interventionAssist: String = "standard",
-)
-
-public data class HighSchoolAllocation(
-    val stuff: Int = 2,
-    val command: Int = 1,
-    val movement: Int = 1,
-    val stamina: Int = 1,
-) {
-    public val total: Int get() = stuff + command + movement + stamina
-}
-
-public data class HighSchoolPitcher(
-    val id: String,
-    val name: String,
-    val stuff: Int,
-    val command: Int,
-    val movement: Int,
-    val stamina: Int,
-    /** The source profile is durable shadow state; Unity never receives this object. */
-    val pitchProfiles: List<PitchProfileSnapshot> = emptyList(),
-    val throwingHand: ThrowingHand = ThrowingHand.RIGHT,
-    /** Missing on legacy saves; zero is supplied by the projection boundary. */
-    val mastery: AbilityMasterySnapshot? = null,
-) {
-    public val effectiveMastery: AbilityMasterySnapshot get() = mastery ?: AbilityMasterySnapshot.ZERO
-}
-
-public data class HighSchoolTrainingOpportunity(
-    val focus: HighSchoolTrainingFocus,
-    val reason: String,
-)
-
-public data class HighSchoolPerformance(
-    val importantGamesCompleted: Int = 0,
-    val pitches: Int = 0,
-    val strikeouts: Int = 0,
-    val walks: Int = 0,
-    val runsAllowed: Int = 0,
-    val expectedDamage: Int = 0,
-    val actualDamage: Int = 0,
-    val outs: Int = 0,
-    val hits: Int = 0,
-)
-
-public data class HighSchoolGameReport(
-    val scenarioNumber: Int,
-    val pitches: Int,
-    val strikeouts: Int,
-    val walks: Int,
-    val runsAllowed: Int,
-    val expectedDamage: Int,
-    val actualDamage: Int,
-    val recommendationAccepted: Int,
-    val outs: Int? = null,
-    val hits: Int? = null,
-    /** Swift ImportantInningReport.sequenceMasteryCount; null preserves pre-v4 reports. */
-    val sequenceMasteryCount: Int? = null,
-    /** Swift scoreDifferentialAtEntry; nullable for old report callers. */
-    val scoreDifferentialAtEntry: Int? = null,
-    /** Source ProGameLine support projection; populated by the Phase 4 boundary. */
-    val teamRuns: Int? = null,
-    val homeRuns: Int? = null,
-)
-
-public data class HighSchoolTrainingPreview(
-    val minimumGrowth: Int, val maximumGrowth: Int,
-    val fatigueChange: Int, val armRiskChange: Int,
-    val atTalentWall: Boolean, val rehabilitation: Boolean,
-    val schoolBonus: Boolean, val opportunityBonus: Boolean,
-)
-
-public data class HighSchoolTrainingResult(
-    val number: Int,
-    val focus: HighSchoolTrainingFocus,
-    val intensity: HighSchoolTrainingIntensity,
-    val growth: Int,
-    val fatigueChange: Int,
-    val opportunityHit: Boolean,
-    val bloomed: Boolean,
-    val masteryBefore: Int? = null,
-    val masteryAfter: Int? = null,
-)
-
-/**
- * Durable evidence for one committed training session.  The Phase 4 state codec carries this
- * separately from HighSchoolState.lastTraining because lastTraining is only a presentation
- * pointer and is intentionally overwritten by the next session.
- */
-public data class HighSchoolTrainingEvidence(
-    val careerId: String,
-    val lifeNumber: Int,
-    val chapterNumber: Int,
-    val trainingNumber: Int,
-    val focus: HighSchoolTrainingFocus,
-    val intensity: HighSchoolTrainingIntensity,
-    val targetPitch: PitchKind? = null,
-    val growthPoints: Int,
-    val fatigueDelta: Int,
-    val codecVersion: Int = 1,
-)
-
-public data class HighSchoolRelationshipResult(
-    val number: Int,
-    val target: HighSchoolRelationshipTarget,
-    val response: HighSchoolRelationshipResponse,
-    val trustBefore: Int,
-    val trustAfter: Int,
-    val fatigueBefore: Int,
-    val fatigueAfter: Int,
-    val fanInterestBefore: Int,
-    val fanInterestAfter: Int,
-    val growthFocus: HighSchoolTrainingFocus?,
-    val masteryBefore: Int? = null,
-    val masteryAfter: Int? = null,
-)
-
-/** Source-shaped draft read model. All names and copy are the current fictional-world catalog. */
-public data class HighSchoolDraftTeam(
-    val id: String,
-    val name: String,
-    val need: HighSchoolTrainingFocus,
-    val demand: Int,
-    val developmentPlan: String,
-    val positionCompetitor: String,
-    val proCoach: String,
-    val competitorProfile: String? = null,
-    val competitorRecord: String? = null,
-    val coachProfile: String? = null,
-    val coachRecord: String? = null,
-)
-
-public data class HighSchoolDraftResult(
-    val outcome: HighSchoolDraftOutcome,
-    val evaluationScore: Int,
-    val projectedRange: String,
-    val teamId: String?,
-    val team: HighSchoolDraftTeam? = null,
-    val round: Int? = null,
-    val overallPick: Int? = null,
-    val signingBonus: Int? = null,
-    val firstSeasonGoal: String? = null,
-    val evaluationBreakdown: List<String>? = null,
-    val summary: String = "",
-)
-
-public data class HighSchoolState(
-    val careerId: String,
-    val revision: ULong,
-    val lifeNumber: Int,
-    val presetId: String,
-    val phase: HighSchoolPhase,
-    val identity: HighSchoolIdentity,
-    val difficulty: HighSchoolDifficulty,
-    val karmas: List<HighSchoolKarma>,
-    val soulBoosts: List<HighSchoolSoulBoost>,
-    val legacyRewardPermille: Int,
-    val memorySlots: Int,
-    val pitcher: HighSchoolPitcher,
-    val talent: HighSchoolTalent,
-    val schoolOptions: List<HighSchoolSchool>,
-    val school: HighSchoolSchool?,
-    val rival: HighSchoolRival,
-    val chapter: HighSchoolChapter,
-    val schedule: HighSchoolSchedule,
-    val chapterTrainingCount: Int,
-    val totalTrainingsCompleted: Int,
-    val milestoneIndex: Int,
-    val relationshipsCompleted: Int,
-    val relationshipTrust: Int,
-    val managerTrust: Int,
-    val catcherTrust: Int,
-    val rivalTrust: Int,
-    val selectedAwakenings: List<HighSchoolAwakening>,
-    val awakeningOptions: List<HighSchoolAwakening>,
-    val awakeningSparks: Int,
-    val fatigue: Int,
-    val performance: HighSchoolPerformance,
-    val currentGameScenarioId: String?,
-    val currentRelationshipTarget: HighSchoolRelationshipTarget?,
-    val trainingOpportunity: HighSchoolTrainingOpportunity?,
-    val lastTraining: HighSchoolTrainingResult?,
-    val lastRelationship: HighSchoolRelationshipResult?,
-    val fanInterest: Int,
-    val armRisk: Int,
-    val injuryRecovery: Int,
-    val automaticGames: Int,
-    val automaticOuts: Int,
-    val automaticRunsAllowed: Int,
-    val draftResult: HighSchoolDraftResult?,
-    val legacyOptions: List<String>,
-    val selectedMemories: List<String>,
-    /** Persisted source event category; Swift stores the full current event snapshot. */
-    val currentRelationshipCategory: String? = null,
-    /** Additive source-shaped content snapshots. IDs remain for old read models. */
-    val currentGameScenario: HighSchoolGameScenario? = null,
-    val currentRelationshipEvent: HighSchoolRelationshipEvent? = null,
-    val news: List<String> = emptyList(),
-    val balanceVersion: Int = HighSchoolContentCatalog.BALANCE_VERSION,
-    val worldRulesVersion: Int = HighSchoolContentCatalog.WORLD_RULES_VERSION,
-    val rebirthEcho: HighSchoolRebirthEcho? = null,
-    val recentRelationshipEventIds: List<String> = emptyList(),
-    val stateCommitment: String,
-    val pitchLearningProject: PitchLearningProject? = null,
-)
-
-public data class HighSchoolEvent(
-    val eventType: String,
-    val sequence: Int = 0,
-    val reasonCodes: List<String> = emptyList(),
-)
-
-public data class HighSchoolResult(
-    val revision: ULong,
-    val nextSeed: String,
-    val events: List<HighSchoolEvent>,
-    val snapshot: HighSchoolState,
-    val eventHash: String,
-)
-
-public class HighSchoolKernel {
-    private val automaticOuting = HighSchoolAutomaticOutingSimulator()
+public class HighSchoolKernel(private val balanceRulesVersion: Int = HighSchoolGameplayRules.CURRENT) {
+    init { require(balanceRulesVersion in HighSchoolGameplayRules.SWIFT_REFERENCE..HighSchoolGameplayRules.CURRENT) }
+    public val gameplayRulesVersion: Int get() = balanceRulesVersion
+    private val currentRules: Boolean get() = balanceRulesVersion >= 5
+    private val automaticOuting = HighSchoolAutomaticOutingSimulator(modernPitching = currentRules, schoolBalance = balanceRulesVersion >= 7)
     public data class StartRequest(
         val seed: String,
         val presetId: String,
@@ -402,7 +175,7 @@ public class HighSchoolKernel {
             currentGameScenario = null,
             currentRelationshipEvent = null,
             news = prologueNews(request.identity, request.lifeNumber, request.inheritedMemories.size, wind.newsLine),
-            balanceVersion = HighSchoolContentCatalog.BALANCE_VERSION,
+            balanceVersion = balanceRulesVersion,
             worldRulesVersion = HighSchoolContentCatalog.WORLD_RULES_VERSION,
             rebirthEcho = request.rebirthEcho,
             trainingOpportunity = null,
@@ -453,21 +226,53 @@ public class HighSchoolKernel {
         val wall = focus != HighSchoolTrainingFocus.RECOVERY && before >= min(80, state.talent.grade(focus).ceiling)
         val signal = trainingSignalBase(state, requestedFocus, intensity)
         val wind = windFor(state.careerId)
-        fun gain(signal: Int): Int {
+        val first = state.totalTrainingsCompleted == 0 && state.lifeNumber == 1
+        fun gain(signal: Int, jackpot: Boolean = false): Int {
             if (rehab || focus == HighSchoolTrainingFocus.RECOVERY || wall) return 0
-            val base = trainingGrowth(max(60, signal))
-            val first = state.totalTrainingsCompleted == 0 && state.lifeNumber == 1
-            return max(if (first) 1 else 0, base) + wind.trainingGrowthBonus(focus)
+            val base = max(if (first) 1 else 0, trainingGrowth(max(60, signal)))
+            val raw = base * (if (jackpot) 2 else 1) + wind.trainingGrowthBonus(focus)
+            val earned = if (raw > 0) raw else (trainingExperience(state, focus) + trainingPracticeStep(state, focus, intensity) * (if (jackpot) 2 else 1)) / 100
+            return min(earned, max(0, min(80, state.talent.grade(focus).ceiling) - before))
         }
         val riskAfter = if (rehab) max(0, state.armRisk - 10) else clamp(state.armRisk + trainingArmRisk(focus, intensity), 0, 100)
         return HighSchoolTrainingPreview(gain(signal - trainingVariance(focus)), gain(signal + trainingVariance(focus)),
             trainingFatigueAfter(state, requestedFocus, intensity) - state.fatigue, riskAfter - state.armRisk,
-            wall, rehab, state.school?.strength == focus, !rehab && state.trainingOpportunity?.focus == focus)
+            wall, rehab, state.school?.strength == focus, !rehab && state.trainingOpportunity?.focus == focus,
+            jackpotChancePercent = if (wall) 0 else trainingJackpotChance(state, focus, intensity),
+            jackpotMinimumGrowth = gain(signal - trainingVariance(focus), jackpot = true),
+            jackpotMaximumGrowth = gain(signal + trainingVariance(focus), jackpot = true),
+            firstTrainingGuaranteed = first && !rehab && focus != HighSchoolTrainingFocus.RECOVERY && !wall,
+            experience = trainingExperience(state, focus), practiceStep = trainingPracticeStep(state, focus, intensity),
+            breakthroughProgress = state.talent.pressure(focus),
+            breakthroughTarget = if (wall && state.talent.grade(focus) != HighSchoolTalentGrade.S) state.talent.grade(focus).bloomThreshold else 0,
+            masteryTraining = wall && state.talent.grade(focus) == HighSchoolTalentGrade.S)
+    }
+
+    /** Preview and resolution share this probability; no extra random draw is introduced. */
+    private fun trainingJackpotChance(state: HighSchoolState, focus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): Int {
+        if (state.injuryRecovery > 0 || focus == HighSchoolTrainingFocus.RECOVERY) return 0
+        val intensityBonus = if (!currentRules) 0 else when (intensity) {
+            HighSchoolTrainingIntensity.LIGHT -> 0
+            HighSchoolTrainingIntensity.STANDARD -> 15
+            HighSchoolTrainingIntensity.INTENSIVE -> 30
+        }
+        return clamp((if (HighSchoolSoulBoost.TRAINING_RHYTHM in state.soulBoosts) 26 else 16) +
+            (if (HighSchoolContentCatalog.BALANCE_VERSION >= 4) jackpotModifier(focus) else 0) + intensityBonus, 0, 70)
+    }
+
+    public fun trainingExperience(state: HighSchoolState, focus: HighSchoolTrainingFocus): Int =
+        state.development?.experience?.get(HighSchoolDevelopment.index(focus)) ?: 0
+
+    public fun trainingPracticeStep(state: HighSchoolState, focus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): Int {
+        if (!currentRules || focus == HighSchoolTrainingFocus.RECOVERY || state.injuryRecovery > 0) return 0
+        val points = when (intensity) { HighSchoolTrainingIntensity.LIGHT -> 35; HighSchoolTrainingIntensity.STANDARD -> 60; HighSchoolTrainingIntensity.INTENSIVE -> 80 }
+        return if (state.fatigue >= 70) points / 2 else points
     }
 
     private fun trainingSignalBase(state: HighSchoolState, focus: HighSchoolTrainingFocus, intensity: HighSchoolTrainingIntensity): Int {
         val base = when (intensity) { HighSchoolTrainingIntensity.LIGHT -> 130; HighSchoolTrainingIntensity.STANDARD -> 210; HighSchoolTrainingIntensity.INTENSIVE -> 280 }
         return base + (if (state.school?.strength == focus) 110 else 0) +
+            (if (state.development?.hasSupport(focus) == true) 120 else 0) +
             (if (state.injuryRecovery <= 0 && state.trainingOpportunity?.focus == focus) 90 else 0) -
             max(0, state.fatigue - 45) * 3 + max(0, 16 - state.schedule.trainingTotal) * 24
     }
@@ -477,7 +282,7 @@ public class HighSchoolKernel {
         val focus = if (rehab) HighSchoolTrainingFocus.RECOVERY else requestedFocus
         val wind = windFor(state.careerId)
         if (rehab) return clamp(state.fatigue + wind.trainingFatigueModifier(focus) - wind.recoveryBonus - 24, 0, 100)
-        val base = when (intensity) { HighSchoolTrainingIntensity.LIGHT -> 3; HighSchoolTrainingIntensity.STANDARD -> 8; HighSchoolTrainingIntensity.INTENSIVE -> 15 }
+        val base = when (intensity) { HighSchoolTrainingIntensity.LIGHT -> 3; HighSchoolTrainingIntensity.STANDARD -> 8; HighSchoolTrainingIntensity.INTENSIVE -> if (balanceRulesVersion >= 6) 11 else 15 }
         return clamp(state.fatigue + base + (if (HighSchoolContentCatalog.BALANCE_VERSION >= 4) trainingFatigueModifier(focus) else 0) +
             wind.trainingFatigueModifier(focus) + (if (focus == HighSchoolTrainingFocus.RECOVERY) -wind.recoveryBonus - 18 else 0), 0, 100)
     }
@@ -496,16 +301,10 @@ public class HighSchoolKernel {
         // ASCII salt for "CAREER" and is part of the deterministic contract.
         val generator = SplitMix64(seed xor number.toULong() xor 0x434152454552UL)
         val opportunityHit = !rehab && state.trainingOpportunity?.focus == request.focus
-        val differentiated = HighSchoolContentCatalog.BALANCE_VERSION >= 4
         val variance = trainingVariance(focus)
         val signalBase = trainingSignalBase(state, request.focus, request.intensity)
         val signal = max(60, signalBase + generator.nextInt(variance * 2 + 1) - variance)
-        val jackpotChance = clamp(
-            (if (HighSchoolSoulBoost.TRAINING_RHYTHM in state.soulBoosts) 26 else 16) +
-                if (differentiated) jackpotModifier(focus) else 0,
-            0,
-            40,
-        )
+        val jackpotChance = trainingJackpotChance(state, focus, request.intensity)
         val jackpot = !rehab && focus != HighSchoolTrainingFocus.RECOVERY &&
             generator.nextInt(100) < jackpotChance
         var rawGrowth = if (rehab || focus == HighSchoolTrainingFocus.RECOVERY) 0 else trainingGrowth(signal)
@@ -516,6 +315,14 @@ public class HighSchoolKernel {
         }
         rawGrowth = (if (jackpot) rawGrowth * 2 else rawGrowth) +
             if (rehab) 0 else wind.trainingGrowthBonus(focus)
+        val development = state.development ?: HighSchoolDevelopment()
+        val practice = if (rehab || focus == HighSchoolTrainingFocus.RECOVERY) 0 else if (rawGrowth > 0) rawGrowth * 100 else trainingPracticeStep(state, focus, request.intensity) * (if (jackpot) 2 else 1)
+        val accumulated = trainingExperience(state, focus) + practice
+        if (focus != HighSchoolTrainingFocus.RECOVERY && !rehab) rawGrowth = accumulated / 100
+        val experience = development.experience.toMutableList()
+        if (focus != HighSchoolTrainingFocus.RECOVERY && !rehab) experience[HighSchoolDevelopment.index(focus)] = accumulated % 100
+        val nextDevelopment = development.copy(experience = experience, lastExperienceEarned = practice)
+            .let { if (rehab) it else it.consume(focus, number) }
         val before = rating(focus, state.pitcher)
         val talentApplication = if (rawGrowth > 0) {
             applyTalent(state.talent, focus, before, rawGrowth)
@@ -572,6 +379,7 @@ public class HighSchoolKernel {
             chapterTrainingCount = state.chapterTrainingCount + 1,
             totalTrainingsCompleted = number,
             lastTraining = training,
+            development = if (currentRules) nextDevelopment else state.development,
             pitchLearningProject = learning,
             injuryRecovery = if (rehab) state.injuryRecovery - 1 else state.injuryRecovery,
             armRisk = if (rehab) max(0, state.armRisk - 10) else clamp(state.armRisk + trainingArmRisk(focus, request.intensity), 0, 100),
@@ -601,7 +409,30 @@ public class HighSchoolKernel {
         }
         val category = state.currentRelationshipCategory ?: state.currentRelationshipTarget?.wire ?: "coach"
         val target = relationshipTargetForCategory(category)
-        val impact = relationshipImpact(state, category, request.response)
+        val baseImpact = relationshipImpact(state, category, request.response)
+        val impact = if (currentRules && category == "coach" && request.response == HighSchoolRelationshipResponse.EXPLAIN)
+            baseImpact.copy(fatigue = -12, growthFocus = null) else baseImpact
+        var development = state.development ?: HighSchoolDevelopment()
+        val support = when (category) {
+            "coach" -> if (request.response == HighSchoolRelationshipResponse.LISTEN) state.school?.strength else null
+            "catcher", "game", "awakening" -> when (request.response) {
+                HighSchoolRelationshipResponse.LISTEN -> HighSchoolTrainingFocus.GAME_PLANNING
+                HighSchoolRelationshipResponse.EXPLAIN -> HighSchoolTrainingFocus.COMMAND
+                HighSchoolRelationshipResponse.CHALLENGE -> HighSchoolTrainingFocus.BREAKING_BALL
+            }
+            "rival" -> when (request.response) {
+                HighSchoolRelationshipResponse.LISTEN -> HighSchoolTrainingFocus.GAME_PLANNING
+                HighSchoolRelationshipResponse.EXPLAIN -> HighSchoolTrainingFocus.COMMAND
+                HighSchoolRelationshipResponse.CHALLENGE -> HighSchoolTrainingFocus.BREAKING_BALL
+            }
+            else -> null
+        }
+        if (support != null) development = development.supported(support)
+        val trial = category == "coach" && request.response == HighSchoolRelationshipResponse.CHALLENGE
+        development = development.copy(starterTrialPending = development.starterTrialPending || trial,
+            lastConversation = state.relationshipsCompleted + 1,
+            lastOffer = when { trial -> "starter_trial"; support != null -> "training";
+                category == "coach" && request.response == HighSchoolRelationshipResponse.EXPLAIN -> "recovery"; else -> "none" })
         val wind = windFor(state.careerId)
         var trustChange = impact.trust + if (target == wind.favoredRelationship) wind.favoredRelationshipBonus else 0
         if (impact.trust < 0) trustChange -= wind.relationshipLossPenalty
@@ -673,6 +504,7 @@ public class HighSchoolKernel {
                 fatigue = relationship.fatigueAfter,
                 fanInterest = fanInterest,
                 lastRelationship = relationship,
+                development = if (currentRules) development else state.development,
                 currentRelationshipTarget = null,
                 currentRelationshipCategory = null,
                 currentRelationshipEvent = null,
@@ -713,16 +545,16 @@ public class HighSchoolKernel {
                     nextRisk = 50
                     fatigueDelta = 6
                     if (HighSchoolKarma.NO_LAST_CHANCE in state.karmas) {
-                        event = "팔이 버티지 못했습니다. 시즌이 여기서 끝났고, 지금까지의 기록으로 평가받습니다."
+                        event = "팔이 버티지 못했다. 시즌은 여기서 끝. 지금까지의 기록으로 평가받는다."
                         headline = "시즌 아웃 · ${state.pitcher.name}, 부상으로 조기 드래프트 평가에 들어갑니다."
                     } else {
-                        event = "무리한 등판이 겹쳐 팔에 이상이 왔습니다. 다음 훈련 ${severity}회는 재활로 씁니다."
+                        event = "무리한 등판이 겹쳐 팔에 이상이 왔다. 다음 훈련 ${severity}번은 재활이다."
                         headline = "팔 부상 · ${state.pitcher.name}, 무리한 등판이 반복돼 재활에 들어갑니다."
                     }
                 } else {
                     fatigueDelta = 4
-                    event = "오늘도 예정대로 던졌습니다. 능력은 지켰지만 팔의 위험이 더 커졌습니다."
-                    headline = "${state.pitcher.name}, 경고에도 등판을 강행했습니다 · 팔 위험 누적."
+                    event = "오늘도 예정대로 던졌다. 능력은 지켰지만 팔은 더 위험해졌다."
+                    headline = "${state.pitcher.name}, 경고에도 등판을 강행했다 · 팔 위험 누적."
                 }
             }
             HighSchoolRelationshipResponse.LISTEN -> {
@@ -730,16 +562,16 @@ public class HighSchoolKernel {
                 fatigueDelta = -30
                 trustDelta = 2
                 fanDelta = 0
-                event = "이번 등판은 건너뛰고 팔을 쉬게 했습니다. 피로와 위험이 크게 줄었습니다."
-                headline = "${state.pitcher.name}, 짧은 휴식으로 팔을 아꼈습니다 · 회복 우선."
+                event = "이번 등판은 건너뛰고 팔을 쉬게 했다. 피로와 위험이 크게 줄었다."
+                headline = "${state.pitcher.name}, 짧은 휴식으로 팔을 아꼈다 · 회복 우선."
             }
             HighSchoolRelationshipResponse.EXPLAIN -> {
                 nextRisk = 0
                 fatigueDelta = -HighSchoolContentCatalog.ARM_EXAM_RELIEF
                 trustDelta = 1
                 fanDelta = 0
-                event = "정밀 검진 결과 큰 손상은 없었습니다. 검진 전 위험 수치는 $priorRisk, 관리 계획을 새로 세웠습니다."
-                headline = "${state.pitcher.name}, 정밀 검진으로 팔 상태를 확인했습니다 · 위험 관리 시작."
+                event = "정밀 검진 결과 큰 손상은 없었다. 트레이너가 관리 계획을 새로 세웠다."
+                headline = "${state.pitcher.name}, 정밀 검진으로 팔 상태를 확인했다 · 위험 관리 시작."
             }
         }
         val wind = windFor(state.careerId)
@@ -815,6 +647,7 @@ public class HighSchoolKernel {
             actualDamage = state.performance.actualDamage + report.actualDamage,
             outs = state.performance.outs + (report.outs ?: min(27, report.pitches / 5)),
             hits = state.performance.hits + (report.hits ?: 0),
+            perfectReleases = state.performance.perfectReleases + (report.perfectReleases ?: 0),
         )
         val gameGrowth = applyGameGrowth(state, report)
         val wind = windFor(state.careerId)
@@ -830,7 +663,8 @@ public class HighSchoolKernel {
             state.awakeningSparks +
                 (if (report.runsAllowed == 0 || report.strikeouts >= 4) 2 else 0) +
                 (if (report.actualDamage <= report.expectedDamage) 1 else 0) +
-                (if (gameGrowth.bloomed) 1 else 0),
+                (if (gameGrowth.bloomed) 1 else 0) +
+                (report.perfectReleases ?: 0) / 3,
         )
         val sequenceTrustReward = min(max(report.sequenceMasteryCount ?: 0, 0), 3)
         val managerTrust = if (sequenceTrustReward > 0) {
@@ -843,8 +677,7 @@ public class HighSchoolKernel {
         } else {
             state.catcherTrust
         }
-        val next = enterMilestone(
-            state.copy(
+        val recorded = state.copy(
                 revision = state.revision + 1UL,
                 pitcher = gameGrowth.pitcher,
                 talent = gameGrowth.talent,
@@ -857,10 +690,21 @@ public class HighSchoolKernel {
                 awakeningSparks = sparks,
                 fatigue = clamp(state.fatigue + max(5, report.pitches * max(60, 140 - state.pitcher.stamina) / 200), 0, 100),
                 currentGameScenarioId = null,
-            ),
-            seed,
-            state.milestoneIndex + 1,
-        )
+            )
+        // A claimed chapter game returns to the chapter review instead of the next milestone.
+        val next = if (state.chapterGameClaimed) {
+            recorded.copy(
+                phase = HighSchoolPhase.CHAPTER_REVIEW,
+                currentGameScenario = null,
+                currentRelationshipEvent = null,
+                currentRelationshipTarget = null,
+                currentRelationshipCategory = null,
+                awakeningOptions = emptyList(),
+                trainingOpportunity = null,
+            )
+        } else {
+            enterMilestone(recorded, seed, state.milestoneIndex + 1)
+        }
         return result(seed, signed(next), "career_important_game_completed", listOf("important_game.$expected"))
     }
 
@@ -869,7 +713,7 @@ public class HighSchoolKernel {
         require(request.awakening in request.state.awakeningOptions && request.awakening !in request.state.selectedAwakenings) {
             "awakening.unavailable"
         }
-        val pitcher = applyAwakening(request.state.pitcher, request.awakening)
+        val pitcher = if (currentRules) applyAwakening(request.state.pitcher, request.awakening) else legacyAwakening(request.state.pitcher, request.awakening)
         val next = enterMilestone(
             request.state.copy(
                 revision = request.state.revision + 1UL,
@@ -884,12 +728,43 @@ public class HighSchoolKernel {
         return result(seed, signed(next), "career_awakening_selected", listOf("awakening.${request.awakening.wire}"))
     }
 
+    /**
+     * "이 경기는 내가 던진다": once per chapter, before the draft chapter, the player takes one of the
+     * chapter's regular games. It is recorded like an important game; advanceChapter then drops one
+     * simulated automatic line so the chapter still holds two games.
+     */
+    public fun claimChapterGame(request: AdvanceRequest): HighSchoolResult {
+        val seed = validate(request.seed, request.state, HighSchoolPhase.CHAPTER_REVIEW)
+        val state = request.state
+        require(state.chapter.number < HighSchoolContentCatalog.chapters.size) { "chapterGame.final_chapter" }
+        require(!state.chapterGameClaimed) { "chapterGame.already_claimed" }
+        val scenario = regularScenario(state)
+        val next = state.copy(
+            revision = state.revision + 1UL,
+            phase = HighSchoolPhase.IMPORTANT_GAME,
+            currentGameScenarioId = scenario.id,
+            currentGameScenario = scenario,
+            chapterGameClaimed = true,
+        )
+        return result(seed, signed(next), "career_chapter_game_claimed", listOf("chapter_game.${scenario.id}"))
+    }
+
+    private fun regularScenario(state: HighSchoolState): HighSchoolGameScenario {
+        val pool = HighSchoolContentCatalog.regularScenarios
+        val base = (hashValue("regular_scenario|${state.careerId}|${state.chapter.number}") % pool.size.toULong()).toInt()
+        return pool[base].copy(title = "정규 경기 선발 등판", inning = 1, outs = 0,
+            firstOccupied = false, secondOccupied = false, thirdOccupied = false, scoreDifferential = 0,
+            narrative = "1회부터 마운드를 맡았어요. 이닝이 끝날 때 계속 던질지 정할 수 있어요.")
+    }
+
     public fun advanceChapter(request: AdvanceRequest): HighSchoolResult {
         val seed = validate(request.seed, request.state, HighSchoolPhase.CHAPTER_REVIEW)
         val state = request.state
         require(state.chapter.number < HighSchoolContentCatalog.chapters.size) { "chapter.final" }
-        val automaticLines = automaticOuting.simulate(state, state.chapter, seed)
-        require(automaticLines.size == 2) { "automaticGame.incomplete" }
+        val simulatedLines = automaticOuting.simulate(state, state.chapter, seed)
+        require(simulatedLines.size == 2) { "automaticGame.incomplete" }
+        // Both lines are always simulated so RNG order never changes; a claimed game replaces the first.
+        val automaticLines = if (state.chapterGameClaimed) simulatedLines.drop(1) else simulatedLines
         val automaticOuts = state.automaticOuts + automaticLines.sumOf { it.outs }
         val automaticRuns = state.automaticRunsAllowed + automaticLines.sumOf { it.runsAllowed }
         val nextChapter = HighSchoolContentCatalog.chapters[state.chapter.number]
@@ -903,13 +778,19 @@ public class HighSchoolKernel {
             automaticGames = state.automaticGames + automaticLines.size,
             automaticOuts = automaticOuts,
             automaticRunsAllowed = automaticRuns,
+            chapterGameClaimed = false,
         )
         return result(seed, signed(next), "career_chapter_advanced", listOf("chapter.${nextChapter.number}"))
     }
 
     public fun resolveDraft(request: AdvanceRequest): HighSchoolResult {
         val seed = validate(request.seed, request.state, HighSchoolPhase.DRAFT)
-        val state = request.state
+        // The final chapter has no advanceChapter action; settle its schedule before scouting evaluates it.
+        val finalLines = if (!currentRules) emptyList() else automaticOuting.simulate(request.state, request.state.chapter, seed)
+            .let { if (request.state.chapterGameClaimed) it.drop(1) else it }
+        val state = request.state.copy(automaticGames = request.state.automaticGames + finalLines.size,
+            automaticOuts = request.state.automaticOuts + finalLines.sumOf { it.outs },
+            automaticRunsAllowed = request.state.automaticRunsAllowed + finalLines.sumOf { it.runsAllowed })
         // Current Swift HighSchoolCareerEngine.resolveDraft uses the fixed-width v4 salt
         // 0x4452_4146_5400; keep the trailing byte rather than the legacy shortened salt.
         val generator = SplitMix64(seed xor 0x445241465400UL)
@@ -945,9 +826,9 @@ public class HighSchoolKernel {
             firstSeasonGoal = team?.let { "퓨처스 선발 10경기와 볼넷률 8% 이하" },
             evaluationBreakdown = draftEvaluationBreakdown(state),
             summary = if (drafted) {
-                "지명 구단 · ${team?.name ?: "프로 구단"}. 구위와 고교 경기 기록에서 높은 평가를 받았습니다."
+                "지명 구단 · ${team?.name ?: "프로 구단"}. 구위와 고교 경기 기록이 스카우트를 움직였다."
             } else {
-                "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
+                "마지막 라운드까지 이름이 불리지 않았다. 다음 선수에게 남길 것을 고른다."
             },
         )
         val next = state.copy(
@@ -993,9 +874,13 @@ public class HighSchoolKernel {
 
     public fun availableAwakenings(state: HighSchoolState): List<HighSchoolAwakening> {
         val taken = state.selectedAwakenings.toSet()
-        val canLeap = state.awakeningSparks >= 3
+        if (currentRules && taken.size >= 2) return emptyList()
+        if (currentRules && taken.isNotEmpty() && (state.chapter.number < 5 || state.totalTrainingsCompleted < 6 ||
+                state.performance.outs + state.automaticOuts < 36)) return emptyList()
+        val canLeap = (!currentRules || state.lifeNumber > 1) && state.awakeningSparks >= 3
         return HighSchoolContentCatalog.awakeningNodes.mapNotNull { node ->
             if (node.id in taken) return@mapNotNull null
+            if (currentRules && node.tier >= 3 && (state.lifeNumber == 1 || maxOf(state.pitcher.stuff, state.pitcher.command, state.pitcher.movement) < 60)) return@mapNotNull null
             val unmet = node.parents.filterNot { it in taken }
             if (unmet.isEmpty()) return@mapNotNull node.id
             if (canLeap && unmet.size == 1 && taken.any { selected ->
@@ -1031,6 +916,8 @@ public class HighSchoolKernel {
         val phases = state.schedule.milestonesByChapter[state.chapter.number - 1].toMutableList()
         if (state.chapter.number == 8) phases += HighSchoolPhase.DRAFT
         val phase = phases.getOrNull(index) ?: HighSchoolPhase.CHAPTER_REVIEW
+        if (currentRules && phase == HighSchoolPhase.AWAKENING && availableAwakenings(state).isEmpty())
+            return enterMilestone(state, seed, index + 1)
         val relationshipEvent = if (phase == HighSchoolPhase.RELATIONSHIP) relationshipEventFor(state, seed) else null
         val gameScenario = if (phase == HighSchoolPhase.IMPORTANT_GAME) gameScenario(state) else null
         val next = state.copy(
@@ -1432,31 +1319,31 @@ public class HighSchoolKernel {
         return InheritanceApplication(value, updatedTalent)
     }
 
-    public fun previewAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher = applyAwakening(pitcher, awakening)
+    public fun previewAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher = if (currentRules) applyAwakening(pitcher, awakening) else legacyAwakening(pitcher, awakening)
 
     private fun applyAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher {
-        // Source: HighSchoolCareer.applyAwakening (current Swift). Keep the profile-level
-        // deltas together with the scalar trade-offs; the automatic PitchKernel path consumes
-        // these profiles in the next chapter.
+        // Android awakening semantics: keep costs tied to the action being strengthened.
+        // Power and large-break techniques trade accuracy/effort; mastery and composure do
+        // not arbitrarily weaken unrelated abilities. Preview and purchase use this same table.
         return when (awakening) {
             HighSchoolAwakening.EXPLOSIVE_FASTBALL -> tune(pitcher, stuff = 4, command = -2, pitch = PitchKind.FOUR_SEAM, velocity = 15, whiff = 5, fatigueCost = 1)
-            HighSchoolAwakening.RISING_FOUR_SEAM -> tune(pitcher, stuff = 3, movement = -1, pitch = PitchKind.FOUR_SEAM, profileMovement = 4, whiff = 6, weakContact = 2)
-            HighSchoolAwakening.PINPOINT_EDGE -> tune(pitcher, stuff = -1, command = 4, control = 2, profileCommand = 3)
+            HighSchoolAwakening.RISING_FOUR_SEAM -> tune(pitcher, stuff = 3, pitch = PitchKind.FOUR_SEAM, profileMovement = 4, whiff = 6, weakContact = 2)
+            HighSchoolAwakening.PINPOINT_EDGE -> tune(pitcher, command = 4, control = 2, profileCommand = 3)
             HighSchoolAwakening.BATTERY_SYNC -> tune(pitcher, command = 2, movement = 1, control = 2, profileCommand = 2, weakContact = 3)
-            HighSchoolAwakening.REPEATABLE_RELEASE -> tune(pitcher, stuff = -1, command = 4, control = 3, profileCommand = 2)
-            HighSchoolAwakening.FIRST_PITCH_STRIKE -> tune(pitcher, command = 3, stamina = -1, control = 3)
+            HighSchoolAwakening.REPEATABLE_RELEASE -> tune(pitcher, command = 4, control = 3, profileCommand = 2)
+            HighSchoolAwakening.FIRST_PITCH_STRIKE -> tune(pitcher, command = 3, control = 3)
             HighSchoolAwakening.DISAPPEARING_BREAKER -> tune(pitcher, command = -1, movement = 4, nonFastball = true, profileMovement = 4, whiff = 5)
             HighSchoolAwakening.SINKER_TUNNEL -> tune(pitcher, movement = 3, pitchSet = setOf(PitchKind.FOUR_SEAM, PitchKind.CHANGEUP), profileMovement = 3, weakContact = 5)
-            HighSchoolAwakening.FROZEN_CHANGEUP -> tune(pitcher, movement = 3, stamina = -1, pitch = PitchKind.CHANGEUP, profileMovement = 6, whiff = 7)
+            HighSchoolAwakening.FROZEN_CHANGEUP -> tune(pitcher, movement = 3, pitch = PitchKind.CHANGEUP, profileMovement = 6, whiff = 7)
             HighSchoolAwakening.SWEEPING_SLIDER -> tune(pitcher, command = -1, movement = 4, pitch = PitchKind.SLIDER, profileMovement = 7, whiff = 6)
-            HighSchoolAwakening.CURVEBALL_CLOCK -> tune(pitcher, movement = 4, stamina = -1, pitch = PitchKind.CURVEBALL, profileMovement = 7, whiff = 5)
-            HighSchoolAwakening.IRON_ARM -> tune(pitcher, movement = -1, stamina = 5, fatigueCost = -2)
+            HighSchoolAwakening.CURVEBALL_CLOCK -> tune(pitcher, movement = 4, pitch = PitchKind.CURVEBALL, profileMovement = 7, whiff = 5)
+            HighSchoolAwakening.IRON_ARM -> tune(pitcher, stamina = 5, fatigueCost = -2)
             HighSchoolAwakening.LATE_INNING_RESERVE -> tune(pitcher, stamina = 4, pitch = PitchKind.FOUR_SEAM, whiff = 2, fatigueCost = -2)
             HighSchoolAwakening.CALM_UNDER_PRESSURE -> tune(pitcher, command = 2, stamina = 1, control = 2, profileCommand = 2)
             HighSchoolAwakening.PICKOFF_RHYTHM -> tune(pitcher, command = 1, stamina = 2, control = 1, weakContact = 1)
-            HighSchoolAwakening.TWO_STRIKE_PLAN -> tune(pitcher, command = 2, movement = 2, stamina = -1, nonFastball = true, whiff = 3)
-            HighSchoolAwakening.TRAFFIC_CONTROLLER -> tune(pitcher, stuff = -1, command = 2, stamina = 2, weakContact = 3)
-            HighSchoolAwakening.SCOUT_COMPOSURE -> tune(pitcher, stuff = 2, command = 2, stamina = -1, control = 1)
+            HighSchoolAwakening.TWO_STRIKE_PLAN -> tune(pitcher, command = 2, movement = 2, nonFastball = true, whiff = 3)
+            HighSchoolAwakening.TRAFFIC_CONTROLLER -> tune(pitcher, command = 2, stamina = 2, weakContact = 3)
+            HighSchoolAwakening.SCOUT_COMPOSURE -> tune(pitcher, stuff = 2, command = 2, control = 1)
         }
     }
 
@@ -1597,6 +1484,11 @@ public class HighSchoolKernel {
             if (cursor < sequence.size) milestones[chapter] += sequence[cursor++]
         }
         milestones[7] += listOf(HighSchoolPhase.AWAKENING, HighSchoolPhase.IMPORTANT_GAME)
+        var earlyAwakeningKept = false
+        if (currentRules) for (chapter in 0..6) milestones[chapter].removeAll { phase ->
+            if (phase != HighSchoolPhase.AWAKENING) false
+            else if (earlyAwakeningKept) true else { earlyAwakeningKept = true; false }
+        }
         return HighSchoolSchedule(trainings, milestones)
     }
 
@@ -1638,17 +1530,7 @@ public class HighSchoolKernel {
         val ratings = state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina
         val performance = state.performance.strikeouts * 4 - state.performance.walks * 2 - state.performance.runsAllowed * 2
         val process = clamp((state.performance.expectedDamage - state.performance.actualDamage) / 350, -8, 10)
-        val season = if (state.automaticOuts == 0) 0 else {
-            val firstLifeBaseline = when (state.pitcher.id) {
-                "pitcher-command" -> 1_900
-                "pitcher-artist" -> 2_700
-                "pitcher-stamina" -> 2_900
-                else -> 4_930
-            }
-            fun meanScale(life: Int): Int = (1..8).sumOf { chapter -> difficultyScale(chapter, life) } * 100 / 8
-            val baseline = firstLifeBaseline + 432 * (meanScale(state.lifeNumber) - meanScale(1)) / 100
-            clamp((baseline - state.automaticRunsAllowed * 27_000 / state.automaticOuts) / 1_000, -2, 2)
-        }
+        val season = officialSeasonEvaluation(state)
         val relationship = (state.relationshipTrust - 50) / 10
         val karma = (if (HighSchoolKarma.UNKNOWN_LAND in state.karmas) 3 else 0) +
             if (HighSchoolKarma.NO_LAST_CHANCE in state.karmas) 2 else 0
@@ -1660,11 +1542,11 @@ public class HighSchoolKernel {
         val fan = clamp((state.fanInterest - 40) / 15, -3, 3)
         return listOf(
             "능력 ${ratings / 4 + 15}",
-            "고교 공식 경기 ${if (performance >= 0) "+" else ""}${performance / 6}",
+            "직접 투구 ${if (performance >= 0) "+" else ""}${directPitchEvaluation(state)}",
             "시즌 기록 ${if (season >= 0) "+" else ""}$season",
             "위기 관리 ${if (process >= 0) "+" else ""}$process",
             "관심도 ${if (fan >= 0) "+" else ""}$fan",
-            "이번 생의 흐름 ${windFor(state.careerId).draftEvaluationDelta}",
+            "이번 회차의 흐름 ${windFor(state.careerId).draftEvaluationDelta}",
             "각성 +${state.selectedAwakenings.size}",
             "관계 ${if (relationship >= 0) "+" else ""}$relationship",
         ) + (if (karma > 0) listOf("핸디캡 -$karma") else emptyList()) +
@@ -1672,20 +1554,11 @@ public class HighSchoolKernel {
     }
 
     private fun draftScore(state: HighSchoolState): Int {
+        if (!currentRules) return legacyDraftScore(state)
         val ratings = state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina
         val quality = state.performance.strikeouts * 4 - state.performance.walks * 2 - state.performance.runsAllowed * 2
         val process = clamp((state.performance.expectedDamage - state.performance.actualDamage) / 350, -8, 10)
-        val season = if (state.automaticOuts == 0) 0 else {
-            val firstLifeBaseline = when (state.pitcher.id) {
-                "pitcher-command" -> 1_900
-                "pitcher-artist" -> 2_700
-                "pitcher-stamina" -> 2_900
-                else -> 4_930
-            }
-            fun meanScale(life: Int): Int = (1..8).sumOf { chapter -> difficultyScale(chapter, life) } * 100 / 8
-            val baseline = firstLifeBaseline + 432 * (meanScale(state.lifeNumber) - meanScale(1)) / 100
-            clamp((baseline - state.automaticRunsAllowed * 27_000 / state.automaticOuts) / 1_000, -2, 2)
-        }
+        val season = officialSeasonEvaluation(state)
         val karmaPenalty = (if (HighSchoolKarma.UNKNOWN_LAND in state.karmas) 3 else 0) +
             if (HighSchoolKarma.NO_LAST_CHANCE in state.karmas) 2 else 0
         val overusePenalty = when {
@@ -1695,12 +1568,26 @@ public class HighSchoolKernel {
         }
         val fanTerm = clamp((state.fanInterest - 40) / 15, -3, 3)
         return clamp(
-            ratings / 4 + 15 + quality / 6 + process + state.selectedAwakenings.size +
+            ratings / 4 + 15 + directPitchEvaluation(state) + process + state.selectedAwakenings.size +
                 (state.relationshipTrust - 50) / 10 + season + fanTerm + windFor(state.careerId).draftEvaluationDelta -
                 karmaPenalty - overusePenalty,
             20,
             95,
         )
+    }
+
+    private fun directPitchEvaluation(state: HighSchoolState): Int {
+        val p = state.performance
+        if (p.outs == 0) return 0
+        return clamp((p.strikeouts * 4 - p.walks * 2 - p.runsAllowed * 2) * 3 / max(9, p.outs), -6, 6)
+    }
+
+    private fun officialSeasonEvaluation(state: HighSchoolState): Int {
+        val outs = state.performance.outs + state.automaticOuts
+        if (outs == 0) return 0
+        val runs = state.performance.runsAllowed + state.automaticRunsAllowed
+        val runRate = runs * 27_000 / outs
+        return clamp(((if (balanceRulesVersion >= 7) 6_000 else 4_500) - runRate) / (if (balanceRulesVersion >= 7) 700 else 550), -8, 8) * min(90, outs) / 90
     }
 
     private fun draftThreshold(state: HighSchoolState): Int {
@@ -1709,7 +1596,7 @@ public class HighSchoolKernel {
             "challenging" -> 65
             else -> 61
         }
-        return base + 5
+        return base + if (balanceRulesVersion >= 7) 0 else 5
     }
 
     private fun trainingGrowth(signal: Int): Int = when {
@@ -1868,7 +1755,7 @@ public class HighSchoolKernel {
 
     private fun difficultyScale(chapter: Int, lifeNumber: Int): Int {
         val byChapter = min(3, max(0, chapter - 1) * 3 / 7)
-        val byLife = min(4, max(0, lifeNumber - 1) * 2)
+        val byLife = if (balanceRulesVersion >= 7) 0 else min(4, max(0, lifeNumber - 1) * 2)
         return byChapter + byLife
     }
 
@@ -1876,14 +1763,14 @@ public class HighSchoolKernel {
         val bucket = HighSchoolWindRules.bucketFor(careerId)
         return when (bucket) {
             in 0..29 -> Wind("calm")
-            in 30..37 -> Wind("monster_generation", "괴물 세대", "강한 숙적과 맞서는 만큼 좋은 경기에는 더 많은 시선이 모입니다.", rivalBonus = 5, rewardBonusPermille = 150, fanInterestGainBonus = 3)
-            in 38..45 -> Wind("scout_frenzy", "스카우트 풍년", "일찍 모인 시선이 시즌 내내 따라붙습니다.", startingFanInterest = 10)
-            in 46..53 -> Wind("quiet_season", "무명의 해", "관심 없이 시작하지만 숙적도 평소보다 덜 완성된 해입니다.", rivalBonus = -3, startingFanInterest = 0, rewardBonusPermille = 80)
-            in 54..61 -> Wind("heatwave", "긴 여름", "훈련의 피로가 더 쌓이는 대신 몸을 돌보는 회복도 더 깊습니다.", rewardBonusPermille = 120, trainingFatigueDelta = 2, recoveryBonus = 4)
+            in 30..37 -> Wind("monster_generation", "괴물 세대", "라이벌이 강한 해. 대신 좋은 경기엔 더 많은 시선이 모인다.", rivalBonus = 5, rewardBonusPermille = 150, fanInterestGainBonus = 3)
+            in 38..45 -> Wind("scout_frenzy", "스카우트 풍년", "일찍 모인 시선이 시즌 내내 따라붙는다.", startingFanInterest = 10)
+            in 46..53 -> Wind("quiet_season", "무명의 해", "관심 없이 시작하지만 라이벌도 평소보다 덜 완성된 해.", rivalBonus = -3, startingFanInterest = 0, rewardBonusPermille = 80)
+            in 54..61 -> Wind("heatwave", "긴 여름", "훈련 피로가 더 쌓이는 대신 회복도 더 깊은 해.", rewardBonusPermille = 120, trainingFatigueDelta = 2, recoveryBonus = 4)
             in 62..69 -> Wind("command_year", "코스의 해", "제구 감각이 잘 붙지만 강한 공을 만드는 날에는 피로가 더 듭니다.", rewardBonusPermille = 50, favoredTraining = HighSchoolTrainingFocus.COMMAND, favoredTrainingBonus = 1, extraFatigueFocus = HighSchoolTrainingFocus.VELOCITY, extraFatigueDelta = 1)
             in 70..77 -> Wind("power_year", "강한 공의 해", "구위는 빠르게 자라지만 숙적도 강한 승부에 맞춰 올라옵니다.", rivalBonus = 3, rewardBonusPermille = 100, favoredTraining = HighSchoolTrainingFocus.VELOCITY, favoredTrainingBonus = 1)
             in 78..85 -> Wind("battery_year", "배터리의 해", "조용한 출발 대신 포수와 쌓는 믿음이 더 빠르게 깊어집니다.", startingFanInterest = 2, rewardBonusPermille = 50, favoredRelationship = HighSchoolRelationshipTarget.CATCHER, favoredRelationshipBonus = 2)
-            in 86..92 -> Wind("spotlight_year", "조명의 해", "좋은 장면은 더 큰 관심을 부르지만 관계에서의 실패도 더 선명하게 남습니다.", rewardBonusPermille = 80, fanInterestGainBonus = 2, relationshipLossPenalty = 2)
+            in 86..92 -> Wind("spotlight_year", "조명의 해", "좋은 장면은 더 큰 관심을 부르지만 관계의 실패도 더 선명하게 남는 해.", rewardBonusPermille = 80, fanInterestGainBonus = 2, relationshipLossPenalty = 2)
             else -> Wind("underdog_year", "언더독의 해", "관심 없이 강한 숙적을 만나지만 끝까지 증명하면 평가가 따라옵니다.", startingFanInterest = 0, rivalBonus = 2, rewardBonusPermille = 120, draftEvaluationDelta = 1)
         }
     }
@@ -1895,24 +1782,27 @@ public class HighSchoolKernel {
         windNews: String?,
     ): List<String> {
         val base = if (lifeNumber <= 1) {
-            listOf("${identity.region} 중학교 마지막 대회에서 보여준 공이 같은 지역 네 고교의 관심을 끌었습니다.")
+            listOf("${identity.region} 중학교 마지막 대회에서 던진 공이 같은 지역 네 고교의 눈에 들었다.")
         } else {
             val openers = listOf(
-                "${identity.region} 중학교 마지막 대회. 처음 서는 마운드인데 흙의 감촉이 낯설지 않았습니다. 같은 지역 네 고교가 다시 지켜보고 있습니다.",
-                "${identity.region} 중학교 마지막 대회에서 던진 마지막 공. 포수 미트에 꽂히는 소리가 어딘가 익숙했습니다. 네 고교의 시선이 모입니다.",
-                "${identity.region} 중학교 마지막 대회를 마친 뒤, 어깨보다 먼저 마음이 다음 이닝을 준비하고 있었습니다. 네 고교에서 제안이 도착했습니다.",
+                "${identity.region} 중학교 마지막 대회. 처음 서는 마운드인데 흙의 감촉이 낯설지 않았다. 같은 지역 네 고교가 다시 지켜보고 있다.",
+                "${identity.region} 중학교 마지막 대회에서 던진 마지막 공. 미트에 꽂히는 소리가 어딘가 익숙했다. 네 고교의 시선이 모인다.",
+                "${identity.region} 중학교 마지막 대회를 마친 뒤, 어깨보다 먼저 마음이 다음 이닝을 준비하고 있었다. 네 고교에서 제안이 왔다.",
             )
             buildList {
                 add(openers[(lifeNumber - 2) % openers.size])
                 if (inheritedMemoryCount > 0) {
-                    add("처음 잡는 그립인데 손끝이 먼저 기억합니다 · 설명하기 어려운 감각 ${inheritedMemoryCount}가지")
+                    add("처음 잡는 그립인데 손끝이 먼저 기억한다 · 설명하기 어려운 감각 ${inheritedMemoryCount}가지")
                 }
             }
         }
         return (windNews?.let(::listOf).orEmpty() + base)
     }
 
-    private fun signed(state: HighSchoolState): HighSchoolState = state.copy(stateCommitment = commitment(state))
+    private fun signed(state: HighSchoolState): HighSchoolState {
+        val versioned = state.copy(balanceVersion = balanceRulesVersion)
+        return versioned.copy(stateCommitment = commitment(versioned))
+    }
 
     private fun commitment(state: HighSchoolState): String {
         val ratings = "${state.pitcher.stuff}:${state.pitcher.command}:${state.pitcher.movement}:${state.pitcher.stamina}"
@@ -2009,11 +1899,15 @@ public class HighSchoolKernel {
                 if (state.recentRelationshipEventIds.isNotEmpty()) add("recentRelationships:${state.recentRelationshipEventIds.joinToString(",")}")
                 if (echo != "none") add("rebirthEcho:$echo")
                 state.pitcher.mastery?.let { add("mastery:${it.stuff}:${it.command}:${it.movement}:${it.stamina}") }
+                if (state.chapterGameClaimed) add("chapterGame:claimed")
+                state.development?.let { add("development:${it.token()}") }
+                if (state.performance.perfectReleases > 0) add("perfect:${state.performance.perfectReleases}")
             }.joinToString("|"),
         )
     }
 
     private fun validate(seedText: String, state: HighSchoolState, phase: HighSchoolPhase): ULong {
+        require(state.balanceVersion <= balanceRulesVersion) { "highschool.future_rules" }
         val seed = parseSeed(seedText)
         require(state.phase == phase) { "state.phase" }
         require(state.stateCommitment.isNotBlank() && state.stateCommitment == commitment(state)) { "state.commitment" }
@@ -2055,7 +1949,7 @@ public class HighSchoolKernel {
     private data class Wind(
         val id: String,
         val title: String = "바람 없는 해",
-        val detail: String = "특별할 것 없는 평범한 해입니다. 실력만이 말합니다.",
+        val detail: String = "특별할 것 없는 평범한 해. 실력만이 말한다.",
         val rivalBonus: Int = 0,
         val startingFanInterest: Int = 5,
         val rewardBonusPermille: Int = 0,
@@ -2075,6 +1969,65 @@ public class HighSchoolKernel {
         fun trainingGrowthBonus(focus: HighSchoolTrainingFocus): Int = if (focus == favoredTraining) favoredTrainingBonus else 0
         fun trainingFatigueModifier(focus: HighSchoolTrainingFocus): Int =
             trainingFatigueDelta + if (focus == extraFatigueFocus) extraFatigueDelta else 0
+    }
+
+    // Frozen Swift v4 rules; current Android rules are v5.
+    private fun legacyDraftScore(state: HighSchoolState): Int {
+        val ratings = state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina
+        val quality = state.performance.strikeouts * 4 - state.performance.walks * 2 - state.performance.runsAllowed * 2
+        val process = clamp((state.performance.expectedDamage - state.performance.actualDamage) / 350, -8, 10)
+        val season = if (state.automaticOuts == 0) 0 else {
+            val firstLifeBaseline = when (state.pitcher.id) {
+                "pitcher-command" -> 1_900
+                "pitcher-artist" -> 2_700
+                "pitcher-stamina" -> 2_900
+                else -> 4_930
+            }
+            fun meanScale(life: Int): Int = (1..8).sumOf { chapter -> difficultyScale(chapter, life) } * 100 / 8
+            val baseline = firstLifeBaseline + 432 * (meanScale(state.lifeNumber) - meanScale(1)) / 100
+            clamp((baseline - state.automaticRunsAllowed * 27_000 / state.automaticOuts) / 1_000, -2, 2)
+        }
+        val karmaPenalty = (if (HighSchoolKarma.UNKNOWN_LAND in state.karmas) 3 else 0) +
+            if (HighSchoolKarma.NO_LAST_CHANCE in state.karmas) 2 else 0
+        val overusePenalty = when {
+            state.armRisk >= HighSchoolContentCatalog.ARM_WARNING_THRESHOLD -> 4
+            state.armRisk >= 45 -> 2
+            else -> 0
+        }
+        val fanTerm = clamp((state.fanInterest - 40) / 15, -3, 3)
+        return clamp(
+            ratings / 4 + 15 + quality / 6 + process + state.selectedAwakenings.size +
+                (state.relationshipTrust - 50) / 10 + season + fanTerm + windFor(state.careerId).draftEvaluationDelta -
+                karmaPenalty - overusePenalty,
+            20,
+            95,
+        )
+    }
+
+    private fun legacyAwakening(pitcher: HighSchoolPitcher, awakening: HighSchoolAwakening): HighSchoolPitcher {
+        // Source: HighSchoolCareer.applyAwakening (current Swift). Keep the profile-level
+        // deltas together with the scalar trade-offs; the automatic PitchKernel path consumes
+        // these profiles in the next chapter.
+        return when (awakening) {
+            HighSchoolAwakening.EXPLOSIVE_FASTBALL -> tune(pitcher, stuff = 4, command = -2, pitch = PitchKind.FOUR_SEAM, velocity = 15, whiff = 5, fatigueCost = 1)
+            HighSchoolAwakening.RISING_FOUR_SEAM -> tune(pitcher, stuff = 3, movement = -1, pitch = PitchKind.FOUR_SEAM, profileMovement = 4, whiff = 6, weakContact = 2)
+            HighSchoolAwakening.PINPOINT_EDGE -> tune(pitcher, stuff = -1, command = 4, control = 2, profileCommand = 3)
+            HighSchoolAwakening.BATTERY_SYNC -> tune(pitcher, command = 2, movement = 1, control = 2, profileCommand = 2, weakContact = 3)
+            HighSchoolAwakening.REPEATABLE_RELEASE -> tune(pitcher, stuff = -1, command = 4, control = 3, profileCommand = 2)
+            HighSchoolAwakening.FIRST_PITCH_STRIKE -> tune(pitcher, command = 3, stamina = -1, control = 3)
+            HighSchoolAwakening.DISAPPEARING_BREAKER -> tune(pitcher, command = -1, movement = 4, nonFastball = true, profileMovement = 4, whiff = 5)
+            HighSchoolAwakening.SINKER_TUNNEL -> tune(pitcher, movement = 3, pitchSet = setOf(PitchKind.FOUR_SEAM, PitchKind.CHANGEUP), profileMovement = 3, weakContact = 5)
+            HighSchoolAwakening.FROZEN_CHANGEUP -> tune(pitcher, movement = 3, stamina = -1, pitch = PitchKind.CHANGEUP, profileMovement = 6, whiff = 7)
+            HighSchoolAwakening.SWEEPING_SLIDER -> tune(pitcher, command = -1, movement = 4, pitch = PitchKind.SLIDER, profileMovement = 7, whiff = 6)
+            HighSchoolAwakening.CURVEBALL_CLOCK -> tune(pitcher, movement = 4, stamina = -1, pitch = PitchKind.CURVEBALL, profileMovement = 7, whiff = 5)
+            HighSchoolAwakening.IRON_ARM -> tune(pitcher, movement = -1, stamina = 5, fatigueCost = -2)
+            HighSchoolAwakening.LATE_INNING_RESERVE -> tune(pitcher, stamina = 4, pitch = PitchKind.FOUR_SEAM, whiff = 2, fatigueCost = -2)
+            HighSchoolAwakening.CALM_UNDER_PRESSURE -> tune(pitcher, command = 2, stamina = 1, control = 2, profileCommand = 2)
+            HighSchoolAwakening.PICKOFF_RHYTHM -> tune(pitcher, command = 1, stamina = 2, control = 1, weakContact = 1)
+            HighSchoolAwakening.TWO_STRIKE_PLAN -> tune(pitcher, command = 2, movement = 2, stamina = -1, nonFastball = true, whiff = 3)
+            HighSchoolAwakening.TRAFFIC_CONTROLLER -> tune(pitcher, stuff = -1, command = 2, stamina = 2, weakContact = 3)
+            HighSchoolAwakening.SCOUT_COMPOSURE -> tune(pitcher, stuff = 2, command = 2, stamina = -1, control = 1)
+        }
     }
 
     private companion object {

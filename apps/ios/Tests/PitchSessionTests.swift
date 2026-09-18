@@ -372,6 +372,14 @@ final class PitchSessionTests: XCTestCase {
                 || store.state?.postseason?.result == .runnerUp
         )
         XCTAssertEqual(store.state?.postseason?.gameHistory?.count, 5)
+        XCTAssertNotNil(store.state?.contract)
+        store.reviewSeason()
+        XCTAssertNotEqual(store.state?.phase, .seasonReview)
+        XCTAssertTrue(
+            store.state?.phase == .seasonSettlement
+                || store.state?.phase == .offseasonDecision,
+            "피날레 확인 뒤 결산 또는 오프시즌이어야 합니다. phase=\(String(describing: store.state?.phase))"
+        )
     }
 
     func testPostseasonRestChoiceEmitsDecisionGameAndCompletionAnalytics() {
@@ -596,6 +604,23 @@ final class PitchSessionTests: XCTestCase {
             }
         }
         XCTFail("세션이 끝나지 않았습니다.")
+    }
+
+    func testFastForwardRefineCallOverridesTheCatcherZone() {
+        let session = PitchSession(state: snapshot(), seed: "20260911")
+        session.start()
+        let forced = PitchZone(row: 2, column: 0)
+        _ = session.fastForwardCurrentBatter { catcher, _, _ in
+            PitchCall(
+                pitchType: catcher.pitchType,
+                zone: forced,
+                zoneIntent: .chase,
+                intensity: catcher.intensity
+            )
+        }
+        XCTAssertFalse(session.pitchLog.isEmpty)
+        XCTAssertTrue(session.pitchLog.allSatisfy { $0.call.zone == forced })
+        XCTAssertTrue(session.pitchLog.contains { !$0.acceptedRecommendation })
     }
 
     func testFastForwardUsesCatcherRecommendationsAndStopsAtBatterBoundary() {

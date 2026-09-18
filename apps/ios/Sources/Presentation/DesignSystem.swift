@@ -226,13 +226,13 @@ struct EffectChip: View {
             Text(text)
                 .font(.caption.weight(.semibold))
                 .monospacedDigit()
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(foreground)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(background, in: Capsule())
-        .fixedSize(horizontal: true, vertical: false)
+        .background(background, in: RoundedRectangle(cornerRadius: 12))
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var foreground: Color {
@@ -272,7 +272,8 @@ struct FlowLayout: Layout {
         let width = proposal.width ?? .infinity
         var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, maxX: CGFloat = 0
         for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
+            let ideal = subview.sizeThatFits(.unspecified)
+            let size = subview.sizeThatFits(ProposedViewSize(width: min(ideal.width, width), height: nil))
             if x > 0, x + size.width > width {
                 x = 0
                 y += rowHeight + spacing
@@ -288,7 +289,8 @@ struct FlowLayout: Layout {
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0
         for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
+            let ideal = subview.sizeThatFits(.unspecified)
+            let size = subview.sizeThatFits(ProposedViewSize(width: min(ideal.width, bounds.width), height: nil))
             if x > bounds.minX, x + size.width > bounds.maxX {
                 x = bounds.minX
                 y += rowHeight + spacing
@@ -473,7 +475,7 @@ struct StatTile: View {
                         .foregroundStyle(BaseballTheme.textTertiary)
                 }
                 // localization-safe: numeric
-                Text(displayedValue)
+                Text(animatesChange && !reduceMotion ? displayedValue : value)
                     .font(previousValue == nil ? BaseballType.heroNumeral : BaseballType.statNumeral)
                     .foregroundStyle(tone)
                     .monospacedDigit()
@@ -492,35 +494,44 @@ struct StatTile: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityCopy)
         .sensoryFeedback(.impact(weight: .medium), trigger: bump)
-        .onAppear { runChangeAnimationIfNeeded() }
+        .task(id: ChangeAnimationInput(value: value, previousValue: previousValue,
+                                       enabled: animatesChange && !reduceMotion)) {
+            await runChangeAnimationIfNeeded()
+        }
     }
 
-    private func runChangeAnimationIfNeeded() {
-        guard animatesChange, let previousValue, previousValue != value else {
-            displayedValue = value
-            return
-        }
-        if reduceMotion {
+    private struct ChangeAnimationInput: Equatable {
+        let value: String
+        let previousValue: String?
+        let enabled: Bool
+    }
+
+    @MainActor
+    private func runChangeAnimationIfNeeded() async {
+        glow = false
+        guard animatesChange, !reduceMotion, let previousValue,
+              previousValue != value, let start = Int(previousValue), let end = Int(value) else {
             displayedValue = value
             return
         }
         displayedValue = previousValue
-        let start = Int(previousValue) ?? 0
-        let end = Int(value) ?? start
-        let steps = max(1, abs(end - start))
-        let stepDuration = 0.4 / Double(steps)
-        for step in 1...steps {
-            DispatchQueue.main.asyncAfter(deadline: .now() + stepDuration * Double(step)) {
-                let next = start + (end - start) * step / steps
-                displayedValue = "\(next)"
-                if next == end {
-                    bump = true
-                    withAnimation(.easeOut(duration: 0.3)) { glow = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        withAnimation(.easeOut(duration: 0.2)) { glow = false }
-                    }
-                }
+        // The view task cancels when its inputs change or the tile disappears, so an old
+        // count-up cannot overwrite the next week's value. Bound the work for large stats.
+        let steps = min(24, max(1, abs(end - start)))
+        do {
+            for step in 1...steps {
+                try await Task.sleep(for: .seconds(0.4 / Double(steps)))
+                try Task.checkCancellation()
+                displayedValue = "\(start + (end - start) * step / steps)"
             }
+            displayedValue = value
+            bump.toggle()
+            withAnimation(.easeOut(duration: 0.3)) { glow = true }
+            try await Task.sleep(for: .seconds(0.3))
+            try Task.checkCancellation()
+            withAnimation(.easeOut(duration: 0.2)) { glow = false }
+        } catch {
+            // A replacement task owns the new value and highlight.
         }
     }
 
@@ -560,15 +571,17 @@ struct PrimaryPill: View {
     var body: some View {
         Button(action: action) {
             Text(verbatim: title)
+                // 꺼진 버튼의 글자도 읽을 수 있어야 한다. 어두운 잉크(actionInk)를 어두운
+                // 배경(actionSoft) 위에 0.6으로 얹으면 라벨이 사실상 사라졌다 —
+                // 선택 전에는 확정 버튼이 아예 없는 것처럼 보였다.
                 .font(.headline)
-                .foregroundStyle(BaseballTheme.actionInk)
+                .foregroundStyle(enabled ? BaseballTheme.actionInk : BaseballTheme.textSecondary)
                 .frame(maxWidth: .infinity, minHeight: 52)
         }
         .background(
             enabled ? BaseballTheme.action : BaseballTheme.actionSoft,
             in: Capsule()
         )
-        .opacity(enabled ? 1 : 0.6)
         .disabled(!enabled)
         .accessibilityIdentifier(identifier ?? title)
     }

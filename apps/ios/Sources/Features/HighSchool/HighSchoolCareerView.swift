@@ -13,6 +13,7 @@ struct HighSchoolCareerView: View {
     var onOpenDraftForecast: (() -> Void)? = nil
     /// 이 회차로 프로에 이미 진출했는가. 은퇴 뒤 돌아왔을 때 다시 들어가지 못하게 한다.
     var hasEnteredPro = false
+    var onRecoverMissingPro: (() -> Void)? = nil
     var weekly: WeeklyProgramStore = .shared
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -62,6 +63,8 @@ struct HighSchoolCareerView: View {
     /// `fullScreenCover(item:)`가 요구하는 식별 가능한 값.
     struct RebirthStamp: Identifiable {
         let lifeNumber: Int
+        /// 고른 다음 생의 길. 있으면 스탬프가 끝난 뒤 그 길로 곧장 시작한다(6-E).
+        var path: RebirthPath?
         /// 정산 화면에서 곧장 온 스탬프인지 값 자체에 싣는다. 별도 `@State`로 두면
         /// cover가 만들어지는 프레임과 플래그 갱신 프레임이 엇갈려 설정 화면으로 빠질 수 있다.
         var startsImmediately = false
@@ -119,38 +122,21 @@ struct HighSchoolCareerView: View {
                         Image(systemName: "exclamationmark.triangle")
                     }
                 } description: {
-                    Text(
-                        verbatim: copyResolver.language == .korean
-                            ? message : copyResolver.resolve(.careerErrorBody)
-                    )
+                    // 갈래를 아는 실패는 그 갈래의 문장을 쓴다. 한국어에서만 원문을 보이던
+                    // 경로도 이제 세 언어 모두 같은 이유를 말한다(7-A).
+                    Text(verbatim: career.lastActionFailure.map {
+                        CareerFailureCopy.message(
+                            for: $0,
+                            repeated: career.lastFailureRepeated,
+                            resolver: copyResolver
+                        )
+                    } ?? (copyResolver.language == .korean
+                        ? message : copyResolver.resolve(.careerErrorBody)))
                 } actions: {
                     // 비파괴 출구가 먼저다. 시드 오타 하나로 도달하는 화면의 유일한
                     // 버튼이 "전 회차 삭제"면 그건 함정이다(4차 패널 P0).
                     PrimaryPill(title: copyResolver.resolve(.careerErrorRetry), identifier: "hs.retry") {
                         career.returnToSetup()
-                    }
-                    Button(role: .destructive) {
-                        confirmingReset = true
-                    } label: {
-                        Text(verbatim: copyResolver.resolve(.careerErrorRestart))
-                    }
-                    .font(BaseballType.detail.weight(.semibold))
-                    .accessibilityIdentifier("hs.restart")
-                    .alert(
-                        copyResolver.resolve(.careerErrorResetTitle),
-                        isPresented: $confirmingReset
-                    ) {
-                        Button(role: .destructive) {
-                            career.deleteCareer()
-                        } label: {
-                            Text(verbatim: copyResolver.resolve(.careerErrorResetConfirm))
-                        }
-                        // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
-                        Button { confirmingReset = false } label: {
-                            Text(verbatim: copyResolver.resolve(.careerErrorResetCancel))
-                        }
-                    } message: {
-                        Text(verbatim: copyResolver.resolve(.careerErrorResetMessage))
                     }
                 }
             case .ready:
@@ -210,8 +196,11 @@ struct HighSchoolCareerView: View {
             RebirthStampView(lifeNumber: stamp.lifeNumber) {
                 rebirthStamp = nil
                 // 정산 화면에서 바로 온 경우엔 설정을 건너뛰고 같은 조건으로 시작한다.
-                if stamp.startsImmediately {
-                    career.beginNextLife()
+                if let path = stamp.path {
+                    guard career.beginNextLife() else { return }
+                    career.startRebirth(path: path, entryPoint: "rebirth_path")
+                } else if stamp.startsImmediately {
+                    guard career.beginNextLife() else { return }
                     career.startQuickRebirth(entryPoint: "recap")
                 } else {
                     career.beginNextLife()
@@ -283,16 +272,21 @@ struct HighSchoolCareerView: View {
         let feedbackTrigger: Int
     }
 
-    /// 전체 삭제 확인. 파괴적 출구는 반드시 한 번 더 묻는다.
-    @State private var confirmingReset = false
     /// 훈련 화면의 선택. 카드가 고르고 스크롤 밖 고정 바가 커밋한다. 훈련 국면에
     /// 들어올 때 직전 훈련에서 다시 시작한다(`TrainingCard.onAppear`).
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var trainingSelection = TrainingSelection.placeholder
     /// 드래프트 결과 1화면 → 유산 2화면. 저장하지 않는다 — 앱을 다시 열면 1화면부터.
     @State private var draftLegacyStep = 0
+    @State private var optionalPledgeCareerID: String?
     @State private var dismissedArmHealth = false
     @State private var dismissedSummary: String?
+    /// 성장 카드가 태어난 국면. 국면이 바뀌면 카드도 같이 사라진다.
+    ///
+    /// `pendingGains`는 "닫기"로만 비워져서, 훈련 뒤 뜬 카드가 각성·정규 경기·다음 장까지
+    /// 따라다녔다. 그 사이 각성과 경기로 능력이 바뀌어 같은 화면 능력표와 숫자가 어긋났다
+    /// (QA 2026-09-12 F-09). 태어난 국면 안에서는 그대로 두고, 벗어나면 접는다.
+    @State private var growthNoticePhase: HighSchoolCareerPhase?
 
     /// 관계 국면에서는 선택지가 뉴스·버즈보다 먼저다(페르소나 보고서 §2-2). 다른
     /// 국면에서는 예전대로 주 행동 위에 둔다.
@@ -356,6 +350,7 @@ struct HighSchoolCareerView: View {
             if state.phase == .prologue, let session = career.tutorialSession {
                 PitchView(session: session, onFinish: career.finishTutorialPitch,
                           onAbort: career.finishTutorialPitch, isPractice: true,
+                          practiceFinishTitle: copyResolver.resolve(.localizable("loop.reborn.continue")),
                           onRetry: career.retryTutorialPitch)
             } else if state.phase == .importantGame, let session = career.pitchSession {
                 PitchView(session: session, onFinish: career.finishImportantGame,
@@ -576,6 +571,17 @@ struct HighSchoolCareerView: View {
                     draftLegacyStep = 0
                     dismissedArmHealth = false
                     dismissedSummary = nil
+                    growthNoticePhase = nil
+                }
+                // 성장이 붙은 국면을 기억해 둔다. 성장과 국면 전환이 같은 갱신에서 오면
+                // (마지막 훈련이 장을 끝내는 경우) 새 국면이 그대로 기준이 되어 카드가 보인다.
+                .onChange(of: career.pendingGains.count) { _, count in
+                    growthNoticePhase = count > 0 ? career.state?.phase : nil
+                }
+                .onChange(of: state.phase) { _, current in
+                    guard let anchor = growthNoticePhase, anchor != current else { return }
+                    career.acknowledgeGains()
+                    growthNoticePhase = nil
                 }
                 // 스크롤 콘텐츠가 상태바 밑을 그대로 지나면 시계와 제목이 겹친다(QA P2-3).
                 .topStatusScrim()
@@ -642,7 +648,11 @@ struct HighSchoolCareerView: View {
         if career.result?.armHealthReceipt != nil, !dismissedArmHealth { return .armHealth }
         if career.trainingReceipt != nil { return .trainingResult }
         if career.pendingBloom != nil { return .bloom }
-        if !career.pendingGains.isEmpty { return .growth }
+        if !career.pendingGains.isEmpty,
+           growthNoticePhase == nil || growthNoticePhase == career.state?.phase {
+            return .growth
+        }
+        if let state = career.state, state.phase == .prologue, state.lifeNumber > 1 { return nil }
         if let summary = career.lastSummary, dismissedSummary != summary { return .summary }
         return nil
     }
@@ -698,6 +708,7 @@ struct HighSchoolCareerView: View {
             GrowthCelebrationView(
                 gains: career.pendingGains,
                 jackpot: career.result?.snapshot.lastTraining?.jackpot ?? false,
+                fatigue: state.fatigue,
                 onDismiss: career.acknowledgeGains
             )
             .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
@@ -726,32 +737,36 @@ struct HighSchoolCareerView: View {
     @ViewBuilder private func phaseBody(state: HighSchoolCareerSnapshot) -> some View {
         switch state.phase {
         case .prologue:
-            if !career.isChallengeRun,
-               let previous = career.archive.first,
-               previous.lifeNumber < state.lifeNumber {
-                PreviousPlayerLetterCard(record: previous, currentPlayerName: state.identity.name)
-                if let comparison = career.inheritedStartComparison(for: state, previous: previous) {
-                    InheritedStartComparisonCard(comparison: comparison)
+            if state.lifeNumber > 1, !career.isChallengeRun {
+                RebornReadyCard(state: state, previous: career.archive.first,
+                    onContinue: career.completePrologue, onPractice: career.beginTutorialPitch) {
+                    if let previous = career.archive.first, previous.lifeNumber < state.lifeNumber {
+                        PreviousPlayerLetterCard(record: previous, currentPlayerName: state.identity.name)
+                        if let comparison = career.inheritedStartComparison(for: state, previous: previous) {
+                            InheritedStartComparisonCard(comparison: comparison)
+                        }
+                    }
                 }
+            } else {
+                PrologueCard(state: state, lifeNumber: state.lifeNumber,
+                    onThrow: career.finishedOnboardingBullpen ? career.completePrologue : career.beginTutorialPitch,
+                    onSkip: career.completePrologue,
+                    throwTitleKey: career.finishedOnboardingBullpen ? AppCopyKey.prologueFirstSchool : AppCopyKey.prologueThrow)
             }
-            PrologueCard(
-                state: state,
-                lifeNumber: state.lifeNumber,
-                onThrow: career.finishedOnboardingBullpen
-                    ? career.completePrologue
-                    : career.beginTutorialPitch,
-                onSkip: career.completePrologue,
-                throwTitleKey: career.finishedOnboardingBullpen
-                    ? AppCopyKey.prologueFirstSchool
-                    : AppCopyKey.prologueThrow
-            )
         case .schoolSelection:
             if !career.isChallengeRun && !career.pledgeDecided {
-                PledgeCard(state: state, intent: career.nextRunIntent,
-                           rivalLedger: career.rivalLedger, isFirstLife: state.lifeNumber == 1,
-                           onChoose: { pledgeID in
-                               _ = career.choosePledge(pledgeID)
-                           })
+                if state.lifeNumber > 1 {
+                    Button(copyResolver.resolve(.localizable("loop.reborn.pledge"))) {
+                        optionalPledgeCareerID = optionalPledgeCareerID == state.careerID ? nil : state.careerID
+                    }.frame(minHeight: BaseballMetrics.minimumTapTarget).accessibilityIdentifier("hs.reborn.pledge")
+                }
+                if state.lifeNumber == 1 || optionalPledgeCareerID == state.careerID {
+                    PledgeCard(state: state, intent: career.nextRunIntent,
+                               rivalLedger: career.rivalLedger, isFirstLife: state.lifeNumber == 1,
+                               onChoose: { pledgeID in
+                                   _ = career.choosePledge(pledgeID)
+                               })
+                }
             }
             SchoolSelectionCard(
                 options: state.schoolOptions,
@@ -822,7 +837,9 @@ struct HighSchoolCareerView: View {
                           onChoose: career.chooseAwakening)
         case .chapterReview:
             ChapterReviewCard(state: state, gains: career.chapterGains,
-                              trainingCount: career.chapterTrainingCount, onContinue: career.advanceChapter)
+                              trainingCount: career.chapterTrainingCount,
+                              onContinue: career.advanceChapter,
+                              onClaim: career.claimChapterGame)
         case .draft:
             DraftCard(state: state, chronicle: career.chronicle, career: career, onResolve: career.resolveDraft)
         case .legacy:
@@ -832,6 +849,7 @@ struct HighSchoolCareerView: View {
                 DraftPeakResultView(
                     state: state,
                     drafted: false,
+                    startingPitcher: career.careerStartingPitcher,
                     onContinue: { draftLegacyStep = 1 }
                 )
             } else {
@@ -851,6 +869,7 @@ struct HighSchoolCareerView: View {
                 DraftPeakResultView(
                     state: state,
                     drafted: state.draftResult?.outcome == .drafted && !hasEnteredPro,
+                    startingPitcher: career.careerStartingPitcher,
                     onContinue: { draftLegacyStep = 1 }
                 )
             } else {
@@ -865,12 +884,20 @@ struct HighSchoolCareerView: View {
                     career: career,
                     state: state,
                     hasEnteredPro: hasEnteredPro,
+                    onRecoverMissingPro: onRecoverMissingPro,
                     onEnterPro: onEnterPro,
                     onSkipToPro: onSkipToPro,
-                    includeReason: false
-                ) {
-                    rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
-                }
+                    includeReason: false,
+                    onRebirth: {
+                        rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
+                    },
+                    onRebirthPath: { path in
+                        rebirthStamp = RebirthStamp(
+                            lifeNumber: career.inheritance.lifeNumber,
+                            path: path
+                        )
+                    }
+                )
             }
         }
     }

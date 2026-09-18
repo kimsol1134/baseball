@@ -57,7 +57,7 @@ struct ChapterHeader: View {
 
     var body: some View {
         Group {
-            if [.training, .relationship, .importantGame, .awakening, .chapterReview, .schoolSelection].contains(state.phase) {
+            if [.training, .relationship, .importantGame, .awakening, .chapterReview, .schoolSelection].contains(state.phase) || (state.phase == .prologue && state.lifeNumber > 1) {
                 VStack(alignment: .leading, spacing: 10) {
                     Button { showsPlayerDetails = true } label: {
                         HStack(spacing: 10) {
@@ -97,7 +97,7 @@ struct ChapterHeader: View {
                                 .detailStyle()
                         }
                     }
-                    HStack(alignment: .top, spacing: 12) {
+                    AdaptiveMetricRow {
                         CorePlayerStat(title: copyResolver.resolve(.localizable("mobile.core.velocity")),
                             value: state.pitcher.profile(for: .fourSeam).map {
                                 GameFormatters.velocity(tenthsKPH: $0.velocityTenthsKPH, language: copyResolver.language)

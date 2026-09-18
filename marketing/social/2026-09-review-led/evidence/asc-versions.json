@@ -1,0 +1,1600 @@
+[
+  {
+    "type": "appStoreVersions",
+    "id": "2c05a8f0-86ed-46b9-921c-9955c00eef5f",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.2.9",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-09-04T09:21:24-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/2c05a8f0-86ed-46b9-921c-9955c00eef5f"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "9414848d-b1c2-4f69-8db1-3084994eb224",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.2.8",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-09-02T02:19:30-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/9414848d-b1c2-4f69-8db1-3084994eb224"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "188eff4f-525c-44ea-993c-957e2755ad1d",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.2.7",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-31T22:50:45-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/188eff4f-525c-44ea-993c-957e2755ad1d"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "5092ba33-16bd-4905-9ddf-669b7f8a90b4",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.2.5",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-30T20:33:21-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/5092ba33-16bd-4905-9ddf-669b7f8a90b4"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "e6ef5f26-1919-445d-831a-2fb618906eca",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.2.4",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-28T01:50:29-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e6ef5f26-1919-445d-831a-2fb618906eca"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "39b614aa-4278-4d31-aa9f-379b74a608b6",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.2.3",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-25T07:33:04-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/39b614aa-4278-4d31-aa9f-379b74a608b6"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "f7b40595-cf09-4112-8703-aa9af67357d7",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.2.2",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-23T04:03:49-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/f7b40595-cf09-4112-8703-aa9af67357d7"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "42bbbcf9-50b4-4d4d-9f0d-9d141b380983",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.2.1",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-18T04:08:59-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/42bbbcf9-50b4-4d4d-9f0d-9d141b380983"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "a57de4c7-946e-4b1e-9a32-c3b4a0224d71",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.2.0",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-16T22:44:41-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a57de4c7-946e-4b1e-9a32-c3b4a0224d71"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "e5b7ec49-1ddf-4753-853d-25eae606a937",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.1.3",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-15T08:43:23-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/e5b7ec49-1ddf-4753-853d-25eae606a937"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "b9e9da9e-c17f-4ec9-a61c-1f443ab923f3",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.1.2",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-13T20:20:11-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/b9e9da9e-c17f-4ec9-a61c-1f443ab923f3"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "a5e34851-ad52-43d6-b8aa-399707ae25ff",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.1.1",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-12T05:43:04-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a5e34851-ad52-43d6-b8aa-399707ae25ff"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "a9d27caa-fbc6-436d-8c73-a425b72e58f5",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.0.4",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "AFTER_APPROVAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-11T07:23:57-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a9d27caa-fbc6-436d-8c73-a425b72e58f5"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "43308988-bfd1-4b63-81cb-9c3fc234fefd",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.0.3",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "AFTER_APPROVAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-09T21:40:46-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/43308988-bfd1-4b63-81cb-9c3fc234fefd"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "1554a5d3-9578-4591-b58d-27e4b9fb6b1c",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.0.2",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "AFTER_APPROVAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-08T07:56:56-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/1554a5d3-9578-4591-b58d-27e4b9fb6b1c"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.0.1",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "AFTER_APPROVAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-08-01T08:02:51-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/a0bc0269-a2d0-45b0-a8c6-1dc06a7901ba"
+    }
+  },
+  {
+    "type": "appStoreVersions",
+    "id": "443cc5fc-e184-4db3-b57c-b4a1a20bfe4f",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.0",
+      "appStoreState": "READY_FOR_SALE",
+      "appVersionState": "READY_FOR_DISTRIBUTION",
+      "copyright": "© 2026 Sol Kim",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": null,
+      "downloadable": true,
+      "createdDate": "2026-07-25T18:26:38-07:00"
+    },
+    "relationships": {
+      "appStoreVersionLocalizations": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/appStoreVersionLocalizations",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/appStoreVersionLocalizations"
+        }
+      },
+      "build": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/build",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/build"
+        }
+      },
+      "appStoreVersionPhasedRelease": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/appStoreVersionPhasedRelease",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/appStoreVersionPhasedRelease"
+        }
+      },
+      "gameCenterAppVersion": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/gameCenterAppVersion",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/gameCenterAppVersion"
+        }
+      },
+      "routingAppCoverage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/routingAppCoverage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/routingAppCoverage"
+        }
+      },
+      "appStoreReviewDetail": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/appStoreReviewDetail",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/appStoreReviewDetail"
+        }
+      },
+      "appStoreVersionSubmission": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/appStoreVersionSubmission",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/appStoreVersionSubmission"
+        }
+      },
+      "appClipDefaultExperience": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/appClipDefaultExperience",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/appClipDefaultExperience"
+        }
+      },
+      "appStoreVersionExperiments": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/appStoreVersionExperiments",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/appStoreVersionExperiments"
+        }
+      },
+      "appStoreVersionExperimentsV2": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/appStoreVersionExperimentsV2",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/appStoreVersionExperimentsV2"
+        }
+      },
+      "customerReviews": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/customerReviews",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/customerReviews"
+        }
+      },
+      "alternativeDistributionPackage": {
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/relationships/alternativeDistributionPackage",
+          "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f/alternativeDistributionPackage"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersions/443cc5fc-e184-4db3-b57c-b4a1a20bfe4f"
+    }
+  }
+]

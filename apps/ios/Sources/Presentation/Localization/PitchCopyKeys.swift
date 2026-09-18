@@ -8,6 +8,9 @@ import BaseballIOSDomain
 /// lookup keys or English fallbacks.
 enum PitchUICopyKey: String, CaseIterable, Sendable {
     case abort = "pitch.action.abort"
+    /// 판정 도장. 심판이 부르는 두 판정만 찍는다(Phase 4 장식).
+    case callStampStrike = "pitch.call-stamp.strike"
+    case callStampBall = "pitch.call-stamp.ball"
     case abortPracticeTitle = "pitch.abort.practice.title"
     case abortGameTitle = "pitch.abort.game.title"
     case abortPracticeConfirm = "pitch.abort.practice.confirm"
@@ -79,6 +82,7 @@ enum PitchUICopyKey: String, CaseIterable, Sendable {
     case feedbackTriple = "pitch.feedback.outcome.triple"
     case feedbackHomeRun = "pitch.feedback.outcome.home-run"
     case feedbackHitByPitch = "pitch.feedback.outcome.hit-by-pitch"
+    case feedbackReachedOnError = "pitch.feedback.outcome.reached-on-error"
 
     case abilityPowerMoment = "pitch.ability.power.moment"
     case abilityCommandMoment = "pitch.ability.command.moment"

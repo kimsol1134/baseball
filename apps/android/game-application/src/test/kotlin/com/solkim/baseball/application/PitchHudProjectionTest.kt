@@ -19,10 +19,24 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
 class PitchHudProjectionTest {
+    @Test fun manualEffortIsNeverOverwrittenByMatchingCatcherPitchAndZone() = runBlocking {
+        val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("manual-effort"))
+        val controller = PitchSessionController(store)
+        controller.enterSetup()
+        controller.startHighSchool("민서준")
+        controller.beginTutorial()
+        controller.reserveTutorialPitch()
+        val primary = PitchHudProjection.model(store.current).preparation.primaryRecommendation.call
+        val call = PitchHudProjection.resolveCall(store.current, PitchHudSelection.Manual(
+            primary.pitchType, primary.zone, ZoneIntent.STRIKE, PitchIntensity.MAX_EFFORT))
+        assertEquals(PitchIntensity.MAX_EFFORT, call.intensity)
+        assertEquals(ZoneIntent.STRIKE, call.zoneIntent)
+    }
+
     @Test
     fun tutorialHudProjectsIosOrderCopyAndSliderDefault() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("hud-tutorial-ios"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -30,6 +44,7 @@ class PitchHudProjectionTest {
         assertFalse(store.current.settings.autoReleaseEnabled)
         val hud = PitchHudProjection.model(store.current)
         assertEquals("첫 불펜", hud.scenarioTitle)
+        assertEquals(0, PitchHudProjection.fatigue(store.current))
         assertTrue(hud.scenarioDetail.contains("연습"))
         assertTrue(hud.scenarioDetail.contains("타석"))
         assertEquals("포심", PitchHudProjection.koreanLabel(PitchKind.FOUR_SEAM))
@@ -45,7 +60,7 @@ class PitchHudProjectionTest {
         assertEquals("길게 눌러 와인드업", hud.holdToReleasePrompt)
         assertFalse(hud.autoReleaseEnabled)
         assertEquals("코치", hud.coachLabel)
-        assertTrue(requireNotNull(hud.coachTip).startsWith("①"))
+        assertTrue(requireNotNull(hud.coachTip).startsWith("길게 눌러"))
         assertEquals("타자가 내 공을 읽는 정도", hud.adaptationTitle)
         assertTrue(hud.catcherConfidenceLabel.contains("사인 확신"))
         assertTrue(hud.catcherTrustLabel.contains("포수 호흡"))
@@ -59,7 +74,7 @@ class PitchHudProjectionTest {
     @Test
     fun officialHudProjectsMatchupLabelsAndPrimaryExplanation() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("hud-official-ios"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -69,7 +84,8 @@ class PitchHudProjectionTest {
         controller.reserveImportantGame()
         assertFalse(store.current.settings.autoReleaseEnabled)
         val hud = PitchHudProjection.model(store.current)
-        assertEquals("마운드 승부처", hud.scenarioTitle)
+        assertEquals("중간계투 등판", hud.scenarioTitle)
+        assertEquals(com.solkim.baseball.core.pitch.OutingRole.RELIEF, OutingPresentation.assignment(store.current)?.role)
         assertEquals("중요도", hud.stakesLabel)
         assertEquals("공 맞히기", hud.contactLabel)
         assertEquals("볼 고르기", hud.disciplineLabel)
@@ -127,7 +143,7 @@ class PitchHudProjectionTest {
     @Test
     fun primaryAndAlternativeRecommendationsRoundTripIntoSubmitCall() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("hud-signs"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -176,7 +192,7 @@ class PitchHudProjectionTest {
     @Test
     fun highSchoolMatchupUsesRunBatterSnapshotNotFallback() = runBlocking {
         val store = KotlinGameStore.fromShadowFixture(GameAggregateState.initial("hud-batter"))
-        val controller = Phase7VerticalController(store)
+        val controller = PitchSessionController(store)
         controller.enterSetup()
         controller.startHighSchool("민서준")
         controller.beginTutorial()
@@ -196,7 +212,7 @@ class PitchHudProjectionTest {
         Unit
     }
 
-    private suspend fun reachImportantGame(controller: Phase7VerticalController, store: KotlinGameStore) {
+    private suspend fun reachImportantGame(controller: PitchSessionController, store: KotlinGameStore) {
         var guard = 0
         while (store.current.highSchool?.run?.phase != com.solkim.baseball.core.highschool.HighSchoolPhase.IMPORTANT_GAME && guard++ < 120) {
             when (store.current.highSchool?.run?.phase) {

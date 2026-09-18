@@ -57,8 +57,27 @@ public enum PitchReleaseWindow {
     public static let stableReleaseThreshold = 820
     public static let baselineCommand = 35
 
+    /// Shared by the orange band, its live highlight and manual release scoring.
+    public static let perfectWidth = Double(1_000 - PitchDelivery.perfectReleaseThreshold) / 1_000
+    public static func containsPerfect(meter: Double) -> Bool {
+        meter.isFinite && meter >= 0.5 - perfectWidth / 2 && meter <= 0.5 + perfectWidth / 2
+    }
+
+    /// More of the bounded margin arrives early; all anchors remain within the original 18–24% cap.
+    public static let milestones = [40, 50, 65, 80]
+    public static func nextMilestone(command: Int) -> Int? { milestones.first { $0 > command } }
+    public static func crossesMilestone(before: Int, after: Int) -> Bool {
+        after > before && milestones.contains { before < $0 && after >= $0 }
+    }
+    private static let anchors = [(35, 180), (40, 195), (50, 210), (65, 225), (80, 240)]
     public static func widthPermille(command: Int) -> Int {
-        baseWidthPermille + (min(80, max(baselineCommand, command)) - baselineCommand) * 60 / 45
+        let value = min(80, max(baselineCommand, command))
+        for index in 1..<anchors.count {
+            let (upper, end) = anchors[index]
+            let (lower, start) = anchors[index - 1]
+            if value <= upper { return start + (value - lower) * (end - start) / (upper - lower) }
+        }
+        return maximumWidthPermille
     }
 
     public static func width(command: Int) -> Double { Double(widthPermille(command: command)) / 1_000 }
@@ -76,10 +95,51 @@ public enum PitchReleaseWindow {
 
     public static func rawAccuracy(meter: Double) -> Int {
         guard meter.isFinite else { return 0 }
-        return min(1_000, max(0, Int(((1 - min(1, abs(meter - 0.5) * 2)) * 1_000).rounded())))
+        let rounded = min(1_000, max(0, Int(((1 - min(1, abs(meter - 0.5) * 2)) * 1_000).rounded())))
+        // Integer rounding must never turn a visible miss into a perfect release.
+        return containsPerfect(meter: meter) ? rounded : min(PitchDelivery.perfectReleaseThreshold - 1, rounded)
     }
 
     public static func contains(meter: Double, command: Int) -> Bool {
         calibratedAccuracy(raw: rawAccuracy(meter: meter), command: command) >= stableReleaseThreshold
+    }
+
+    /// 바늘이 릴리스 지점 부근에서 느려지는 폭(미터 단위). 금색 창을 덮을 만큼 넓고,
+    /// 초록 창의 타이밍은 그대로 둘 만큼 좁다.
+    public static let releaseDwellSpan = 0.09
+
+    /// 정중앙에 머무는 정도. 제구가 오를수록 더 오래 머문다 — 가장 맞히기 어려운 것이
+    /// 성장으로 실제로 쉬워지는 자리다.
+    public static func releaseDwell(command: Int) -> Double {
+        let value = min(80, max(baselineCommand, command))
+        return 0.60 + Double(value - baselineCommand) / 45.0 * 0.18
+    }
+
+    /// 지금부터 바늘이 다음번 정중앙에 앉기까지 남은 시간(초).
+    ///
+    /// 감속은 가운데를 가운데에 그대로 두므로 통과 시각은 선형 왕복과 같다. 예고 신호를
+    /// 정확한 시각에 놓을 수 있는 이유다.
+    public static func secondsToRelease(elapsed: Double, sweepSeconds: Double) -> Double {
+        guard elapsed.isFinite, elapsed >= 0, sweepSeconds.isFinite, sweepSeconds > 0 else { return 0 }
+        let legs = elapsed / sweepSeconds
+        let next = (legs - 0.5).rounded(.down) + 1.5
+        return max(0, next * sweepSeconds - elapsed)
+    }
+
+    /// 경과 시간의 바늘 위치(0~1).
+    ///
+    /// 금색 창은 미터의 2.5%라 선형 왕복으로는 25ms 만에 지나갔다 — 가장 보상이 큰 조작이
+    /// 사실상 운이었다. 주기와 초록 창의 시간은 그대로 두고, 릴리스 지점 부근에서만
+    /// 바늘을 늦춘다.
+    public static func meterPosition(elapsed: Double, sweepSeconds: Double, command: Int) -> Double {
+        guard elapsed.isFinite, elapsed >= 0, sweepSeconds.isFinite, sweepSeconds > 0 else { return 0 }
+        let sweep = elapsed / sweepSeconds
+        let whole = sweep.rounded(.down)
+        let fraction = sweep - whole
+        let linear = Int(whole) % 2 == 0 ? fraction : 1 - fraction
+        let offset = 2 * linear - 1
+        let ratio = offset / releaseDwellSpan
+        let eased = offset * (1 - releaseDwell(command: command) * exp(-ratio * ratio))
+        return (eased + 1) / 2
     }
 }

@@ -1,0 +1,32 @@
+{
+  "ko-KR": [
+    "구종과 코스를 고르고 슬라이더로 타이밍을 맞추는 직접 투구",
+    "훈련 종류와 강도를 고르는 투수 성장 화면",
+    "다음 선수에게 이어 줄 능력을 선택하는 유산 화면",
+    "포수의 조언과 선택 효과를 확인하는 대화",
+    "고교 3년의 경기 기록과 능력 성장을 보여 주는 드래프트 결과",
+    "프로 첫 계약의 기간·연봉·역할을 살펴보는 화면",
+    "1군 승격 조건과 주간 계획을 확인하는 프로 시즌",
+    "선수의 시즌 기록을 돌아보는 앨범"
+  ],
+  "en-US": [
+    "Choose pitch and location, then time the release with the pitching control.",
+    "Choose a training focus and intensity to develop your pitcher.",
+    "Choose one legacy ability for your next baseball life.",
+    "Consider catcher advice and review each choice’s effects.",
+    "Review three high-school years of stats and growth at the draft.",
+    "Review the term, salary and role in your first pro contract.",
+    "Plan your pro week and review first-team call-up requirements.",
+    "Revisit your pitcher’s season stats in the player album."
+  ],
+  "ja-JP": [
+    "球種とコースを選び、タイミングを合わせて投げる操作画面。",
+    "練習内容と強度を選んで投手を育てる画面。",
+    "次の野球人生へ受け継ぐ能力を選ぶ画面。",
+    "捕手の助言と選択の効果を確認する会話画面。",
+    "高校3年間の記録と成長を振り返るドラフト結果。",
+    "最初のプロ契約の期間・年俸・役割を確認する画面。",
+    "一軍昇格の条件を確認し、今週の計画を選ぶ画面。",
+    "選手アルバムでシーズンの記録を振り返る画面。"
+  ]
+}

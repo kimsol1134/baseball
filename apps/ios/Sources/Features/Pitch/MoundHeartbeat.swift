@@ -255,7 +255,9 @@ enum MoundTensionModel {
 }
 
 enum MoundHeartbeatSettings {
-    static func meterJitterEnabled(hapticsEnabled: Bool) -> Bool { hapticsEnabled }
+    /// 마운드 흔들림은 판정에 영향을 준다. 진동 설정에 묶어 두면 진동을 끈 사람만 판정이
+    /// 쉬워진다 — 접근성 설정이 난이도 설정이 되면 안 된다. 모션 줄이기는 크기만 줄인다.
+    static var meterJitterEnabled: Bool { true }
     static func heartbeatAudioEnabled(soundEnabled: Bool) -> Bool { soundEnabled }
 }
 
@@ -367,13 +369,16 @@ enum MoundMeterDisturbance {
         at time: Double,
         effectiveTension: Double,
         beatTimes: [Double],
-        hapticsEnabled: Bool,
         reduceMotion: Bool,
+        commandRating: Int = PitchReleaseWindow.baselineCommand,
         seed: UInt64
     ) -> Double {
-        guard MoundHeartbeatSettings.meterJitterEnabled(hapticsEnabled: hapticsEnabled) else { return 0 }
+        guard MoundHeartbeatSettings.meterJitterEnabled else { return 0 }
 
-        let cap = MoundTensionModel.jitterCap(for: effectiveTension)
+        // 흔들림이 제구 창의 4분의 1을 넘으면, 손끝이 정확히 가운데였던 퍼펙트를 흔들림이
+        // 빼앗는다. 실력으로 얻은 것을 연출이 지우지 않게 상한을 창에 묶는다.
+        let windowCap = PitchReleaseWindow.width(command: commandRating) / 4
+        let cap = min(MoundTensionModel.jitterCap(for: effectiveTension), windowCap)
         guard cap > 0 else { return 0 }
 
         let phase = MoundTensionModel.deterministicUnit(seed ^ 0xA24B_AED4_963E_E407) * 2 * .pi
@@ -397,16 +402,16 @@ enum MoundMeterDisturbance {
         at time: Double,
         effectiveTension: Double,
         beatTimes: [Double],
-        hapticsEnabled: Bool,
         reduceMotion: Bool,
+        commandRating: Int = PitchReleaseWindow.baselineCommand,
         seed: UInt64
     ) -> Double {
         min(1, max(0, base + offset(
             at: time,
             effectiveTension: effectiveTension,
             beatTimes: beatTimes,
-            hapticsEnabled: hapticsEnabled,
             reduceMotion: reduceMotion,
+            commandRating: commandRating,
             seed: seed
         )))
     }

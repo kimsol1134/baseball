@@ -1,6 +1,75 @@
 {
   "sourceLanguage": "ko",
   "strings": {
+    "career.recovery.missing-pro.action": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "유산 선택으로 이어가기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue to legacy selection"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "継承選択へ進む"
+          }
+        }
+      }
+    },
+    "career.recovery.missing-pro.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프로 진행 데이터를 찾지 못했습니다. 지금까지 모은 유산과 보상은 유지되며, 고교 기록에서 유산을 골라 새로운 선수를 시작할 수 있어요."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your pro career could not be found. Keep your accumulated legacies and rewards, choose a legacy from your saved high-school career, and start a new player. This does not restore missing pro records."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロの進行記録が見つかりません。これまでの継承と報酬を保ったまま、残っている高校の記録から継承を選び、新しい選手を始められます。失われたプロの記録は復元されません。"
+          }
+        }
+      }
+    },
+    "career.recovery.missing-pro.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "남은 기록으로 이어가기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with your saved records"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "残っている記録で続ける"
+          }
+        }
+      }
+    },
     "accessibility.stat.line": {
       "localizations": {
         "en": {
@@ -386,7 +455,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この覚醒を選択してください"
+            "value": "この覚醒を選ぶ"
           }
         },
         "ko": {
@@ -408,7 +477,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "もう一度選択してください"
+            "value": "選び直す"
           }
         },
         "ko": {
@@ -826,7 +895,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "スキルを 1 つ取得して、そのブランチ内の次のノードのロックを解除します。このピックの後も %lld の覚醒が残ります。1 つのブランチを完了するか、ピックを複数に分散してください。"
+            "value": "スキルを1つ取得して、そのブランチ内の次のノードのロックを解除します。このピックの後も %lld の覚醒が残ります。1つのブランチを完了するか、ピックを複数に分散してください。"
           }
         },
         "ko": {
@@ -848,7 +917,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "選んだ枝の次の節が開く · 残り覚醒 %lld 回"
+            "value": "選んだ枝の次の節が開く · 残り覚醒%lld回"
           }
         },
         "ko": {
@@ -936,7 +1005,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "あなたはまだ自分自身を証明する試合を持っていません - ノードは順番にロック解除されます。強力な登板により、次の覚醒時に 1 段階のスキップがロック解除されます。"
+            "value": "あなたはまだ自分自身を証明する試合を持っていません - ノードは順番にロック解除されます。強力な登板により、次の覚醒時に1段階のスキップがロック解除されます。"
           }
         },
         "ko": {
@@ -980,7 +1049,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "まだスキップを獲得していません。今のところ、ノードは順番にロック解除されます。強力なアウト（無得点フレームと三振ショー）と才能の躍進により、次の覚醒で 1 段階のスキップのロックを解除できます。"
+            "value": "まだスキップを獲得していません。今のところ、ノードは順番にロック解除されます。強力なアウト（無得点フレームと三振ショー）と才能の躍進により、次の覚醒で1段階のスキップのロックを解除できます。"
           }
         },
         "ko": {
@@ -1629,6 +1698,28 @@
         }
       }
     },
+    "chapter.review.claim-game": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take the regular start"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公式戦に登板"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정규 경기 등판"
+          }
+        }
+      }
+    },
     "chapter.review.continue": {
       "localizations": {
         "en": {
@@ -1684,7 +1775,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 回トレーニングしましたが、成長はまだ数値に現れていません。"
+            "value": "%lld回トレーニングしましたが、成長はまだ数値に現れていません。"
           }
         },
         "ko": {
@@ -1706,7 +1797,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "これは、%lld トレーニング セッションを反映しています。"
+            "value": "これは、%lld トレーニングセッションを反映しています。"
           }
         },
         "ko": {
@@ -1964,19 +2055,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This player scored %lld. Beat that mark with the next one."
+            "value": "This life scored %lld. Challenge your own record in the next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今回の選手は %lld 点。次の選手でこの記録を超えよう。"
+            "value": "今回の人生は%lld点。次の人生で自分の記録に再挑戦しましょう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이번 선수는 %lld점. 다음 선수로 이 기록을 넘어 보세요."
+            "value": "이번 선수는 %lld점. 다음 회차에서 내 최고 기록에 다시 도전해 보세요!"
           }
         }
       }
@@ -1998,7 +2089,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "다음 과녁"
+            "value": "다음 목표"
           }
         }
       }
@@ -2426,19 +2517,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Undrafted. But these three years become the next player's foundation."
+            "value": "Undrafted. The feel of these three years stays with you in the next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ドラフト外。しかし、この３年間が次の選手の基礎となる。"
+            "value": "ドラフト外。この3年間の感覚は次の人生に残ります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "드래프트 미지명. 하지만 이 3년은 새 선수의 밑천이 됩니다."
+            "value": "드래프트 미지명. 하지만 3년 동안 쌓은 감각은 다음 선수에게 남습니다."
           }
         }
       }
@@ -2520,7 +2611,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "もう一度選択してください"
+            "value": "選び直す"
           }
         },
         "ko": {
@@ -2734,19 +2825,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Three years end here. Choose what to leave the next player."
+            "value": "These three years are over. Choose the feel you’ll remember in your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "3年間はここで終わり。次の選手に残すものを選んでください。"
+            "value": "今回の3年間は終わり。次の人生でも覚えていたい感覚を選びましょう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "3년은 여기서 끝. 새 선수에게 남길 것을 고르세요."
+            "value": "이번 3년은 끝. 다음 회차에도 이어갈 특별한 감각을 골라보세요."
           }
         }
       }
@@ -2800,19 +2891,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your name was not called by the final round. Choose what this player leaves for the next one."
+            "value": "Your name wasn’t called. Choose the feel you’ll carry into your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "最終ラウンドまで名前は呼ばれませんでした。この選手が次の選手へ残すものを選んでください。"
+            "value": "最後まで名前は呼ばれませんでした。次の人生へつなぐ感覚を選びましょう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
+            "value": "마지막까지 이름이 불리지 않았습니다. 다음 선수에게 이어줄 감각을 고르세요."
           }
         }
       }
@@ -3218,19 +3309,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Skip the pro path and start a new player. Choose what to leave behind."
+            "value": "Give up this life’s pro path and be reborn. Choose the memories to carry forward."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プロを諦めて新しい選手で始めます。残す記憶を選んでください。"
+            "value": "この人生のプロ入りを諦めて生まれ変わります。引き継ぐ記憶を選びましょう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "프로를 포기하고 새 선수로 시작합니다. 남길 기억을 고르세요."
+            "value": "이번 도전을 마무리하고 새롭게 시작합니다. 다음으로 이어갈 기억을 고르세요."
           }
         }
       }
@@ -3328,19 +3419,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "One of these will pass to the next player. The choice comes after the pro story."
+            "value": "You’ll remember one of these in your next life. Choose after your pro career."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このうち1つが次の選手に受け継がれます。選ぶのはプロ編を終えた後です。"
+            "value": "このうち1つを次の人生でも覚えています。プロでの物語を終えてから選びます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 중 하나가 다음 선수에게 이어집니다. 선택은 프로 이야기를 마친 뒤입니다."
+            "value": "이 중 하나를 다음 회차로 이어받습니다. 프로 이야기를 마친 뒤 고릅니다."
           }
         }
       }
@@ -3378,7 +3469,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "署名のレガシーをロックインする"
+            "value": "代表遺産を確定する"
           }
         },
         "ko": {
@@ -3394,19 +3485,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The high-school years close for good. Only the chosen legacy passes to the next player."
+            "value": "The high-school years end permanently. Carry one chosen legacy into your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "高校3年間が閉じ、元に戻せません。選んだ遺産1つだけが次の選手に受け継がれます。"
+            "value": "高校3年間が終わり、元には戻せません。選んだ遺産1つを次の人生へつなぎます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "고교 3년이 닫히고 되돌릴 수 없습니다. 고른 유산 하나만 새 선수에게 이어집니다."
+            "value": "고교 3년이 끝나며 되돌릴 수 없습니다. 선택한 대표 유산 하나를 다음 선수에게 이어줍니다."
           }
         }
       }
@@ -3416,19 +3507,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pass %@ to the next player?"
+            "value": "Remember %@ in your next life?"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ を次のプレイヤーに渡しますか?"
+            "value": "%@の感覚を次の人生でも覚えておきますか？"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ 새 선수에게 남길까요?"
+            "value": "%@의 감각을 다음 회차에도 이어갈까요?"
           }
         }
       }
@@ -3708,7 +3799,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ブレーキング"
+            "value": "変化球"
           }
         },
         "ko": {
@@ -3890,7 +3981,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "방어율"
+            "value": "RA9"
           }
         }
       }
@@ -3956,7 +4047,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "숙적 %@"
+            "value": "라이벌 %@"
           }
         }
       }
@@ -4126,7 +4217,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "選手カードを共有する"
+            "value": "選手カードを共有"
           }
         },
         "ko": {
@@ -4214,7 +4305,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "シグネチャーレガシー · %@"
+            "value": "代表遺産 · %@"
           }
         },
         "ko": {
@@ -4236,7 +4327,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "シグネチャーレガシー %@"
+            "value": "代表遺産 %@"
           }
         },
         "ko": {
@@ -4390,7 +4481,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "思い出を閉じ込めて"
+            "value": "思い出を確定する"
           }
         },
         "ko": {
@@ -4406,19 +4497,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This player began before the feature update. Only the memories chosen under those rules pass forward."
+            "value": "Only the memories chosen in this life carry into the next."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "アップデート前に始めた選手です。当時のルールで選んだ記憶だけが次の選手に受け継がれます。"
+            "value": "この人生で選んだ記憶だけが次の人生に受け継がれます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "기능 업데이트 전에 시작한 선수입니다. 당시 규칙대로 고른 기억만 새 선수에게 이어집니다."
+            "value": "이번에 고른 기억만 다음 회차로 이어집니다."
           }
         }
       }
@@ -4494,19 +4585,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Memories for the Next Player · %lld/%lld"
+            "value": "Memories for my next life · %lld/%lld"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次のプレイヤーへの思い出 · %lld/%lld"
+            "value": "次の人生でも覚えていたいこと・%lld/%lld"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "새 선수에게 남길 기억 · %lld/%lld"
+            "value": "다음 선수에게 전할 기억 · %lld/%lld"
           }
         }
       }
@@ -4538,19 +4629,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "After the pro career, review the high-school years and career line, then choose a legacy for the next player."
+            "value": "After your pro career, look back on this life and choose the legacy to carry into the next."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プロ引退後、高校時代と通算成績を振り返り、次の選手に残す遺産を選びます。"
+            "value": "プロでの人生を終えたら今回の人生を振り返り、次へつなぐ遺産を選びます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "프로 커리어를 마치면 고교 시절과 통산 기록을 돌아보고, 다음 선수에게 남길 유산을 고릅니다."
+            "value": "프로 커리어를 마치면 지금까지의 야구 인생을 돌아보고, 다음 선수에게 물려줄 유산을 고릅니다."
           }
         }
       }
@@ -4786,7 +4877,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 覚醒 · %lld トレーニング セッション"
+            "value": "%lld 覚醒 · %lld トレーニングセッション"
           }
         },
         "ko": {
@@ -5116,7 +5207,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 試合 · %@ · %lld K %lld BB · %lld失点"
+            "value": "%lld試合 · %@ · %lld K %lld BB · %lld失点"
           }
         },
         "ko": {
@@ -5220,19 +5311,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "One choice passes directly to the next player. The others stay discovered so they can return in a later run."
+            "value": "Carry the chosen feel into your next life. Other discoveries remain available for later reincarnations."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 つの選択は次のプレイヤーに直接渡されます。他のものは検出されたままなので、後の実行で戻ることができます。"
+            "value": "選んだ感覚を次の人生へつなぎます。他の発見も残り、以後の転生で選べます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "고른 하나는 새 선수에게 바로 이어지고, 나머지도 발견 목록에 남아 다음에 다시 고를 수 있습니다."
+            "value": "선택한 감각은 다음 회차로 이어집니다. 나머지도 도감에 남아 이후 도전에서 다시 고를 수 있어요."
           }
         }
       }
@@ -5248,7 +5339,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このプレーヤーのシグネチャー レガシー · %lld/1"
+            "value": "このプレーヤーの代表遺産 · %lld/1"
           }
         },
         "ko": {
@@ -5380,7 +5471,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "3 年の風 · %@"
+            "value": "3年の風 · %@"
           }
         },
         "ko": {
@@ -5782,7 +5873,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "배터리와 벤치의 말에 귀 기울이세요."
+            "value": "포수와 감독님의 조언에 귀를 기울여 보세요."
           }
         }
       }
@@ -6618,7 +6709,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "실점과 FIP가 비슷합니다. 성적이 내용 그대로입니다."
+            "value": "평균 실점과 순수 실력 지표(FIP)가 비슷해요. 현재 성적이 실력 그대로 잘 나타나고 있어요."
           }
         }
       }
@@ -6640,7 +6731,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "실점이 FIP보다 낮습니다. 수비와 운이 도왔으니, 내용이 그대로면 성적은 내려갈 수 있습니다."
+            "value": "실제 실점이 순수 실력(FIP)보다 적어요. 동료들의 호수비와 운의 도움을 받았으니 방심하지 마세요!"
           }
         }
       }
@@ -6662,7 +6753,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "실점이 FIP보다 높습니다. 수비와 운이 불리했으니, 같은 내용이면 성적은 좋아질 여지가 있습니다."
+            "value": "실제 실점이 순수 실력(FIP)보다 많아요. 수비 실수나 불운이 겹쳤을 뿐, 공 자체는 좋으니 앞으로 성적이 더 오를 거예요!"
           }
         }
       }
@@ -6684,7 +6775,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "표본이 아직 적습니다. 10이닝을 넘기면 지표가 의미를 갖습니다."
+            "value": "던진 이닝이 아직 적어요. 10이닝 이상 던져야 실력을 제대로 나타내는 기록이 돼요."
           }
         }
       }
@@ -6694,19 +6785,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The game tracks runs, not earned runs, so it uses RA9 instead of ERA. A quality start is 6+ innings with 3 or fewer runs allowed."
+            "value": "RA9 counts all runs allowed, including unearned runs. Here, a quality start is 6+ innings with 3 or fewer runs allowed."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "試合では自責点ではなく得点が記録されるため、ERA ではなく RA9 が使用されます。クォリティスタートとは、6イニング以上、許される失点が3以下のことを指します。"
+            "value": "RA9は自責点かどうかにかかわらず、すべての失点を数えます。このゲームのクオリティスタートは6イニング以上・3失点以下です。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "자책점을 따로 세지 않아 평균자책점 대신 9이닝당 실점을 씁니다. 퀄리티스타트도 6이닝 3실점 이하 기준입니다."
+            "value": "평균 실점(RA9)은 경기당 내준 모든 실점을 계산해요. 퀄리티스타트는 6이닝 이상 던지고 3점 이하로 막았을 때 인정돼요."
           }
         }
       }
@@ -7140,7 +7231,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "1人の最多奪三振 %1$lld（%2$lld 人目の選手）— 記録は破るためにある。"
+            "value": "1人の最多奪三振 %1$lld（%2$lld人目の選手）— 記録は破るためにある。"
           }
         },
         "ko": {
@@ -7316,7 +7407,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ニックネーム コレクション %1$lld/%2$lld—世界中で付けられるすべての名前があなたのものになります。"
+            "value": "ニックネームコレクション %1$lld/%2$lld—世界中で付けられるすべての名前があなたのものになります。"
           }
         },
         "ko": {
@@ -7338,7 +7429,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ニックネーム コレクション %1$lld/%2$lld — 獲得すべき名前がまだ残っています。"
+            "value": "ニックネームコレクション %1$lld/%2$lld — 獲得すべき名前がまだ残っています。"
           }
         },
         "ko": {
@@ -7492,7 +7583,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ · レガシーポイント報酬 +%2$lld%%"
+            "value": "%1$@ · 継承ポイント報酬 +%2$lld%%"
           }
         },
         "ko": {
@@ -7580,7 +7671,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld 登板 · %2$lld K · %3$lld BB · %4$lld 失点 · レガシーポイント +%5$lld"
+            "value": "%1$lld 登板 · %2$lld K · %3$lld BB · %4$lld 失点 · 継承ポイント +%5$lld"
           }
         },
         "ko": {
@@ -7652,7 +7743,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "숙적 %@ · 신뢰 %lld"
+            "value": "라이벌 %@ · 믿음 %lld"
           }
         }
       }
@@ -7756,7 +7847,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "シグネチャーレガシー · %@"
+            "value": "代表遺産 · %@"
           }
         },
         "ko": {
@@ -7822,7 +7913,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "レガシーポイント"
+            "value": "継承ポイント"
           }
         },
         "ko": {
@@ -8020,7 +8111,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "過去の選手全員。 %1$lld ドラフト、%2$lld キャリア三振、%3$lld 最高評価、%4$lld 獲得レガシーポイント。"
+            "value": "過去の選手全員。 %1$lld ドラフト、%2$lld キャリア三振、%3$lld 最高評価、%4$lld 獲得継承ポイント。"
           }
         },
         "ko": {
@@ -8064,7 +8155,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "3 年の風 · %@"
+            "value": "3年の風 · %@"
           }
         },
         "ko": {
@@ -8460,13 +8551,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "レガシーポイント、メモリー、アーカイブを消去"
+            "value": "継承ポイント、メモリー、アーカイブを消去"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "계승 포인트·기억·아카이브를 모두 지운다"
+            "value": "계승 포인트·기억·기록 보관함을 모두 지운다"
           }
         }
       }
@@ -8686,7 +8777,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "현재 환생 기록을 읽지 못해 직전 정상 백업으로 복구했습니다."
+            "value": "기록 파일을 읽지 못해 가장 최근 정상 백업으로 안전하게 복구했어요."
           }
         }
       }
@@ -8752,7 +8843,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud 환생 기록을 읽지 못해 이 기기의 진행을 유지합니다."
+            "value": "iCloud 동기화 기록을 읽지 못해 현재 기기의 진행 상태를 유지합니다."
           }
         }
       }
@@ -8938,19 +9029,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You leave %lld memories to the next player."
+            "value": "Leave %lld memories for your next self."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld の思い出を次のプレイヤーに残します。"
+            "value": "%lld枚の記憶を次の人生の自分へ残します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "기억 %lld장을 새 선수에게 남깁니다."
+            "value": "기억 %lld장을 다음 회차의 나에게 남깁니다."
           }
         }
       }
@@ -9010,7 +9101,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "目標設定: %1$@。完了すると +%2$lld%% レガシー ポイントを獲得できます。"
+            "value": "目標設定: %1$@。完了すると +%2$lld%% 継承ポイントを獲得できます。"
           }
         },
         "ko": {
@@ -9032,7 +9123,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "高校時代とプロとしてのキャリアから、3 つの特徴的な遺産が生まれました。"
+            "value": "高校時代とプロとしてのキャリアから、3つの特徴的な遺産が生まれました。"
           }
         },
         "ko": {
@@ -9098,7 +9189,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 思い出と1つのシグネチャーレガシー"
+            "value": "%lld 思い出と1つの代表遺産"
           }
         },
         "ko": {
@@ -9142,7 +9233,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 つの署名の遺産"
+            "value": "1つの代表遺産"
           }
         },
         "ko": {
@@ -9268,19 +9359,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You leave ‘%@’ to the next player."
+            "value": "Carry the feel of %@ into your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@」を次のプレイヤーに任せます。"
+            "value": "%@の感覚を次の人生へつなぎます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@을 새 선수에게 남깁니다."
+            "value": "%@의 감각을 다음 선수에게 이어줍니다."
           }
         }
       }
@@ -9522,7 +9613,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "배터리"
+            "value": "배터리 (투수·포수 호흡)"
           }
         }
       }
@@ -9736,7 +9827,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ 目標、%2$@、%3$@、レガシーポイント報酬 +%4$lld パーセント"
+            "value": "%1$@ 目標、%2$@、%3$@、継承ポイント報酬 +%4$lld パーセント"
           }
         },
         "ko": {
@@ -9758,7 +9849,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "最後のプレイヤーから引き継がれました。 %1$@ 目標、%2$@、%3$@、レガシーポイント報酬 +%4$lld パーセント"
+            "value": "最後のプレイヤーから引き継がれました。 %1$@ 目標、%2$@、%3$@、継承ポイント報酬 +%4$lld パーセント"
           }
         },
         "ko": {
@@ -10104,19 +10195,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pick one. We check it after three years. Succeed and the next player starts stronger."
+            "value": "Choose one to revisit after three years. Achieve it and start your next life stronger."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "1つ選ぶと3年後に振り返ります。達成すれば次の選手の出発が強くなります。"
+            "value": "1つ選び、3年後に振り返ります。達成すれば次の人生をより強く始められます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "하나 고르면 3년 뒤 돌아봅니다. 이루면 새 선수 출발이 강해집니다."
+            "value": "하나를 고르면 3년 뒤 결과를 확인해요. 달성하면 다음 회차를 더 강하게 시작할 수 있어요."
           }
         }
       }
@@ -10176,7 +10267,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "レガシーポイント +%lld%%"
+            "value": "継承ポイント +%lld%%"
           }
         },
         "ko": {
@@ -10346,19 +10437,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "To the new pitcher carrying the same name"
+            "value": "To my reborn self"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "同名新人投手へ"
+            "value": "生まれ変わった自分へ"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "같은 이름을 이어받은 새 선수에게"
+            "value": "다시 태어난 나에게"
           }
         }
       }
@@ -10374,7 +10465,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "引き継がれるシグネチャーレガシー · %@"
+            "value": "引き継がれる代表遺産 · %@"
           }
         },
         "ko": {
@@ -10522,19 +10613,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Carry the Legacy to a New Player"
+            "value": "Carry my legacy into the next life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "新しいプレイヤーにレガシーを引き継ぐ"
+            "value": "遺産を胸に次の人生へ"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "유산을 안고 새 선수로"
+            "value": "유산을 안고 다음 회차로"
           }
         }
       }
@@ -10572,7 +10663,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "目標完了—%1$@ · レガシーポイント +%2$lld%%"
+            "value": "目標完了—%1$@ · 継承ポイント +%2$lld%%"
           }
         },
         "ko": {
@@ -10632,19 +10723,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ goal, %2$@, Legacy Point reward +%3$lld percent. Save as the next player's goal."
+            "value": "%1$@ goal, %2$@, inheritance reward +%3$lld percent. Save for your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ 目標、%2$@、レガシー ポイント報酬 +%3$lld パーセント。次のプレイヤーのゴールとして保存します。"
+            "value": "%1$@の目標、%2$@、継承ポイント報酬%3$lldパーセント追加。次の人生の目標として保存。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ 목표, %2$@, 보상 계승 포인트 %3$lld퍼센트 추가, 새 선수 목표로 저장"
+            "value": "%1 목표, %2, 계승 포인트 보상 %3 추가, 다음 회차 목표로 저장"
           }
         }
       }
@@ -10666,7 +10757,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "아카이브에 아직 완주하지 않은 목표입니다."
+            "value": "아직 달성하지 못한 도전 목표입니다."
           }
         }
       }
@@ -10682,7 +10773,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "これは、過去 3 年間で惜しくも達成できなかった目標でした。"
+            "value": "これは、過去3年間で惜しくも達成できなかった目標でした。"
           }
         },
         "ko": {
@@ -10698,19 +10789,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save as Next Player's Goal"
+            "value": "Save for my next life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次のプレイヤーの目標として保存"
+            "value": "次の人生の目標にする"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "새 선수 목표로 저장"
+            "value": "다음 회차 목표로 저장"
           }
         }
       }
@@ -10720,19 +10811,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Saved as Next Player's Goal"
+            "value": "Saved for my next life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次のプレイヤーの目標として保存されました"
+            "value": "次の人生の目標に保存済み"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "새 선수 목표로 저장됨"
+            "value": "다음 회차 목표로 저장됨"
           }
         }
       }
@@ -10742,19 +10833,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "TRY AGAIN WITH THE NEXT PLAYER"
+            "value": "Try again in my next life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次のプレイヤーでもう一度お試しください"
+            "value": "次の人生でもう一度挑戦"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "새 선수로 다시 도전"
+            "value": "다음 회차에서 다시 도전"
           }
         }
       }
@@ -10776,7 +10867,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "잔액 %1$lldP · 다음 생 시작 보너스 +%2$lld"
+            "value": "잔액 %1 · 다음 회차 시작 보너스 +%2"
           }
         }
       }
@@ -10786,19 +10877,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Points left by your last player. Save up and buy rules for the next player in the Legacy Shop."
+            "value": "Points earned in your past life. Use them in the Legacy Shop to choose rules for your next life."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前の選手が残したポイント。貯めて継承ショップで次の選手のルールを買います。"
+            "value": "前の人生で集めたポイント。継承ショップで次の人生のルールを選ぶ時に使います。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "지난 선수가 남긴 포인트. 모아서 계승 상점에서 새 선수의 규칙을 삽니다."
+            "value": "이전 회차에서 모은 포인트예요. 계승 상점에서 다음 선수의 성장 혜택을 고를 때 써요."
           }
         }
       }
@@ -10836,7 +10927,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "レガシーポイント"
+            "value": "継承ポイント"
           }
         },
         "ko": {
@@ -10886,7 +10977,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "숙적 %1$@ — %2$lld타석 %3$lld삼진 %4$lld피안타"
+            "value": "라이벌 %1 — %2 %3 %4 허용"
           }
         }
       }
@@ -10902,7 +10993,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "一緒に発見された 3 つの遺産はすべてあなたのコレクションに残ります。"
+            "value": "一緒に発見された3つの遺産はすべてあなたのコレクションに残ります。"
           }
         },
         "ko": {
@@ -10918,19 +11009,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "SIGNATURE LEGACY PASSED TO THE NEXT PLAYER"
+            "value": "My signature feel for the next life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次のプレイヤーに引き継がれるシグネチャーレガシー"
+            "value": "次の人生にも残る自分の感覚"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "새 선수에게 직접 이어진 대표 유산"
+            "value": "다음 회차에도 남을 나의 감각"
           }
         }
       }
@@ -11034,7 +11125,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プレーヤー %lld · 3 年間の振り返り"
+            "value": "プレーヤー %lld · 3年間の振り返り"
           }
         },
         "ko": {
@@ -11056,7 +11147,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld この章のトレーニング セッション%2$@"
+            "value": "%1$lld この章のトレーニングセッション%2$@"
           }
         },
         "ko": {
@@ -12052,7 +12143,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "투구 공식에서 맡은 부분을 최대 %lld‰ 보정."
+            "value": "숙련도가 쌓이면 해당 능력치의 효과가 최대 %lld%% 더 강력해집니다."
           }
         }
       }
@@ -12244,7 +12335,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ウィークリースタンプ・レガシーポイント+%lldを請求しましょう"
+            "value": "ウィークリースタンプ・継承ポイント+%lldを請求しましょう"
           }
         },
         "ko": {
@@ -12288,7 +12379,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "完璧な一週間にあと 1 回 · %@"
+            "value": "完璧な一週間にあと1回 · %@"
           }
         },
         "ko": {
@@ -12310,7 +12401,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "スタンプをもう 1 つ · %@"
+            "value": "スタンプをもう1つ · %@"
           }
         },
         "ko": {
@@ -12354,7 +12445,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "3 つ中 2 つでスタンプ。逃してもペナルティなし。"
+            "value": "3つ中2つでスタンプ。逃してもペナルティなし。"
           }
         },
         "ko": {
@@ -12530,7 +12621,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@。 3 つの目標のうち 2 つを完了します。"
+            "value": "%@。 3つの目標のうち2つを完了します。"
           }
         },
         "ko": {
@@ -12854,19 +12945,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Name this pitcher"
+            "value": "That first bullpen was this pitcher."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この投手の名前を決めてください"
+            "value": "今の一球を投げた投手です。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 투수의 이름을 정하세요"
+            "value": "방금 그 공을 던진 투수입니다."
           }
         }
       }
@@ -14268,7 +14359,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化球型シナジー · 動きと凡打を活かします。"
+            "value": "変化球型シナジー · 変化量を増やし、凡打を誘います。"
           }
         },
         "ko": {
@@ -15308,7 +15399,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "① 길게 눌러 와인드업 — 미터가 가운데 초록에 올 때 떼자. 구종과 코스는 포수가 골라 뒀다."
+            "value": "① 버튼을 꾹 눌러 투구 준비 — 게이지가 초록 구간에 올 때 떼자. 구종과 코스는 포수가 골라 뒀어."
           }
         }
       }
@@ -15462,7 +15553,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "길게 눌러 와인드업, 끌어서 조준, 떼면 투구. 설정에서 자동 릴리스를 켜면 탭 한 번으로 던집니다."
+            "value": "버튼을 꾹 눌러 힘을 모으고, 손가락을 끌어 조준한 뒤 초록 구간에서 떼면 공을 던집니다. 설정에서 자동 릴리스를 켜면 탭 한 번으로 던질 수 있어요."
           }
         }
       }
@@ -15472,19 +15563,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Windup"
+            "value": "Wind-up — hold, then release in the green"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ワインドアップ"
+            "value": "ワインドアップ — 長押しして緑で離す"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "와인드업"
+            "value": "투구 준비 — 누르고 있다가 초록 구간에서 놓기"
           }
         }
       }
@@ -15528,7 +15619,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "자동 릴리스가 켜져 있어 타이밍 없이 던집니다."
+            "value": "자동 릴리스가 켜져 있어 타이밍 조작 없이 바로 던집니다."
           }
         }
       }
@@ -15550,7 +15641,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "조준이 크게 흔들렸습니다 — 손가락을 과녁에 머무르게 하세요"
+            "value": "조준이 크게 빗나갔어요! 손가락을 목표 위치에 잘 유지해 보세요"
           }
         }
       }
@@ -15572,7 +15663,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "조준이 살짝 흔들렸습니다"
+            "value": "조준이 살짝 빗나갔어요"
           }
         }
       }
@@ -15594,7 +15685,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "미터를 크게 놓쳤습니다 — 초록 구간에서 떼세요"
+            "value": "타이밍을 크게 놓쳤어요! 게이지가 초록 구간에 올 때 손을 떼세요"
           }
         }
       }
@@ -15616,7 +15707,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "미터를 살짝 놓쳤습니다"
+            "value": "타이밍이 살짝 빗나갔어요"
           }
         }
       }
@@ -15638,7 +15729,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "누르고, 초록에서 놓기"
+            "value": "누르고 있다가 초록 구간에서 놓기"
           }
         }
       }
@@ -15660,7 +15751,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "너무 짧아요 — 길게 눌러 미터를 채우세요"
+            "value": "너무 짧아요! 길게 눌러 투구 게이지를 채우세요"
           }
         }
       }
@@ -15880,7 +15971,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "손에서 빠졌습니다"
+            "value": "손에서 공이 빠졌습니다!"
           }
         }
       }
@@ -15924,7 +16015,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "퍼펙트 릴리스 — 제대로 긁혔다"
+            "value": "퍼펙트 릴리스 — 손끝에 제대로 감겼다!"
           }
         }
       }
@@ -16122,7 +16213,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "존을 놓쳤습니다."
+            "value": "스트라이크존을 벗어났습니다. (볼)"
           }
         }
       }
@@ -16144,7 +16235,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "타자를 얼어붙게 했습니다."
+            "value": "타자가 지켜보기만 했습니다! (루킹 스트라이크)"
           }
         }
       }
@@ -16166,7 +16257,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "장타를 허용했습니다."
+            "value": "장타를 맞았습니다! (2루타)"
           }
         }
       }
@@ -16188,7 +16279,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "타자가 간신히 걷어냈습니다."
+            "value": "타자가 간신히 쳐냈습니다. (파울)"
           }
         }
       }
@@ -16210,7 +16301,29 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "공이 타자에게 맞았습니다."
+            "value": "공이 타자 몸에 맞았습니다. (몸에 맞는 공)"
+          }
+        }
+      }
+    },
+    "pitch.feedback.outcome.reached-on-error": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A fielder booted a routine play and the batter reached."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "野手が平凡な打球をこぼし、打者が生きた。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "야수의 실책으로 타자가 출루했습니다."
           }
         }
       }
@@ -16232,7 +16345,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "타구가 담장을 넘었습니다."
+            "value": "타구가 담장을 넘어갔습니다! (홈런)"
           }
         }
       }
@@ -16254,7 +16367,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "수비가 아웃으로 바꿨습니다."
+            "value": "야수 정면! 깔끔하게 아웃을 잡았습니다."
           }
         }
       }
@@ -16276,7 +16389,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "빈 곳에 떨어졌습니다."
+            "value": "안타를 맞았습니다. (1루타)"
           }
         }
       }
@@ -16298,7 +16411,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "방망이를 끌어냈습니다."
+            "value": "타자의 헛스윙을 이끌어냈습니다! (헛스윙 스트라이크)"
           }
         }
       }
@@ -16320,7 +16433,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "타구가 외야를 갈랐습니다."
+            "value": "외야를 가르는 깊은 타구! (3루타)"
           }
         }
       }
@@ -17172,7 +17285,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "優勝決定戦 第%lld戦・シリーズ %lld-%lld"
+            "value": "優勝決定戦第%lld戦・シリーズ %lld-%lld"
           }
         },
         "ko": {
@@ -18382,7 +18495,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "読み合い的中 %lld回 · %@"
+            "value": "読み合い的中%lld回 · %@"
           }
         },
         "ko": {
@@ -19994,7 +20107,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "증명 계약"
+            "value": "1년 단기 계약 (실력 증명)"
           }
         }
       }
@@ -20296,7 +20409,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ と %lld 年契約を結びますか？"
+            "value": "%@ と%lld年契約を結びますか？"
           }
         },
         "ko": {
@@ -20340,7 +20453,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ と %lld 年契約しますか？通算記録は残り、チーム内の立場はゼロから積み上げます。"
+            "value": "%@ と%lld年契約しますか？通算記録は残り、チーム内の立場はゼロから積み上げます。"
           }
         },
         "ko": {
@@ -20522,7 +20635,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "도전 가능"
+            "value": "쉬움 (달성 쉬움)"
           }
         }
       }
@@ -20544,7 +20657,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "표준"
+            "value": "보통 (기본 목표)"
           }
         }
       }
@@ -20566,7 +20679,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "도전적"
+            "value": "어려움 (도전적 목표)"
           }
         }
       }
@@ -20582,7 +20695,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "全体 %lld 位"
+            "value": "全体%lld位"
           }
         },
         "ko": {
@@ -20626,7 +20739,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 年"
+            "value": "%lld年"
           }
         },
         "ko": {
@@ -20918,7 +21031,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "총 보장 연봉 · 계약금 별도"
+            "value": "총 보장 연봉 (계약금 제외)"
           }
         }
       }
@@ -21528,7 +21641,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 週間"
+            "value": "%lld週間"
           }
         },
         "ko": {
@@ -21654,19 +21767,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Week %lld, %@ %@, %@, %lld to %lld"
+            "value": "%@, %@ %@, %@, %lld to %lld"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "週 %lld、%@ %@、%@、%lld ～ %lld"
+            "value": "%@、%@ %@、%@、%lld～%lld"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld주차 %@ %@, %@, %lld 대 %lld"
+            "value": "%@ %@ %@, %@, %lld 대 %lld"
           }
         }
       }
@@ -21676,19 +21789,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Week %lld, %@ %@, %@, %lld to %lld, %@"
+            "value": "%@, %@ %@, %@, %lld to %lld, %@"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "週 %lld、%@ %@、%@、%lld ～ %lld、%@"
+            "value": "%@、%@ %@、%@、%lld～%lld、%@"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld주차 %@ %@, %@, %lld 대 %lld %@"
+            "value": "%@ %@ %@, %@, %lld 대 %lld %@"
           }
         }
       }
@@ -21698,19 +21811,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Week %lld, %@ %@, %@, %lld to %lld, %@, direct outing"
+            "value": "%@, %@ %@, %@, %lld to %lld, %@, direct outing"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "週 %lld、%@ %@、%@、%lld ～ %lld、%@、直接登板"
+            "value": "%@、%@ %@、%@、%lld～%lld、%@、直接登板"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld주차 %@ %@, %@, %lld 대 %lld %@, 직접 등판"
+            "value": "%@ %@ %@, %@, %lld 대 %lld %@, 직접 등판"
           }
         }
       }
@@ -21720,19 +21833,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Week %lld, %@ %@, %@, %lld to %lld, direct outing"
+            "value": "%@, %@ %@, %@, %lld to %lld, direct outing"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "週 %lld、%@ %@、%@、%lld ～ %lld、直接登板"
+            "value": "%@、%@ %@、%@、%lld～%lld、直接登板"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld주차 %@ %@, %@, %lld 대 %lld, 직접 등판"
+            "value": "%@ %@ %@, %@, %lld 대 %lld, 직접 등판"
           }
         }
       }
@@ -21902,7 +22015,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld / 24 週間"
+            "value": "%lld / 24週間"
           }
         },
         "ko": {
@@ -21924,7 +22037,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "シーズンの進行状況: 24 週 %lld"
+            "value": "シーズンの進行状況: 24週 %lld"
           }
         },
         "ko": {
@@ -22056,7 +22169,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この選択にコミットする"
+            "value": "この選択で決定"
           }
         },
         "ko": {
@@ -22584,7 +22697,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化量 +%lld"
+            "value": "変化球 +%lld"
           }
         },
         "ko": {
@@ -22606,7 +22719,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化量 −%lld"
+            "value": "変化球 −%lld"
           }
         },
         "ko": {
@@ -23530,7 +23643,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lldシーズン %lld週に発生。回復まで公式戦には出ません。"
+            "value": "%lldシーズン%lld週に発生。回復まで公式戦には出ません。"
           }
         },
         "ko": {
@@ -23558,7 +23671,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "원피로 %lld · 실제 피로 %lld · %lld구"
+            "value": "등판 전 피로 %lld · 현재 피로 %lld · 던진 공 %lld구"
           }
         }
       }
@@ -23580,7 +23693,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "다음 행동: 회복 일정을 진행하세요."
+            "value": "다음: 무리하지 말고 회복 일정을 진행하세요."
           }
         }
       }
@@ -23618,7 +23731,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "腕の過負荷 · 回復 %lld週"
+            "value": "腕の過負荷 · 回復%lld週"
           }
         },
         "ko": {
@@ -24014,7 +24127,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ · %2$lld/100 · 次は%3$@ · レガシーポイントあと%4$lld"
+            "value": "%1$@ · %2$lld/100 · 次は%3$@ · 継承ポイントあと%4$lld"
           }
         },
         "ko": {
@@ -24036,7 +24149,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ · %2$lld/100 · 次は%3$@ · レガシーポイントあと%4$lld、完了シーズンあと%5$lld"
+            "value": "%1$@ · %2$lld/100 · 次は%3$@ · 継承ポイントあと%4$lld、完了シーズンあと%5$lld"
           }
         },
         "ko": {
@@ -24146,7 +24259,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld 試合 · %2$@ · 三振 %3$lld · 受賞 %4$lld"
+            "value": "%1$lld試合 · %2$@ · 三振 %3$lld · 受賞 %4$lld"
           }
         },
         "ko": {
@@ -25334,7 +25447,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld勝 %lld試合"
+            "value": "%lld勝%lld試合"
           }
         },
         "ko": {
@@ -25450,7 +25563,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@에서 계약 %lld시즌을 더 보낸 뒤 오프시즌 경계를 넘습니다."
+            "value": "%@에서 계약 기간 %lld시즌을 마친 뒤 새로운 계약 협상을 시작할 수 있어요."
           }
         }
       }
@@ -25664,7 +25777,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "出発と帰還"
+            "value": "行ってくる"
           }
         },
         "ko": {
@@ -25928,13 +26041,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "6 年間のトップレベルの勤務が必要です。あなたは%lldを持っています。"
+            "value": "6年間のトップレベルの勤務が必要です。あなたは%lldを持っています。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "1군 등록 6년이 필요합니다. 지금 %lld년."
+            "value": "FA 자격을 얻으려면 1군 6시즌이 필요해요. (현재 %lld년)"
           }
         }
       }
@@ -26516,13 +26629,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Movement"
+            "value": "Breaking"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化"
+            "value": "変化球"
           }
         },
         "ko": {
@@ -26544,7 +26657,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "体力"
+            "value": "スタミナ"
           }
         },
         "ko": {
@@ -26880,7 +26993,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "오픈 시장은 1군 등록 6년부터. 지금 %lld년."
+            "value": "자유계약(FA) 시장은 1군 6시즌을 채워야 열려요. (현재 %lld년)"
           }
         }
       }
@@ -26962,7 +27075,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 季節"
+            "value": "%lldシーズン"
           }
         },
         "ko": {
@@ -27028,7 +27141,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 年"
+            "value": "%lld年"
           }
         },
         "ko": {
@@ -28348,7 +28461,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "退職しました"
+            "value": "引退"
           }
         },
         "ko": {
@@ -28590,7 +28703,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "レガシーポイント +%lld"
+            "value": "継承ポイント +%lld"
           }
         },
         "ko": {
@@ -28700,7 +28813,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このキャリアをレガシーポイントとして保持しますか?"
+            "value": "このキャリアを継承ポイントとして保持しますか?"
           }
         },
         "ko": {
@@ -28744,7 +28857,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プロのキャリアをレガシーポイントに変える"
+            "value": "プロのキャリアを継承ポイントに変える"
           }
         },
         "ko": {
@@ -29366,7 +29479,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이번 시즌 보직을 고릅니다. 수락 전망은 지금 능력과 감독의 믿음 기준입니다."
+            "value": "이번 시즌 원하는 보직을 골라 지원해요. 수락 여부는 현재 실력과 감독님의 믿음에 달려 있어요."
           }
         }
       }
@@ -29514,7 +29627,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "体力 %lld — 第6週に再確認します"
+            "value": "スタミナ %lld — 第6週に再確認します"
           }
         },
         "ko": {
@@ -30636,7 +30749,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld 試合 · %2$@ · 三振 %3$lld"
+            "value": "%1$lld試合 · %2$@ · 三振 %3$lld"
           }
         },
         "ko": {
@@ -30828,13 +30941,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Movement"
+            "value": "Breaking"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化量"
+            "value": "変化球"
           }
         },
         "ko": {
@@ -31186,7 +31299,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld 試合 · %2$@ · 三振 %3$lld · 受賞 %4$lld"
+            "value": "%1$lld試合 · %2$@ · 三振 %3$lld · 受賞 %4$lld"
           }
         },
         "ko": {
@@ -31362,7 +31475,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "季節"
+            "value": "シーズン"
           }
         },
         "ko": {
@@ -32264,7 +32377,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "持ち球全体に制球とコースを構築 · %@"
+            "value": "制球と全球種のコースが伸びます · %@"
           }
         },
         "ko": {
@@ -32330,7 +32443,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "選択した変化球で動きと 空振り を構築します · %@"
+            "value": "選んだ変化球の変化量・空振りが伸びます · %@"
           }
         },
         "ko": {
@@ -32374,7 +32487,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "0 登板 · 評価成長なし · 1 週間のみ実行。"
+            "value": "0 登板 · 評価成長なし · 1週間のみ実行。"
           }
         },
         "ko": {
@@ -32484,7 +32597,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "登板後半の疲労を効果的に軽減・%@"
+            "value": "登板後半の体感疲労が減ります · %@"
           }
         },
         "ko": {
@@ -32572,7 +32685,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ビルド内容、フォーシーム 速度、および 空振り · %@"
+            "value": "球威・フォーシームの球速・空振りが伸びます · %@"
           }
         },
         "ko": {
@@ -32754,7 +32867,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "로테이션 신뢰 쌓기"
+            "value": "선발 로테이션에서 믿음 쌓기"
           }
         }
       }
@@ -32968,7 +33081,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "自動前進により回復が繰り返されることはありません。 1 週間進めてから、もう一度選択してください。"
+            "value": "自動前進により回復が繰り返されることはありません。 1週間進めてから、もう一度選択してください。"
           }
         },
         "ko": {
@@ -33144,7 +33257,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@役・残り登板予定 約%2$lld回。直接対決もこの中に含みます。"
+            "value": "%1$@役・残り登板予定約%2$lld回。直接対決もこの中に含みます。"
           }
         },
         "ko": {
@@ -33584,7 +33697,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今すぐ学校を選択してください"
+            "value": "すぐに学校を選ぶ"
           }
         },
         "ko": {
@@ -33754,19 +33867,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Baseball Spirit and carried memories"
+            "value": "Baseball Spirit and memories of my past life"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "野球魂と持ち込まれた思い出"
+            "value": "野球魂と前の人生の記憶"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "야구혼과 이전 선수의 기억"
+            "value": "야구혼과 지난 생의 기억"
           }
         }
       }
@@ -34101,6 +34214,28 @@
         }
       }
     },
+    "record.ability-growth.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How you got here"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ここまでの歩み"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "여기까지 온 길"
+          }
+        }
+      }
+    },
     "record.ability.command": {
       "localizations": {
         "en": {
@@ -34128,13 +34263,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Movement"
+            "value": "Breaking"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化量"
+            "value": "変化球"
           }
         },
         "ko": {
@@ -34229,6 +34364,182 @@
           "stringUnit": {
             "state": "translated",
             "value": "업적과 도감"
+          }
+        }
+      }
+    },
+    "record.advancement.locked-accessibility": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Locked"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未解放"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "잠김"
+          }
+        }
+      }
+    },
+    "record.advancement.remaining": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%2$lld more %1$@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ あと%2$lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$lld 남음"
+          }
+        }
+      }
+    },
+    "record.advancement.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What Comes Next"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の関門"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 문턱"
+          }
+        }
+      }
+    },
+    "record.advancement.unlocked": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解放済み"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "열렸습니다"
+          }
+        }
+      }
+    },
+    "record.album.empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing in the album yet. Strikeouts, home runs and pitches you released dead centre are kept."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "まだアルバムに残った球はありません。奪三振と本塁打、そして真ん中で放した球が残ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아직 앨범에 담긴 공이 없습니다. 삼진과 홈런, 그리고 정중앙을 맞힌 공이 남습니다."
+          }
+        }
+      }
+    },
+    "record.album.replay.accessibility": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season %1$lld, %2$@, %3$lld kilometres"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lldシーズン %2$@ %3$lldキロ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld시즌 %2$@ %3$lld킬로미터"
+          }
+        }
+      }
+    },
+    "record.album.replay.heading": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season %1$lld, week %2$lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lldシーズン%2$lld週"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld시즌 %2$lld주차"
+          }
+        }
+      }
+    },
+    "record.album.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pitches Worth Replaying"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "もう一度見る球"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다시 보는 공"
           }
         }
       }
@@ -34376,7 +34687,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "すべての%lld 試合を表示"
+            "value": "すべての%lld試合を表示"
           }
         },
         "ko": {
@@ -34398,7 +34709,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "最近の %lld 試合を表示"
+            "value": "最近の%lld試合を表示"
           }
         },
         "ko": {
@@ -34552,7 +34863,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "目覚め"
+            "value": "覚醒"
           }
         },
         "ko": {
@@ -34910,7 +35221,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "첫 등판부터 여기에 쌓입니다. 탈삼진·볼넷·실점부터 WHIP·FIP까지, 던질수록 정확해집니다."
+            "value": "첫 등판부터 기록이 차곡차곡 쌓여요. 삼진·볼넷·실점부터 WHIP·FIP까지, 공을 던질수록 내 실력이 숫자로 증명돼요."
           }
         }
       }
@@ -34977,6 +35288,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "볼넷"
+          }
+        }
+      }
+    },
+    "record.lineage-comparison.lives": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Life %1$lld → %2$lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld周目 → %2$lld周目"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld회차 → %2$lld회차"
+          }
+        }
+      }
+    },
+    "record.lineage-comparison.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your First Life and This One"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1周目の自分と今回の自分"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1회차의 나 vs 이번 회차의 나"
           }
         }
       }
@@ -35058,7 +35413,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ポストシーズン %lld試合・%lld勝%lld敗・直接登板%lld回"
+            "value": "ポストシーズン%lld試合・%lld勝%lld敗・直接登板%lld回"
           }
         },
         "ko": {
@@ -35322,7 +35677,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この季節の登板"
+            "value": "今シーズンの登板"
           }
         },
         "ko": {
@@ -35404,19 +35759,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "FIP · WAR · K% · BB% · RA9 · QS · WHIP · replacement level"
+            "value": "ERA · FIP · WAR · K% · BB% · RA9 · QS · WHIP · replacement level"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "FIP · WAR · K% · BB% · RA9 · QS · WHIP · 代替レベル"
+            "value": "ERA · FIP · WAR · K% · BB% · RA9 · QS · WHIP · 代替レベル"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "FIP · WAR · K% · BB% · RA9 · QS · WHIP · 대체 수준"
+            "value": "ERA · FIP · WAR · K% · BB% · RA9 · QS · WHIP · 대체 수준"
           }
         }
       }
@@ -35593,6 +35948,116 @@
           "stringUnit": {
             "state": "translated",
             "value": "WHIP"
+          }
+        }
+      }
+    },
+    "record.season-comparison.headline": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ improved the most."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ — 最も良くなりました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ — 가장 크게 좋아졌습니다."
+          }
+        }
+      }
+    },
+    "record.season-comparison.seasons": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season %1$lld → %2$lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lldシーズン → %2$lldシーズン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld시즌 → %2$lld시즌"
+          }
+        }
+      }
+    },
+    "record.season-comparison.steady": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing has improved on last year yet."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "去年より良くなった指標はまだありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "작년보다 나아진 지표가 아직 없습니다."
+          }
+        }
+      }
+    },
+    "record.season-comparison.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last Year and This Year"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "去年の自分と今年の自分"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "작년의 나 vs 올해의 나"
+          }
+        }
+      }
+    },
+    "record.season-comparison.unknown": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
           }
         }
       }
@@ -35938,7 +36403,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ — 過去 3 年間の未完成部分を新しいプレーヤーに引き継ぎます。"
+            "value": "%@ — 過去3年間の未完成部分を新しいプレーヤーに引き継ぎます。"
           }
         },
         "ko": {
@@ -36356,7 +36821,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "もう一度選択してください"
+            "value": "選び直す"
           }
         },
         "ko": {
@@ -36400,7 +36865,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "高校 3 年間のキャリアに %@ を選択しますか?"
+            "value": "高校3年間のキャリアに %@ を選択しますか?"
           }
         },
         "ko": {
@@ -37522,7 +37987,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このプレーヤーが引退すると、追加のシグネチャー レガシー オプションが 1 つ見つかります。"
+            "value": "このプレーヤーが引退すると、追加の代表遺産オプションが1つ見つかります。"
           }
         },
         "ko": {
@@ -37572,7 +38037,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "자동 스며듦 상한 너머로 +5가 추가로 스며듭니다."
+            "value": "선수의 능력치 자동 성장 한계가 +5 더 늘어납니다."
           }
         }
       }
@@ -37610,7 +38075,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "最も低い才能グレードで 1 つのステップを開くことから始めます。"
+            "value": "最も低い才能グレードで1つのステップを開くことから始めます。"
           }
         },
         "ko": {
@@ -37654,7 +38119,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この 3 年間のキャリアの素晴らしいトレーニングのチャンスが 16% から 26% に増加します。"
+            "value": "この3年間のキャリアの素晴らしいトレーニングのチャンスが 16% から 26% に増加します。"
           }
         },
         "ko": {
@@ -37868,19 +38333,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Up to two. Each makes this three-year career harder, but gives the next player more to inherit. Current bonus: +%lld%%"
+            "value": "Up to two. Make these three school years harder to carry more strength into your next life. Current bonus: +%lld%%"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "2つまで。それぞれがこの3年間のキャリアをより困難なものにするが、次の選手に受け継ぐものはさらに多くなる。現在のボーナス: +%lld%%"
+            "value": "2つまで。この高校3年間が難しくなる代わりに、次の人生へつなぐ力が増えます。現在 +%lld%%"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "최대 2개. 고르면 이번 고교 3년이 어려워집니다. 대신 새 선수가 이어받는 힘이 커집니다. 지금 +%lld%%"
+            "value": "최대 2개. 이번 3년이 어려워지는 대신 다음 회차에 쓸 계승 포인트를 더 많이 받습니다. (현재 +%lld%%)"
           }
         }
       }
@@ -37984,7 +38449,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "シグネチャーレガシー · %@"
+            "value": "代表遺産 · %@"
           }
         },
         "ko": {
@@ -38066,19 +38531,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Inheritance points are the reward one player's career leaves for the next. Spend them here on rules that apply to this three-year high school career; your accumulated automatic-growth bonus stays intact."
+            "value": "Use inheritance points earned in past lives to choose rules for this life. Your accumulated automatic-growth bonus stays intact."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "継承ポイントは、あるプレイヤーのキャリアが次のプレイヤーに残される報酬です。この 3 年間の高校生活に適用されるルールについてここで学びましょう。蓄積された自動成長ボーナスはそのまま残ります。"
+            "value": "過去の人生で集めた継承ポイントで今回のルールを選びます。蓄積した自動成長ボーナスは減りません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "계승 포인트는 이전 선수의 커리어가 다음 선수에게 남긴 보상입니다. 여기서 이번 고교 3년에 적용할 규칙을 사고, 이미 쌓인 자동 성장 보너스는 줄지 않습니다."
+            "value": "이전 회차에서 모은 계승 포인트로 이번 선수의 성장 혜택을 고릅니다. 이미 쌓인 자동 성장 보너스는 줄지 않아요."
           }
         }
       }
@@ -38110,19 +38575,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Spend what the last player left on rules for this run."
+            "value": "Use points earned in your past life to choose this run’s rules."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前の選手が残したポイントで、この3年のルールを買います。"
+            "value": "前の人生で集めたポイントで今回の3年間のルールを選びます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이전 선수가 남긴 포인트로 이번 3년의 규칙을 삽니다."
+            "value": "지난 생에서 모은 포인트로 이번 3년의 규칙을 고릅니다."
           }
         }
       }
@@ -38182,7 +38647,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ハンディキャップは2つまで選択できます。別のものを選択する前に、1 つを削除してください。"
+            "value": "ハンディキャップは2つまで選択できます。別のものを選択する前に、1つを削除してください。"
           }
         },
         "ko": {
@@ -38512,7 +38977,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このプレイヤーのシグネチャーレガシーを選択してください"
+            "value": "このプレイヤーの代表遺産を選択してください"
           }
         },
         "ko": {
@@ -38594,19 +39059,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This name will echo through this ballpark for three years."
+            "value": "This is the ballpark of the next three years."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この名前は３年間、この球場に響き渡るだろう。"
+            "value": "これから3年を過ごす球場です。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 이름이 3년 동안 이 구장에서 불립니다."
+            "value": "3년을 보낼 구장입니다."
           }
         }
       }
@@ -38622,7 +39087,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@を使用してください"
+            "value": "%@を使う"
           }
         },
         "ko": {
@@ -38644,7 +39109,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プレイヤーの名前を選択してください"
+            "value": "選手の名前を決めましょう"
           }
         },
         "ko": {
@@ -39948,7 +40413,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "불펜 반복이 끝날 때까지 공식 경기에서는 사용할 수 없습니다."
+            "value": "불펜에서 연습을 마칠 때까지는 공식 경기에서 던질 수 없어요."
           }
         }
       }
@@ -39992,7 +40457,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "포수가 우선해서 배합하지만 결과에 숨은 보정은 없습니다."
+            "value": "포수가 이 구종을 자주 추천하지만, 던졌을 때 특별한 보너스가 붙지는 않아요."
           }
         }
       }
@@ -40118,7 +40583,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ナンバーシードプレイヤー%lld。カード チャレンジを再作成するには、カードの共有コードを入力します。"
+            "value": "ナンバーシードプレイヤー%lld。カードチャレンジを再作成するには、カードの共有コードを入力します。"
           }
         },
         "ko": {
@@ -40162,7 +40627,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球威 +%lld · 制球 +%lld · 変化量 +%lld · スタミナ +%lld"
+            "value": "球威 +%lld · 制球 +%lld · 変化球 +%lld · スタミナ +%lld"
           }
         },
         "ko": {
@@ -40206,7 +40671,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "制球 +%lld · 変化量 +%lld"
+            "value": "制球 +%lld · 変化球 +%lld"
           }
         },
         "ko": {
@@ -40228,7 +40693,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "制球 +%lld · 変化量 +%lld · スタミナ +%lld"
+            "value": "制球 +%lld · 変化球 +%lld · スタミナ +%lld"
           }
         },
         "ko": {
@@ -40272,7 +40737,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化量 +%lld"
+            "value": "変化球 +%lld"
           }
         },
         "ko": {
@@ -40294,7 +40759,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化量 +%lld · スタミナ +%lld"
+            "value": "変化球 +%lld · スタミナ +%lld"
           }
         },
         "ko": {
@@ -40404,7 +40869,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球威 +%lld · 制球 +%lld · 変化量 +%lld"
+            "value": "球威 +%lld · 制球 +%lld · 変化球 +%lld"
           }
         },
         "ko": {
@@ -40448,7 +40913,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球威 +%lld · 変化量 +%lld"
+            "value": "球威 +%lld · 変化球 +%lld"
           }
         },
         "ko": {
@@ -40470,7 +40935,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球威 +%lld · 変化量 +%lld · スタミナ +%lld"
+            "value": "球威 +%lld · 変化球 +%lld · スタミナ +%lld"
           }
         },
         "ko": {
@@ -40772,13 +41237,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Movement"
+            "value": "Breaking"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化量"
+            "value": "変化球"
           }
         },
         "ko": {
@@ -40844,7 +41309,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "異なるのは開始時の評価だけです。 3 年間のトレーニングですべてが変わります。"
+            "value": "異なるのは開始時の評価だけです。 3年間のトレーニングですべてが変わります。"
           }
         },
         "ko": {
@@ -40882,19 +41347,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Share card"
+            "value": "Share this moment"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "カードを共有"
+            "value": "この場面を共有"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "카드 공유"
+            "value": "이 장면 공유"
           }
         }
       }
@@ -41620,7 +42085,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "다음: 다시 무리하기 전에 회복 훈련을 고르세요."
+            "value": "다음: 몸에 무리가 오기 전에 회복 훈련을 골라보세요."
           }
         }
       }
@@ -41636,13 +42101,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次の行動：残り %lld 回のリハビリを完了してください。"
+            "value": "次の行動：残り%lld回のリハビリを完了してください。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "다음 행동: 재활 훈련 %lld회를 더 마치세요."
+            "value": "다음: 앞으로 재활 훈련을 %lld번 더 마쳐야 해요."
           }
         }
       }
@@ -41686,7 +42151,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "팔 상태 경고 뒤 등판을 강행해 부상을 입었습니다."
+            "value": "팔이 아픈 상태에서 무리하게 던져 부상을 당했습니다."
           }
         }
       }
@@ -41922,7 +42387,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "故障リスク 高"
+            "value": "故障リスク高"
           }
         },
         "ko": {
@@ -41944,7 +42409,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "故障リスク やや"
+            "value": "故障リスクやや"
           }
         },
         "ko": {
@@ -42544,7 +43009,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "재능이 만개했습니다"
+            "value": "잠재력이 폭발했습니다!"
           }
         }
       }
@@ -42774,7 +43239,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld번째 생"
+            "value": "%lld회차 선수"
           }
         },
         "en": {
@@ -42928,7 +43393,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "다음 생에도, 나의 공"
+            "value": "다음 회차에도, 나의 공"
           }
         },
         "en": {
@@ -43082,7 +43547,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld번째 생 → %lld번째 생"
+            "value": "%lld회차 → %lld회차"
           }
         },
         "en": {
@@ -43258,7 +43723,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이번 생 시작"
+            "value": "이번 회차 시작"
           }
         },
         "en": {
@@ -43280,7 +43745,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "다음 생 시작"
+            "value": "다음 회차 시작"
           }
         },
         "en": {
@@ -43387,12 +43852,6 @@
     },
     "mobile.polish.growth-movement": {
       "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "변화구의 움직임을 키웠어요."
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -43402,7 +43861,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "変化球のキレが増しました。"
+            "value": "変化球の変化量が増しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "변화구의 움직임을 키웠어요."
           }
         }
       }
@@ -43522,7 +43987,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "다음 생의 도전"
+            "value": "다음 회차의 도전"
           }
         },
         "en": {
@@ -43767,12 +44232,6 @@
     "mobile.polish.evidence-hs-games": {
       "extractionState": "manual",
       "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "고교 %lld경기"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -43782,7 +44241,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "高校 %lld試合"
+            "value": "高校%lld試合"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "고교 %lld경기"
           }
         }
       }
@@ -43859,12 +44324,6 @@
     "mobile.polish.evidence-awakenings": {
       "extractionState": "manual",
       "localizations": {
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "관련 각성 %lld개"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -43874,7 +44333,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "関連する覚醒 %lld個"
+            "value": "関連する覚醒%lld個"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "관련 각성 %lld개"
           }
         }
       }
@@ -44197,6 +44662,2199 @@
           "stringUnit": {
             "state": "translated",
             "value": "タイミングを逃しました"
+          }
+        }
+      }
+    },
+    "loop.growth.change": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "성장"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Growth"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長"
+          }
+        }
+      }
+    },
+    "loop.growth.row": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "성장 · %@ %lld → %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Growth · %@ %lld → %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長・%@ %lld → %lld"
+          }
+        }
+      }
+    },
+    "loop.growth.milestone": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제구 목표 달성"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control milestone reached"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "制球の目標達成"
+          }
+        }
+      }
+    },
+    "loop.growth.next": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 제구 목표까지 +%lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next control target: +%lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の制球目標まで +%lld"
+          }
+        }
+      }
+    },
+    "loop.growth.base-window": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기본 안정 구간"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Base stable window"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基本の安定ゾーン"
+          }
+        }
+      }
+    },
+    "loop.growth.details": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "성장·컨디션 자세히"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Growth and condition details"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長・コンディションの詳細"
+          }
+        }
+      }
+    },
+    "loop.condition.up": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금: 피로 %lld (+%lld) · 미터가 빨라져요"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now: fatigue %lld (+%lld) · faster meter"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在：疲労 %lld（+%lld）・メーターが速くなります"
+          }
+        }
+      }
+    },
+    "loop.condition.down": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금: 피로 %lld (%lld) · 회복했어요"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now: fatigue %lld (%lld) · recovered"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在：疲労 %lld（%lld）・回復しました"
+          }
+        }
+      }
+    },
+    "loop.condition.current": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금: 피로 %lld"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now: fatigue %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在：疲労 %lld"
+          }
+        }
+      }
+    },
+    "loop.condition.explanation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "성장은 남고, 훈련 피로는 회복됩니다. 같은 구속·피로에서 제구가 높을수록 안정 구간이 넓어집니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Growth stays; training fatigue can recover. At the same velocity and fatigue, higher control gives a wider stable window."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長は残り、練習の疲労は回復できます。同じ球速・疲労なら、制球が高いほど安定ゾーンが広がります。"
+          }
+        }
+      }
+    },
+    "loop.meter.tired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · fatigue speeds the meter"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@・疲労でメーターが速い"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · 지쳐서 게이지가 빨라짐"
+          }
+        }
+      }
+    },
+    "loop.meter.rested": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · steady meter"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@・メーターは通常"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · 게이지 속도 정상"
+          }
+        }
+      }
+    },
+    "loop.reborn.same": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다시 태어난 나"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reborn, still me"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生まれ変わった自分"
+          }
+        }
+      }
+    },
+    "loop.reborn.different": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새로운 투수의 시작"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A new pitcher begins"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しい投手の始まり"
+          }
+        }
+      }
+    },
+    "loop.reborn.next": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새로운 선수의 첫 등판을 준비합니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare for this life’s first appearance."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この人生の初登板に備えましょう。"
+          }
+        }
+      }
+    },
+    "loop.reborn.continue": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "학교를 고르고 시작"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a school and begin"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "学校を選んで始める"
+          }
+        }
+      }
+    },
+    "loop.reborn.practice": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금 몸으로 한 구 던지기"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try one pitch in this body"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今の体で1球投げる"
+          }
+        }
+      }
+    },
+    "loop.reborn.memories": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 생의 기억"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memories of my past life"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の人生の記憶"
+          }
+        }
+      }
+    },
+    "loop.reborn.other-record": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이전 선수의 기록"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous pitcher’s record"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の投手の記録"
+          }
+        }
+      }
+    },
+    "loop.reborn.inherited": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이어온 감각: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carried forward: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "受け継いだ感覚：%@"
+          }
+        }
+      }
+    },
+    "loop.letter.self-title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 생의 나"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My past self"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の人生の自分"
+          }
+        }
+      }
+    },
+    "loop.letter.self-body": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@의 감각은 내 안에 남아 있다. 이번 회차에서도 내 공으로 다시 도전한다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The feel of %@ stays with me. In this life, I’ll take the mound again with my own pitch."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の感覚は自分の中に残っている。この人生でも、自分の球でもう一度挑む。"
+          }
+        }
+      }
+    },
+    "loop.letter.self-basic": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 생에서 익힌 야구의 감각이 내 안에 남아 있다. 다시 내 공으로 도전한다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The baseball instincts I learned in my past life stay with me. I’ll challenge myself again with my own pitch."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の人生で身につけた野球の感覚は自分の中に残っている。自分の球でもう一度挑む。"
+          }
+        }
+      }
+    },
+    "loop.letter.self-signature": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내가 이어온 감각 · %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The feel I carried forward · %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自分が受け継いだ感覚・%@"
+          }
+        }
+      }
+    },
+    "loop.letter.self-memories": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내 안에 남은 기억 · %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memories that stay with me · %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自分の中に残る記憶・%@"
+          }
+        }
+      }
+    },
+    "loop.letter.self-accessibility": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@의 지난 생의 기억. %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memories of %@’s past life. %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の前の人生の記憶。%@"
+          }
+        }
+      }
+    },
+    "loop.reborn.handicaps": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld active handicaps"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "継続中のハンディキャップ%lld個"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "유지 중인 핸디캡 %lld개"
+          }
+        }
+      }
+    },
+    "loop.reborn.record-line": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 생: %lld경기 · %lld탈삼진"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past life: %lld games · %lld strikeouts"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の人生：%lld試合・%lld奪三振"
+          }
+        }
+      }
+    },
+    "loop.reborn.other-history": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@의 기록과 기억을 간직하고 새 투수로 시작한다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begin as a new pitcher, carrying %@’s records and memories."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の記録と記憶を受け継いで、新しい投手として始める。"
+          }
+        }
+      }
+    },
+    "loop.reborn.practice-note": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "공식 경기 기록과 성장 보상에는 반영되지 않습니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This practice does not grant official game stats or growth rewards."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公式戦の記録や成長報酬には反映されません。"
+          }
+        }
+      }
+    },
+    "loop.letter.to-next-self": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 회차의 나에게"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To my next self"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次の人生の自分へ"
+          }
+        }
+      }
+    },
+    "loop.letter.to-next-body": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@의 감각을 다음 회차에서도 잊지 않겠다. 다시 내 공으로 도전하겠다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I’ll remember the feel of %@ in my next life and challenge myself again with my own pitch."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の感覚を次の人生でも忘れない。自分の球でもう一度挑む。"
+          }
+        }
+      }
+    },
+    "loop.letter.to-next-basic": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번에 익힌 감각을 다음 회차에서도 잊지 않겠다. 다시 내 공으로 도전하겠다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I’ll remember what I learned in this life and challenge myself again with my own pitch."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この人生で身につけた感覚を次の人生でも忘れない。自分の球でもう一度挑む。"
+          }
+        }
+      }
+    },
+    "loop.reborn.memories-carry": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 기억을 다음 선수에게 이어줍니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carry chosen memories into your next life."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選んだ記憶を次の人生へつなぎます。"
+          }
+        }
+      }
+    },
+    "loop.reborn.subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "남은 기억을 품고 새로운 도전을 시작합니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begin your next life with the memories you carry."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "残る記憶を胸に次の人生を始めます。"
+          }
+        }
+      }
+    },
+    "loop.reborn.archive-start": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "남긴 기록과 야구혼을 품고 다음 회차를 시작합니다."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begin your next life with your records and Baseball Spirit."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録と野球魂を胸に次の人生を始めます。"
+          }
+        }
+      }
+    },
+    "loop.reborn.pledge": {
+      "extractionState": "manual",
+      "localizations": {
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 회차의 목표 고르기 · 선택"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose this life’s goal · optional"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この人生の目標を選ぶ・任意"
+          }
+        }
+      }
+    },
+    "conversation.eyebrow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversation"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会話"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "대화"
+          }
+        }
+      }
+    },
+    "conversation.result.eyebrow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What your choice changed"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択による変化"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택이 남긴 변화"
+          }
+        }
+      }
+    },
+    "conversation.scene.disclosure": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read the scene"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "詳しい会話"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이야기 더 보기"
+          }
+        }
+      }
+    },
+    "pro.conversation.role.coach": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manager"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "監督"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "감독"
+          }
+        }
+      }
+    },
+    "pro.conversation.role.catcher": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Catcher"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "捕手"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포수"
+          }
+        }
+      }
+    },
+    "pro.conversation.role.staff": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team staff"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "球団スタッフ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구단 스태프"
+          }
+        }
+      }
+    },
+    "pro.decision.chip.pitch-sharpened": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ sharpened"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@の精度アップ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ 손질"
+          }
+        }
+      }
+    },
+    "pro.decision.chip.extra-outing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One extra outing"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登板が1回追加"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "등판 한 번 추가"
+          }
+        }
+      }
+    },
+    "pro.decision.chip.injury-pressure": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pitching under injury pressure"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "故障リスクの高い状態で登板"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "부상 위험 큰 상태로 등판"
+          }
+        }
+      }
+    },
+    "pro.decision.chip.no-first-team": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No first-team outings"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一軍登板なし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1군 등판 없음"
+          }
+        }
+      }
+    },
+    "pro.decision.chip.reduced-training": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training pays less"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "練習の効率が低下"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "훈련 효율 감소"
+          }
+        }
+      }
+    },
+    "pro.decision.chip.command-returns": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Command comes back later"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "制球は後で戻る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제구는 후속에서 회복"
+          }
+        }
+      }
+    },
+    "pro.decision.chip.commitment-window": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Through week %1$lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第%1$lld週まで"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld주차까지"
+          }
+        }
+      }
+    },
+    "pro.decision.chip.season-benefit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season condition support"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今季のコンディション補正"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 시즌 컨디션 보정"
+          }
+        }
+      }
+    },
+    "pro.decision.chip.recovery-year": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Softer decline next offseason"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "来オフの下落を緩和"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 오프시즌 하락 완화"
+          }
+        }
+      }
+    },
+    "pro.decision.preview.caption": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The projection runs the same way the real decision does."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "予想は実際の進行と同じ方法で計算しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "예상 변화는 실제 진행과 같은 방식으로 계산합니다."
+          }
+        }
+      }
+    },
+    "pro.decision.select.prompt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How do you answer?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "どう答えますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "어떻게 하시겠어요?"
+          }
+        }
+      }
+    },
+    "pro.decision.result.line": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What this choice changed"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この選択で変わったこと"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 선택이 바꾼 것"
+          }
+        }
+      }
+    },
+    "pro.decision.result.continue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "続ける"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계속하기"
+          }
+        }
+      }
+    },
+    "draft.journey.undrafted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not drafted this year"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今年のドラフトでは指名なし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 드래프트 미지명"
+          }
+        }
+      }
+    },
+    "draft.journey.pick": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Round %1$lld · Overall pick %2$lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld巡目 · 全体%2$lld位"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld라운드 · 전체 %2$lld순위"
+          }
+        }
+      }
+    },
+    "draft.journey.record": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld games · %2$@ · %3$lld strikeouts"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld試合 · %2$@ · %3$lld奪三振"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld경기 · %2$@ · %3$lld탈삼진"
+          }
+        }
+      }
+    },
+    "draft.journey.growth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where you started → where you are"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "始まりの自分 → 今の自分"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "처음의 나 → 지금의 나"
+          }
+        }
+      }
+    },
+    "draft.journey.effort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld training sessions · %2$lld conversations"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld回の練習 · %2$lld回の会話"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld번의 훈련 · %2$lld번의 대화"
+          }
+        }
+      }
+    },
+    "draft.journey.coach.trusted": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I trust the three years you built. Throw your own pitch on the next mound too."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "君が積み上げた3年を信じている。次のマウンドでも自分の球を投げろ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "네가 쌓은 3년을 믿는다. 다음 마운드에서도 네 공을 던져라."
+          }
+        }
+      }
+    },
+    "draft.journey.coach.next": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is not the end. Show your pitch on the next mound."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ここで終わりじゃない。次のマウンドで自分の球を見せろ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "여기서 끝은 아니다. 다음 마운드에서 네 공을 보여 줘라."
+          }
+        }
+      }
+    },
+    "rebirth.path.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A different game this life"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今度の人生は違う野球を"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 회차에는 다른 야구"
+          }
+        }
+      }
+    },
+    "rebirth.path.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name, face, album, and inherited power all stay. Only the growth type and main pitch change, starting again from school selection."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名前・顔・アルバム・受け継いだ力はそのままです。成長タイプと決め球だけを変えて、学校選びからやり直します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이름·얼굴·앨범·이어받은 힘은 그대로예요. 성장 유형과 주력 구종을 바꾸고 학교 선택부터 시작합니다."
+          }
+        }
+      }
+    },
+    "rebirth.path.confirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start down this path"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この道で始める"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 길로 시작하기"
+          }
+        }
+      }
+    },
+    "rebirth.path.primary-pitch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main pitch: %1$@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "決め球 %1$@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "주력 %1$@"
+          }
+        }
+      }
+    },
+    "rebirth.path.endurance.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A starter who goes the distance"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最後まで投げ抜く先発"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "끝까지 책임지는 선발"
+          }
+        }
+      }
+    },
+    "rebirth.path.endurance.detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lean on stamina, work deep into games, and chase the complete game."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スタミナを土台に長いイニングを投げ、完投を狙います。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "체력을 앞세워 긴 이닝을 던지고 완투를 노립니다."
+          }
+        }
+      }
+    },
+    "rebirth.path.closer.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The final-out specialist"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最後のアウトを任される投手"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마지막 아웃의 주인공"
+          }
+        }
+      }
+    },
+    "rebirth.path.closer.detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Win short outings with breaking balls and apply for the closer role."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "変化球で短い勝負を制し、抑えの役割に志願します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "변화구로 짧게 승부하고 마무리 보직에 지원합니다."
+          }
+        }
+      }
+    },
+    "rebirth.path.command.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Win with fewer pitches"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "少ない球数で勝つ投手"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "적은 공으로 이기는 투수"
+          }
+        }
+      }
+    },
+    "rebirth.path.command.detail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cut walks with command and get through innings efficiently."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "制球で四球を減らし、効率よくイニングを重ねます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제구로 볼넷을 줄이고 효율적으로 이닝을 넘깁니다."
+          }
+        }
+      }
+    },
+    "failure.rule": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can't do that right now. Check what this screen is asking for."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今はこの操作を進められません。この画面の条件を確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금은 이 동작을 진행할 수 없어요. 현재 화면의 조건을 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.stale-state": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The progress changed somewhere else. Go back and check the current record."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "進行状況が変わりました。前の画面に戻って現在の記録を確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "진행 상태가 달라졌어요. 이전 화면으로 돌아가 현재 기록을 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.pitch-state": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The pitch is unfinished. Go back to the saved game and continue from there."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "投球の状態を確認する必要があります。保存された試合に戻って続きを進めてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "투구 상태를 확인해야 해요. 저장된 경기로 돌아가 이어서 진행해 주세요."
+          }
+        }
+      }
+    },
+    "failure.storage-full": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There wasn't enough space to save. Free some up, then check again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存容量が足りず記録を保存できませんでした。空き容量を確保してから確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저장 공간이 부족해 기록을 저장하지 못했어요. 공간을 확보한 뒤 다시 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.io": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record didn't save. Check the saved progress, then continue."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録を保存できませんでした。保存された進行を確認してから続けてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기록을 저장하지 못했어요. 저장 공간이나 네트워크를 확인한 뒤 다시 시도해 주세요."
+          }
+        }
+      }
+    },
+    "failure.io.repeated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving keeps failing. Export the record from Settings, then check again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録の保存が繰り返し失敗しています。設定から記録をファイルに保存してから確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기록 저장 중 문제가 반복됐어요. 설정에서 기록을 파일로 보관한 뒤 다시 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.save-validation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record couldn't be validated. The original is untouched — check it in Settings."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録を検証できませんでした。元の記録はそのままです。設定から確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기록을 검증하지 못했어요. 원본은 그대로 두었으니 설정에서 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.write-disabled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This save can't be written to. Check the app version."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この保存データには書き込めません。アプリのバージョンを確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 저장본에는 기록을 쓸 수 없어요. 앱 버전을 확인해 주세요."
+          }
+        }
+      }
+    },
+    "failure.unknown": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That didn't finish. Go back and check the current state."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "進行を完了できませんでした。前の画面に戻って状態を確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "진행을 완료하지 못했어요. 이전 화면으로 돌아가 다시 시도해 주세요."
+          }
+        }
+      }
+    },
+    "pitch.failure.saved": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This outing's result is already saved."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この登板の結果は保存されています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 등판의 결과는 저장돼 있어요."
+          }
+        }
+      }
+    },
+    "pitch.failure.uncertain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It hasn't been recorded yet. Go back and you can continue from the saved inning."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "まだ反映されていません。戻れば保存されたイニングから続けて投げられます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아직 반영되지 않았어요. 돌아가면 저장된 이닝부터 이어서 던질 수 있어요."
+          }
+        }
+      }
+    },
+    "pitch.failure.confirm-result": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the result"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "結果を確認する"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "결과 확인하기"
+          }
+        }
+      }
+    },
+    "pitch.failure.abandon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "戻る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "돌아가기"
+          }
+        }
+      }
+    },
+    "settings.export-save": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save a copy of your record"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録をファイルに保存"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기록을 파일로 보관"
+          }
+        }
+      }
+    },
+    "settings.export-save.footer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exports your current progress as one file. If saving keeps failing, keep this file first."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在の進行をファイル1つに書き出します。保存が繰り返し失敗するときは、まずこのファイルを保管してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 진행 데이터를 하나의 파일로 안전하게 내보냅니다. 중요한 기록을 따로 보관해 둘 때 사용하세요."
+          }
+        }
+      }
+    },
+    "pitch.call-stamp.strike": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STRIKE"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ストライク"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "스트라이크"
+          }
+        }
+      }
+    },
+    "pitch.call-stamp.ball": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BALL"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ボール"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "볼"
+          }
+        }
+      }
+    },
+    "record.game-log.chapter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chapter %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第%lld章"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld장"
+          }
+        }
+      }
+    },
+    "record.album.play": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replay this pitch"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この投球を再生"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 공 다시 보기"
+          }
+        }
+      }
+    },
+    "record.album.view": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View pitch location"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "投球位置を見る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "공이 들어온 위치 보기"
+          }
+        }
+      }
+    },
+    "record.album.catcher-view": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Catcher view · strike zone"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "捕手視点 · ストライクゾーン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포수 시점 · 스트라이크 존"
+          }
+        }
+      }
+    },
+    "record.album.strikeout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strikeout"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "三振"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "삼진"
+          }
+        }
+      }
+    },
+    "record.album.other-scenes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld more moments"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ほかの%lld場面"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 장면 %lld개"
+          }
+        }
+      }
+    },
+    "record.saber.era": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ERA"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ERA"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ERA"
+          }
+        }
+      }
+    },
+    "league.standings.games-behind-accessibility": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Games behind %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ゲーム差 %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "승차 %@"
           }
         }
       }

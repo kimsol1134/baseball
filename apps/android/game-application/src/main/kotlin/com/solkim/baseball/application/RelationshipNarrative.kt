@@ -19,6 +19,8 @@ public object RelationshipNarrative {
         else -> who ?: "동료"
     }
     public fun choice(state: HighSchoolState, response: HighSchoolRelationshipResponse): Choice? = scene(state)?.choices?.get(response.ordinal)
+    /** "coach" / "catcher" / "rival" when the speaker has a face in the portrait set; otherwise null. */
+    public fun speakerRole(state: HighSchoolState): String? = scene(state)?.speaker?.takeIf { it in setOf("coach", "catcher", "rival") }
     private val scenes = mapOf(
         "evt-coach-role" to Scene("coach", listOf("“선발은 아직 이르다. 불펜부터 시작해. …이유를 따질 시간에 공이나 더 던져 봐.”", "“다음 대회는 불펜에서 시작한다. 경기 후반을 맡아 줘.”", "“{player}. 이번엔 네가 경기 후반을 닫아 줘. 마지막 이닝은 아무한테나 안 맡긴다.”"), listOf(
             Choice("불펜으로 옮긴 이유를 묻는다", "감독이 본 약점부터 듣는다"),
@@ -265,57 +267,57 @@ public object RelationshipNarrative {
             Choice("그립 잡는 법을 설명해 준다", "숨기지 않고 알려 준다"),
             Choice("자리는 마운드에서 겨루자고 한다", "선발은 경기로 정하자고 답한다")
         )),
-        "rebirth" to Scene("나", listOf("", "", ""), listOf(
+        "rebirth" to Scene("나", listOf("“처음 잡는 글러브인데 손이 먼저 접힌다. 이 감각, 어디서 왔지.”", "“이 마운드에 서 본 적이 없는데, 발이 놓일 자리를 안다.”", "“기억은 없는데 몸이 안다. 지난 생의 내가 여기 있다.”"), listOf(
             Choice("가만히 그 감각을 따라가 본다", "떠오르는 것을 밀어내지 않는다"),
             Choice("착각이라고 정리한다", "지금 해야 할 일에 집중한다"),
             Choice("아는 대로 해 본다", "그 감각을 믿고 그대로 던진다")
         )),
-        "growth" to Scene("훈련 파트너", listOf("", "", ""), listOf(
+        "growth" to Scene("훈련 파트너", listOf("“너 요즘 공 달라졌다. 근데 뭐가 달라졌는지는 너도 모르지?”", "“그립 살짝 바꿨지? 공 끝이 달라. 한 번 더 던져 봐.”", "“{player}, 그 공 그대로 가. 나도 그거 받으면 손이 얼얼해.”"), listOf(
             Choice("무엇을 바꾸면 좋을지 듣는다", "상대의 제안을 먼저 듣는다"),
             Choice("지금 잡은 감각을 설명한다", "내가 느낀 그립을 말한다"),
             Choice("경기에서 바로 시험하겠다고 한다", "다음 등판에서 써 본다")
         )),
-        "health" to Scene("트레이너", listOf("", "", ""), listOf(
+        "health" to Scene("트레이너", listOf("“팔 올릴 때 얼굴 찡그리는 거 봤다. 오늘은 안 던진다.”", "“어깨가 늦게 따라온다. 하루만 쉬자. 내 말 들어.”", "“{player}, 네 팔은 내가 제일 잘 알아. 오늘은 몸부터 챙기자.”"), listOf(
             Choice("오늘은 쉬라는 말을 따른다", "회복을 우선한다"),
             Choice("몸 상태를 기록으로 보여준다", "지금 느낌을 설명한다"),
             Choice("그래도 오늘 던지겠다고 한다", "쉬는 대신 공을 잡는다")
         )),
-        "team" to Scene("주장", listOf("", "", ""), listOf(
+        "team" to Scene("주장", listOf("“순서는 감독이 정해. 네가 던지고 싶은 대로 되는 팀이 아니야.”", "“이번 대회 뒷문은 네가 맡아 줬으면 좋겠다. 어때?”", "“{player}, 이 팀 마운드는 네 거야. 우리는 뒤에서 잡을게.”"), listOf(
             Choice("팀이 정한 순서를 받아들인다", "맡겨진 역할을 따른다"),
             Choice("맡을 역할을 분명히 말한다", "내 생각을 팀에 전한다"),
             Choice("더 긴 이닝을 맡겠다고 나선다", "책임을 자청한다")
         )),
-        "draft" to Scene("스카우트", listOf("", "", ""), listOf(
+        "draft" to Scene("스카우트", listOf("“구속은 봤고. 근데 우리가 보는 건 그것만이 아니야.”", "“지난 대회보다 공이 좋아졌더군. 무엇을 바꿨나?”", "“{player} 선수, 솔직히 말하지. 우리 리스트 위쪽에 있어.”"), listOf(
             Choice("무엇을 평가하는지 듣는다", "스카우트가 보는 것을 듣는다"),
             Choice("무엇을 바꿨는지 설명한다", "달라진 점을 말한다"),
             Choice("가장 좋은 공으로 승부한다", "실력으로 답한다")
         )),
-        "media" to Scene("취재진", listOf("", "", ""), listOf(
+        "media" to Scene("취재진", listOf("“그 상황에서 왜 변화구였죠? 결과가 안 좋았는데요.”", "“결정적인 순간에 던진 그 공, 누가 고른 겁니까?”", "“{player} 선수, 오늘 마지막 공은 이 대회 최고의 장면이었습니다. 한마디 부탁드려요.”"), listOf(
             Choice("질문의 뜻을 되묻는다", "무엇을 궁금해하는지 듣는다"),
             Choice("그 공을 고른 이유를 말한다", "내 판단을 설명한다"),
             Choice("다음 경기로 답하겠다고 한다", "결과로 보여준다")
         )),
-        "fan" to Scene("팬", listOf("", "", ""), listOf(
+        "fan" to Scene("팬", listOf("“편지예요. 지난 경기는 아쉬웠지만… 다음엔 꼭 이겨 주세요.”", "“그 슬라이더 던질 때 스탠드가 조용해져요. 저 그 순간이 좋아요.”", "“{player} 선수 등번호 유니폼 샀어요. 다음 경기도 갈게요.”"), listOf(
             Choice("바라는 것을 귀담아듣는다", "팬이 좋아하는 공을 확인한다"),
             Choice("그 공을 아끼는 이유를 적는다", "내 마음을 답장에 담는다"),
             Choice("다음 경기에서 보여주겠다고 약속한다", "기대에 답한다")
         )),
-        "game" to Scene("catcher", listOf("", "", ""), listOf(
+        "game" to Scene("catcher", listOf("“아까 그 볼넷. 사인 내기 전에 이미 포기한 얼굴이었어.”", "“7회 그 타석, 우리 둘 다 같은 공을 생각했지? 그런데 왜 흔들렸을까.”", "“{player}, 오늘 마지막 공은 내 미트가 안 움직였어. 그게 제일 좋았어.”"), listOf(
             Choice("지난 상황을 포수와 되짚는다", "무엇이 문제였는지 듣는다"),
             Choice("그때의 선택을 설명한다", "내 판단을 말한다"),
             Choice("다음엔 더 공격적으로 가겠다고 한다", "같은 상황을 정면으로 맞선다")
         )),
-        "awakening" to Scene("catcher", listOf("", "", ""), listOf(
+        "awakening" to Scene("catcher", listOf("“방금 공, 뭐야. 원래 그렇게 안 던졌잖아.”", "“공이 달라졌어. 나도 잡는 자리를 바꿔야겠어.”", "“{player}, 그 공 이제 네 거야. 내가 보증할게.”"), listOf(
             Choice("익은 동작을 다시 확인한다", "몸의 감각을 점검한다"),
             Choice("그 감각을 말로 정리한다", "무엇이 달라졌는지 설명한다"),
             Choice("경기에서 바로 써 보겠다고 한다", "실전에서 시험한다")
         )),
-        "life" to Scene("가족", listOf("", "", ""), listOf(
+        "life" to Scene("가족", listOf("“요즘 집에서 얼굴 보기가 힘드네. 밥은 먹고 다니니.”", "“경기 봤다. 잘하더라. …무리는 하지 말고.”", "“{player}야, 네가 마운드에 서 있는 것만으로 우린 충분해.”"), listOf(
             Choice("가족의 이야기를 먼저 듣는다", "마음을 가라앉힌다"),
             Choice("지금의 계획을 설명한다", "내 생각을 전한다"),
             Choice("부족한 시간을 훈련으로 메우겠다고 한다", "남은 시간을 아껴 쓴다")
         )),
-        "legacy" to Scene("지난 기록", listOf("", "", ""), listOf(
+        "legacy" to Scene("지난 기록", listOf("“3년 치 기록을 넘긴다. 좋았던 페이지보다 아쉬운 페이지가 먼저 펼쳐진다.”", "“가장 잘 던진 날의 스코어북. 그날의 손끝이 아직 기억난다.”", "“{player}의 3년. 남길 것 하나를 고를 시간이다.”"), listOf(
             Choice("가장 좋았던 경기를 되짚는다", "지난 세 해를 돌아본다"),
             Choice("남길 기록을 골라 적는다", "무엇을 남길지 정리한다"),
             Choice("다음 선수에게 남길 한 가지를 정한다", "가장 중요한 하나를 고른다")

@@ -4,9 +4,11 @@ import com.solkim.baseball.core.pitch.PitchLearningProject
 import com.solkim.baseball.core.pitch.PitchLearningRules
 import com.solkim.baseball.core.highschool.HighSchoolPhase4Kernel
 import com.solkim.baseball.core.highschool.HighSchoolTutorialMound
-import com.solkim.baseball.core.highschool.toBatterSnapshot
+import com.solkim.baseball.core.highschool.currentBatter
 import com.solkim.baseball.core.highschool.toPitcherSnapshot
+import com.solkim.baseball.core.pitch.BaserunnerStateSnapshot
 import com.solkim.baseball.core.pitch.BatterSnapshot
+import com.solkim.baseball.core.pitch.MoundComposureInput
 import com.solkim.baseball.core.pitch.PitchCall
 import com.solkim.baseball.core.pitch.PitchIntensity
 import com.solkim.baseball.core.pitch.PitchKernel
@@ -28,6 +30,16 @@ public sealed interface PitchHudSelection {
         val intensity: PitchIntensity = PitchIntensity.NORMAL,
     ) : PitchHudSelection
 }
+
+public data class MoundScene(
+    val official: Boolean,
+    val runners: BaserunnerStateSnapshot,
+    val leverage: Int,
+    val balls: Int,
+    val strikes: Int,
+    val outs: Int,
+    val composure: MoundComposureInput,
+)
 
 public data class PitchHudModel(
     val repertoire: List<PitchKind>,
@@ -81,6 +93,13 @@ public object PitchHudProjection {
         return highSchool.run.toPitcherSnapshot()
     }
 
+    /** Match the active simulation context; archived pro fatigue must never leak into a new life. */
+    public fun fatigue(state: GameAggregateState): Int = when (state.pitch?.careerKind) {
+        PitchCareerKind.TUTORIAL -> 0
+        PitchCareerKind.PRO -> state.pro?.activePitch?.context?.fatigue ?: state.pro?.fatigue ?: 0
+        else -> state.highSchool?.activePitch?.context?.fatigue ?: state.highSchool?.run?.fatigue ?: 0
+    }
+
     public fun batter(state: GameAggregateState): BatterSnapshot {
         val pitch = state.pitch
         if (pitch?.careerKind == PitchCareerKind.PRO) {
@@ -88,7 +107,7 @@ public object PitchHudProjection {
         }
         if (pitch?.careerKind == PitchCareerKind.TUTORIAL) return HighSchoolTutorialMound.BATTER
         val highSchool = requireNotNull(state.highSchool) { "pitch.hud.highSchool_missing" }
-        return highSchool.run.toBatterSnapshot()
+        return highSchool.currentBatter()
     }
 
     public fun repertoire(state: GameAggregateState): List<PitchKind> = selectableTypes(pitcher(state))
@@ -156,11 +175,11 @@ public object PitchHudProjection {
             adaptationWarning = adaptationWarning(adaptation),
             adaptationLevel = adaptation.level,
             catcherConfidencePercent = catcherConfidence,
-            catcherConfidenceLabel = "사인 확신 ${catcherConfidence}%",
+            catcherConfidenceLabel = "사인 확신 ${when { catcherConfidence >= 75 -> "높음"; catcherConfidence >= 50 -> "보통"; else -> "낮음" }}",
             catcherTrust = catcherTrust,
             catcherBondLabel = catcherBond,
-            catcherTrustLabel = "포수 호흡 $catcherTrust · $catcherBond",
-            autoReleaseLabel = "자동 릴리스 — 탭 한 번으로 중립 투구",
+            catcherTrustLabel = "포수 호흡 · $catcherBond",
+            autoReleaseLabel = "자동 릴리스 · 탭 한 번으로 던지기",
             abortLabel = "중단",
             sessionPitches = sessionPitches(state),
             canFastForward = canFastForward(state),
@@ -170,7 +189,7 @@ public object PitchHudProjection {
         )
     }
 
-    public fun scenarioTitle(state: GameAggregateState): String = when (state.pitch?.careerKind) {
+    public fun scenarioTitle(state: GameAggregateState): String = OutingPresentation.title(state) ?: when (state.pitch?.careerKind) {
         PitchCareerKind.TUTORIAL -> "첫 불펜"
         PitchCareerKind.PRO -> when (state.pro?.seasonTrigger) {
             com.solkim.baseball.core.pro.ProSeasonTrigger.MAJOR_DEBUT -> "1군 데뷔"
@@ -178,17 +197,24 @@ public object PitchHudProjection {
             com.solkim.baseball.core.pro.ProSeasonTrigger.OPENING_STATEMENT -> "개막 선언"
             com.solkim.baseball.core.pro.ProSeasonTrigger.STANDINGS_RACE -> "순위 경쟁"
             com.solkim.baseball.core.pro.ProSeasonTrigger.NATIONAL_FINAL -> "대표팀 결승"
-            else -> "프로 중요 경기"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.RECORD_CHASE -> "기록이 걸린 등판"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.ROLE_SHOWDOWN -> "보직이 걸린 등판"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_WILD_CARD -> "와일드카드"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_SEMIFINAL -> "준플레이오프"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_PLAYOFF -> "플레이오프"
+            com.solkim.baseball.core.pro.ProSeasonTrigger.AUTUMN_FINAL -> "우승 결정전"
+            null -> "프로 중요 경기"
         }
         else -> "마운드 승부처"
     }
 
     public fun scenarioDetail(state: GameAggregateState): String = when (state.pitch?.careerKind) {
-        PitchCareerKind.TUTORIAL -> "기록에 남지 않는 연습 한 타석입니다. 마음껏 던져 보세요."
-        PitchCareerKind.PRO -> state.pro?.currentRival?.profile ?: "오늘 이 타석이 시즌의 무게를 가릅니다."
+        PitchCareerKind.TUTORIAL -> if ((state.highSchool?.run?.lifeNumber ?: 1) > 1) "기록에 안 남는 연습 한 구. 새 몸을 시험해 보자."
+            else "기록에 안 남는 연습 한 타석. 마음껏 던져 보자."
+        PitchCareerKind.PRO -> state.pro?.currentRival?.profile ?: "오늘 이 타석이 시즌의 무게를 가른다."
         else -> {
             val rival = state.highSchool?.run?.rival?.name
-            if (rival.isNullOrBlank()) "오늘 이 타석이 승부처입니다." else "${rival}과의 승부. 이 타석이 오늘을 가릅니다."
+            if (rival.isNullOrBlank()) "오늘 이 타석이 승부처다." else "${rival}과의 승부. 이 타석이 오늘을 가른다."
         }
     }
 
@@ -206,9 +232,9 @@ public object PitchHudProjection {
         if (pitches >= 3) return null
         val strikes = session?.context?.strikes ?: 0
         return when {
-            pitches == 0 -> "① 길게 눌러 와인드업 — 미터가 가운데 초록에 올 때 떼자. 구종과 코스는 포수가 골라 뒀다."
-            strikes >= 2 -> "③ 결정구 — 상대가 약한 구종으로 유인하자. 존을 살짝 벗어나도 방망이가 나온다."
-            else -> "② 같은 곳에 두 번은 없다 — 구종이나 코스를 바꿔 타자의 눈을 흔들자."
+            pitches == 0 -> "길게 눌러 와인드업. 미터가 가운데 초록에 올 때 떼자. 구종과 코스는 포수가 골라 뒀다."
+            strikes >= 2 -> "결정구다. 상대가 약한 구종으로 유인하자. 존을 살짝 벗어나도 방망이가 나온다."
+            else -> "같은 곳에 두 번은 없다. 구종이나 코스를 바꿔 타자의 눈을 흔들자."
         }
     }
 
@@ -242,7 +268,11 @@ public object PitchHudProjection {
     }
 
     public fun canFastForward(state: GameAggregateState): Boolean {
-        if (state.pitch?.careerKind == PitchCareerKind.TUTORIAL) return false
+        val pitch = state.pitch ?: return false
+        if (pitch.careerKind == PitchCareerKind.TUTORIAL || pitch.boundary != PitchBoundary.PLAYING) return false
+        val ended = if (pitch.careerKind == PitchCareerKind.PRO) state.pro?.activePitch?.ended else state.highSchool?.activePitch?.ended
+        if (ended != false) return false
+        if (fatigue(state) >= 80) return true
         val pitches = sessionPitches(state)
         val leverage: Int
         val balls: Int
@@ -258,7 +288,8 @@ public object PitchHudProjection {
             balls = context?.balls ?: 0
             strikes = context?.strikes ?: 0
         }
-        return pitches > 0 && leverage < 780 && balls < 3 && strikes < 2
+        // Skipping is for low-pressure plate appearances only; a full count or two strikes is one pitch away anyway.
+        return leverage < 780 && !(balls == 3 || strikes == 2) || (pitches == 0 && leverage < 780)
     }
 
     public fun scoutingTitle(preparation: PitchPreparation, batSide: com.solkim.baseball.core.pitch.BatSide): String {
@@ -311,10 +342,78 @@ public object PitchHudProjection {
         PitchIntensity.MAX_EFFORT -> "전력"
     }
 
-    private fun leverage(state: GameAggregateState): Int = when (state.pitch?.careerKind) {
+    public fun leverage(state: GameAggregateState): Int = when (state.pitch?.careerKind) {
         PitchCareerKind.TUTORIAL -> 200
         PitchCareerKind.PRO -> state.pro?.activePitch?.context?.leverage ?: 500
         else -> state.highSchool?.activePitch?.context?.leverage ?: 500
+    }
+
+    public fun careerId(state: GameAggregateState): String? =
+        if (state.pitch?.careerKind == PitchCareerKind.PRO) state.pro?.careerId else state.highSchool?.run?.careerId
+
+    public fun startingPitcher(state: GameAggregateState): PitcherSnapshot? {
+        if (state.pitch?.careerKind == PitchCareerKind.PRO) return null
+        val pitcher = state.highSchool?.startingPitcher ?: return null
+        return PitcherSnapshot(
+            id = pitcher.id,
+            name = pitcher.name,
+            stuff = pitcher.stuff,
+            command = pitcher.command,
+            movement = pitcher.movement,
+            stamina = pitcher.stamina,
+            pitchProfiles = pitcher.pitchProfiles,
+            throwingHand = pitcher.throwingHand,
+            mastery = pitcher.mastery,
+        )
+    }
+
+    public fun careerRevision(state: GameAggregateState): ULong? =
+        if (state.pitch?.careerKind == PitchCareerKind.PRO) state.pro?.revision else state.highSchool?.run?.revision
+
+    public fun lastTutorialPitchNumber(state: GameAggregateState): Int = state.highSchool?.lastPresentation?.pitchNumber ?: 0
+
+    public fun rivalName(state: GameAggregateState): String? =
+        state.pro?.currentRival?.name ?: state.highSchool?.run?.rival?.name
+
+    public fun hasProActivePitch(state: GameAggregateState): Boolean = state.pro?.activePitch != null
+
+    public fun firstLifeWithoutPresentation(state: GameAggregateState): Boolean =
+        state.highSchool?.run?.lifeNumber == 1 && state.highSchool?.lastPresentation == null
+
+    public fun moundScene(state: GameAggregateState): MoundScene {
+        val pitch = state.pitch
+        val official = pitch != null && pitch.careerKind != PitchCareerKind.TUTORIAL && !pitch.challengeRun
+        val proSession = state.pro?.activePitch?.takeIf { pitch?.careerKind == PitchCareerKind.PRO }
+        val hsSession = state.highSchool?.activePitch?.takeIf { pitch?.careerKind == PitchCareerKind.HIGH_SCHOOL }
+        val runners = when {
+            proSession != null -> proSession.game.runners
+            hsSession != null -> BaserunnerStateSnapshot(
+                hsSession.game.firstOccupied,
+                hsSession.game.secondOccupied,
+                hsSession.game.thirdOccupied,
+                52,
+            )
+            else -> BaserunnerStateSnapshot.EMPTY
+        }
+        val contextBalls = proSession?.context?.balls ?: hsSession?.context?.balls ?: 0
+        val contextStrikes = proSession?.context?.strikes ?: hsSession?.context?.strikes ?: 0
+        val contextOuts = proSession?.context?.outs ?: hsSession?.context?.outs ?: 0
+        val command = if (pitch?.careerKind == PitchCareerKind.PRO) state.pro?.pitcher?.command else state.highSchool?.run?.pitcher?.command
+        val stamina = if (pitch?.careerKind == PitchCareerKind.PRO) state.pro?.pitcher?.stamina else state.highSchool?.run?.pitcher?.stamina
+        return MoundScene(
+            official = official,
+            runners = runners,
+            leverage = leverage(state),
+            balls = contextBalls,
+            strikes = contextStrikes,
+            outs = contextOuts,
+            composure = MoundComposureInput(
+                command = command ?: 0,
+                stamina = stamina ?: 0,
+                awakeningWires = state.highSchool?.run?.selectedAwakenings.orEmpty().map { it.wire },
+                memoryWires = emptyList(),
+            ),
+        )
     }
 
     public fun resolveCall(
@@ -326,13 +425,7 @@ public object PitchHudProjection {
         val call = when (selection) {
             PitchHudSelection.Primary -> preparation.primaryRecommendation.call
             PitchHudSelection.Alternative -> preparation.alternativeRecommendation.call
-            is PitchHudSelection.Manual -> {
-                val matched = listOf(
-                    preparation.primaryRecommendation,
-                    preparation.alternativeRecommendation,
-                ).firstOrNull { it.call.pitchType == selection.pitchType && it.call.zone == selection.zone }
-                matched?.call ?: PitchCall(selection.pitchType, selection.zone, selection.intent, selection.intensity)
-            }
+            is PitchHudSelection.Manual -> PitchCall(selection.pitchType, selection.zone, selection.intent, selection.intensity)
         }
         require(call.pitchType in allowed) { "pitch.not_in_repertoire" }
         return call

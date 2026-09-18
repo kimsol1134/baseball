@@ -86,10 +86,13 @@ public object HighSchoolReturnPlanRules {
         if (!isDayKey(plan.createdDayKey)) return false
         if (plan.receiptId.isNotBlank() &&
             (plan.receiptId.length > 32 || !isHex(plan.receiptId))) return false
-        if (plan.experimentId != null && !isToken(plan.experimentId, 48)) return false
-        if (plan.savedDayKey != null && !isDayKey(plan.savedDayKey)) return false
+        val experimentId = plan.experimentId
+        if (experimentId != null && !isToken(experimentId, 48)) return false
+        val savedDayKey = plan.savedDayKey
+        if (savedDayKey != null && !isDayKey(savedDayKey)) return false
         if (plan.experimentVariant != null && plan.experimentVariant !in setOf("holdout", "guided")) return false
-        if (plan.developmentRulesVersion != null && plan.developmentRulesVersion <= 0) return false
+        val developmentRulesVersion = plan.developmentRulesVersion
+        if (developmentRulesVersion != null && developmentRulesVersion <= 0) return false
         return plan.route.isNotBlank() && plan.route.length <= 64
     }
 

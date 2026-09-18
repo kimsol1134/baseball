@@ -10,6 +10,21 @@ import BaseballIOSDomain
 /// `-uiTestAutoRelease`로 이 경로를 우회하므로 아무도 알아채지 못한다.
 @MainActor
 final class DeliveryControlTests: XCTestCase {
+    func testGestureReleaseCannotRoundAnOrangeBandMissUpToPerfect() {
+        let cases: [(Double, Bool)] = [
+            (0.4874, false), (0.4875.nextDown, false), (0.4875, true),
+            (0.5, true), (0.5125, true), (0.5125.nextUp, false), (0.5126, false),
+        ]
+        for command in [35, 50, 80] {
+            for (meter, expected) in cases {
+                let delivery = DeliveryControl.delivery(
+                    meter: meter, aim: CGSize(width: 12, height: 7), aimRadius: 46,
+                    commandRating: command)
+                XCTAssertEqual(delivery.isPerfectRelease, expected, "meter \(meter), command \(command)")
+            }
+        }
+    }
+
     func testRealGestureAdapterUsesCommandWindowAndKeepsAimAndPerfectHonest() {
         let before = DeliveryControl.delivery(meter: 0.60, aim: CGSize(width: 12, height: 7), aimRadius: 46, commandRating: 35)
         let after = DeliveryControl.delivery(meter: 0.60, aim: CGSize(width: 12, height: 7), aimRadius: 46, commandRating: 80)
@@ -253,7 +268,7 @@ final class DeliveryControlTests: XCTestCase {
                 releaseAccuracy: PitchDelivery.perfectReleaseThreshold,
                 aimAccuracy: 500
             ))?.text,
-            "퍼펙트 릴리스 — 제대로 긁혔다"
+            "퍼펙트 릴리스 — 손끝에 제대로 감겼다!"
         )
         XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 900, aimAccuracy: 900))?.text, "안정 릴리스")
         XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 700, aimAccuracy: 700))?.text, "안정 구간에 가까웠어요")
@@ -279,11 +294,11 @@ final class DeliveryControlTests: XCTestCase {
     func testCoachingHintNamesTheWeakerManualAxis() {
         XCTAssertEqual(
             DeliveryControl.coachingHint(PitchDelivery(releaseAccuracy: 300, aimAccuracy: 800)),
-            "미터를 크게 놓쳤습니다 — 초록 구간에서 떼세요"
+            "타이밍을 크게 놓쳤어요! 게이지가 초록 구간에 올 때 손을 떼세요"
         )
         XCTAssertEqual(
             DeliveryControl.coachingHint(PitchDelivery(releaseAccuracy: 800, aimAccuracy: 300)),
-            "조준이 크게 흔들렸습니다 — 손가락을 과녁에 머무르게 하세요"
+            "조준이 크게 빗나갔어요! 손가락을 목표 위치에 잘 유지해 보세요"
         )
     }
 }

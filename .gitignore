@@ -83,3 +83,6 @@ apps/android-pitch-unity/.vscode/
 
 # QA 스크린샷·릴리스 증거(수백 MB). 세션 산출물이며 저장소에 넣지 않는다.
 apps/ios/releases/
+
+# Kotlin compiler session markers
+/apps/android/.kotlin/

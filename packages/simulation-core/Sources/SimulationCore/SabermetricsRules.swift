@@ -428,7 +428,12 @@ private extension SabermetricsRules {
     }
 
     static func summing(_ seasons: [ProSeasonStats]) -> ProSeasonStats {
-        seasons.reduce(ProSeasonStats(season: 0, teamID: "")) { total, season in
+        // 통산 자책점은 **모든** 시즌에 원장이 있을 때만 성립한다. 원장 없는 시즌 하나를 0으로
+        // 세면 통산 방어율이 실제보다 좋아진다 — 그런 숫자는 보여 주지 않는 편이 낫다.
+        let careerEarnedRuns = seasons.allSatisfy { $0.earnedRuns != nil }
+            ? seasons.reduce(0) { $0 + ($1.earnedRuns ?? 0) }
+            : nil
+        return seasons.reduce(ProSeasonStats(season: 0, teamID: "", earnedRuns: careerEarnedRuns)) { total, season in
             ProSeasonStats(
                 season: 0,
                 teamID: "",
@@ -443,7 +448,8 @@ private extension SabermetricsRules {
                 pitches: total.pitches + season.pitches,
                 wins: total.wins + season.wins,
                 losses: total.losses + season.losses,
-                saves: total.saves + season.saves
+                saves: total.saves + season.saves,
+                earnedRuns: total.earnedRuns
             )
         }
     }

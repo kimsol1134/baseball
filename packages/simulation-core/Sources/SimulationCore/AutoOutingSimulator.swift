@@ -9,6 +9,10 @@ import Foundation
 /// 여기서 나오는 성적은 **근사가 아니다** — 매 타석을 `PitchKernelEngine`에 통과시킨다.
 /// 그래서 자동으로 흘러간 경기와 직접 던진 경기가 같은 규칙 위에 있다.
 public struct AutoOutingSimulator: Sendable {
+
+    /// Which balance pass the pitch kernel runs for these outings. `.legacy` keeps the frozen
+    /// fixture path; callers on newer career rules pass `.school` or `.professional`.
+    public let balance: PitchBalanceRules
     /// 등판 하나의 원시 집계.
     public struct Line: Equatable, Sendable {
         public var outs = 0
@@ -21,11 +25,16 @@ public struct AutoOutingSimulator: Sendable {
         /// 장타 분해. 실점이 안타 수와 어긋날 때 원인이 장타 부족인지 보려면 이 숫자가 있어야 한다.
         public var doubles = 0
         public var triples = 0
+        /// 자책점. 실책과 승계 주자를 가려내는 원장이 있는 프로 경로에서만 값이 있다.
+        /// 원장 없이 돌린 등판은 `nil` — 추정하지 않는다.
+        public var earnedRuns: Int?
 
         public init() {}
     }
 
-    public init() {}
+    public init(balance: PitchBalanceRules = .legacy) {
+        self.balance = balance
+    }
 
     /// 값 범위를 자른다. 이 파일 안에서만 쓰는 지역 도우미다.
     private func clamp(_ value: Int, _ lower: Int, _ upper: Int) -> Int {
@@ -54,37 +63,79 @@ public struct AutoOutingSimulator: Sendable {
         batterOffset: Int = 0,
         callPolicy: AutoCallPolicy = .perfect,
         baseSeed: UInt64,
-        diverseScouting: Bool = false
+        diverseScouting: Bool = false,
+        delivery: PitchDelivery? = nil,
+        fullStart: Bool = false,
+        priorOuts: Int = 0,
+        priorPitches: Int = 0,
+        priorRuns: Int = 0
     ) -> Line {
-        let engine = PitchKernelEngine()
+        // 프로 자동 등판의 포수는 안드로이드와 같은 코스 선택 규칙을 쓴다(버전 3).
+        // v10·고교는 이미 배포된 계산이므로 버전 1 그대로다.
+        let engine = PitchKernelEngine(
+            recommendationEngine: CatcherRecommendationEngine(
+                rules: CatcherSignRules(
+                    version: balance.isProfessional
+                        ? CatcherSignRules.scoutingTargetVersion
+                        : CatcherSignRules.fixtureSafeVersion
+                )
+            ),
+            balance: balance
+        )
         var rng = SplitMix64(seed: baseSeed)
         var line = Line()
         let fielders = FielderPosition.allCases.map {
             FielderSnapshot(id: "week-\($0.rawValue)", name: $0.rawValue, position: $0, range: 50, glove: 50, arm: 50)
         }
-        var inningState = InningStateSnapshot(inning: 1, half: .top, outs: 0)
+        var inningState = InningStateSnapshot(
+            inning: fullStart ? priorOuts / 3 + 1 : 1, half: .top, outs: 0
+        )
         var runners = BaserunnerStateSnapshot(firstOccupied: false, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 52)
         var runsOnBoard = 0
-        var carriedGameLog = GameLogSnapshot(gameID: "week-outing", revision: 0, totalPitches: 0, entries: [])
+        var carriedGameLog = GameLogSnapshot(
+            gameID: "week-outing", revision: 0, totalPitches: priorPitches, entries: []
+        )
         var currentFatigue = clamp(startingFatigue, 0, 95)
         var benchMemory: RivalMemorySnapshot?
         var paIndex = 0
+        // 자책점 원장은 프로 경로에서만 돈다. 나머지 경로는 원장을 만들지 않으므로 이 등판의
+        // 자책점은 '없음'으로 남는다. 원장이 커널이 보고한 주자와 어긋나면 그 자리에서
+        // 버린다 — 어긋난 원장으로 계산한 자책점은 틀린 숫자이고, 틀린 숫자보다 '모른다'가 낫다.
+        var scoring: PitchRunLedger? = balance.isProfessional ? PitchRunLedger() : nil
+        var lastGameState: GameStateSnapshot?
+        var lastSeed = String(baseSeed)
         // 선발 목표(6이닝 이상)에서만 체력 특화의 '한 타자 더'를 실제 아웃과 투구 수로
         // 보상한다. 불펜 역할은 원래 맡은 이닝이 짧으므로 같은 보너스를 적용하지 않는다.
-        let extensionOuts = outsTarget >= 18
+        // 완투 경로에서는 목표 아웃과 투구 상한이 아니라 감독의 교체 판단이 등판을 끝낸다.
+        // 체력 특화의 '한 타자 더'는 목표가 고정된 경로에서만 의미가 있으므로 여기서는 빠진다.
+        let extensionOuts = !fullStart && outsTarget >= 18
             ? PitchAbilityRules.starterExtensionOuts(pitcher: pitcher)
             : 0
-        let effectiveOutsTarget = outsTarget + extensionOuts
-        let effectivePitchCap = pitchCap + extensionOuts * 4
+        let effectiveOutsTarget = fullStart ? 27 - priorOuts : outsTarget + extensionOuts
+        let effectivePitchCap = fullStart ? 125 - priorPitches : pitchCap + extensionOuts * 4
         while line.outs < effectiveOutsTarget && line.pitches < effectivePitchCap && paIndex < 60 {
+            if fullStart, !ProOutingUsageRules.canContinue(
+                pitcher: pitcher,
+                outs: line.outs + priorOuts,
+                pitches: line.pitches + priorPitches,
+                fatigue: currentFatigue,
+                runs: line.runsAllowed + priorRuns,
+                starter: true
+            ) { break }
             paIndex += 1
-            let batter = BatterSnapshot(
+            // 리그 평균 타자는 아홉 타석이 전부 같은 타석이었다. 프로 재조정 경로에서는
+            // 실제 타순을 세운다. 평균 타자의 난수는 그대로 뽑아 두어 두 경로의 난수 소비
+            // 순서가 어긋나지 않게 한다.
+            let averageBatter = BatterSnapshot(
                 id: "week-batter-\(paIndex)", name: "상대 타선",
                 contact: clamp(50 + batterOffset + rng.nextInt(upperBound: 9) - 4, 20, 80),
                 discipline: clamp(50 + batterOffset + rng.nextInt(upperBound: 7) - 3, 20, 80),
                 power: clamp(50 + batterOffset + rng.nextInt(upperBound: 9) - 4, 20, 80),
                 batSide: rng.nextInt(upperBound: 100) < 32 ? .left : .right
             )
+            let batter = balance.isProfessional
+                ? ProfessionalLineup.batter(teamKey: "lineup-\(baseSeed)", turn: paIndex, offset: batterOffset)
+                : averageBatter
             // 강점과 약점 코스는 서로 마주 보게 잡는다.
             //
             // 예전에는 둘을 각각 무작위로 뽑아서 **11%의 타자가 강점과 약점이 같은 칸**이었다.
@@ -166,7 +217,12 @@ public struct AutoOutingSimulator: Sendable {
                     context: context, preparationToken: preparation.preparationToken,
                     call: call,
                     rivalMemory: paMemory, gameState: gameState, gameLog: gameLog
-                )) else { return line }
+                ), delivery: delivery) else { return line }
+                if let ledger = scoring {
+                    scoring = try? ledger.advance(result.snapshot)
+                }
+                lastGameState = result.gameState
+                lastSeed = result.nextSeed
                 paMemory = result.rivalMemory
                 benchMemory = result.rivalMemory
                 gameState = result.gameState
@@ -175,7 +231,12 @@ public struct AutoOutingSimulator: Sendable {
                 currentFatigue = clamp(result.snapshot.fatigueAfterPitch, 0, 95)
                 if let paResult = result.snapshot.result {
                     if paResult == .strikeout { line.strikeouts += 1 }
-                    if paResult == .walk { line.walks += 1 }
+                    // 사구는 볼넷이 아니다. 거친 타석의 결과지 제구가 만든 출루가 아니라서
+                    // BB/9에 섞이면 제구를 잘못 읽는다.
+                    if paResult == .walk,
+                       !(balance.isProfessional && result.snapshot.outcome == .hitByPitch) {
+                        line.walks += 1
+                    }
                     if paResult == .hit {
                         line.hits += 1
                         switch result.snapshot.outcome {
@@ -194,6 +255,15 @@ public struct AutoOutingSimulator: Sendable {
                     runners = result.gameState.runners
                     let outsAfter = absoluteOuts(inningState)
                     line.outs += max(0, outsAfter - outsBefore)
+                    // 한 경기를 이어 던지는 경로에서는 회차를 실제 아웃 수로 되돌려 놓는다.
+                    // 그러지 않으면 초말 전환이 아홉 회를 넘겨 버린다.
+                    if fullStart {
+                        inningState = InningStateSnapshot(
+                            inning: min(9, (line.outs + priorOuts) / 3 + 1),
+                            half: .top,
+                            outs: (line.outs + priorOuts) % 3
+                        )
+                    }
                     break
                 }
                 seed = result.nextSeed
@@ -212,6 +282,17 @@ public struct AutoOutingSimulator: Sendable {
                 guard let nextPreparation = result.nextPreparation else { return line }
                 preparation = nextPreparation
             }
+        }
+        // 등판이 끝날 때 남긴 주자는 아직 이 투수의 책임이다. 남은 이닝을 리그 평균 구원
+        // 투수로 마저 돌려 그 주자들이 홈을 밟았는지만 본다.
+        if var ledger = scoring {
+            if let lastGameState {
+                ledger = settleReliefRuns(
+                    engine: engine, game: lastGameState, ledger: ledger, seed: lastSeed
+                )
+            }
+            line.runsAllowed = ledger.runs
+            line.earnedRuns = ledger.earnedRuns
         }
         return line
     }

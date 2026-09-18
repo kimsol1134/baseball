@@ -9,6 +9,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import com.solkim.baseball.application.CareerAccess
 import com.solkim.baseball.application.GameStage
 import org.junit.Assert.*
 import org.junit.Test
@@ -69,16 +70,45 @@ class FirstPitchLocalizedSmokeTest {
         tap("action.enterSetup")
         assertTrue(device.wait(Until.hasObject(By.res("setup.name")), 10_000))
         capture("name")
-        tap("setup.next")
-        assertTrue(device.wait(Until.gone(By.res("setup.name")), 10_000))
         tap("setup.region")
         tap("setup.region.부산")
         capture("region")
         tap("setup.next")
+        assertTrue(device.wait(Until.gone(By.res("setup.name")), 10_000))
         capture("style")
+        val confirmStarted = SystemClock.elapsedRealtime()
         tap("setup.confirm")
-        tap("action.beginTutorial")
-        tap("action.openTutorialPitch")
+        assertTrue("Introduction must wait on the actual mound", device.wait(Until.hasObject(By.res("pitch.practiceIntroduction.start")), 25_000))
+        android.util.Log.i("BASEBALL_LAUNCH_QA", "setup_to_introduction_ms=${SystemClock.elapsedRealtime() - confirmStarted}")
+        assertNull(CareerAccess.school(app.gameStore.current)?.lastPresentation)
+        tap("pitch.practiceIntroduction.start")
+        assertTrue("First-pitch action should open the mound", device.wait(Until.hasObject(By.res("pitch.slider")), 20_000))
+        if (InstrumentationRegistry.getArguments().getString("qaPreferenceFailure") == "true") {
+            require(context.packageName == "com.solkim.baseball.android.reset.compose.qa")
+            tap("pitch.settings")
+            for (attempt in 0..12) {
+                val bounds = requireNotNull(device.findObject(By.scrollable(true).pkg(context.packageName))).visibleBounds
+                val target = device.findObject(By.res("pitch.haptics.toggle"))?.visibleBounds
+                if (target != null && target.top >= bounds.top && target.bottom <= bounds.bottom) break
+                device.swipe(bounds.centerX(), bounds.bottom - 35, bounds.centerX(), bounds.top + 35, 24)
+                device.waitForIdle()
+            }
+            val before = app.gameStore.current.settings.hapticsEnabled
+            val blocked = File(context.getExternalFilesDir(null), "save/save.tmp")
+            assertTrue(blocked.mkdir())
+            val blocker = File(blocked, "qa-blocker").apply { writeText("disposable write fault") }
+            try {
+                capture("before-setting-error")
+                tap("pitch.haptics.toggle")
+                val errorVisible = device.wait(Until.hasObject(By.res("pitch.error")), 10_000)
+                if (!errorVisible) capture("missing-setting-error")
+                assertTrue("Pitch settings failures must be visible", errorVisible)
+                assertEquals(before, app.gameStore.current.settings.hapticsEnabled)
+                capture("setting-error")
+                tap("pitch.error.close")
+            } finally { blocker.delete(); if (blocked.isDirectory) assertTrue(blocked.delete()) }
+            tap("pitch.settings.close")
+        }
         val manualPlan = InstrumentationRegistry.getArguments().getString("qaManualPlan") == "true"
         if (manualPlan) {
             tap("pitch.type.curveball")
@@ -97,12 +127,10 @@ class FirstPitchLocalizedSmokeTest {
             capture("manual-plan")
         }
         if (InstrumentationRegistry.getArguments().getString("qaStrategy") == "true") {
-            tap("pitch.strategy")
-            // The opening bullpen may have no prepared catcher rationale.
+            // The catcher's reason sits inline under the sign. The opening bullpen may have none.
             device.wait(Until.findObject(By.res("pitch.rationale").pkg(context.packageName)), 1_000)?.click()
             capture("strategy")
-            assertTrue("A strategy dialog must remain available after inspecting its rationale", device.wait(Until.hasObject(By.res("pitch.strategy.close").pkg(context.packageName)), 5_000))
-            tap("pitch.strategy.close")
+            assertTrue("The slider must stay available after reading the catcher's reason", device.wait(Until.hasObject(By.res("pitch.slider").pkg(context.packageName)), 5_000))
         }
         val pad = device.wait(Until.findObject(By.res("pitch.slider").pkg(context.packageName)), 20_000)
         if (pad == null) capture("missing-slider")
@@ -130,10 +158,10 @@ class FirstPitchLocalizedSmokeTest {
         assertTrue("Saved result must be visible", device.wait(Until.hasObject(By.res("pitch.replay")), 20_000))
         capture("pitch")
         val state = app.gameStore.current
-        assertEquals("부산", state.highSchool?.run?.identity?.region)
+        assertEquals("부산", CareerAccess.school(state)?.run?.identity?.region)
         assertFalse(state.settings.autoReleaseEnabled)
         assertTrue("A real pitch must be committed", state.pitch?.resultHashes?.isNotEmpty() == true)
-        if (manualPlan) assertEquals(com.solkim.baseball.application.PitchKind.CURVEBALL, state.highSchool?.lastPresentation?.snapshot?.pitchType)
+        if (manualPlan) assertEquals(com.solkim.baseball.application.PitchKind.CURVEBALL, CareerAccess.school(state)?.lastPresentation?.snapshot?.pitchType)
         if (InstrumentationRegistry.getArguments().getString("qaNativeStore") == "true") {
             val nativeSave = File(context.getExternalFilesDir(null), "save/save.json")
             assertTrue("Native writer must create the production-format save", nativeSave.isFile)
@@ -146,9 +174,8 @@ class FirstPitchLocalizedSmokeTest {
         val intervals = frameTimes.toList().zipWithNext { a, b -> (b - a) / 1_000_000.0 }.sorted()
         val medianInterval = intervals.getOrNull(intervals.size / 2)
         android.util.Log.i("BASEBALL_LAUNCH_QA", "first_slider elapsed_ms=${SystemClock.elapsedRealtime() - started} requested_hz=$requestedRate actual_hz=${display.mode.refreshRate} meter_interval_ms=$medianInterval meter_frames=${frameTimes.size} revision=${state.revision}")
-        tap("pitch.continue")
-        tap("action.completeTutorial")
+        tap("pitch.practiceSchool")
         assertTrue("School choices must follow the first pitch", device.wait(Until.hasObject(By.res(java.util.regex.Pattern.compile("action.chooseSchool:.*"))), 20_000))
-        assertTrue(app.gameStore.current.highSchool?.tutorial?.completed == true)
+        assertTrue(CareerAccess.school(app.gameStore.current)?.tutorial?.completed == true)
     }
 }

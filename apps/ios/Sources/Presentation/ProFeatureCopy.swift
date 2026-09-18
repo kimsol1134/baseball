@@ -17,6 +17,18 @@ enum ProSeasonSettlementCopy {
         return resolver.resolve(.journeySettlementTitle, arguments: [.integer(season)])
     }
 
+    /// 회차 비교 카드의 부제("N시즌 → M시즌"). 화면이 인자를 직접 조립하지 않게 여기서 맞춘다.
+    static func seasonComparisonSubtitle(
+        previousLabel: Int,
+        currentLabel: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .seasonComparisonSeasons,
+            arguments: [.integer(previousLabel), .integer(currentLabel)]
+        )
+    }
+
     static func arcTitleKey(_ id: String?) -> ProUICopyKey? {
         switch id {
         case "pro.arc.first_half_ace": .journeyArcFirstHalfAce
@@ -335,6 +347,28 @@ enum ProWeeklyCopy {
         resolver.resolve(.gameContent(row.hintKey))
     }
 
+    static func advancementTitle(_ row: ProAdvancement, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.gameContent(row.titleKey))
+    }
+
+    static func advancementHint(_ row: ProAdvancement, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.gameContent(row.hintKey))
+    }
+
+    /// "체력 4 남음". 다음 문턱까지의 거리를 사람이 읽는 한 줄로.
+    static func advancementRemaining(
+        _ requirement: ProAdvancementRequirement,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .advancementRemaining,
+            arguments: [
+                .userText(resolver.resolve(.gameContent(requirement.labelKey))),
+                .integer(requirement.remaining),
+            ]
+        )
+    }
+
     static func goalBoardLine(_ row: ProGoalBoardRow, resolver: GameCopyResolver) -> String {
         resolver.resolve(
             .weeklyGoalBoardLine,
@@ -378,7 +412,10 @@ enum ProWeeklyCopy {
         qualityUses: Int,
         resolver: GameCopyResolver
     ) -> String {
-        resolver.resolve(
+        if PitchLearningProjectSnapshot.stage(practiceCredits: practiceCredits, qualityUses: qualityUses) == .completed {
+            return resolver.resolve(AppCopyKey.trainingPitchLearningCompleted)
+        }
+        return resolver.resolve(
             AppCopyKey.trainingPitchLearningProgress,
             arguments: [
                 .integer(practiceCredits),

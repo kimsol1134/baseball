@@ -19,14 +19,50 @@ final class PitchSession {
         case betweenBatters(String)
         /// 이닝이 끝났다. 리포트가 확정됐다.
         case finished
-        case failed(String)
+        /// 무너진 자리와 그때 알고 있던 것 전부. 화면은 여기서 출구를 고른다(7-B).
+        case failed(PitchFailureDiagnosis)
     }
 
-    private let engine = PitchKernelEngine(
-        recommendationEngine: CatcherRecommendationEngine(
-            rules: CatcherSignRules(version: CatcherSignRules.livePlayVersion)
+    /// 이 세션 한 판을 로그에서 이어 붙이는 끈.
+    let sessionID = UUID().uuidString
+
+    /// 실패 진단을 만든다. 저장 확인은 호출자가 넘긴 값을 쓴다 — 세션은 디스크를 모른다.
+    private func diagnose(
+        _ error: Error,
+        step: PitchFailureDiagnosis.Step,
+        savedRevision: UInt64 = 0,
+        expectedRevision: UInt64 = 0,
+        commandID: String? = nil
+    ) -> PitchFailureDiagnosis {
+        PitchFailureDiagnosis(
+            step: step,
+            correlationID: UUID().uuidString,
+            sessionID: sessionID,
+            pitchID: "\(sessionID):\(pitchLog.count)",
+            commandID: commandID,
+            expectedRevision: expectedRevision,
+            currentRevision: savedRevision,
+            failure: CareerActionFailureRules.classify(error),
+            recovery: PitchFailureRecoveryRules.recovery(
+                savedRevision: savedRevision,
+                expectedRevision: expectedRevision
+            )
         )
-    )
+    }
+
+    private func fail(_ error: Error, step: PitchFailureDiagnosis.Step) {
+        let diagnosis = diagnose(error, step: step)
+        stage = .failed(diagnosis)
+        CareerTelemetry.log(.pitchFailed, diagnosis.analyticsProperties)
+    }
+
+    /// 직접 던지는 공의 커널.
+    ///
+    /// 예전에는 `balance`를 넘기지 않아 기본값 `.legacy`가 조용히 들어갔다 — **기본 인자
+    /// 하나가 게임 밸런스를 정하고 있었고 아무도 그것을 고른 적이 없다.** 이제 시나리오가
+    /// 커리어의 규칙 버전에서 고른 값을 들고 오고, 오늘 값은 모든 버전에서 `.legacy`라
+    /// 동작은 한 줄도 바뀌지 않는다(계획 문서 §2.5).
+    private let engine: PitchKernelEngine
     let scenario: PitchScenario
 
     private(set) var stage: Stage = .ready
@@ -53,6 +89,8 @@ final class PitchSession {
     /// 이번 등판에서 **직접 던진** 공들의 릴리스 점수. 자동 릴리스(중립)는 세지 않는다 —
     /// 실력을 재는 자리에 실력이 개입하지 않은 공을 섞으면 평균이 거짓말을 한다.
     private(set) var deliveryScores: [Int] = []
+    /// 미터 정중앙을 맞힌 횟수. 등판 기록·시즌·통산으로 이어지고, 셋마다 각성 전조가 된다.
+    private(set) var perfectReleases = 0
     /// Aggregated locally, then committed by the career engine with the inning report. Outcome is
     /// deliberately irrelevant: only using the development pitch and executing it well count.
     private(set) var pitchLearningPitches: [PitchType: Int] = [:]
@@ -220,6 +258,8 @@ final class PitchSession {
             },
             sequenceMoments: sequenceMoments,
             deliveryScores: deliveryScores,
+            perfectReleases: perfectReleases,
+            runLedgerToken: runLedger?.token(),
             pitchLearningUses: pitchLearningReceipts,
             pitchLearningAwardedPlateAppearances: Array(pitchLearningAwardedPlateAppearances).sorted()
         )
@@ -242,6 +282,8 @@ final class PitchSession {
         actualDamage = resume.actualDamage
         recommendationAccepted = resume.recommendationAccepted
         outsRecorded = resume.outsRecorded
+        // 토큰이 없거나 읽을 수 없으면 원장 없이 이어 던진다 — 그 등판의 자책점은 모른다.
+        runLedger = resume.runLedgerToken.flatMap(PitchRunLedger.decode)
         hitsAllowed = resume.hitsAllowed ?? 0
         homeRunsAllowed = resume.homeRunsAllowed ?? 0
         rivalOutcomes = resume.rivalOutcomes
@@ -268,6 +310,7 @@ final class PitchSession {
         }
         sequenceMoments = resume.sequenceMoments ?? pitchLog.compactMap(\.sequenceMoment)
         deliveryScores = resume.deliveryScores ?? []
+        perfectReleases = resume.perfectReleases ?? 0
         let learningUses = resume.pitchLearningUses ?? []
         pitchLearningPitches = Dictionary(
             uniqueKeysWithValues: learningUses.map { ($0.pitchType, $0.pitchesThrown) }
@@ -311,6 +354,12 @@ final class PitchSession {
     }
 
     init(scenario: PitchScenario, seed: String) {
+        self.engine = PitchKernelEngine(
+            recommendationEngine: CatcherRecommendationEngine(
+                rules: CatcherSignRules(version: CatcherSignRules.livePlayVersion)
+            ),
+            balance: scenario.livePitchBalance
+        )
         self.scenario = scenario
         self.seed = seed
         self.scouting = scenario.scouting
@@ -342,6 +391,10 @@ final class PitchSession {
 
     func start() {
         guard preparation == nil else { return }
+        // 마운드에 오를 때 이미 나가 있는 주자는 전부 남의 책임이다.
+        if scenario.isProfessional {
+            runLedger = PitchRunLedger.entry(runners: scenario.runners, outs: scenario.outs)
+        }
         // 등판 하나가 곧 하나의 매치업이다. 시나리오 id를 벤치 식별자로 쓴다.
         rivalMemory = scenario.initialRivalMemory
             ?? RivalMemoryEngine().benchMemory(pitcher: pitcher, benchID: scenario.id)
@@ -401,6 +454,7 @@ final class PitchSession {
             if let delivery, let score = PitchDeliveryScoring.score(delivery) {
                 deliveryScores.append(score)
             }
+            if delivery?.isPerfectRelease == true { perfectReleases += 1 }
             if countsForPitchLearning {
                 recordPitchLearningUse(
                     call: call,
@@ -425,7 +479,7 @@ final class PitchSession {
                 ])
             }
         } catch {
-            stage = .failed(error.localizedDescription)
+            fail(error, step: .submit)
         }
     }
 
@@ -434,8 +488,18 @@ final class PitchSession {
     /// 코어를 우회하거나 결과를 미리 만들지 않는다. 화면에서 한 구씩 누를 때와 같은
     /// `preparePitch → submitPitch` 경로를 그대로 반복하며, 타석 종료/이닝 종료에서 멈춘다.
     /// 호출자가 저위험 상황에만 버튼을 노출하므로 승부처는 계속 직접 던진다.
+    /// - Parameter delivery: 이 타석을 어떤 손으로 던지는가. 화면의 자동 진행은 늘 중립이고,
+    ///   밸런스 하네스만 **실력 있는 손**을 넣어 잰다 — 중립만 재면 못 하는 사람 기준으로만
+    ///   난이도를 맞추게 된다(계획 문서 §2.5 Step 4).
+    /// - Parameter refineCall: 포수 1안을 받은 뒤 코스·노림만 고친다. nil이면 포수를 그대로
+    ///   따른다(화면의 자동 진행). 밸런스 하네스가 사람의 코스 선택을 흉내 낼 때만 넘긴다
+    ///   — school 곡선은 한복판을 벌하므로, 포수 추종만 재면 실력의 절반이 빠진다(§2.7).
     @discardableResult
-    func fastForwardCurrentBatter(maximumPitches: Int = 12) -> Int {
+    func fastForwardCurrentBatter(
+        maximumPitches: Int = 12,
+        delivery: PitchDelivery = .neutral,
+        refineCall: ((PitchCall, BatterScoutingSnapshot, PlateAppearanceContext) -> PitchCall)? = nil
+    ) -> Int {
         guard case .ready = stage, maximumPitches > 0 else { return 0 }
         let startingBatter = batterIndex
         let startingPitches = pitches
@@ -447,20 +511,37 @@ final class PitchSession {
               pitches - startingPitches < maximumPitches,
               case .ready = stage {
             if let preparation {
-                let call = preparation.primaryRecommendation.call
+                let catcher = preparation.primaryRecommendation.call
+                let call = refineCall?(catcher, scouting, context) ?? catcher
                 selectedPitchType = call.pitchType
                 selectedZone = call.zone
                 selectedIntent = call.zoneIntent
                 selectedIntensity = call.intensity
             }
             throwPitch(
-                delivery: .neutral,
-                automaticRelease: true,
+                delivery: delivery,
+                automaticRelease: delivery.isNeutral,
                 countsForPitchLearning: false
             )
         }
         return pitches - startingPitches
     }
+
+    /// 이 등판의 주자 책임 원장. 자책점은 스코어보드가 아니라 "수비가 깨끗했다면 몇 점이
+    /// 들어왔을까"를 묻기 때문에, 주자 한 명 한 명이 왜 거기 서 있는지를 들고 다녀야 한다.
+    ///
+    /// 프로 등판에서만 돈다. 원장이 커널이 보고한 주자와 어긋나면 그 자리에서 버린다 —
+    /// **어긋난 원장으로 계산한 자책점은 틀린 숫자이고, 틀린 숫자보다 '모른다'가 낫다**
+    /// (`AutoOutingSimulator`가 같은 규칙을 쓴다).
+    private(set) var runLedger: PitchRunLedger?
+
+    /// 이 등판에서 다시 볼 만했던 공들. 스토어가 등판을 정산할 때 앨범으로 옮긴다.
+    /// 세션이 들고 있는 동안에는 예산을 적용하지 않는다 — 예산은 앨범 전체를 봐야 정해진다.
+    private(set) var capturedReplays: [AlbumReplay] = []
+    /// 재생에 새길 좌표. 프로 등판이 아니면 0이고, 그때는 앨범에 담기지 않는다.
+    var replaySeason = 0
+    var replayWeek = 0
+    var replayOutingNumber = 0
 
     /// 이번 등판에서 실제로 잡은 아웃카운트. 매 투구의 차이로 누적한다.
     ///
@@ -501,7 +582,9 @@ final class PitchSession {
             sequenceMasteryCount: sequenceMasteryCount,
             hits: hitsAllowed,
             homeRuns: homeRunsAllowed,
-            pitchLearningUses: pitchLearningReceipts.isEmpty ? nil : pitchLearningReceipts
+            pitchLearningUses: pitchLearningReceipts.isEmpty ? nil : pitchLearningReceipts,
+            perfectReleases: perfectReleases,
+            earnedRuns: runLedger?.earnedRuns
         )
     }
 
@@ -616,6 +699,33 @@ final class PitchSession {
         homeRunsAllowed += snapshot.outcome == .homeRun ? 1 : 0
         hitByPitches += snapshot.outcome == .hitByPitch ? 1 : 0
         runsAllowed += snapshot.runsScored
+        // 다시 볼 만한 공은 궤적째 남긴다. 커널이 이미 궤적을 내놓으므로 새로 계산하는 것은
+        // 없고, 예산과 무엇을 남길지는 `AlbumReplayRules`가 정한다.
+        if AlbumReplayRules.isWorthKeeping(
+            outcome: snapshot.outcome,
+            result: snapshot.result,
+            perfectRelease: lastDelivery?.isPerfectRelease == true
+        ), let trajectory = snapshot.execution.trajectorySeries, !trajectory.isEmpty {
+            capturedReplays.append(
+                AlbumReplay(
+                    id: "\(scenario.id)-p\(context.pitchNumber)-\(pitches)",
+                    season: replaySeason,
+                    week: replayWeek,
+                    outingNumber: replayOutingNumber,
+                    pitchNumber: pitches,
+                    pitchType: call.pitchType,
+                    velocityTenthsKPH: snapshot.execution.velocityTenthsKPH,
+                    outcome: snapshot.outcome,
+                    result: snapshot.result,
+                    perfectRelease: lastDelivery?.isPerfectRelease == true,
+                    trajectory: trajectory
+                )
+            )
+        }
+        if let ledger = runLedger {
+            // 실패하면 nil이 되어 이 등판의 자책점은 '모른다'로 남는다. 되살리지 않는다.
+            runLedger = try? ledger.advance(snapshot)
+        }
         recommendationAccepted += snapshot.recommendationAccepted ? 1 : 0
         if let entry = result.gameLog.entries.last {
             expectedDamage += entry.expectedDamage
@@ -648,7 +758,19 @@ final class PitchSession {
 
         let inningEnded = snapshot.inningTransition?.inningEnded ?? false
         let reachedCap = batterIndex + 1 >= min(scenario.maximumBatters, scenario.lineup.count)
-        if inningEnded || reachedCap || reachedPitchCap {
+        if inningEnded, scenario.continuesAcrossInnings, !reachedCap, !reachedPitchCap {
+            // 우리 공격 이닝은 건너뛴다. 다음 회 초구부터 다시 던진다.
+            let nextInning = (gameState.inningState?.inning ?? context.inning) + 1
+            gameState = GameStateSnapshot(
+                defense: gameState.defense,
+                park: gameState.park,
+                runners: .empty,
+                runsAllowed: gameState.runsAllowed,
+                inningState: InningStateSnapshot(inning: nextInning, half: .top, outs: 0)
+            )
+            stage = .betweenBatters(snapshot.shortFeedback)
+            preparation = nil
+        } else if inningEnded || reachedCap || reachedPitchCap {
             stage = .finished
             preparation = nil
         } else {
@@ -690,7 +812,7 @@ final class PitchSession {
             applyRecommendation(prepared)
             stage = .ready
         } catch {
-            stage = .failed(error.localizedDescription)
+            fail(error, step: .prepare)
         }
     }
 

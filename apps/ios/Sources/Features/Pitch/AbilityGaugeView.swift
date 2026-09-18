@@ -204,6 +204,8 @@ struct ControlWindowPreview: View {
     let command: Int
     var beforeCommand: Int? = nil
     var compact = false
+    var showsLegend = true
+    var titleKey: String? = nil
     @Environment(\.gameCopyResolver) private var copyResolver
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var revealed = false
@@ -212,7 +214,7 @@ struct ControlWindowPreview: View {
     private var expanded: Bool { previous.map { current > $0 } ?? false }
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(verbatim: copyResolver.resolve(.localizable(expanded ? "control.window.expanded" : "control.window.short")))
+            Text(verbatim: copyResolver.resolve(.localizable(titleKey ?? (expanded ? "control.window.expanded" : "control.window.short"))))
                 .font(compact ? BaseballType.annotation : BaseballType.detail.weight(.semibold))
                 .foregroundStyle(expanded ? BaseballTheme.action : BaseballTheme.textSecondary)
             GeometryReader { proxy in
@@ -232,7 +234,7 @@ struct ControlWindowPreview: View {
                         .offset(x: proxy.size.width * 0.4875)
                 }
             }.frame(height: compact ? 12 : 18)
-            if previous != nil, !compact {
+            if previous != nil, !compact, showsLegend {
                 Text(verbatim: copyResolver.resolve(.localizable("control.window.legend")))
                     .font(BaseballType.annotation).foregroundStyle(BaseballTheme.textSecondary)
             }
@@ -243,5 +245,22 @@ struct ControlWindowPreview: View {
         .accessibilityIdentifier("growth.controlWindow")
         .onAppear { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.45)) { revealed = true } }
         .onChange(of: command) { _, _ in revealed = true }
+    }
+}
+
+struct ControlMilestoneGoal: View {
+    let command: Int
+    @Environment(\.gameCopyResolver) private var copyResolver
+    var body: some View {
+        if let target = PitchReleaseWindow.nextMilestone(command: command) {
+            let lower = PitchReleaseWindow.milestones.last(where: { $0 <= command }) ?? PitchReleaseWindow.baselineCommand
+            VStack(alignment: .leading, spacing: 5) {
+                Text(verbatim: copyResolver.resolve(.localizable("loop.growth.next"), arguments: [
+                    .integer(AbilityDisplayScale.displayRating(target) - AbilityDisplayScale.displayRating(command))]))
+                    .font(BaseballType.annotation).foregroundStyle(BaseballTheme.textSecondary)
+                ProgressView(value: Double(max(0, command - lower)), total: Double(target - lower))
+                    .tint(BaseballTheme.action)
+            }.accessibilityElement(children: .combine).accessibilityIdentifier("growth.controlGoal")
+        }
     }
 }

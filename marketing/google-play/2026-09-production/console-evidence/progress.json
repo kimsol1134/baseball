@@ -1,0 +1,36 @@
+{
+  "app": "com.solkim.baseball.android",
+  "target": "Google Play production",
+  "releaseBranch": "codex/play-production-2026-09-10",
+  "commit": "e130cf9ddbb20a683a1f9074d49deceef7e02fcb",
+  "aab": "artifacts/android-compose/production-42/rc/1.0.0-42/baseball-android-compose-1.0.0-42.aab",
+  "signedCandidateCreated": true,
+  "signedEmulatorSmokePassed": true,
+  "listingCopy": [
+    "ko-KR",
+    "en-US",
+    "ja-JP"
+  ],
+  "imagesCompleted": [
+    "ko-KR",
+    "en-US",
+    "ja-JP"
+  ],
+  "imagesInProgress": [],
+  "consoleReleaseUploaded": true,
+  "productionPublished": false,
+  "physicalDevice": "SM-A536N R5CT40GZSWZ Android 16 ko-KR; signed 42 smoke passed 2026-09-10",
+  "videosWired": {
+    "ko-KR": "https://www.youtube.com/watch?v=fQiix0qgAGc",
+    "en-US": "https://www.youtube.com/watch?v=dhC3FlNexwE",
+    "ja-JP": "https://www.youtube.com/watch?v=ZMNRhP6_GwE"
+  },
+  "reviewSubmitted": true,
+  "reviewStatus": "queued after Play pre-check; publishing overview shows 검토 중인 변경사항",
+  "versionCode": 42,
+  "countries": [
+    "KR",
+    "US",
+    "JP"
+  ]
+}

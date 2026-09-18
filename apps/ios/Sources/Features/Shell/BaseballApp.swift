@@ -20,6 +20,17 @@ struct BaseballApp: App {
         let proConfiguration = AppFeatureConfiguration.production
 #endif
         _pro = State(initialValue: MobileCareerStore(configuration: proConfiguration))
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uiTestIsolatedCareer") {
+            _highSchool = State(initialValue: HighSchoolCareerStore(
+                sync: CareerSaveSync.isolatedUITestStore(key: "highschool.json")
+            ))
+            _pro = State(initialValue: MobileCareerStore(
+                sync: CareerSaveSync.isolatedUITestStore(key: "pro.json"),
+                configuration: proConfiguration
+            ))
+        }
+#endif
     }
 
     /// UI 스모크 테스트가 저장된 커리어를 지우고 첫 실행 상태에서 시작하도록 하는 인자.
@@ -49,12 +60,15 @@ struct BaseballApp: App {
     nonisolated static let postseasonFixtureLaunchArgument = "-uiTestPostseasonFixture"
     /// 고교 1장 훈련 국면 첫 주를 바로 여는 Debug 전용 픽스처.
     nonisolated static let trainingFixtureLaunchArgument = "-uiTestTrainingFixture"
+    nonisolated static let commandMilestoneFixtureLaunchArgument = "-uiTestCommandMilestoneFixture"
+    nonisolated static let rebornFixtureLaunchArgument = "-uiTestRebornFixture"
     /// 프로 1시즌 6주차 결정 대기를 바로 여는 Debug 전용 픽스처.
     nonisolated static let seasonDecisionFixtureLaunchArgument = "-uiTestSeasonDecisionFixture"
     /// 프로 1시즌 24주차 시즌 리뷰 대기(계약 있음). 결산·오프시즌 스모크용.
     nonisolated static let seasonReviewFixtureLaunchArgument = "-uiTestSeasonReviewFixture"
     /// 은퇴 화면 미리보기 Debug 전용 픽스처.
     nonisolated static let retiredShareFixtureLaunchArgument = "-uiTestRetiredShareFixture"
+    nonisolated static let populatedProFixtureLaunchArgument = "-uiTestPopulatedProFixture"
 #endif
 
     @Environment(\.scenePhase) private var scenePhase
@@ -347,6 +361,9 @@ struct BaseballApp: App {
                         _ = pro.deleteCareer()
                         CareerTelemetry.resetCompletedGameCountForUITesting()
                         DailyReminder.resetForUITesting()
+                        // 앞선 테스트가 접어 둔 공개 영역이 다음 실행의 구종 구성·훈련
+                        // 설명을 삼키지 않게, 커리어와 같이 처음 본 상태로 되돌린다.
+                        SeenContentStore.reset()
                         // `previousReturnPlan`은 App 초기화 때 이미 읽힌 값이라 defaults만 지워서는
                         // 이번 화면에 남는다. 메모리 사본도 같은 원자적 초기화에 포함한다.
                         previousReturnPlan = nil
@@ -358,7 +375,11 @@ struct BaseballApp: App {
                             forKey: PitchControlPreferences.autoReleaseKey
                         )
 #if DEBUG
-                        if arguments.contains(Self.draftedCareerFixtureLaunchArgument) {
+                        if arguments.contains("-uiTestMissingProFixture") {
+                            if highSchool.installDraftedCareerFixtureForUITesting() {
+                                _ = highSchool.markEnteredPro()
+                            }
+                        } else if arguments.contains(Self.draftedCareerFixtureLaunchArgument) {
                             _ = highSchool.installDraftedCareerFixtureForUITesting()
                         } else if arguments.contains(Self.undraftedCareerFixtureLaunchArgument) {
                             _ = highSchool.installUndraftedDraftFixtureForUITesting()
@@ -366,6 +387,10 @@ struct BaseballApp: App {
                             _ = pro.installReviewImprovementFixtureForUITesting()
                         } else if arguments.contains(Self.postseasonFixtureLaunchArgument) {
                             _ = pro.installPostseasonFixtureForUITesting()
+                        } else if arguments.contains(Self.rebornFixtureLaunchArgument) {
+                            _ = highSchool.installRebornFixtureForUITesting(stopAtLegacy: arguments.contains("-uiTestStopAtLegacy"))
+                        } else if arguments.contains(Self.commandMilestoneFixtureLaunchArgument) {
+                            _ = highSchool.installTrainingFixtureForUITesting(presetID: "breaking_ball_artist", commandMilestone: true)
                         } else if arguments.contains(Self.trainingFixtureLaunchArgument) {
                             SeenContentStore.reset()
                             SeenContentStore.markSeen("hs.training.repeat.explained")
@@ -373,6 +398,13 @@ struct BaseballApp: App {
                         } else if arguments.contains(Self.seasonDecisionFixtureLaunchArgument) {
                             SeenContentStore.reset()
                             _ = pro.installSeasonDecisionFixtureForUITesting()
+                        } else if arguments.contains(Self.populatedProFixtureLaunchArgument) {
+                            let phaseIndex = arguments.firstIndex(of: "-uiTestProPhase")
+                            let phase = phaseIndex.flatMap { index in
+                                arguments.indices.contains(index + 1)
+                                    ? ProCareerPhase(rawValue: arguments[index + 1]) : nil
+                            } ?? .seasonReview
+                            _ = pro.installPopulatedProFixtureForUITesting(stoppingAt: phase)
                         } else if arguments.contains(Self.seasonReviewFixtureLaunchArgument) {
                             _ = pro.installSeasonReviewFixtureForUITesting()
                         } else if arguments.contains(Self.retiredShareFixtureLaunchArgument) {

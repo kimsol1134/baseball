@@ -1,0 +1,102 @@
+package com.solkim.baseball.application
+
+import com.solkim.baseball.core.pitch.*
+import com.solkim.baseball.core.highschool.*
+import com.solkim.baseball.core.pro.*
+
+public data class OutingBriefing(val title: String, val situation: String, val score: String, val goal: String, val reward: String, val story: String,
+    val inning: Int, val outs: Int, val bases: List<Int>, val lead: Int, val starterTrial: Boolean, val rewardTrust: Int) {
+    public fun localized(copy: GameCopy): OutingBriefing {
+        val runners = if (bases.isEmpty()) copy.resolve("improve.outing.empty-bases") else copy.resolve("improve.outing.bases", GameCopyArgument.UserText(bases.joinToString("·")))
+        return this.copy(title = copy.legacy(title), goal = copy.legacy(goal), story = copy.legacy(story),
+            score = if (lead == 0) copy.resolve("improve.outing.tied") else copy.resolve(if (lead > 0) "improve.outing.lead" else "improve.outing.trail", GameCopyArgument.Whole(kotlin.math.abs(lead).toLong())),
+            situation = copy.resolve("improve.outing.situation", GameCopyArgument.Whole(inning.toLong()), GameCopyArgument.Whole(outs.toLong()), GameCopyArgument.UserText(runners)),
+            reward = listOfNotNull(copy.resolve("improve.outing.chance").takeIf { starterTrial },
+                copy.resolve("improve.outing.reward", GameCopyArgument.Whole(rewardTrust.toLong())).takeIf { rewardTrust > 0 }).joinToString(" · "))
+    }
+}
+
+public object OutingPresentation {
+    public fun briefing(state: GameAggregateState, context: ScreenCommandContext = ScreenCommandContext()): OutingBriefing? {
+        val pro = state.pro?.takeIf { (state.stage == GameStage.PRO || state.pitch?.careerKind == PitchCareerKind.PRO) && (it.phase == ProCareerPhase.IMPORTANT_GAME || it.activePitch != null) }
+        val hs = state.highSchool?.takeIf { it.run.phase == HighSchoolPhase.IMPORTANT_GAME }
+        val preview = when {
+            pro != null -> state.copy(pitch = null, pro = if (pro.activePitch == null) ProKernel().reserveImportantGame(pro, context.seed(state, "pro-important-game")).state else pro)
+            hs != null -> state.copy(pitch = null, highSchool = if (hs.activePitch == null) HighSchoolPhase4Kernel().reserveImportantGame(context.seed(state, "important-game"), hs).state else hs)
+            else -> return null
+        }
+        val assignment = assignment(preview)
+        val board = PitchScoreboardProjection.model(preview)
+        val trust = if (pro != null) pro.managerTrust else hs?.run?.managerTrust ?: 100
+        val trial = assignment?.goal == OutingGoal.STARTER_TEST
+        val reward = minOf(if (trial) 8 else 2, (100 - trust).coerceAtLeast(0))
+        return OutingBriefing(title(preview) ?: "등판 상황", "${board.inningText} · ${board.outs}사 · ${PitchScoreboardProjection.situationLine(board.outs, board.runners).substringAfter(' ')}",
+            board.scoreText, assignment?.let(::goal) ?: "이번 이닝에 집중해요.",
+            listOfNotNull("선발 기회".takeIf { trial }, "감독의 믿음 +$reward".takeIf { assignment != null && reward > 0 }).joinToString(" · "),
+            if (pro != null) ProKernel().importantHeadline(pro.seasonTrigger ?: ProSeasonTrigger.STANDINGS_RACE, pro.currentRival, pro.level)
+            else preview.highSchool?.run?.currentGameScenario?.narrative.orEmpty(), board.inning, board.outs,
+            listOfNotNull(1.takeIf { board.runners.firstOccupied }, 2.takeIf { board.runners.secondOccupied }, 3.takeIf { board.runners.thirdOccupied }), board.scoreDiff, trial, if (assignment != null) reward else 0)
+    }
+    public fun isStarterTrial(state: GameAggregateState): Boolean = assignment(state)?.goal == OutingGoal.STARTER_TEST
+    public fun assignment(state: GameAggregateState): OutingAssignment? = state.pro?.activePitch?.assignment ?: state.highSchool?.activePitch?.assignment
+    public fun roleLabel(role: OutingRole): String = when (role) { OutingRole.STARTER -> "선발 등판"; OutingRole.RELIEF -> "중간계투 등판"; OutingRole.CLOSER -> "마무리 등판" }
+    public fun title(state: GameAggregateState): String? = assignment(state)?.let { if (it.goal == OutingGoal.STARTER_TEST) "선발 테스트" else if (it.role == OutingRole.STARTER && it.entryInning > 1) "선발 · ${it.entryInning}회부터 직접" else roleLabel(it.role) }
+    public fun goal(assignment: OutingAssignment): String = when (assignment.goal) {
+        OutingGoal.STARTER_TEST -> "직접 2이닝 · 2실점 이하"
+        OutingGoal.HOLD_LEAD -> "리드를 지켜 이닝 마무리"
+        OutingGoal.CLEAN_FRAME -> if (assignment.role == OutingRole.STARTER && assignment.entryInning == 1) "첫 이닝 무실점으로 출발" else "추가 실점 없이 이닝 마무리"
+    }
+    public fun goal(state: GameAggregateState): String {
+        val pro = state.pro
+        val p = pro?.activePitch
+        if (p?.assignment?.role == OutingRole.STARTER && p.assignment?.entryInning == 1 && p.assignment?.entryOuts == 0 && p.context.inning >= 7) return if (p.runsAllowed == 0) "완봉 도전 · 마지막 아웃까지" else "완투 도전 · 끝까지 책임지기"
+        if (p?.assignment?.role == OutingRole.STARTER && p.assignment?.entryInning == 1 && p.assignment?.entryOuts == 0 && p.context.inning >= 2) return if (p.outs < 15) "승리의 발판 · 5이닝 이상" else "불펜을 아끼는 투구"
+        return assignment(state)?.let(::goal) ?: "이번 이닝에 집중해요."
+    }
+    public fun progress(state: GameAggregateState): String? {
+        val proPitch = state.pro?.activePitch
+        if (proPitch?.assignment?.role == OutingRole.STARTER && proPitch.assignment?.entryInning == 1 && proPitch.assignment?.entryOuts == 0 && proPitch.context.inning >= 7) return "${(27 - proPitch.outs).coerceAtLeast(0)}아웃 남음 · ${proPitch.pitches}구"
+        if (proPitch?.assignment?.role == OutingRole.STARTER && proPitch.assignment?.entryInning == 1 && proPitch.assignment?.entryOuts == 0 && proPitch.context.inning >= 2) return "${proPitch.outs / 3}.${proPitch.outs % 3}이닝 · ${proPitch.pitches}구"
+        val goal = assignment(state) ?: return null
+        val outs = state.pro?.activePitch?.outs ?: state.highSchool?.activePitch?.outs ?: 0
+        return when (goal.status) {
+            OutingGoalStatus.ACHIEVED -> if (goal.goal == OutingGoal.STARTER_TEST) "테스트 합격! 선발 기회 확보" else if (goal.trustReward > 0) "목표 달성! 감독의 믿음 +${goal.trustReward}" else "목표 달성!"
+            OutingGoalStatus.FAILED -> "목표는 놓쳤지만, 남은 타자를 침착하게 막아보세요."
+            OutingGoalStatus.UNFINISHED -> "다음 기회를 준비해요."
+            OutingGoalStatus.PENDING -> "${outs.coerceAtMost(goal.targetOuts)}/${goal.targetOuts} 아웃"
+        }
+    }
+}
+
+public data class OutingLiveView(
+    val batterName: String,
+    val sessionPitches: Int,
+    val outs: Int,
+    val fatigue: Int,
+)
+
+public data class OutingBriefingModel(
+    val briefing: OutingBriefing?,
+    val portraitSeed: String?,
+    val isPro: Boolean,
+    val isAceYear: Boolean,
+    val live: OutingLiveView?,
+) {
+    public companion object {
+        public fun resolve(state: GameAggregateState, context: ScreenCommandContext): OutingBriefingModel {
+            val live = if (CareerUiRules.hasLiveOuting(state)) OutingLiveView(
+                batterName = PitchHudProjection.batter(state).name,
+                sessionPitches = PitchHudProjection.sessionPitches(state),
+                outs = CareerUiRules.liveOutingOuts(state),
+                fatigue = PitchHudProjection.fatigue(state),
+            ) else null
+            return OutingBriefingModel(
+                briefing = OutingPresentation.briefing(state, context),
+                portraitSeed = CareerUiRules.portraitSeed(state),
+                isPro = state.stage in setOf(GameStage.PRO, GameStage.RETIREMENT),
+                isAceYear = CareerUiRules.isAceYear(state),
+                live = live,
+            )
+        }
+    }
+}

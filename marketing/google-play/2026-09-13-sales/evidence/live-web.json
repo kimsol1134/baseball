@@ -1,0 +1,61 @@
+[
+  {
+    "path": "/",
+    "status": 200,
+    "bytes": 102635,
+    "google_play_links": [
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=ko&utm_source=official_site&utm_medium=website&utm_campaign=official_site&utm_content=header",
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=ko&utm_source=official_site&utm_medium=website&utm_campaign=official_site&utm_content=hero",
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=ko&utm_source=official_site&utm_medium=website&utm_campaign=official_site&utm_content=detail",
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=ko&utm_source=official_site&utm_medium=website&utm_campaign=official_site&utm_content=final",
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=ko&utm_source=official_site&utm_medium=website&utm_campaign=official_site&utm_content=mobile"
+    ]
+  },
+  {
+    "path": "/android",
+    "status": 200,
+    "bytes": 31732,
+    "google_play_links": [
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=ko&utm_source=official_site&utm_medium=website&utm_campaign=android_launch_202609&utm_content=header",
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=ko&utm_source=official_site&utm_medium=website&utm_campaign=android_launch_202609&utm_content=hero",
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=ko&utm_source=official_site&utm_medium=website&utm_campaign=android_launch_202609&utm_content=final",
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=ko&utm_source=official_site&utm_medium=website&utm_campaign=android_launch_202609&utm_content=mobile"
+    ]
+  },
+  {
+    "path": "/en",
+    "status": 200,
+    "bytes": 30479,
+    "google_play_links": [
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=en&utm_source=official_site&utm_medium=website&utm_campaign=official_site&utm_content=header",
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=en&utm_source=official_site&utm_medium=website&utm_campaign=official_site&utm_content=hero",
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=en&utm_source=official_site&utm_medium=website&utm_campaign=official_site&utm_content=final",
+      "https://play.google.com/store/apps/details?id=com.solkim.baseball.android&hl=en&utm_source=official_site&utm_medium=website&utm_campaign=official_site&utm_content=mobile"
+    ]
+  },
+  {
+    "path": "/support",
+    "status": 200,
+    "bytes": 18323
+  },
+  {
+    "path": "/en/support",
+    "status": 200,
+    "bytes": 19762
+  },
+  {
+    "path": "/sitemap.xml",
+    "status": 200,
+    "bytes": 1329
+  },
+  {
+    "path": "/robots.txt",
+    "status": 200,
+    "bytes": 87
+  },
+  {
+    "path": "/android/gameplay.mp4",
+    "status": 200,
+    "bytes": 789611
+  }
+]

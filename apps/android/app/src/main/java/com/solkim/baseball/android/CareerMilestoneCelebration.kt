@@ -1,0 +1,138 @@
+package com.solkim.baseball.android
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.solkim.baseball.application.*
+import com.solkim.baseball.design.BaseballColors
+import com.solkim.baseball.android.LocalizedGameText as Text
+
+/** Only newly observed milestones interrupt play. Loading an old career does not replay praise. */
+@Composable
+internal fun CareerMilestoneCelebration(state: GameAggregateState, showTrainingBloom: Boolean = true) {
+    val run = CareerUiRules.schoolFacts(state) ?: return
+    val copy = rememberGameCopy()
+    val wins = CareerUiRules.schoolWins(state)
+    var seenTraining by rememberSaveable(run.careerId) { mutableStateOf(run.trainings) }
+    var seenLearning by rememberSaveable(run.careerId) { mutableStateOf(run.learningCompleted) }
+    var seenAwakenings by rememberSaveable(run.careerId) { mutableStateOf(run.awakeningWires.size) }
+    var seenWins by rememberSaveable(run.careerId) { mutableStateOf(wins) }
+    var moment by rememberSaveable(run.careerId) { mutableStateOf<String?>(null) }
+    var detail by rememberSaveable(run.careerId) { mutableStateOf<String?>(null) }
+    var artBranch by rememberSaveable(run.careerId) { mutableStateOf("game") }
+    LaunchedEffect(run.revision, wins) {
+        when {
+            run.learningCompleted && !seenLearning -> {
+                moment = "pitch"
+                artBranch = "breaking"
+                detail = run.learningPitch?.let(TrainingPresentation::pitchLabel)
+            }
+            run.awakeningWires.size > seenAwakenings -> {
+                moment = "awakening"
+                artBranch = run.awakeningWires.last()
+                detail = HighSchoolDisplayRules.awakeningTitle(run.awakeningWires.last())
+            }
+            wins > 0 && seenWins == 0 -> { moment = "win"; detail = null }
+            showTrainingBloom && run.trainings > seenTraining && run.lastBloomed -> {
+                moment = "bloom"
+                artBranch = when (run.lastFocus) {
+                    TrainingFocus.VELOCITY, TrainingFocus.STAMINA -> "power"
+                    TrainingFocus.COMMAND -> "command"
+                    TrainingFocus.BREAKING_BALL -> "breaking"
+                    else -> "game"
+                }
+                detail = null
+            }
+        }
+        seenTraining = run.trainings
+        seenLearning = run.learningCompleted
+        seenAwakenings = run.awakeningWires.size
+        seenWins = wins
+    }
+    moment?.let { kind ->
+        AlertDialog(onDismissRequest = { moment = null }, modifier = Modifier.testTag("career.milestone"),
+            containerColor = BaseballColors.surfaceRaised,
+            title = {
+                Text(copy.resolve("career.moment.$kind"), verbatim = true, style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold, color = BaseballColors.action)
+            },
+            text = {
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (kind == "win") PlayerPortrait(seed = playerPortraitSeed(state) ?: run.playerName,
+                        stage = if (run.chapterNumber >= 5) PlayerStage.ACE else PlayerStage.FRESHMAN, width = 88.dp)
+                    else SkillCelebrationArtwork(artBranch)
+                    detail?.let { Text(it, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
+                }
+            },
+            confirmButton = { TextButton(onClick = { moment = null }, modifier = Modifier.testTag("career.milestone.continue")) {
+                Text(copy.resolve("career.moment.continue"), verbatim = true)
+            } })
+    }
+}
+
+/** Ordinary growth is a short-lived line, never a report or an extra continue button. */
+@Composable
+internal fun RecentGrowthNotice(state: GameAggregateState, enabled: Boolean) {
+    val receipt = state.meta.playerGrowth
+    val career = CareerUiRules.highSchoolCareerId(state) ?: CareerUiRules.proCareerId(state)
+    var consumed by rememberSaveable(career) { mutableStateOf(receipt?.commandId) }
+    LaunchedEffect(receipt?.commandId, enabled) {
+        if (receipt != null && receipt.commandId != consumed) {
+            if (enabled) kotlinx.coroutines.delay(3_500)
+            consumed = receipt.commandId
+        }
+    }
+    if (!enabled || receipt == null || receipt.commandId == consumed) return
+    val copy = rememberGameCopy()
+    val labels = listOf("구위", "제구", "변화구", "체력")
+    val lines = labels.indices.mapNotNull { index ->
+        val delta = AbilityDisplayScale.delta(receipt.before[index], receipt.after[index])
+        if (delta > 0) "${copy.legacy(labels[index])} +$delta" else null
+    }
+    if (lines.isNotEmpty()) StatChangeText(lines.joinToString(" · "), verbatim = true, fontWeight = FontWeight.Bold,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp).testTag("career.growthNotice"))
+}
+
+
+internal fun skillCelebrationArt(branch: String): Int = when (branch) {
+    "explosive_fastball" -> R.drawable.awakening_skill_explosive_fastball
+    "rising_four_seam" -> R.drawable.awakening_skill_rising_four_seam
+    "iron_arm" -> R.drawable.awakening_skill_iron_arm
+    "late_inning_reserve" -> R.drawable.awakening_skill_late_inning_reserve
+    "pinpoint_edge" -> R.drawable.awakening_skill_pinpoint_edge
+    "repeatable_release" -> R.drawable.awakening_skill_repeatable_release
+    "first_pitch_strike" -> R.drawable.awakening_skill_first_pitch_strike
+    "calm_under_pressure" -> R.drawable.awakening_skill_calm_under_pressure
+    "scout_composure" -> R.drawable.awakening_skill_scout_composure
+    "disappearing_breaker" -> R.drawable.awakening_skill_disappearing_breaker
+    "sweeping_slider" -> R.drawable.awakening_skill_sweeping_slider
+    "curveball_clock" -> R.drawable.awakening_skill_curveball_clock
+    "frozen_changeup" -> R.drawable.awakening_skill_frozen_changeup
+    "sinker_tunnel" -> R.drawable.awakening_skill_sinker_tunnel
+    "battery_sync" -> R.drawable.awakening_skill_battery_sync
+    "two_strike_plan" -> R.drawable.awakening_skill_two_strike_plan
+    "pickoff_rhythm" -> R.drawable.awakening_skill_pickoff_rhythm
+    "traffic_controller" -> R.drawable.awakening_skill_traffic_controller
+
+    "power" -> R.drawable.awakening_art_power
+    "command" -> R.drawable.awakening_art_command
+    "breaking" -> R.drawable.awakening_art_breaking
+    else -> R.drawable.awakening_art_game
+}
+
+@Composable
+internal fun SkillCelebrationArtwork(branch: String) {
+    Image(painter = painterResource(skillCelebrationArt(branch)), contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = Modifier.fillMaxWidth().aspectRatio(1.5f).clip(MaterialTheme.shapes.medium).testTag("career.milestone.art.$branch"))
+}

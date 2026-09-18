@@ -276,9 +276,15 @@ final class ScopedPresentationParityTests: XCTestCase {
         let beforeEventHash = started.eventHash
         let beforeNextSeed = started.nextSeed
 
+        // 아래 여섯 줄은 이 픽스처의 예보가 지금 무엇을 말하는지 적어 두는 기록이다.
+        // 진짜 계약은 이 함수 이름 그대로, **조회가 스냅숏·커밋먼트·이벤트 해시를 바꾸지
+        // 않는다**는 것이고 그 단언은 아래에 있다.
+        //
+        // v9는 공을 던지기 전에 "미지명권"에서 출발한다. 시작 평가 52가 문턱 50 위에
+        // 있어도, 아직 등판이 없으면 3년이 방어가 아니라 쟁취로 읽히게 한다(§2.8).
         let forecast = HighSchoolCareerEngine.draftForecast(state: started.snapshot)
         XCTAssertEqual(forecast.score, 52)
-        XCTAssertEqual(forecast.threshold, 66)
+        XCTAssertEqual(forecast.threshold, 50)
         XCTAssertEqual(forecast.band, "미지명권 — 아직 명단 밖")
         XCTAssertEqual(forecast.interestedTeam, "대구 포지")
         XCTAssertEqual(forecast.presentation?.bandID, .outside)

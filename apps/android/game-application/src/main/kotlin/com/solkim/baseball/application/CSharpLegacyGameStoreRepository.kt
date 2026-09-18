@@ -9,6 +9,7 @@ import com.solkim.baseball.persistence.LegacySaveCompatibilityException
 import com.solkim.baseball.persistence.SaveEnvelope
 import com.solkim.baseball.persistence.SaveFailureCode
 import com.solkim.baseball.persistence.SaveFileLayout
+import com.solkim.baseball.persistence.SaveFaultInjector
 import com.solkim.baseball.persistence.SaveLoadResult
 import com.solkim.baseball.persistence.SaveLoadStatus
 import com.solkim.baseball.persistence.SaveRepositoryException
@@ -58,11 +59,21 @@ private object CSharpPayloadCodec : JsonPayloadCodec<JsonValue.Obj> {
 public class CSharpLegacyGameStoreRepository(
     public val directory: Path,
     private val installId: String,
+    private val resetSideEffects: ResetSideEffects = NoResetSideEffects,
+    faults: SaveFaultInjector = SaveFaultInjector.NONE,
+    private val allowDeviceRestore: Boolean = false,
 ) : NativeAuthoritativeGameStoreRepository {
     private val delegate: KotlinSaveRepository<JsonValue.Obj> = AtomicJsonRepository(
         layout = SaveFileLayout(directory),
         codec = CSharpPayloadCodec,
+        faults = faults,
         preserveUnknownEnvelopeFields = true,
+    )
+
+    // A durable fresh-state intent lives outside the save files being erased. It is replayed
+    // before any load/write so process death can never restore a pre-reset backup.
+    private val resetIntent: KotlinSaveRepository<JsonValue.Obj> = AtomicJsonRepository(
+        layout = SaveFileLayout(directory.resolve("progress-reset")), codec = CSharpPayloadCodec,
     )
 
     init {
@@ -77,21 +88,40 @@ public class CSharpLegacyGameStoreRepository(
         )
 
     override suspend fun load(): SaveLoadResult<GameAggregateState> = withContext(Dispatchers.IO) {
-        project(delegate.load())
+        finishPendingReset()
+        val loaded = delegate.load()
+        val restored = loaded.envelope
+        if (allowDeviceRestore && restored != null && restored.payload.string("installId") != installId) {
+            // OS restore moves only the validated career files, never the no-backup install identity.
+            // Rebind once through the atomic writer; preserve the career, command receipts and pitch result.
+            val revision = restored.revision.checkedIncrement()
+            val payload = JsonValue.Obj(LinkedHashMap(restored.payload.entries).apply {
+                put("installId", JsonValue.Str(installId))
+                put("revision", JsonValue.Num(revision.toString()))
+            })
+            CSharpPayloadCodec.validate(payload)
+            delegate.save(payload, revision)
+            project(delegate.load())
+        } else project(loaded)
     }
 
-    override suspend fun reset(): Unit = withContext(Dispatchers.IO) { delegate.reset() }
+    override suspend fun reset(): Unit = withContext(Dispatchers.IO) { delegate.reset(); resetIntent.reset() }
 
     public suspend fun exportCareer(): ByteArray = withContext(Dispatchers.IO) {
+        finishPendingReset()
         val loaded = delegate.load()
         require(loaded.status in setOf(SaveLoadStatus.LOADED_CANONICAL, SaveLoadStatus.RECOVERED_BACKUP)) { "backup.no_save" }
-        CareerBackup.encode(requireNotNull(loaded.envelope).payload)
+        val saved = requireNotNull(loaded.envelope)
+        require(CareerBackup.isAvailable(projectEnvelope(saved).payload)) { "backup.challenge_active" }
+        CareerBackup.encode(saved.payload)
     }
 
     public suspend fun importCareer(bytes: ByteArray, expectedRevision: ULong): GameAggregateState = withContext(Dispatchers.IO) {
         val source = CareerBackup.decode(bytes)
+        finishPendingReset()
         val loaded = delegate.load()
         require(loaded.status in setOf(SaveLoadStatus.NO_SAVE, SaveLoadStatus.LOADED_CANONICAL, SaveLoadStatus.RECOVERED_BACKUP)) { "backup.current_save_unavailable" }
+        require(loaded.envelope?.let { CareerBackup.isAvailable(projectEnvelope(it).payload) } != false) { "backup.challenge_active" }
         require((loaded.envelope?.revision ?: 0UL) == expectedRevision) { "backup.stale_revision" }
         val sourceRevision = (source["revision"] as? JsonValue.Num)?.raw?.toULongOrNull() ?: error("backup.revision")
         val revision = maxOf(expectedRevision, sourceRevision).checkedIncrement()
@@ -113,6 +143,7 @@ public class CSharpLegacyGameStoreRepository(
             throw GameCommandException(error.message ?: "game.command.invalid")
         }
 
+        finishPendingReset()
         val loaded = delegate.load()
         val currentEnvelope = when (loaded.status) {
             SaveLoadStatus.NO_SAVE -> null
@@ -127,8 +158,8 @@ public class CSharpLegacyGameStoreRepository(
         if (envelope.expectedRevision != currentRevision) throw GameCommandException("game.command.stale_revision")
 
         val currentPayload = currentEnvelope?.payload ?: initialPayload(installId)
-        val commandReceipts = currentPayload.stringArray("commandReceipts")
-        if (envelope.commandId in commandReceipts) {
+        val commandReceipts = currentPayload.stringArray("commandReceipts").map(CareerWire::migrateCommandId)
+        if (CareerWire.migrateCommandId(envelope.commandId) in commandReceipts) {
             // The C# v1 wire stores command IDs, not command/result hashes.  Replaying a durable
             // ID is therefore safe and idempotent, while a new ID still requires the exact
             // expected revision above.
@@ -137,6 +168,17 @@ public class CSharpLegacyGameStoreRepository(
                 eventHash = GameCommandCodec.resultHash(before, envelope, "legacy.duplicate"),
                 duplicate = true,
             )
+        }
+
+        if (envelope.command == GameCommand.ResetProgress) {
+            val revision = currentRevision.checkedIncrement()
+            val fresh = JsonValue.Obj(LinkedHashMap(initialPayload(installId).entries).apply {
+                put("revision", JsonValue.Num(revision.toString()))
+                put("commandReceipts", JsonValue.Arr(listOf(JsonValue.Str(envelope.commandId))))
+            })
+            resetIntent.save(fresh, revision)
+            val after = projectEnvelope(requireNotNull(finishPendingReset())).payload
+            return@withContext GameDispatchResult(after, GameCommandCodec.resultHash(before, envelope, "game.reset"), duplicate = false)
         }
 
         val applied = try {
@@ -151,6 +193,12 @@ public class CSharpLegacyGameStoreRepository(
         val growth = PlayerGrowthReceipt.transition(before, projected, envelope.commandId)
         val nextMeta = LinkedHashMap((applied.payload["meta"] as JsonValue.Obj).entries)
         if (growth == null) nextMeta.remove("playerGrowth") else nextMeta["playerGrowth"] = PlayerGrowthReceipt.encode(growth)
+        val abilityHistory = AbilityHistory.transition(before, projected, envelope.commandId)
+        if (abilityHistory.isNotEmpty()) nextMeta["abilityHistory"] = AbilityHistory.encode(abilityHistory)
+        val companion = PitcherCompanionRules.transition(before, projected)
+        if (companion == null) nextMeta.remove("companion") else nextMeta["companion"] = PitcherCompanionCodec.encode(companion)
+        val album = PlayerAlbum.capture(before, projected)
+        if (album.isNotEmpty()) nextMeta["album"] = PlayerAlbumCodec.encode(album)
         val payload = JsonValue.Obj(LinkedHashMap(applied.payload.entries).apply { put("meta", JsonValue.Obj(nextMeta)) })
         val written = delegate.save(payload, nextRevision)
         val after = projectEnvelope(written.envelope).payload
@@ -159,6 +207,25 @@ public class CSharpLegacyGameStoreRepository(
             eventHash = GameCommandCodec.resultHash(before, envelope, applied.eventName),
             duplicate = false,
         )
+    }
+
+    private fun finishPendingReset(): SaveEnvelope<JsonValue.Obj>? {
+        val pending = resetIntent.load()
+        if (pending.status == SaveLoadStatus.NO_SAVE) return null
+        require(pending.status in setOf(SaveLoadStatus.LOADED_CANONICAL, SaveLoadStatus.RECOVERED_BACKUP)) { "reset.intent_unavailable" }
+        val intent = requireNotNull(pending.envelope)
+        val fresh = intent.payload
+        require(fresh.string("installId") == installId && fresh.string("stage") == GameStage.OPENING.wire &&
+            fresh["highSchool"] == JsonValue.Null && fresh["pro"] == JsonValue.Null && fresh.stringArray("commandReceipts").size == 1) { "reset.intent_invalid" }
+        delegate.reset()
+        val written = delegate.save(fresh, intent.revision).envelope
+        resetSideEffects.clearAnalytics()
+        resetSideEffects.clearReview()
+        resetSideEffects.clearReminders()
+        resetSideEffects.clearScopedEpoch()
+        resetSideEffects.clearShareCache()
+        resetIntent.reset()
+        return written
     }
 
     private fun project(source: SaveLoadResult<JsonValue.Obj>): SaveLoadResult<GameAggregateState> {

@@ -31,8 +31,8 @@ final class HighSchoolCareerEngineTests: XCTestCase {
     func testVerticalSliceContentMinimumsUseStableUniqueIDs() {
         XCTAssertEqual(HighSchoolContentCatalog.events.count, 36)
         XCTAssertEqual(Set(HighSchoolContentCatalog.events.map(\.id)).count, 36)
-        XCTAssertEqual(HighSchoolContentCatalog.scenarios.count, 30)
-        XCTAssertEqual(Set(HighSchoolContentCatalog.scenarios.map(\.id)).count, 30)
+        XCTAssertEqual(HighSchoolContentCatalog.scenarios.count, 31)
+        XCTAssertEqual(Set(HighSchoolContentCatalog.scenarios.map(\.id)).count, 31)
         XCTAssertEqual(AwakeningID.allCases.count, 18)
         XCTAssertEqual(MemoryCardID.allCases.count, 18)
     }
@@ -709,11 +709,11 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         // 신규 8종을 포함한 20종 시나리오 전부가 경기 상황으로 성립하는지 검증한다. 이닝 1–10,
         // 아웃 0–2, 레버리지 1–1000, 리드 주자 스피드 범위, 제목·서사 비어 있지 않음, id 고유.
         let scenarios = HighSchoolContentCatalog.scenarios
-        XCTAssertEqual(scenarios.count, 30)
-        XCTAssertEqual(Set(scenarios.map(\.id)).count, 30, "scenario ids must be unique")
-        // (이닝, 아웃, 주자 배치) 조합도 서로 겹치지 않아 30종이 실제로 다른 상황을 만든다.
+        XCTAssertEqual(scenarios.count, 31)
+        XCTAssertEqual(Set(scenarios.map(\.id)).count, 31, "scenario ids must be unique")
+        // (이닝, 아웃, 주자 배치) 조합도 서로 겹치지 않아 31종이 실제로 다른 상황을 만든다.
         let situations = scenarios.map { "\($0.inning)-\($0.outs)-\($0.runners.firstOccupied)-\($0.runners.secondOccupied)-\($0.runners.thirdOccupied)" }
-        XCTAssertEqual(Set(situations).count, 30, "each scenario must be a distinct (inning, outs, runners) situation")
+        XCTAssertEqual(Set(situations).count, 31, "each scenario must be a distinct (inning, outs, runners) situation")
         for scenario in scenarios {
             XCTAssertTrue((1...10).contains(scenario.inning), "\(scenario.id): inning out of range")
             XCTAssertTrue((0...2).contains(scenario.outs), "\(scenario.id): outs out of range")
@@ -1687,6 +1687,6 @@ extension HighSchoolCareerEngineTests {
         }
         // 시기 고정 장면 5 — 결승·마지막 이닝·한여름·선배들의 마지막·퍼펙트.
         let always = HighSchoolContentCatalog.scenarios.filter { $0.minChapter <= 1 }
-        XCTAssertEqual(HighSchoolContentCatalog.scenarios.count - always.count, 5)
+        XCTAssertEqual(HighSchoolContentCatalog.scenarios.count - always.count, 6)
     }
 }

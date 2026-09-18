@@ -1,5 +1,7 @@
 package com.solkim.baseball.android
 
+import com.solkim.baseball.application.CareerAccess
+
 import android.content.Intent
 import android.os.Build
 import android.os.PowerManager
@@ -27,15 +29,30 @@ class PitchSustainedRenderTest {
         context.getSharedPreferences("launch-qa", 0).edit().putInt("refresh-rate", 120).commit()
         val device = UiDevice.getInstance(inst)
         device.wakeUp()
+        val existing = app.gameStore.current.pitch
+        if (existing != null && existing.boundary !in setOf(com.solkim.baseball.application.PitchBoundary.COMPLETED, com.solkim.baseball.application.PitchBoundary.ABANDONED)) {
+            context.startActivity(PitchActivity.intent(context, existing.sessionId, app.gameStore.current.revision.toString()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } else {
         context.startActivity(requireNotNull(context.packageManager.getLaunchIntentForPackage(context.packageName))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
-        val open = device.wait(Until.findObject(By.res("action.openTutorialPitch")), 20_000)
-        assertNotNull("Run FirstPitchLocalizedSmokeTest first", open)
-        requireNotNull(open).click()
+        // A disposable QA install starts at the opening screen, so the career this render sample needs
+        // is created here instead of depending on another test class having run first.
+        device.wait(Until.findObject(By.res("action.enterSetup")), 20_000)?.click()
+        if (device.wait(Until.hasObject(By.res("setup.name")), 10_000)) {
+            requireNotNull(device.wait(Until.findObject(By.res("setup.next")), 10_000)).click()
+            requireNotNull(device.wait(Until.findObject(By.res("setup.confirm")), 10_000)).click()
+        }
+        device.wait(Until.findObject(By.res("pitch.practiceIntroduction.start").enabled(true)), 20_000)?.click()
+        }
+        // The replay this test samples exists only after a pitch has been thrown.
+        if (!device.wait(Until.hasObject(By.res("pitch.replay")), 5_000)) {
+            val slider = requireNotNull(device.wait(Until.findObject(By.res("pitch.slider")), 20_000)).visibleBounds
+            device.swipe(slider.centerX(), slider.centerY(), slider.centerX() + 1, slider.centerY(), 180)
+        }
         assertTrue(device.wait(Until.hasObject(By.res("pitch.replay")), 20_000))
         val revision = app.gameStore.current.revision
         val receipts = app.gameStore.current.pitch?.resultHashes
-        val careerCommitment = app.gameStore.current.highSchool?.stateCommitment
+        val careerCommitment = CareerAccess.school(app.gameStore.current)?.stateCommitment
         val completedGames = app.gameStore.current.meta.completedGameCount
         var settledRevision: ULong? = null
         val power = context.getSystemService(PowerManager::class.java)
@@ -49,7 +66,7 @@ class PitchSustainedRenderTest {
                 assertNotNull("Replay must remain available", replay)
                 requireNotNull(replay).click()
                 SystemClock.sleep(4_000)
-                assertEquals("Replay must not change the career", careerCommitment, app.gameStore.current.highSchool?.stateCommitment)
+                assertEquals("Replay must not change the career", careerCommitment, CareerAccess.school(app.gameStore.current)?.stateCommitment)
                 assertEquals("Replay must not add a completed game", completedGames, app.gameStore.current.meta.completedGameCount)
                 assertEquals(receipts, app.gameStore.current.pitch?.resultHashes)
                 // The launcher may finish its screen-view receipt after opening the saved result.

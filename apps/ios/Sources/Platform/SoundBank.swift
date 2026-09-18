@@ -27,6 +27,11 @@ enum SoundAsset: String, CaseIterable {
     case crowdGroan = "crowd-groan"
     /// 이어서 도는 관중 웅성거림. 이 하나만 넣어도 체감이 가장 크게 바뀐다.
     case crowdLoop = "crowd-loop"
+    /// 정중앙 릴리스에만 울리는 종. 이 게임에서 손으로 해낼 수 있는 가장 어려운 것에
+    /// 다른 소리를 준다 — 잘 던진 공과 완벽하게 던진 공이 귀로 갈린다.
+    case perfectRelease = "perfect-release"
+    /// 공이 날아가는 동안 깔리는 공기음. 구속에 비례해 커지고 빨라진다.
+    case pitchFlight = "pitch-flight"
     /// 메뉴·커리어 화면 아래 이어 도는 음악. 파일이 없으면 합성 패드가 대신 깔린다.
     /// 이어 붙는 루프이므로 무손실(wav/aiff/caf/ALAC)이어야 한다 — 손실 압축은 이음매에 틈이 생긴다.
     case menuTheme = "menu-theme"
@@ -44,6 +49,8 @@ enum SoundAsset: String, CaseIterable {
         case .umpireStrikeout: .umpireStrikeout
         case .crowdCheer: .crowdCheer
         case .crowdGroan: .crowdGroan
+        case .perfectRelease: .perfectRelease
+        case .pitchFlight: .pitchFlight
         // 성장·기념·UI 음은 게임 안의 소리가 아니라 화면 피드백이다. 맑은 합성음이 더 맞고,
         // 녹음을 넣으면 오히려 다른 앱에서 들어 본 소리처럼 들린다.
         case .growth, .milestone, .uiSelect: nil

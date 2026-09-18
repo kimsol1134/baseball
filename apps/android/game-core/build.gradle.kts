@@ -9,7 +9,7 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
-    api(project(":game-model"))
+    api(project(":game-core-api"))
     testImplementation(kotlin("test"))
     testImplementation(libs.junit)
 }

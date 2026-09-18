@@ -95,7 +95,7 @@ private func canonicalRow(_ row: Row) -> String {
 }
 
 private func run(seed: String) throws -> Row {
-    let engine = HighSchoolCareerEngine()
+    let engine = HighSchoolCareerEngine(gameplayRulesVersion: HighSchoolGameplayRules.reference)
     var result = try engine.start(.init(seed: seed, presetID: "power_prospect"))
     let startingPitcher = result.snapshot.pitcher
     var phases = [result.snapshot.phase.rawValue]

@@ -400,7 +400,7 @@ final class PresentationCopyTokenTests: XCTestCase {
             .pitchOutcome,
             rawValues: [
                 "ball", "called_strike", "swinging_strike", "foul", "in_play_out",
-                "single", "double", "triple", "home_run", "hit_by_pitch",
+                "single", "reached_on_error", "double", "triple", "home_run", "hit_by_pitch",
             ]
         )
         assertFamily(.zoneIntent, rawValues: ["strike", "edge", "chase"])
@@ -588,7 +588,7 @@ final class PresentationCopyTokenTests: XCTestCase {
 
     func testImportantGamePresentationRegistryCoversAllCurrentScenariosAndFallbacks() throws {
         let scenarios = HighSchoolContentCatalog.scenarios
-        XCTAssertEqual(scenarios.count, 30)
+        XCTAssertEqual(scenarios.count, 31)
         XCTAssertEqual(ImportantGamePresentationCatalog.scenarioIDs, scenarios.map(\.id))
         XCTAssertEqual(
             ImportantGamePresentationCatalog.scenarioDescriptors.count,

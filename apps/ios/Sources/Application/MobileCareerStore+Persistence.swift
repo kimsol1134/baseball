@@ -6,6 +6,16 @@ import BaseballIOSPersistence
 
 extension MobileCareerStore {
     @discardableResult
+    /// 실패를 한 곳에서 기록한다. 반복 여부까지 여기서 정해 화면이 다시 계산하지 않는다.
+    func recordFailure(_ failure: CareerActionFailure, operation: String = #function) {
+        lastActionFailure = failure
+        lastFailureRepeated = failureRepetition.record(
+            operation: operation,
+            failure: failure,
+            revision: result?.snapshot.revision ?? 0
+        )
+    }
+
     func save() -> Bool {
         guard let result else { return false }
         return persist(result: result, gameResume: gameResume)
@@ -21,6 +31,7 @@ extension MobileCareerStore {
         acknowledgedInjuryEventID: String? = nil
     ) -> Bool {
         guard featureConfiguration.proCareerJourneyV1 || result.snapshot.journeyState == nil else {
+            recordFailure(.init(kind: .rule, code: "journey_disabled"))
             return false
         }
         let existing = capturePersisted()
@@ -30,21 +41,51 @@ extension MobileCareerStore {
                 : pendingInjuryEvent,
             acknowledgedID: acknowledgedInjuryEventID ?? existing.acknowledgedInjuryEventID
         )
-        let schemaVersion = ProCareerPersistence.schemaVersion(for: candidateState)
-        guard canWrite() else { return false }
+        var candidateWithAlbum = foldingStagedReplays(into: candidateState)
+        // 이 명령의 영수증을 같은 트랜잭션에 태운다. 저장이 성공해야 영수증도 남는다.
+        if let operation = stagedCommandOperation {
+            candidateWithAlbum.commandReceipts = CommandReceiptRetention.retaining(
+                (candidateWithAlbum.commandReceipts ?? [])
+                    + [receipt(for: operation, at: existing.result?.snapshot.revision ?? 0)]
+            )
+        }
+        let schemaVersion = ProCareerPersistence.schemaVersion(for: candidateWithAlbum)
+        guard canWrite() else {
+            // 쓰기가 막힌 저장본은 디스크 문제가 아니다. 공간을 비워도 풀리지 않는다.
+            recordFailure(CareerActionFailureRules.classify(writeDisabled: true))
+            return false
+        }
         let candidateRevision = ProCareerPersistence.nextRevision(
             after: syncedRevision,
             atLeast: result.snapshot.revision
         )
         let record = ProCareerPersistence.record(
-            from: candidateState,
+            from: candidateWithAlbum,
             schemaVersion: schemaVersion,
             syncRevision: candidateRevision
         )
-        guard let data = ProCareerPersistence.encode(record) else { return false }
-        let didWrite = saveWriter?(data) ?? sync.write(data)
-        guard didWrite else { return false }
-        updatePersisted { $0.syncedRevision = candidateRevision }
+        guard let data = ProCareerPersistence.encode(record) else {
+            recordFailure(CareerActionFailureRules.classify(encodeFailed: true))
+            return false
+        }
+        if let saveWriter {
+            guard saveWriter(data) else {
+                recordFailure(CareerActionFailureRules.classify(write: .io(code: "injected")))
+                return false
+            }
+        } else if let writeFailure = sync.writing(data) {
+            // 파일 시스템이 말한 이유를 그대로 싣는다. 공간 부족은 그렇게 말했을 때만이다.
+            recordFailure(CareerActionFailureRules.classify(write: writeFailure))
+            return false
+        }
+        lastActionFailure = nil
+        // 디스크가 받아들인 뒤에만 앨범을 커밋하고 대기열을 비운다. 실패하면 다음 저장에서
+        // 다시 시도되므로 이번 등판의 공이 조용히 사라지지 않는다.
+        var committed = candidateWithAlbum
+        committed.syncedRevision = candidateRevision
+        replacePersisted(committed)
+        stagedReplays = []
+        stagedCommandOperation = nil
         return true
     }
 
@@ -216,6 +257,9 @@ extension MobileCareerStore {
            let resume = record.gameResume,
            PitchScenario.pro(state: restored.snapshot).id == resume.scenarioID {
             let session = PitchSession(state: restored.snapshot, seed: resume.seed)
+            session.replaySeason = restored.snapshot.season
+            session.replayWeek = restored.snapshot.week
+            session.replayOutingNumber = (restored.snapshot.gameLines?.count ?? 0) + 1
             session.start()
             session.restore(from: resume)
             attachCheckpoint(session)
@@ -234,13 +278,25 @@ extension MobileCareerStore {
         }
     }
 
+    /// - Parameter operation: 이 명령을 뭐라고 부르는가. 주면 **같은 명령이 두 번 적용되지
+    ///   않는다** — 버튼이 두 번 눌리거나 저장이 재시도돼도 한 번만 간다(7-D).
     @discardableResult
     func perform(
         summary: String? = nil,
         cue: FeedbackCue? = nil,
         clearGameResumeOnSuccess: Bool = false,
+        operation: String? = nil,
         _ action: () throws -> ProCareerResult
     ) -> Bool {
+        // 영수증은 상태를 바꾸기 전에 본다. 명령을 실행한 뒤에 거절하면 이미 늦었다.
+        if let operation, !acceptsCommand(operation) {
+            // 재전송은 규칙이 막은 것이지 저장이 실패한 것이 아니다(7-A·7-D).
+            recordFailure(.init(kind: .rule, code: "duplicate_command"), operation: operation)
+            return false
+        }
+        stagedCommandOperation = operation
+        // 저장이 실패했거나 규칙이 거절했으면 이 명령의 영수증을 다음 저장에 얹지 않는다.
+        defer { stagedCommandOperation = nil }
         do {
             let before = result?.snapshot
             guard featureConfiguration.proCareerJourneyV1 || before?.journeyState == nil else {
@@ -289,7 +345,17 @@ extension MobileCareerStore {
             AchievementStore.shared.submit(LeaderboardRules.scores(for: updated.snapshot))
             return true
         } catch {
-            loadState = .failed(error.localizedDescription)
+            let failure = CareerActionFailureRules.classify(error)
+            recordFailure(failure, operation: operation ?? "perform")
+            // **규칙이 거절한 일은 커리어를 못 쓰게 만들지 않는다.** 예전에는 어떤 오류든
+            // `loadState`를 실패로 뒤집어, 이미 적용한 결정을 한 번 더 누른 것만으로도
+            // 화면이 "커리어를 열 수 없습니다"가 됐다. 이유만 알리고 화면은 그대로 둔다.
+            if failure.kind == .rule || failure.kind == .pitchState {
+                feedbackCue = .setback
+                feedbackTrigger += 1
+            } else {
+                loadState = .failed(error.localizedDescription)
+            }
             return false
         }
     }

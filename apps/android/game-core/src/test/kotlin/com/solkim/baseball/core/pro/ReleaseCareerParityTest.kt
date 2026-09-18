@@ -7,11 +7,10 @@ import com.solkim.baseball.model.StrictJson
 import java.nio.file.Path
 import java.nio.file.Files
 import kotlin.test.*
-import org.junit.Assume.assumeTrue
 
 /** Replay Swift-authored commands; fixed game reports isolate career rules from mound rendering. */
 class ReleaseCareerParityTest {
-    private val kernel = ProKernel()
+    private val kernel = ProKernel(gameplayRulesVersion = 10)
     private fun signed(s: ProState): ProState = s.copy(commitment = kernel.commitment(s))
     private fun values(s: ProState): List<String> {
         val r = s.currentStats
@@ -26,7 +25,7 @@ class ReleaseCareerParityTest {
             s.journeyState?.pendingContractMarket?.offers.orEmpty().joinToString(";") { "${it.teamId}:${it.years}:${it.annualSalary}:${it.signingBonus ?: 0}:${it.contractKind.wire}:${it.rolePromise.wire}:${it.expectation.kind.wire}:${it.expectation.target}:${it.expectation.difficulty.wire}" })
     }
     private fun replayHighSchool(root: JsonValue.Obj): HighSchoolState {
-        val k = HighSchoolKernel()
+        val k = HighSchoolKernel(balanceRulesVersion = 4)
         var state: HighSchoolState? = null
         val rows = (root["highSchool"] as JsonValue.Arr).values.map { it as JsonValue.Obj }
         for ((index, row) in rows.withIndex()) {
@@ -65,10 +64,10 @@ class ReleaseCareerParityTest {
         return requireNotNull(state)
     }
     @Test fun currentSwiftTwentySeasonTranscriptMatchesEveryCareerTransition() {
-        val path = Path.of("../../../artifacts/android-compose/release-gate/swift-release-parity.json")
-        assumeTrue("Run tools/run-android-release-gate.py to generate current Swift evidence", Files.exists(path))
-        val root = StrictJson.parseUtf8(Files.readAllBytes(path)) as JsonValue.Obj
-        assertEquals(ProCatalog.RULES_VERSION, (root["rulesVersion"] as JsonValue.Num).raw.toInt())
+        val root = com.solkim.baseball.core.SwiftReleaseReference.read()
+        val evidenceDirectory = Path.of("../../../artifacts/android-compose/release-gate")
+        Files.createDirectories(evidenceDirectory)
+        assertEquals(10, (root["rulesVersion"] as JsonValue.Num).raw.toInt())
         assertEquals(HighSchoolContentCatalog.BALANCE_VERSION, (root["balanceVersion"] as JsonValue.Num).raw.toInt())
         val linkedSchool = replayHighSchool(root)
         for (scenario in listOf("pro", "proFa", "proLinked")) {
@@ -88,14 +87,14 @@ class ReleaseCareerParityTest {
                 } else kernel.startLinked(ProStartLinkedRequest(seed, "fixture-hs", "민서준", ProCatalog.pitcherForPreset("power_prospect", "민서준"), ProCatalog.teams.first().id, 72, draftRound = 2, signingBonus = 120_000_000, overallPick = 18))
                 "contract" -> kernel.acceptContractOffer(s!!, seed, s.journeyState!!.pendingContractMarket!!.offers.first().id, ProCareerAmbition.entries.firstOrNull { it.wire == args[0] })
                 "week" -> kernel.planWeek(s!!, seed, ProWeekPlan.entries.single { it.wire == args[0] })
-                "decision" -> { require(s!!.pendingDecision!!.choices.any { it.id == args[0] }) { "step=$index expected=${args[0]} actual=${s.pendingDecision.type.wire}:${s.pendingDecision.choices.map { it.id }}" }; kernel.applySeasonDecision(s, seed, s.pendingDecision.id, args[0]) }
+                "decision" -> { require(s!!.pendingDecision!!.choices.any { it.id == args[0] }) { "step=$index expected=${args[0]} actual=${s.pendingDecision!!.type.wire}:${s.pendingDecision!!.choices.map { it.id }}" }; kernel.applySeasonDecision(s, seed, s.pendingDecision!!.id, args[0]) }
                 "game" -> {
                     // Swift receives an ImportantInningReport. Adapt the same report to Android's session boundary.
                     val prepared = kernel.reserveImportantGame(s!!, seed).state
                     val entry = PitchAnalysisEntry(PitchKind.FOUR_SEAM, true, false, PitchOutcome.CALLED_STRIKE, SelectionQuality.entries.first(), 700, null, 0, 0, true, 1400)
-                    val session = prepared.activePitch!!.copy(seed = seed, pitches = 24, pitchIndex = 24, preparationToken = "", boundary = ProPitchBoundary.COMPLETED, log = prepared.activePitch.log.copy(totalPitches = 24, entries = List(24) { entry }), strikeouts = 4, walks = 0, runsAllowed = 0,
+                    val session = prepared.activePitch!!.copy(seed = seed, pitches = 24, pitchIndex = 24, preparationToken = "", boundary = ProPitchBoundary.COMPLETED, log = prepared.activePitch!!.log.copy(totalPitches = 24, entries = List(24) { entry }), strikeouts = 4, walks = 0, runsAllowed = 0,
                         expectedDamage = 420, actualDamage = 160, recommendationAccepted = 16, outs = 3, hits = 0, homeRuns = 0,
-                        sequenceMasteryCount = 1, ended = true, context = prepared.activePitch.context.copy(scoreDifferential = 2))
+                        sequenceMasteryCount = 1, ended = true, context = prepared.activePitch!!.context.copy(scoreDifferential = 2))
                     kernel.finishImportantGame(signed(s.copy(activePitch = session)))
                 }
                 "review" -> kernel.reviewSeason(s!!, seed)
@@ -114,7 +113,7 @@ class ReleaseCareerParityTest {
             output += JsonValue.Obj(linkedMapOf("step" to JsonValue.Num(index.toString()), "action" to row.entries.getValue("action"),
                 "expected" to row.entries.getValue("values"), "actual" to JsonValue.Arr(actual.map(JsonValue::Str)),
                 "expectedSeed" to row.entries.getValue("nextSeed"), "actualSeed" to JsonValue.Str(result.nextSeed), "rawAndroidPhase" to JsonValue.Str(state.phase.wire)))
-            if (index % 50 == 0 || index == rows.lastIndex || expected != actual || text("nextSeed") != result.nextSeed) Files.writeString(path.resolveSibling("kotlin-release-parity-$scenario.json"), StrictJson.canonical(JsonValue.Arr(output)))
+            if (index % 50 == 0 || index == rows.lastIndex || expected != actual || text("nextSeed") != result.nextSeed) Files.writeString(evidenceDirectory.resolve("kotlin-release-parity-$scenario.json"), StrictJson.canonical(JsonValue.Arr(output)))
             assertEquals(expected, actual, "first divergence step=$index action=${text("action")} seed=$seed")
             assertEquals(text("nextSeed"), result.nextSeed, "seed divergence at $index ${text("action")}")
             state = ProStateCodec.decode(ProStateCodec.encode(state))

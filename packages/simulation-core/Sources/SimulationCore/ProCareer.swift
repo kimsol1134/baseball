@@ -17,9 +17,17 @@ public struct ProEntitlementSnapshot: Codable, Equatable, Sendable {
 
 public struct ProCareerEngine: Sendable {
     public let journeyEnabled: Bool
+    /// The rules version this engine signs the states it produces with.
+    ///
+    /// Live play uses `currentRulesVersion`, and a career in progress moves onto it at its next
+    /// command. The **frozen reference export** pins `ProGameplayRules.reference` instead: the
+    /// Android parity fixture exists to hold the v10 path still, so it cannot be allowed to drift
+    /// forward every time the live version moves.
+    public let rulesVersion: Int
 
-    public init(journeyEnabled: Bool = false) {
+    public init(journeyEnabled: Bool = false, rulesVersion: Int = ProCareerEngine.currentRulesVersion) {
         self.journeyEnabled = journeyEnabled
+        self.rulesVersion = rulesVersion
     }
 
     public func start(_ params: StartProCareerParams) throws -> ProCareerResult {
@@ -89,7 +97,7 @@ public struct ProCareerEngine: Sendable {
         } catch {
             throw SimulationError.invalidProCareer("invalid starting repertoire")
         }
-        let base = ProCareerSnapshot(proCareerID: id, revision: 0, phase: .contractOffer, identity: params.identity, pitcher: pitcher, team: team, entitlement: params.entitlement, age: 19, season: 1, week: 0, level: .minor, role: .starter, managerTrust: 42, catcherTrust: 45, fatigue: 0, injuryWeeks: 0, serviceYears: 0, militaryCompleted: false, contract: nil, currentStats: stats, careerStats: [], awards: [], milestones: ["프로 지명"], news: ["신인 계약 제안 · \(team.name) · \(params.identity.name)"], hallOfFameScore: nil, commitment: "", balanceVersion: PitcherPresetCatalog.balanceVersion, proRulesVersion: params.proRulesVersion ?? Self.currentRulesVersion, seasonSegment: .springCamp, seasonImportantGames: 0, decisionHistory: [], repertoireRulesVersion: repertoireRulesVersion, pitchLearningProject: pitchLearningProject, journeyState: journeyState)
+        let base = ProCareerSnapshot(proCareerID: id, revision: 0, phase: .contractOffer, identity: params.identity, pitcher: pitcher, team: team, entitlement: params.entitlement, age: 19, season: 1, week: 0, level: .minor, role: .starter, managerTrust: 42, catcherTrust: 45, fatigue: 0, injuryWeeks: 0, serviceYears: 0, militaryCompleted: false, contract: nil, currentStats: stats, careerStats: [], awards: [], milestones: ["프로 지명"], news: ["신인 계약 제안 · \(team.name) · \(params.identity.name)"], hallOfFameScore: nil, commitment: "", balanceVersion: PitcherPresetCatalog.balanceVersion, proRulesVersion: params.proRulesVersion ?? rulesVersion, seasonSegment: .springCamp, seasonImportantGames: 0, decisionHistory: [], repertoireRulesVersion: repertoireRulesVersion, pitchLearningProject: pitchLearningProject, journeyState: journeyState)
         let state = signed(base)
         if journeyEnabled {
             try validateState(state)
@@ -523,10 +531,20 @@ public struct ProCareerEngine: Sendable {
         var outings: Int
         let outsTargetPerOuting: Int
         let pitchCapPerOuting: Int
+        // 24주에 선발 28회, 셋업·마무리 60회. 실제 보직의 등판 수다 — 선발은 6주마다 한 번
+        // 더 나가고, 뒷문은 이틀 연투를 격주로 한다.
+        let professionalRoles = ProGameplayRules.usesProfessionalBalance(state.proRulesVersion)
         switch state.role {
-        case .starter: outings = 1; outsTargetPerOuting = 18; pitchCapPerOuting = 96
-        case .longRelief: outings = 2; outsTargetPerOuting = 6; pitchCapPerOuting = 42
-        case .setup, .closer: outings = 3; outsTargetPerOuting = 3; pitchCapPerOuting = 24
+        case .starter:
+            outings = professionalRoles && nextWeek % 6 == 0 ? 2 : 1
+            outsTargetPerOuting = 18
+            pitchCapPerOuting = 96
+        case .longRelief:
+            outings = 2; outsTargetPerOuting = 6; pitchCapPerOuting = 42
+        case .setup, .closer:
+            outings = professionalRoles && nextWeek % 2 == 0 ? 2 : 3
+            outsTargetPerOuting = 3
+            pitchCapPerOuting = 24
         }
         var weekLine = WeeklyOutingLine()
         var newGameLines: [ProGameLine] = []
@@ -558,8 +576,18 @@ public struct ProCareerEngine: Sendable {
                     batterOffset: weekOffset,
                     callPolicy: weekCallPolicy,
                     baseSeed: rng.next() ^ UInt64(bitPattern: Int64(nextWeek &* 0x9E37)) &+ UInt64(outingIndex),
-                    diverseScouting: Self.usesWeeklyDecisionRules(state)
+                    diverseScouting: Self.usesWeeklyDecisionRules(state),
+                    proRulesVersion: state.proRulesVersion,
+                    // v13 선발은 목표 이닝이 아니라 감독의 교체 판단으로 끝난다. 잘 던지면
+                    // 9회까지 가고, 맞으면 5회에 내려온다.
+                    fullStart: ProGameplayRules.usesWorkload(state.proRulesVersion)
+                        && state.role == .starter
                 )
+                // 등판 전부터 던질 상태가 아니면 그날은 등판이 없다. 0투구를 한 경기로 세면
+                // 등판 수와 방어율 분모가 모두 거짓이 된다.
+                if ProGameplayRules.usesWorkload(state.proRulesVersion), outingLine.pitches == 0 {
+                    continue
+                }
                 weekLine.outs += outingLine.outs
                 weekLine.strikeouts += outingLine.strikeouts
                 weekLine.walks += outingLine.walks
@@ -578,6 +606,12 @@ public struct ProCareerEngine: Sendable {
                 let othersRuns = LeagueBaseline.restOfTeamRuns(outsCovered: othersOuts, using: &rng)
                 let opponentRuns = outingLine.runsAllowed + othersRuns
                 let started = state.role == .starter
+                // 구원 등판의 승패 귀속. 선발은 예전 규칙 그대로이므로 뽑지 않고, 추첨은
+                // v12 이상 경로 안에만 있어 기존 난수 스트림도 그대로다.
+                let reliefDecisionDraw = !started
+                    && ProGameplayRules.usesProfessionalBalance(state.proRulesVersion)
+                    ? rng.nextInt(upperBound: 1_000)
+                    : nil
                 newGameLines.append(
                     ProGameLine(
                         season: state.season,
@@ -597,17 +631,26 @@ public struct ProCareerEngine: Sendable {
                             outs: outingLine.outs,
                             runsAllowed: outingLine.runsAllowed,
                             teamRuns: support,
-                            opponentRuns: opponentRuns
+                            opponentRuns: opponentRuns,
+                            reliefDecisionDraw: reliefDecisionDraw,
+                            shortStartSharesTheLoss: ProGameplayRules.usesWorkload(state.proRulesVersion)
                         ),
                         played: false,
                         hits: outingLine.hits,
-                        homeRuns: outingLine.homeRuns
+                        homeRuns: outingLine.homeRuns,
+                        earnedRuns: outingLine.earnedRuns,
+                        // 완투는 아홉 이닝을 혼자 책임지고 경기가 갈린 날이다. 무승부로
+                        // 끝난 경기는 아무도 완투로 기억하지 않는다.
+                        completeGame: ProGameplayRules.usesWorkload(state.proRulesVersion)
+                            ? started && outingLine.outs == 27 && support != opponentRuns
+                            : nil
                     )
                 )
             }
         }
-        let games = restingWeek ? 0 : outings
-        let starts = restingWeek ? 0 : (state.role == .starter ? outings : 0)
+        // 등판이 실제로 성립한 날만 경기다. v13에서는 감독이 아예 내보내지 않은 날이 있다.
+        let games = restingWeek ? 0 : newGameLines.count
+        let starts = restingWeek ? 0 : (state.role == .starter ? games : 0)
         let strikeouts = weekLine.strikeouts
         let walks = weekLine.walks
         let runs = weekLine.runsAllowed
@@ -625,7 +668,19 @@ public struct ProCareerEngine: Sendable {
             case .recover: -16
             }
             let outingLoad = (weekLine.pitches + 14) / 15
-            let staminaRelief = max(0, (state.pitcher.stamina - 50) / 15)
+            // 체력이 경기 **사이**에도 값을 해야 한다.
+            //
+            // 예전 식 `(체력−50)/15`는 체력 80에서 감면이 겨우 2였다. 40에서 80까지 올려도
+            // 주간 누적이 13에서 11로 바뀔 뿐이라, 어떤 투수든 3주에 한 주는 회복에 써야
+            // 했고 커리어는 늘 피로 50~70에서 돌아갔다. 그 피로가 `ProOutingUsageRules`의
+            // 교체 판단을 앞당겨 등판당 2~3이닝에 묶었다 — 체력을 키운 보상이 경기 안에서만
+            // 있고 시즌에는 없었다는 뜻이다.
+            //
+            // `(체력−40)/5`는 체력 80에서 8을 깎아 주간 누적을 5로 낮춘다. 세 주를 훈련하고
+            // 한 주를 쉬면 되는 몸이 된다. 체력 40은 그대로 매주 지친다.
+            let staminaRelief = ProGameplayRules.usesProfessionalBalance(state.proRulesVersion)
+                ? max(0, (state.pitcher.stamina - 40) / 5)
+                : max(0, (state.pitcher.stamina - 50) / 15)
             fatigueDelta = trainingLoad + outingLoad - staminaRelief
         } else if params.plan == .recover {
             fatigueDelta = -20
@@ -704,10 +759,14 @@ public struct ProCareerEngine: Sendable {
             pitches: state.currentStats.pitches + weekLine.pitches,
             wins: state.currentStats.wins + newGameLines.count { $0.decision == .win },
             losses: state.currentStats.losses + newGameLines.count { $0.decision == .loss },
-            saves: state.currentStats.saves + newGameLines.count { $0.decision == .save }
+            saves: state.currentStats.saves + newGameLines.count { $0.decision == .save },
+            // 시즌 자책점은 그 시즌의 **모든** 등판에 원장이 있을 때만 성립한다. 한 경기라도
+            // 원장이 없으면 합계는 그 경기를 0으로 세는 거짓말이 되므로 통째로 '모른다'로 둔다.
+            earnedRuns: Self.seasonEarnedRuns(state: state, newGameLines: newGameLines)
         )
-        let earnedCallUp = trust >= 60 && skill >= 46
-            && (state.season > 1 || stats.games >= 12 || stats.strikeouts >= 40)
+        let earnedCallUp = ProCallUpRules.qualifies(
+            trust: trust, skill: skill, season: state.season, stats: stats
+        )
         // **2군행이 있다.** 예전에는 한번 올라가면 내려오지 않았다 — 1군이 승급이 아니라
         // 통과 지점이었다는 뜻이고, 그러면 남은 시즌에 걸린 것이 없어진다.
         //
@@ -945,6 +1004,19 @@ public struct ProCareerEngine: Sendable {
             followUpEvents.append("pro_weekly_decision_followup_resolved")
         }
         trackedModifiers.removeAll { $0.expiresWeek <= nextWeek }
+        // **문턱을 넘은 주는 그 주에 말한다.** 보드(`ProAdvancementRules`)는 그 뒤로도 계속
+        // 들고 있지만, 문이 열린 순간이 결과 화면을 한 번 지나가지 않으면 플레이어는 자기가
+        // 무엇을 얻었는지 모른 채 지나친다. 승격은 이미 위에서 알리므로 겹쳐 말하지 않는다.
+        if ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) {
+            let advanced = replacing(
+                state, pitcher: nextPitcher, level: level, role: role, managerTrust: nextTrust
+            )
+            let opened = ProAdvancementRules.newlyUnlocked(from: state, to: advanced)
+                .filter { !($0 == .majorCallUp && state.level != level) }
+            for kind in opened {
+                news.insert(ProAdvancementRules.unlockedNewsKey(kind), at: 0)
+            }
+        }
         let modifiersOverride: [ProDecisionModifier]?? = trackedModifiers.isEmpty ? .some(nil) : .some(trackedModifiers)
         let followUpsOverride: [ProDecisionFollowUp]?? = resolvedFollowUps.isEmpty ? .some(nil) : .some(resolvedFollowUps)
         let updated = replacing(state, revision: state.revision + 1, phase: phase, pitcher: nextPitcher, week: nextWeek, level: level, role: role, managerTrust: nextTrust, fatigue: fatigue, injuryWeeks: newInjury, currentStats: stats, gameLines: (state.gameLines ?? []) + newGameLines, milestones: milestones, news: Array(news.prefix(30)), seasonSegment: nextSegment, seasonTrigger: trigger, currentRival: rival, seasonTensions: seasonTensionsValue, seasonImportantGames: importantGames, pendingDecision: pendingDecision, developmentProgress: development.progress, pitchLearningProject: development.pitchLearningProject, journeyState: journeyOverride, postseason: postseasonOverride, activeDecisionModifiers: modifiersOverride, resolvedFollowUps: followUpsOverride)
@@ -1373,7 +1445,19 @@ public struct ProCareerEngine: Sendable {
         }
         let followUpRecords = unresolvedIndices.map { decisionHistory[$0] }
         let followUpReward = followUpRecords.count * (soundProcess ? 2 : -1)
-        let trust = clamp(params.state.managerTrust + report.strikeouts * 2 - report.walks * 2 - report.runsAllowed * 3 + (soundProcess ? 2 : 0) + sequenceTrustReward + followUpReward, 0, 100)
+        let trust = clamp(
+            params.state.managerTrust + Self.liveOutingTrustDelta(
+                strikeouts: report.strikeouts,
+                walks: report.walks,
+                runsAllowed: report.runsAllowed,
+                soundProcess: soundProcess,
+                sequenceReward: sequenceTrustReward,
+                followUpReward: followUpReward,
+                proRulesVersion: params.state.proRulesVersion
+            ),
+            0,
+            100
+        )
         // 실제로 잡은 아웃을 쓴다. 없으면 예전처럼 어림하되, 그건 옛 저장본 호환용 경로다.
         let directOuts = report.outs ?? max(3, report.pitches / 5)
         var gameLines = params.state.gameLines ?? []
@@ -1386,24 +1470,69 @@ public struct ProCareerEngine: Sendable {
         let scheduledLine = scheduledIndex.map { gameLines[$0] }
         let started = scheduledLine?.started ?? (params.state.role == .starter)
         let scheduledOuts = scheduledLine?.outs ?? 0
-        let complementOuts = max(0, scheduledOuts - directOuts)
+        let professional = ProGameplayRules.usesProfessionalBalance(params.state.proRulesVersion)
+        let workload = ProGameplayRules.usesWorkload(params.state.proRulesVersion)
+        // 규칙 13에서는 직접 던진 뒤에도 감독이 계속 맡길지를 묻는다. 계속이면 남은 이닝은
+        // 예정된 자동 등판의 길이가 아니라 **경기 전체**(27아웃)까지다 — 완투는 그렇게 온다.
+        let staysOnTheMound = !workload || ProOutingUsageRules.canContinue(
+            pitcher: params.state.pitcher,
+            outs: directOuts,
+            pitches: report.pitches,
+            fatigue: params.state.fatigue,
+            runs: report.runsAllowed,
+            starter: started
+        )
+        let complementOuts = !staysOnTheMound ? 0
+            : workload && started ? max(0, 27 - directOuts)
+            : max(0, scheduledOuts - directOuts)
+        // **내가 던지지 않은 이닝도 실제로 던져진다.**
+        //
+        // 예전에는 예정된 자동 등판의 기록을 이닝 비율로 잘라 남겼다. 그러면 그 이닝의
+        // 안타·삼진·실점이 내가 직접 만든 결과의 그림자일 뿐이라, 6회를 삼자범퇴로 막고
+        // 내려온 날과 만루를 남기고 내려온 날의 나머지 이닝이 같아진다. 같은 투구 엔진으로
+        // 실제로 시뮬레이션하면 그 이닝이 자기 몫의 결과를 갖는다(안드로이드 v12와 같다).
+        let complement: AutoOutingSimulator.Line? = professional && complementOuts > 0
+            ? AutoOutingSimulator(balance: workload ? .professionalWorkload : .professional).simulate(
+                pitcher: params.state.pitcher,
+                startingFatigue: params.state.fatigue,
+                outsTarget: complementOuts,
+                pitchCap: complementOuts * 7 + 12,
+                batterOffset: Self.liveBatterOffset(for: params.state, week: params.state.week),
+                baseSeed: rng.next() ^ 0x434F_4D50,
+                diverseScouting: true,
+                fullStart: workload && started,
+                priorOuts: workload && started ? directOuts : 0,
+                priorPitches: workload && started ? report.pitches : 0,
+                priorRuns: workload && started ? report.runsAllowed : 0
+            )
+            : nil
 
         func retained(_ value: Int) -> Int {
+            // 규칙 11 이하의 옛 경로. 반올림 나눗셈을 쓰는 것은 내림이면 중요 경기를 치를
+            // 때마다 시즌 안타·삼진·볼넷이 조금씩 깎여 나갔기 때문이다(18→16, 133→132).
             guard scheduledOuts > 0 else { return 0 }
-            // 반올림 나눗셈. 내림을 쓰면 중요 경기를 치를 때마다 시즌 안타·삼진·볼넷이
-            // 조금씩 깎여 나갔다(실측: 18→16, 133→132처럼 resolve마다 손실).
             return (value * complementOuts + scheduledOuts / 2) / scheduledOuts
         }
 
-        // 자동 등판의 같은 비율만 남기고 사용자가 직접 만든 승부처 성적을 합친다.
-        // 선발은 나머지 이닝이 보존되고, 한 이닝 구원은 거의 전부 직접 결과가 된다.
-        let outs = scheduledLine == nil ? directOuts : complementOuts + directOuts
-        let strikeouts = retained(scheduledLine?.strikeouts ?? 0) + report.strikeouts
-        let walks = retained(scheduledLine?.walks ?? 0) + report.walks
-        let runsAllowed = retained(scheduledLine?.runsAllowed ?? 0) + report.runsAllowed
-        let pitches = retained(scheduledLine?.pitches ?? 0) + report.pitches
-        let hits = retained(scheduledLine?.hits ?? 0) + (report.hits ?? 0)
-        let homeRuns = retained(scheduledLine?.homeRuns ?? 0) + (report.homeRuns ?? 0)
+        func merged(_ direct: Int, _ complementValue: Int?, _ scheduled: Int) -> Int {
+            direct + (professional ? (complementValue ?? 0) : retained(scheduled))
+        }
+
+        let outs = professional
+            ? directOuts + (complement?.outs ?? 0)
+            : scheduledLine == nil ? directOuts : complementOuts + directOuts
+        let strikeouts = merged(report.strikeouts, complement?.strikeouts, scheduledLine?.strikeouts ?? 0)
+        let walks = merged(report.walks, complement?.walks, scheduledLine?.walks ?? 0)
+        let runsAllowed = merged(report.runsAllowed, complement?.runsAllowed, scheduledLine?.runsAllowed ?? 0)
+        let pitches = merged(report.pitches, complement?.pitches, scheduledLine?.pitches ?? 0)
+        let hits = merged(report.hits ?? 0, complement?.hits, scheduledLine?.hits ?? 0)
+        let homeRuns = merged(report.homeRuns ?? 0, complement?.homeRuns, scheduledLine?.homeRuns ?? 0)
+        // **직접 던진 경기도 자책점을 갖는다**(이식 계획 2-D). 화면이 주자 책임 원장을 들고
+        // 던졌을 때만 값이 있고, 거기에 내가 던지지 않은 이닝의 자책점을 더한다. 원장이
+        // 없으면 nil이다 — 실점으로 대신하면 그 시즌 평균자책이 조용히 틀린다.
+        let playedEarnedRuns: Int? = professional
+            ? report.earnedRuns.map { $0 + (complement?.earnedRuns ?? 0) }
+            : nil
         // 최종 스코어를 등판 시점의 점수 차에서 파생시킨다. 그래야 "1점 리드로 올라가
         // 무실점으로 막았는데 패배" 같은 모순이 생기지 않는다. 지는 경기는 반드시
         // 내 실점이나 불펜 실점으로 설명된다.
@@ -1428,7 +1557,16 @@ public struct ProCareerEngine: Sendable {
             outs: outs,
             runsAllowed: runsAllowed,
             teamRuns: support,
-            opponentRuns: opponentRuns
+            opponentRuns: opponentRuns,
+            // 직접 던진 구원 등판도 같은 규칙을 쓴다. 플레이어가 던진 경기만 다른 잣대로
+            // 기록되면 "내가 만든 성적"이 자동 경기와 이어지지 않는다.
+            reliefDecisionDraw: !started
+                && ProGameplayRules.usesProfessionalBalance(params.state.proRulesVersion)
+                ? rng.nextInt(upperBound: 1_000)
+                : nil,
+            // 직접 던진 선발도 같은 잣대다. 자동 등판만 고쳐 두면 플레이어가 직접 던진
+            // 짧은 등판만 여전히 지기만 한다.
+            shortStartSharesTheLoss: ProGameplayRules.usesWorkload(params.state.proRulesVersion)
         )
         let replacedGame = scheduledLine != nil
         let oldDecision = scheduledLine?.decision
@@ -1445,7 +1583,12 @@ public struct ProCareerEngine: Sendable {
             pitches: params.state.currentStats.pitches - (scheduledLine?.pitches ?? 0) + pitches,
             wins: params.state.currentStats.wins - (oldDecision == .win ? 1 : 0) + (decision == .win ? 1 : 0),
             losses: params.state.currentStats.losses - (oldDecision == .loss ? 1 : 0) + (decision == .loss ? 1 : 0),
-            saves: params.state.currentStats.saves - (oldDecision == .save ? 1 : 0) + (decision == .save ? 1 : 0)
+            saves: params.state.currentStats.saves - (oldDecision == .save ? 1 : 0) + (decision == .save ? 1 : 0),
+            // 시즌 자책점은 그 시즌의 **모든** 등판에 원장이 있을 때만 성립한다. 바꿔 넣는
+            // 경기의 옛 값을 빼고 새 값을 더하되, 어느 한 경기라도 모르면 통째로 모른다다.
+            earnedRuns: Self.directOutingEarnedRuns(
+                state: params.state, scheduledLine: scheduledLine, playedEarnedRuns: playedEarnedRuns
+            )
         )
         // 직접 던진 경기는 기록에 그렇게 표시된다. 자동으로 지나간 경기와 섞이면
         // "내가 만든 성적"이라는 감각이 사라진다.
@@ -1464,7 +1607,11 @@ public struct ProCareerEngine: Sendable {
             decision: decision,
             played: true,
             hits: hits,
-            homeRuns: homeRuns
+            homeRuns: homeRuns,
+            earnedRuns: playedEarnedRuns,
+            completeGame: workload
+                ? started && outs == 27 && support != opponentRuns
+                : nil
         )
         if let scheduledIndex {
             gameLines[scheduledIndex] = playedLine
@@ -1629,13 +1776,15 @@ public struct ProCareerEngine: Sendable {
         let followUpRecords = unresolvedIndices.map { decisionHistory[$0] }
         let followUpReward = followUpRecords.count * (soundProcess ? 2 : -1)
         let trust = clamp(
-            params.state.managerTrust
-                + report.strikeouts * 2
-                - report.walks * 2
-                - report.runsAllowed * 3
-                + (soundProcess ? 2 : 0)
-                + sequenceTrustReward
-                + followUpReward,
+            params.state.managerTrust + Self.liveOutingTrustDelta(
+                strikeouts: report.strikeouts,
+                walks: report.walks,
+                runsAllowed: report.runsAllowed,
+                soundProcess: soundProcess,
+                sequenceReward: sequenceTrustReward,
+                followUpReward: followUpReward,
+                proRulesVersion: params.state.proRulesVersion
+            ),
             0,
             100
         )
@@ -2007,7 +2156,12 @@ public struct ProCareerEngine: Sendable {
         let phase: ProCareerPhase = state.season >= Self.maximumCareerSeasons
             ? .retirementDecision : .offseasonDecision
         let news = ["시즌 \(state.season) 종료 · \(state.currentStats.games)경기 · \(state.currentStats.strikeouts)K · 9이닝당 실점 \(String(format: "%.2f", Double(runsPer9Permille) / 1000))"] + state.news
-        let archivedStats = state.currentStats.archivingPostseason(state.postseason?.gameHistory)
+        // 시즌을 넘길 때 그 시점의 능력을 함께 새긴다. v10 경로는 새기지 않는다 — 이미 배포된
+        // 계산이고, 패리티 픽스처가 붙들고 있는 경로다.
+        let archivedStats = state.currentStats.archivingPostseason(
+            state.postseason?.gameHistory,
+            abilities: ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) ? state.pitcher : nil
+        )
         let updated = replacing(state, revision: state.revision + 1, phase: phase, careerStats: state.careerStats + [archivedStats], awards: awards, milestones: milestones, news: Array(news.prefix(30)))
         return result(updated, nextSeed: String(rng.next()), events: ["pro_season_reviewed"])
     }
@@ -2068,7 +2222,7 @@ public struct ProCareerEngine: Sendable {
         let pitcher = ProContractMarketRules.projectedPitcher(
             for: state.pitcher,
             effectiveAge: age,
-            proRulesVersion: Self.currentRulesVersion,
+            proRulesVersion: rulesVersion,
             recoveryYear: recoveryYear
         )
         let contract = ProContractSnapshot(yearsRemaining: max(1, (state.contract?.yearsRemaining ?? 1) - 1), annualSalary: max(state.contract?.annualSalary ?? 40_000_000, 40_000_000 + service * 50_000_000), rolePromise: state.role)
@@ -2083,7 +2237,7 @@ public struct ProCareerEngine: Sendable {
             // 새 시즌은 빈 기록으로 시작한다. 안 비우면 20시즌 구원 투수가 천 행 넘게 들고
             // 다니고 등판 번호도 시즌을 넘어 계속 늘어난다. 지난 시즌은 careerStats가 맡는다.
             gameLines: [],
-            news: Array(news.prefix(30)), proRulesVersion: Self.currentRulesVersion, pendingDecision: clearedDecision,
+            news: Array(news.prefix(30)), proRulesVersion: rulesVersion, pendingDecision: clearedDecision,
             activeDecisionModifiers: .some(nil), resolvedFollowUps: .some(nil), roleRequest: .some(nil),
             nationalTeamCarry: .some(nil))
         let tensions = seasonTensions(for: baseAdvanced)
@@ -2100,7 +2254,8 @@ public struct ProCareerEngine: Sendable {
     public static let maximumCareerSeasons = 20
     /// Live schedule/fatigue/agency rules. New careers start here. Offseason may raise an
     /// in-progress save to this value without rewriting already stored season records.
-    public static let currentRulesVersion = 10
+    /// 새 커리어와 다음 명령이 기록하는 규칙 버전. 값의 뜻은 `ProGameplayRules`에 적었다.
+    public static let currentRulesVersion = ProGameplayRules.current
     /// First version that owns the agency weekly-plan and important-game contracts.
     /// Must stay below `currentRulesVersion` so a version bump cannot turn agency off.
     public static let agencyRulesVersion = 3
@@ -2209,7 +2364,37 @@ public struct ProCareerEngine: Sendable {
         )
     }
 
+    /// 직접 던진 승부가 감독의 믿음을 얼마나 움직이는가.
+    ///
+    /// v13까지는 `K×2 − BB×2 − R×3`. v14는 곡선을 연결하면 같은 투구가 볼넷·실점을
+    /// 더 내기 때문에, 고교 8이 성적 항 계수를 3→6으로 연 것과 같이 감도를 두 배로 연다.
+    /// 수싸움·선택 회수는 이미 끝난 투구 위의 관계 보상이라 그대로 둔다.
+    public static func liveOutingTrustDelta(
+        strikeouts: Int,
+        walks: Int,
+        runsAllowed: Int,
+        soundProcess: Bool,
+        sequenceReward: Int,
+        followUpReward: Int,
+        proRulesVersion: Int?
+    ) -> Int {
+        let sensitivity = ProGameplayRules.usesLiveBalanceEvaluation(proRulesVersion) ? 2 : 1
+        return strikeouts * 2 * sensitivity
+            - walks * 2 * sensitivity
+            - runsAllowed * 3 * sensitivity
+            + (soundProcess ? 2 : 0)
+            + sequenceReward
+            + followUpReward
+    }
+
     public static func liveBatterOffset(for state: ProCareerSnapshot, week: Int? = nil) -> Int {
+        // v12부터 상대는 평평한 50이 아니라 실제 타순이다. 타순 자체가 리그 수준을
+        // 표현하므로, 평평한 상대용으로 만든 시즌 계단·능력 추적 가산을 그 위에 얹으면
+        // 아홉 명 전원이 컨택 73 이상이 된다(실측: 능력 80/80 선수의 시즌 10 RA/9 20).
+        // 남는 것은 무대의 차이뿐이다 — 2군 타선은 1군 타선이 아니다.
+        if ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) {
+            return state.level == .major ? 0 : -7
+        }
         let skill = (state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina) / 4
         if usesCareerArcRules(state), let climate = liveClimate(for: state, week: week) {
             return DifficultyScale.proArc(
@@ -2234,6 +2419,45 @@ public struct ProCareerEngine: Sendable {
         case 65..<73: return 4
         default: return 6
         }
+    }
+
+    /// 이번 주를 더한 뒤의 시즌 자책점. 셋 중 하나라도 원장이 없으면 nil이다.
+    ///
+    /// - 이미 진행 중인 시즌이 원장 없이 쌓였다면(구저장본으로 시작한 시즌) 그대로 nil.
+    /// - 이번 주의 등판 중 하나라도 원장이 없으면 nil.
+    ///
+    /// 아직 한 경기도 없는 시즌은 원장을 시작할 수 있으므로 예외다.
+    /// 직접 등판이 바꿔 놓은 뒤의 시즌 자책점.
+    ///
+    /// 이 경로는 예정된 자동 등판 한 줄을 직접 던진 한 줄로 **바꿔 넣는다.** 그래서 합계도
+    /// 옛 값을 빼고 새 값을 더해야 한다. 어느 한쪽이라도 원장이 없으면 통째로 '모른다'다 —
+    /// 없는 경기를 0으로 세는 합계는 거짓말이고, 평균자책이 조용히 낮아진다.
+    static func directOutingEarnedRuns(
+        state: ProCareerSnapshot,
+        scheduledLine: ProGameLine?,
+        playedEarnedRuns: Int?
+    ) -> Int? {
+        guard ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) else { return nil }
+        guard let playedEarnedRuns else { return nil }
+        guard let running = state.currentStats.earnedRuns ?? (state.currentStats.games == 0 ? 0 : nil) else {
+            return nil
+        }
+        guard let replaced = scheduledLine.map(\.earnedRuns) else {
+            return running + playedEarnedRuns
+        }
+        guard let replaced else { return nil }
+        return running - replaced + playedEarnedRuns
+    }
+
+    static func seasonEarnedRuns(
+        state: ProCareerSnapshot,
+        newGameLines: [ProGameLine]
+    ) -> Int? {
+        guard ProGameplayRules.usesProfessionalBalance(state.proRulesVersion) else { return nil }
+        guard state.currentStats.earnedRuns != nil || state.currentStats.games == 0 else { return nil }
+        guard newGameLines.allSatisfy({ $0.earnedRuns != nil }) else { return nil }
+        return (state.currentStats.earnedRuns ?? 0)
+            + newGameLines.reduce(0) { $0 + ($1.earnedRuns ?? 0) }
     }
 
     /// 화면과 시뮬레이션이 같은 성장 목표를 말하도록 주간 계획의 현재 목표를 공개한다.
@@ -3154,6 +3378,8 @@ public struct ProCareerEngine: Sendable {
         /// 피안타·피홈런. 삼진과 볼넷만 세면 "6이닝 2실점"이 어떻게 만들어졌는지 알 수 없다.
         var hits = 0
         var homeRuns = 0
+        /// 자책점. 원장을 돌리는 프로 경로에만 값이 있다.
+        var earnedRuns: Int?
     }
 
     /// 주간 자동 등판을 PitchKernelEngine 실제 타석 루프로 실행한다(투구 UI 없이 결과만 집계).
@@ -3169,9 +3395,19 @@ public struct ProCareerEngine: Sendable {
         batterOffset: Int = 0,
         callPolicy: AutoCallPolicy = .perfect,
         baseSeed: UInt64,
-        diverseScouting: Bool = false
+        diverseScouting: Bool = false,
+        proRulesVersion: Int? = nil,
+        fullStart: Bool = false
     ) -> WeeklyOutingLine {
-        let line = AutoOutingSimulator().simulate(
+        let balance: PitchBalanceRules
+        if ProGameplayRules.usesWorkload(proRulesVersion) {
+            balance = .professionalWorkload
+        } else if ProGameplayRules.usesProfessionalBalance(proRulesVersion) {
+            balance = .professional
+        } else {
+            balance = .legacy
+        }
+        let line = AutoOutingSimulator(balance: balance).simulate(
             pitcher: pitcher,
             startingFatigue: startingFatigue,
             outsTarget: outsTarget,
@@ -3179,7 +3415,8 @@ public struct ProCareerEngine: Sendable {
             batterOffset: batterOffset,
             callPolicy: callPolicy,
             baseSeed: baseSeed,
-            diverseScouting: diverseScouting
+            diverseScouting: diverseScouting,
+            fullStart: fullStart
         )
         var weekly = WeeklyOutingLine()
         weekly.outs = line.outs
@@ -3189,6 +3426,7 @@ public struct ProCareerEngine: Sendable {
         weekly.pitches = line.pitches
         weekly.hits = line.hits
         weekly.homeRuns = line.homeRuns
+        weekly.earnedRuns = line.earnedRuns
         return weekly
     }
     func signed(_ state: ProCareerSnapshot) -> ProCareerSnapshot { replacing(state, commitment: commitment(state)) }
@@ -3433,6 +3671,34 @@ public struct ProCareerEngine: Sendable {
         let qualitySeasons = seasons.count { season in
             season.inningsOuts >= 180
                 && season.runsAllowed * 27_000 / max(1, season.inningsOuts) < 4_000
+        }
+        // v12: 안드로이드와 같은 기준으로 다시 잡는다(이식 계획 2-F).
+        //
+        // v3는 이닝으로만 일한 양을 셌다. 그러면 **마무리는 영원히 전당에 못 간다** — 한 시즌
+        // 60이닝짜리 커리어는 이닝 점수가 바닥이다. 세이브를 이닝의 대안으로 두고, 승리와
+        // 세이브를 함께 세고, 좋은 시즌의 기준을 실점이 아니라 **자책점**으로 본다(원장이
+        // 생겼으므로 이제 잴 수 있다). 셋을 합치면 선발과 마무리가 각자의 길로 70에 닿는다.
+        if ProGameplayRules.usesProfessionalBalance(rulesVersion) {
+            let wins = seasons.reduce(0) { $0 + $1.wins }
+            let saves = seasons.reduce(0) { $0 + $1.saves }
+            let earnedQualitySeasons = seasons.count { season in
+                guard season.inningsOuts >= 180 else { return false }
+                // 자책점이 있으면 평균자책으로, 없으면 실점으로 판단한다. 없는 시즌을
+                // 좋은 시즌으로 세지 않는다.
+                let per9 = (season.earnedRuns ?? season.runsAllowed) * 27_000
+                    / max(1, season.inningsOuts)
+                return per9 < 3_800
+            }
+            return min(100, max(0,
+                min(15, max(0, serviceYears))
+                    + min(22, max(0, strikeouts) / 140)
+                    + min(18, max(max(0, outs) / 450, max(0, saves) / 20))
+                    + min(14, max(0, wins) / 15 + max(0, saves) / 25)
+                    + min(15, earnedQualitySeasons)
+                    + min(10, max(0, awardCount))
+                    + max(0, autumnBonus)
+                    + max(0, nationalGoldBonus)
+            ))
         }
         guard rulesVersion >= Self.hallOfFameFormulaVersion else {
             // Frozen formula for legacy, v1, and v2 saves. Their stored commitment and
@@ -3881,7 +4147,8 @@ public struct ProCareerEngine: Sendable {
             batterOffset: opponent.batterOffset,
             callPolicy: .perfect,
             baseSeed: rng.next(),
-            diverseScouting: false
+            diverseScouting: false,
+            proRulesVersion: state.proRulesVersion
         )
         let support = LeagueBaseline.teamRuns(using: &rng)
         let othersOuts = max(0, 27 - outing.outs)

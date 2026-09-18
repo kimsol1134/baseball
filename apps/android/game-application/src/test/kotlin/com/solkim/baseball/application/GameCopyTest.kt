@@ -35,6 +35,11 @@ class GameCopyTest {
         assertEquals("Practice pitching", GameCopy(GameLanguage.ENGLISH).legacy("첫 사인 익히기"))
         assertEquals("投球を練習する", GameCopy(GameLanguage.JAPANESE).legacy("첫 사인 익히기"))
         assertEquals("첫 사인 익히기", GameCopy(GameLanguage.KOREAN).legacy("첫 사인 익히기", setOf("첫 사인 익히기")))
+        val oldDraft = "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
+        for (language in GameLanguage.entries) {
+            val copy = GameCopy(language)
+            assertEquals(copy.resolve("conclusion.draft-summary.undrafted"), copy.legacy(oldDraft))
+        }
     }
     @Test fun sourceCataloguesResolveExplicitKeysInAllThreeLanguages() {
         assertEquals("선수 만들기", GameCopy(GameLanguage.KOREAN).resolve("android.setup.title"))
@@ -74,10 +79,10 @@ class GameCopyTest {
         val pro = com.solkim.baseball.core.pro.ProKernel().startDirect(
             com.solkim.baseball.core.pro.ProStartDirectRequest("7841", "power_prospect", "포심")).state
         val state = GameAggregateState.initial("copy-name").copy(pro = pro, stage = GameStage.PRO)
-        val id = Phase8ScreenId.P025_RECORDS_LEAGUE
-        val model = Phase8ScreenModel(id, "기록", "기록", listOf(Phase8Section("test", "기록", listOf(
-            Phase8Row("선수", "포심"), Phase8Row("구종", "포심"),
-        ))), emptyList(), Phase8Payloads.view(state, id)).localized(en, state)
+        val id = ScreenId.P025_RECORDS_LEAGUE
+        val model = ScreenModel(id, "기록", "기록", listOf(ScreenSection("test", "기록", listOf(
+            ScreenRow("선수", "포심"), ScreenRow("구종", "포심"),
+        ))), emptyList(), ScreenPayloads.view(state, id)).localized(en, state)
         assertEquals("포심", model.sections.single().rows[0].value)
         assertEquals("Four-seam", model.sections.single().rows[1].value)
     }

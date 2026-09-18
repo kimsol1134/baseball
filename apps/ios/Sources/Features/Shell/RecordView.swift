@@ -19,6 +19,7 @@ struct RecordView: View {
                 RecordBoard(
                     state: state,
                     archive: highSchool.archive,
+                    replays: career.replays,
                     weekly: weekly,
                     highSchool: highSchool
                 )
@@ -120,7 +121,7 @@ private struct HighSchoolRecordBoard: View {
                 ))
                     .eyebrowStyle(BaseballTheme.action)
 
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.appearances), value: "\(state.performance.importantGamesCompleted)")
                     Metric(
                         title: copyResolver.resolve(.pitchedInnings),
@@ -128,7 +129,7 @@ private struct HighSchoolRecordBoard: View {
                     )
                     Metric(title: copyResolver.resolve(.pitches), value: "\(state.performance.pitches)")
                 }
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.strikeouts), value: "\(state.performance.strikeouts)", tone: .positive)
                     Metric(title: copyResolver.resolve(.walks), value: "\(state.performance.walks)", tone: .warning)
                     Metric(title: copyResolver.resolve(.runs), value: "\(state.performance.runsAllowed)")
@@ -217,7 +218,7 @@ private struct HighSchoolRecordBoard: View {
                             .detailStyle()
                     }
                 } else {
-                    GameLogSection(title: copyResolver.resolve(.highSchoolGames), lines: lines)
+                    GameLogSection(title: copyResolver.resolve(.highSchoolGames), lines: lines, stage: .highSchool)
                 }
 
                 if !state.selectedAwakenings.isEmpty {
@@ -281,6 +282,7 @@ private struct HighSchoolRecordBoard: View {
 private struct RecordBoard: View {
     let state: ProCareerSnapshot
     let archive: [LifeRecord]
+    let replays: [AlbumReplay]
     let weekly: WeeklyProgramStore
     let highSchool: HighSchoolCareerStore
     @Environment(\.gameCopyResolver) private var copyResolver
@@ -315,12 +317,16 @@ private struct RecordBoard: View {
 
     /// 9이닝당 실점. 코어가 자책점을 따로 세지 않으므로 평균자책이 아니라 실점으로 적는다.
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                 WeeklyProgramView(
                     store: weekly,
                     highSchool: highSchool
                 )
+                ProAlbumCard(replays: replays)
+                    .id("album")
+                ProAdvancementCard(state: state)
                 ProGoalBoardCard(state: state)
                 if let history = state.nationalTeamHistory, !history.isEmpty {
                     BaseballCard(title: copyResolver.resolve(.nationalRecordTitle), tone: .milestone) {
@@ -345,7 +351,7 @@ private struct RecordBoard: View {
                 if let decisions = state.decisionHistory, !decisions.isEmpty {
                     ProDecisionHistoryCard(decisions: decisions)
                 }
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.totalsGames), value: "\(state.currentStats.games)")
                     Metric(
                         title: copyResolver.resolve(.totalsInnings),
@@ -360,7 +366,7 @@ private struct RecordBoard: View {
                         )
                     )
                 }
-                HStack(spacing: 10) {
+                AdaptiveMetricRow {
                     Metric(title: copyResolver.resolve(.totalsStrikeouts), value: "\(state.currentStats.strikeouts)", tone: .positive)
                     Metric(title: copyResolver.resolve(.walks), value: "\(state.currentStats.walks)", tone: .warning)
                     Metric(
@@ -384,13 +390,27 @@ private struct RecordBoard: View {
                         ))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(BaseballTheme.textSecondary)
-                        AbilityGaugeView(label: copyResolver.resolve(.stuff), value: state.pitcher.stuff)
-                        AbilityGaugeView(label: copyResolver.resolve(.command), value: state.pitcher.command)
-                        AbilityGaugeView(label: copyResolver.resolve(.movement), value: state.pitcher.movement)
-                        AbilityGaugeView(label: copyResolver.resolve(.stamina), value: state.pitcher.stamina)
+                        // 바로 아래 성장 그래프와 **같은 색·같은 자**를 쓴다. 색이 축을
+                        // 뜻해야 위아래 두 그림이 같은 것을 말한다.
+                        let history = CareerDisplayRules.abilityHistory(for: state)
+                        ProAbilityPanel(
+                            pitcher: state.pitcher,
+                            // 견줄 자리는 지난 시즌이다 — 옆의 "작년의 나 vs 올해의 나"와 같은 기준.
+                            previous: history.count >= 2 ? history[history.count - 2] : nil
+                        )
                         Text(ProCareerPresentation.buildStrength(identity, resolver: copyResolver))
                             .detailStyle(BaseballTheme.positive)
                             .fontWeight(.semibold)
+
+                        // 막대는 "지금 어떤 투수인가"를 말하고, 그래프는 "어떻게 여기까지
+                        // 왔는가"를 말한다. 시즌을 두 번 이상 넘긴 뒤에만 선다.
+                        if history.count >= 2 {
+                            Divider().overlay(BaseballTheme.border)
+                            Text(verbatim: copyResolver.resolve(.abilityGrowthTitle))
+                                .eyebrowStyle(BaseballTheme.textTertiary)
+                            AbilityGrowthGraph(points: history)
+                                .id("growth")
+                        }
                     }
                 }
 
@@ -405,13 +425,16 @@ private struct RecordBoard: View {
                     lines: state.gameLines ?? []
                 )
 
-                SaberMetricsCard(board: MobileCareerStore.saberBoard(state: state))
+                SaberMetricsCard(board: MobileCareerStore.saberBoard(state: state),
+                    seasons: ProCareerPresentation.recordedSeasons(state))
+                    .id("saber")
 
                 StandingsCard(
                     season: state.season, seed: state.proCareerID,
                     week: state.week, myTeamID: state.team.id,
                     myGames: state.gameLines ?? []
                 )
+                .id("standings")
 
                 PitcherLeaderboardCard(
                     season: state.season, seed: state.proCareerID,
@@ -537,18 +560,30 @@ private struct RecordBoard: View {
             .safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
         }
         .background(BaseballTheme.canvas)
+#if DEBUG
+        .task {
+            let arguments = ProcessInfo.processInfo.arguments
+            if arguments.contains("-uiTestResetCareer"),
+               let index = arguments.firstIndex(of: "-uiTestRecordSection"),
+               arguments.indices.contains(index + 1) {
+                proxy.scrollTo(arguments[index + 1], anchor: .top)
+            }
+        }
+#endif
+        }
     }
 }
 
 struct SaberMetricsCard: View {
     let board: SaberMetricsBoard
+    var seasons: [ProSeasonStats] = []
     @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         BaseballCard(title: copyResolver.resolve(.saberTitle)) {
             VStack(alignment: .leading, spacing: 10) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 8) {
+                ScrollView(.horizontal) {
+                    Grid(alignment: .trailing, horizontalSpacing: 12, verticalSpacing: 10) {
                         header
                         ForEach(board.rows) { line in
                             row(line, isCareer: false)
@@ -564,9 +599,10 @@ struct SaberMetricsCard: View {
     }
 
     private var header: some View {
-        HStack(spacing: 12) {
+        GridRow {
             headerCell(copyResolver.resolve(.saberSeasonHeader), width: 64, alignment: .leading)
             headerCell(copyResolver.resolve(.saberIP), width: 52)
+            headerCell(copyResolver.resolve(.saberERA), width: 48)
             headerCell(copyResolver.resolve(.saberRA9), width: 48)
             headerCell(copyResolver.resolve(.saberFIP), width: 48)
             headerCell(copyResolver.resolve(.saberKPercent), width: 52)
@@ -578,12 +614,16 @@ struct SaberMetricsCard: View {
     }
 
     private func row(_ line: SaberMetricsLine, isCareer: Bool) -> some View {
-        HStack(spacing: 12) {
+        GridRow {
             Text(verbatim: seasonLabel(line))
                 .font(isCareer ? BaseballType.detail.weight(.bold) : BaseballType.detail)
                 .foregroundStyle(BaseballTheme.textPrimary)
-                .frame(width: 64, alignment: .leading)
+                .fixedSize(horizontal: true, vertical: true)
+                .frame(minWidth: 64, alignment: .leading)
             valueCell(line.inningsText, width: 52, tone: .even)
+            valueCell(ProCareerPresentation.eraText(seasons: line.season.map { season in
+                seasons.filter { $0.season == season }
+            } ?? seasons), width: 48, tone: .even)
             valueCell(line.ra9Text, width: 48, tone: line.ra9Tone)
             valueCell(line.fipText, width: 48, tone: line.fipTone)
             valueCell(line.kPercentText, width: 52, tone: line.kPercentTone)
@@ -606,14 +646,16 @@ struct SaberMetricsCard: View {
         Text(verbatim: title)
             .font(BaseballType.annotation.weight(.bold))
             .foregroundStyle(BaseballTheme.textTertiary)
-            .frame(width: width, alignment: alignment)
+            .fixedSize(horizontal: true, vertical: true)
+            .frame(minWidth: width, alignment: alignment)
     }
 
     private func valueCell(_ value: String, width: CGFloat, tone: SaberMetricsTone) -> some View {
         Text(verbatim: value)
             .font(BaseballType.detail.monospacedDigit().weight(.semibold))
             .foregroundStyle(color(tone))
-            .frame(width: width, alignment: .trailing)
+            .fixedSize(horizontal: true, vertical: true)
+            .frame(minWidth: width, alignment: .trailing)
     }
 
     private func color(_ tone: SaberMetricsTone) -> Color {
@@ -622,6 +664,130 @@ struct SaberMetricsCard: View {
         case .worse: BaseballTheme.negative
         case .even: BaseballTheme.textPrimary
         }
+    }
+}
+
+/// **성장을 자격으로 보여 준다.** 목표 보드가 "무엇을 남길 것인가"라면 이 카드는
+/// "지금 무엇을 할 수 있게 됐는가"다 — 능력 숫자가 아니라 열린 문으로 성장을 말한다.
+///
+/// 문턱 값은 전부 `ProAdvancementRules`가 규칙에서 그대로 가져오므로, 화면이 규칙보다
+/// 낮거나 높은 숫자를 말할 수 없다.
+/// 다시 볼 만했던 공들.
+///
+/// 한 시즌이 수천 구인데 예산은 512개다. 전부 담는 것은 애초에 불가능하므로 **앨범은 기록이
+/// 아니라 highlight다** — 남는 것은 삼진, 얻어맞은 홈런, 그리고 손으로 정중앙을 맞힌 공이다
+/// (`AlbumReplayRules.isWorthKeeping`).
+struct ProAlbumCard: View {
+    let replays: [AlbumReplay]
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    /// 최근 것부터. 오래된 공을 먼저 보여 주면 지금 잘 던지고 있다는 감각이 안 온다.
+    private var newestFirst: [AlbumReplay] {
+        replays.sorted {
+            ($0.season, $0.outingNumber, $0.pitchNumber) > ($1.season, $1.outingNumber, $1.pitchNumber)
+        }
+    }
+
+    var body: some View {
+        BaseballCard(title: copyResolver.resolve(.albumTitle)) {
+            if replays.isEmpty {
+                Text(verbatim: copyResolver.resolve(.albumEmpty))
+                    .detailStyle(BaseballTheme.textTertiary)
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    if let latest = newestFirst.first {
+                        AlbumReplayCard(replay: latest)
+                    }
+                    let others = Array(newestFirst.dropFirst().prefix(5))
+                    if !others.isEmpty {
+                        DisclosureGroup {
+                            VStack(spacing: 10) {
+                                ForEach(others) { replay in
+                                    AlbumReplayCard(replay: replay, featured: false)
+                                }
+                            }
+                            .padding(.top, 10)
+                        } label: {
+                            Text(verbatim: copyResolver.resolve(.albumOtherScenes, arguments: [.integer(others.count)]))
+                                .font(BaseballType.detail)
+                        }
+                        .tint(BaseballTheme.action)
+                        .accessibilityIdentifier("pro.album.more")
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("pro.album")
+    }
+}
+
+struct ProAdvancementCard: View {
+    let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var board: ProAdvancementBoard {
+        MobileCareerStore.advancementBoard(state: state)
+    }
+
+    var body: some View {
+        let board = board
+        BaseballCard(title: copyResolver.resolve(.advancementTitle), tone: .raised) {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(board.rows) { row in
+                    advancementRow(row, isNext: row.id == board.next?.id)
+                }
+            }
+        }
+        .accessibilityIdentifier("pro.advancementBoard")
+    }
+
+    @ViewBuilder
+    private func advancementRow(_ row: ProAdvancement, isNext: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(verbatim: ProWeeklyCopy.advancementTitle(row, resolver: copyResolver))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(row.unlocked ? BaseballTheme.textPrimary : BaseballTheme.textSecondary)
+                Spacer()
+                if row.unlocked {
+                    Text(verbatim: copyResolver.resolve(.advancementUnlocked))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.milestone)
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(BaseballTheme.milestone)
+                        .accessibilityHidden(true)
+                } else if let gap = row.nearestGap {
+                    // 다음 문턱까지 남은 거리. 이번 주에 손댈 수 있는 조건 하나만 말한다.
+                    Text(verbatim: ProWeeklyCopy.advancementRemaining(gap, resolver: copyResolver))
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(isNext ? BaseballTheme.action : BaseballTheme.textSecondary)
+                }
+            }
+            GoalPermilleBar(permille: row.permille, completed: row.unlocked)
+            if !row.unlocked {
+                ForEach(row.requirements) { requirement in
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(verbatim: copyResolver.resolve(.gameContent(requirement.labelKey)))
+                            .detailStyle(BaseballTheme.textTertiary)
+                        Spacer()
+                        Text(verbatim: copyResolver.resolve(
+                            .goalBoardProgress,
+                            arguments: [.integer(requirement.current), .integer(requirement.target)]
+                        ))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(requirement.met ? BaseballTheme.milestone : BaseballTheme.textTertiary)
+                    }
+                }
+                Text(verbatim: ProWeeklyCopy.advancementHint(row, resolver: copyResolver))
+                    .detailStyle(BaseballTheme.textTertiary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "\(ProWeeklyCopy.advancementTitle(row, resolver: copyResolver)), "
+            + copyResolver.resolve(row.unlocked ? .advancementUnlocked : .advancementLockedAccessibility)
+        )
+        .accessibilityIdentifier("pro.advancement.\(row.id)")
     }
 }
 
@@ -848,6 +1014,8 @@ struct ProDecisionHistoryCard: View {
 private struct GameLogSection: View {
     let title: String
     let lines: [ProGameLine]
+    /// 고교는 장, 프로는 주차로 센다. 같은 목록 뷰가 두 무대를 그린다(QA 2026-09-12 F-04).
+    var stage: ProCareerPresentation.GameLogStage = .pro
 
     /// 구원이면 한 시즌에 70등판이 넘는다. 처음부터 다 펼치면 화면이 목록에 잡아먹힌다.
     @State private var showsAll = false
@@ -863,7 +1031,7 @@ private struct GameLogSection: View {
         BaseballCard(title: title) {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(visible) { line in
-                    GameLogRow(line: line)
+                    GameLogRow(line: line, stage: stage)
                     if line.id != visible.last?.id {
                         Rectangle()
                             .fill(BaseballTheme.border.opacity(0.35))
@@ -889,6 +1057,7 @@ private struct GameLogSection: View {
 
 private struct GameLogRow: View {
     let line: ProGameLine
+    var stage: ProCareerPresentation.GameLogStage = .pro
     @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
@@ -900,10 +1069,10 @@ private struct GameLogRow: View {
                 EffectChip(text: copyResolver.resolve(.directOuting), tone: .gain, systemImage: "hand.raised.fill")
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(copyResolver.resolve(.week, arguments: [.integer(line.week)]))
+                Text(ProCareerPresentation.gamePeriod(line, stage: stage, resolver: copyResolver))
                     .font(BaseballType.annotation.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textTertiary)
-                Text(ProCareerPresentation.gameRole(line, resolver: copyResolver))
+                Text(ProCareerPresentation.gameRole(line, stage: stage, resolver: copyResolver))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(BaseballTheme.textPrimary)
                 Spacer()
@@ -918,14 +1087,14 @@ private struct GameLogRow: View {
                         .foregroundStyle(GameLineFormat.decisionTone(line.decision))
                 }
             }
-            Text(ProCareerPresentation.gameSummary(line, resolver: copyResolver))
+            Text(ProCareerPresentation.gameSummary(line, stage: stage, resolver: copyResolver))
                 .font(BaseballType.detail.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textSecondary)
         }
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(ProCareerPresentation.gameAccessibility(line, resolver: copyResolver))
+        .accessibilityLabel(ProCareerPresentation.gameAccessibility(line, stage: stage, resolver: copyResolver))
     }
 }
 

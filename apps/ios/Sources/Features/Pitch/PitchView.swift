@@ -7,9 +7,14 @@ struct PitchView: View {
     let onFinish: () -> Void
     /// 등판 중단(진행 파기). nil이면 중단 버튼을 그리지 않는다 — 튜토리얼 불펜에는 없다.
     var onAbort: (() -> Void)? = nil
+    /// 저장이 확인된 등판을 재실행 없이 닫는다(7-B). nil이면 그 출구를 열지 않는다.
+    var onConfirmSaved: (() -> Void)? = nil
+    /// 디스크에 이어할 이닝이 남아 있는가. 실패 화면의 출구를 정하는 데 쓴다.
+    var hasSavedResume = false
     /// 연습 타석(프롤로그 불펜). 기록에 안 남는 판에 '각성의 전조 +2' 같은
     /// 정산을 그리면 첫 5분에 거짓 영수증을 발행하는 셈이다.
     var isPractice = false
+    var practiceFinishTitle: String? = nil
     /// 연습 타석 다시 던지기. 배우는 자리는 한 번에 끝내라고 강요하지 않는다.
     var onRetry: (() -> Void)? = nil
 
@@ -264,7 +269,8 @@ struct PitchView: View {
             return
         }
         guard perfectReleaseCelebrationID == id else { return }
-        audio.play(.milestone)
+        // 정중앙 릴리스에만 나는 종. 다른 어떤 순간과도 같은 소리가 나지 않는다.
+        audio.play(.perfectRelease)
 
         do {
             try await Task.sleep(
@@ -526,19 +532,41 @@ struct PitchView: View {
         .clipped()
 
         if let result = session.lastResult, showsLastPitch || session.stage != .ready {
-            HStack(alignment: .center, spacing: 8) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(verbatim: PitchCopy.localized(result.snapshot.outcome,
-                        battedBall: result.snapshot.battedBall, resolver: copyResolver))
-                        .font(.title3.weight(.bold))
-                    if let verdict = session.lastDelivery.flatMap({ DeliveryControl.localizedVerdict($0, resolver: copyResolver) }) {
-                        EffectChip(text: verdict.text, tone: chipTone(for: verdict.tone))
+            let outcomeText = Text(verbatim: PitchCopy.localized(result.snapshot.outcome,
+                battedBall: result.snapshot.battedBall, resolver: copyResolver))
+                .font(.title3.weight(.bold))
+            let detailButton = Button(copyResolver.resolve(.localizable("mobile.core.details"))) {
+                coreDetail = .result
+            }
+                .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                .accessibilityIdentifier("pitch.resultDetails")
+            let verdictChip = session.lastDelivery
+                .flatMap { DeliveryControl.localizedVerdict($0, resolver: copyResolver) }
+            // 접근성 글자에서는 결과 문구가 한 줄을 다 먹어 "자세히"가 5pt까지 찌그러졌다
+            // (QA 2026-09-12 F-06). 폭을 강제하면 카드가 화면보다 넓어지므로, 그 크기에서는
+            // 나란히 두기를 포기하고 아래로 내린다.
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 6) {
+                        outcomeText.fixedSize(horizontal: false, vertical: true)
+                        if let verdictChip {
+                            EffectChip(text: verdictChip.text, tone: chipTone(for: verdictChip.tone))
+                        }
+                        detailButton
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HStack(alignment: .center, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            outcomeText
+                            if let verdictChip {
+                                EffectChip(text: verdictChip.text, tone: chipTone(for: verdictChip.tone))
+                            }
+                        }
+                        Spacer(minLength: 4)
+                        detailButton
                     }
                 }
-                Spacer(minLength: 4)
-                Button(copyResolver.resolve(.localizable("mobile.core.details"))) { coreDetail = .result }
-                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
-                    .accessibilityIdentifier("pitch.resultDetails")
             }
             .foregroundStyle(BaseballTheme.textPrimary)
         }
@@ -713,11 +741,52 @@ struct PitchView: View {
         }
     }
 
+    /// 실패한 투구에서 나가는 길. 결과가 커밋됐으면 포기가 아니라 결과 확인이다.
+    @ViewBuilder
+    private func failureExit(_ diagnosis: PitchFailureDiagnosis) -> some View {
+        let exit = PitchSessionTransitionRules.exit(
+            for: diagnosis,
+            hasSavedResume: hasSavedResume,
+            pitchesThrown: session.pitchLog.count
+        )
+        switch exit {
+        case .confirmResult:
+            if let onConfirmSaved {
+                Text(verbatim: copyResolver.resolve(AppCopyKey.pitchFailureSaved)).detailStyle()
+                PrimaryPill(
+                    title: copyResolver.resolve(AppCopyKey.pitchFailureConfirmResult),
+                    identifier: "pitch.failure.confirmResult",
+                    action: onConfirmSaved
+                )
+            }
+        case .resume:
+            Text(verbatim: copyResolver.resolve(AppCopyKey.pitchFailureUncertain)).detailStyle()
+        case .abandon:
+            if let onAbort {
+                PrimaryPill(
+                    title: copyResolver.resolve(AppCopyKey.pitchFailureAbandon),
+                    identifier: "pitch.failure.abandon",
+                    action: onAbort
+                )
+            }
+        }
+    }
+
     @ViewBuilder private var stage: some View {
         switch session.stage {
-        case .failed:
+        case .failed(let diagnosis):
             BaseballCard(title: copyResolver.resolve(.stateFailedTitle), tone: .negative) {
-                Text(verbatim: copyResolver.resolve(.stateFailedBody)).proseStyle()
+                VStack(alignment: .leading, spacing: 10) {
+                    // 무엇이 잘못됐는지는 갈래가 말한다. "저장 공간"을 아무 실패에나
+                    // 붙이지 않는다(7-A).
+                    Text(verbatim: CareerFailureCopy.message(
+                        for: diagnosis.failure,
+                        resolver: copyResolver
+                    ))
+                    .proseStyle()
+                    // 나가는 길은 **저장이 어떻게 됐는지**가 정한다(7-B·7-C).
+                    failureExit(diagnosis)
+                }
             }
         case .finished:
             // 이닝을 끝낸 공도 장면부터 보여 준다.
@@ -1091,7 +1160,7 @@ struct PitchView: View {
                     session.advanceToNextBatter()
                 }
             case .finished, .failed:
-                PrimaryPill(title: copyResolver.resolve(isPractice ? .startCareer : .finishOuting),
+                PrimaryPill(title: isPractice ? (practiceFinishTitle ?? copyResolver.resolve(.startCareer)) : copyResolver.resolve(.finishOuting),
                             identifier: "pitch.finish", action: onFinish)
             }
         }
@@ -1144,7 +1213,7 @@ struct PitchView: View {
     private func tone(for outcome: PitchOutcome) -> BaseballCardTone {
         switch outcome {
         case .swingingStrike, .calledStrike, .inPlayOut: .positive
-        case .ball, .foul, .hitByPitch: .warning
+        case .ball, .foul, .hitByPitch, .reachedOnError: .warning
         case .single, .double, .triple, .homeRun: .negative
         }
     }
@@ -1166,7 +1235,13 @@ struct PitchView: View {
         // 승부구는 슬로모션 — 같은 1.6초면 승부구가 승부구로 안 읽힌다. 소리 박자도
         // 같은 배율로 늘어져야 심판이 공보다 빨라지지 않는다.
         let tempo = PitchFeedbackTimeline.tempo(isClutch: wasClutch)
-        withAnimation(.linear(duration: PitchFeedbackTimeline.standardReplayDuration * tempo)) {
+        // 정중앙에서 놓은 공은 빨리 도착한다. 손으로 해낸 일이 장면에서 보이게 하는
+        // 값싼 장치이고, 숫자를 하나 더 띄우는 것보다 낫다.
+        let perfect = session.lastDelivery?.isPerfectRelease == true
+        withAnimation(.linear(duration: PitchFeedbackTimeline.replayDuration(
+            isClutch: wasClutch,
+            perfectRelease: perfect
+        ))) {
             replayProgress = 1
         }
 
@@ -1175,6 +1250,13 @@ struct PitchView: View {
         // 전에는 포구와 콜이 같은 순간에 겹쳐서 심판이 공보다 빨랐다.
         let cues = session.lastCues
         if let release = cues.first { audio.play(release) }
+        // 릴리스 직후, 공이 날아가는 동안 공기음이 깔린다. 구속이 높을수록 크고 짧다.
+        if let velocity = session.lastResult?.snapshot.execution.velocityTenthsKPH {
+            let normalized = Double(min(1_500, max(1_100, velocity)) - 1_100) / 400
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.06 * tempo) {
+                audio.play(.pitchFlight(velocity: normalized))
+            }
+        }
         // 3타자 연속 삼진부터는 축하음이 함성 위에 얹힌다. 풀콜(1.32~3.2초)이 끝나고
         // 함성이 부풀어 있는 자리다. 매 삼진마다 울리면 3연속이 아무것도 아니게 된다.
         if session.consecutiveStrikeouts >= 3, session.lastResult?.snapshot.result == .strikeout {
@@ -1182,7 +1264,10 @@ struct PitchView: View {
         }
         for (index, cue) in cues.dropFirst().enumerated() {
             // 삼진 풀콜은 반 박 더 뜸을 들인다 — 심판이 펀치아웃 동작과 함께 지르는 그 사이.
-            let delay = if cue == .umpireStrikeout { 1.32 * tempo } else {
+            // 정중앙에서 놓은 공은 콜이 앞선다. 심판이 먼저 알아본 것처럼 들린다.
+            let delay = if cue == .umpireStrikeout {
+                PitchFeedbackTimeline.callDelay(contactDelay: 1.32 * tempo, perfectRelease: perfect)
+            } else {
                 switch index {
                 case 0: PitchFeedbackTimeline.resultHapticDelay(
                     reduceMotion: false,

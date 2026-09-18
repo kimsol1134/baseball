@@ -111,6 +111,11 @@ struct SchoolSelectionCard: View {
                 onChoose(school.id)
                 pending = nil
             }
+            // SwiftUI alert 제약(QA 2026-09-12 F-08): 알럿 버튼에 `accessibilityIdentifier`를
+            // 붙이면 같은 프레임의 접근성 요소가 둘로 늘어난다(식별자 없는 취소 버튼은 하나).
+            // `accessibilityElement(children: .combine)`으로도 풀리지 않았고, 식별자를 label
+            // 안쪽으로 옮기면 `app.buttons.matching(identifier:)`가 못 찾아 UI 테스트가 깨진다.
+            // 자동화는 `.firstMatch`로 견디고 있으므로 식별자를 유지한다.
             .accessibilityIdentifier("hs.school.confirm")
             // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣어 취소를 항상 보이게 한다.
             Button(copyResolver.resolve(AppCopyKey.schoolSelectionConfirmCancel)) { pending = nil }
@@ -444,6 +449,7 @@ struct TrainingCard: View {
                 .frame(minHeight: BaseballMetrics.minimumTapTarget)
                 .accessibilityIdentifier("training.change")
             focusOptionButton(focus)
+            if focus == .command || focus == .gamePlanning { ControlMilestoneGoal(command: state.pitcher.command) }
             Text(verbatim: copyResolver.resolve(.localizable("mobile.polish.intensity")))
                 .font(BaseballType.detail.weight(.semibold))
             HStack(spacing: 6) {
@@ -478,17 +484,19 @@ struct TrainingCard: View {
                     VStack(alignment: .leading, spacing: 5) {
                         GameCopyText(learningStageKey(project.stage))
                             .font(.subheadline.weight(.bold))
-                        GameCopyText(
-                            AppCopyKey.trainingPitchLearningProgress,
-                            arguments: [
-                                .integer(project.practiceCredits),
-                                .integer(CareerDisplayRules.pitchLearningPracticeCap),
-                                .integer(project.qualityUses),
-                                .integer(CareerDisplayRules.pitchLearningQualityUses),
-                            ]
-                        )
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        if !project.isCompleted {
+                            GameCopyText(
+                                AppCopyKey.trainingPitchLearningProgress,
+                                arguments: [
+                                    .integer(project.practiceCredits),
+                                    .integer(CareerDisplayRules.pitchLearningPracticeCap),
+                                    .integer(project.qualityUses),
+                                    .integer(CareerDisplayRules.pitchLearningQualityUses),
+                                ]
+                            )
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                        }
                     }
                     .accessibilityIdentifier("hs.training.pitchLearning.stage")
                 }
