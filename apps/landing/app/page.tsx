@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { PitchDecision } from "@/components/PitchDecision";
-import { AppStoreButton, AppStoreMark } from "@/components/AppStoreButton";
+import { StoreButtons } from "@/components/StoreButtons";
 import { primaryCta, webTeaserLabel, webTeaserUrl } from "@/lib/links";
 
 const memories = [
@@ -27,7 +27,7 @@ const faqItems = [
   {
     question: "공은 어떻게 던지나요?",
     answer:
-      "구종·코스·노림·힘 배분을 고른 뒤, 화면을 길게 눌러 와인드업하고 손가락을 끌어 조준한 다음 떼면 공이 나갑니다. 릴리스 타이밍과 조준이 좋을수록 노린 코스에 가깝게 들어갑니다. 타이밍 조작이 어렵다면 설정에서 자동 릴리스를 켜세요. 게임 진행에 손해가 없습니다.",
+      "구종과 코스, 힘 배분을 고른 뒤 투구 슬라이더를 직접 조작합니다. 타이밍을 맞춰 손을 놓으면 공이 나갑니다. 구종 선택과 릴리스 타이밍을 함께 익히며 나만의 승부를 만들어 보세요.",
   },
   {
     question: "환생은 어떻게 진행되나요?",
@@ -42,22 +42,22 @@ const faqItems = [
   {
     question: "사고 나서 맞지 않으면 어떻게 하나요?",
     answer:
-      "App Store 구매는 Apple의 환불 절차를 따릅니다. reportaproblem.apple.com에서 구매 내역을 열고 환불을 요청하면 Apple이 심사합니다. 개발자가 대신 처리할 수는 없지만, 판단이 서지 않으면 이 페이지의 체험으로 투구 방식을 먼저 확인해 보세요.",
+      "Android는 Google Play, iPhone은 App Store의 환불 절차를 따릅니다. 구매한 스토어의 주문 내역에서 확인해 주세요. 구매 전 Android 전용 페이지의 실제 플레이 영상과 화면으로 게임을 확인할 수 있습니다.",
   },
   {
     question: "어떤 기기에서 되나요?",
     answer:
-      "iOS 17 이상의 iPhone에서 동작합니다. 세로 화면 전용이고, 아이패드는 이번 버전의 지원 대상이 아닙니다.",
+      "Android와 iPhone에서 즐길 수 있습니다. Android는 Google Play, iPhone은 App Store에서 구매하세요. 내 기기의 설치 가능 여부는 해당 스토어에서 확인할 수 있습니다.",
   },
   {
     question: "기기를 바꾸면 진행이 사라지나요?",
     answer:
-      "같은 Apple 계정이라면 iCloud로 이어집니다. 진행 상황은 기기에 저장되고 iCloud에 함께 올라가며, 새 기기에서 앱을 열면 최신 진행을 내려받습니다.",
+      "Android 진행은 현재 기기에 저장됩니다. 앱 삭제나 데이터 초기화에 주의해 주세요. iPhone은 같은 Apple 계정의 iCloud 설정에 따라 이어서 할 수 있습니다. Android와 iPhone 사이의 세이브 연동은 지원하지 않습니다.",
   },
   {
     question: "인터넷이 없어도 되나요?",
     answer:
-      "됩니다. 모든 계산은 기기 안에서 이뤄집니다. 인터넷은 iCloud 동기화와 Game Center 순위표에만 쓰이고, 둘 다 없어도 게임은 그대로 돌아갑니다.",
+      "게임은 오프라인으로 즐길 수 있습니다. 구매와 다운로드에는 인터넷 연결이 필요합니다. iPhone의 iCloud 동기화와 Game Center 기능은 인터넷을 사용합니다.",
   },
 ] as const;
 
@@ -67,30 +67,8 @@ function externalProps(href: string) {
     : {};
 }
 
-/// 주 행동 버튼. 출시 전에는 App Store가 404이므로 목적지와 문구가 함께 바뀐다.
-/// 다운로드 표식도 실제로 내려받을 수 있을 때만 붙인다.
-function PrimaryCta({
-  placement,
-  withPrice = false,
-  className = "",
-}: {
-  placement: Parameters<typeof primaryCta>[0];
-  withPrice?: boolean;
-  className?: string;
-}) {
-  const cta = primaryCta(placement, { withPrice });
-  if (cta.external) {
-    return (
-      <AppStoreButton className={className} href={cta.href} target="_blank" rel="noreferrer">
-        {cta.label}
-      </AppStoreButton>
-    );
-  }
-  return (
-    <a className={`button button-primary ${className}`.trim()} href={cta.href}>
-      <span>{cta.label}</span>
-    </a>
-  );
+function PrimaryCta(props: { placement: Parameters<typeof primaryCta>[0]; withPrice?: boolean; className?: string }) {
+  return <StoreButtons {...props} />;
 }
 
 function Brand() {
@@ -127,7 +105,7 @@ function SectionHeading({
 
 export default function HomePage() {
   const teaserHref = webTeaserUrl();
-  const mobileCta = primaryCta("mobile", { withPrice: true });
+
 
   return (
     <>
@@ -139,6 +117,7 @@ export default function HomePage() {
         <div className="header-inner">
           <Brand />
           <nav className="desktop-nav" aria-label="주요 메뉴">
+            <a href="/android">Android</a>
             <a href="#trailer">영상</a>
             <a href="#gameplay">게임플레이</a>
             <a href="#rebirth">환생</a>
@@ -167,7 +146,7 @@ export default function HomePage() {
 
           <div className="hero-content shell">
             <div className="hero-copy">
-              <p className="eyebrow">한 구가 인생을 바꾸는 투수 육성 게임</p>
+              <p className="eyebrow">안드로이드 출시 · 직접 던지는 투수 성장 RPG</p>
               <h1>
                 이번 생엔,
                 <br />
@@ -186,14 +165,15 @@ export default function HomePage() {
                   <span className="scroll-mark" aria-hidden="true">
                     ↓
                   </span>
-                  설치 없이 한 타석 던져보기
+                  설치 없이 투구 선택 체험
                 </a>
               </div>
               <p className="release-status">
-                App Store에서 ₩4,400. 한 번 구매로 끝이고, 그 뒤로 결제할 것이 없습니다.
+                Android와 iPhone에서 ₩4,400. 한 번 구매로 고교부터 프로 은퇴까지.
               </p>
+              <a className="android-text-link" href="/android">Android 실제 플레이와 구매 안내 →</a>
               <ul className="release-facts" aria-label="게임과 출시 정보">
-                <li>iPhone · iOS 17+</li>
+                <li>Android · iPhone</li>
                 <li>한 번 구매로 전부</li>
                 <li>광고·앱 내 구입 없음</li>
                 <li>오프라인 플레이</li>
@@ -613,7 +593,7 @@ export default function HomePage() {
         <section className="section screens-section" id="screens">
           <div className="shell">
             <SectionHeading
-              eyebrow="당신의 iPhone에서"
+              eyebrow="iPhone 플레이 화면 · Android 화면은 전용 페이지에서"
               title="실제 앱 화면입니다."
               description="승부처에서 구종과 코스를 고르고, 던진 공의 궤적과 결과를 그 자리에서 확인합니다."
               centered
@@ -683,7 +663,7 @@ export default function HomePage() {
           <div className="shell faq-shell">
             <SectionHeading
               eyebrow="FAQ"
-              title="출시 전에 궁금한 점."
+              title="구매 전에 궁금한 점."
               description="구매 전에 가장 많이 묻는 것들입니다."
             />
             <div className="faq-list">
@@ -738,16 +718,9 @@ export default function HomePage() {
         </div>
       </footer>
 
-      <a
-        className="mobile-wishlist"
-        href={mobileCta.href}
-        {...externalProps(mobileCta.href)}
-      >
-        {mobileCta.external ? <AppStoreMark /> : null}
-        {mobileCta.label}
-      </a>
+      <div className="mobile-wishlist mobile-stores"><StoreButtons placement="mobile" withPrice /></div>
 
-      {/* 구조화 데이터. FAQ는 검색 결과에 그대로 펼쳐지고, 게임 정보는 가격·플랫폼을 함께 노출한다. */}
+      {/* 구조화 데이터. 검색엔진이 가격·플랫폼·FAQ를 이해하도록 제공한다. 검색 결과 표시는 보장하지 않는다. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData()) }}
@@ -779,13 +752,13 @@ function structuredData() {
         },
         inLanguage: "ko",
         genre: ["시뮬레이션", "스포츠", "로그라이트"],
-        gamePlatform: "iOS",
+        gamePlatform: ["Android", "iOS"],
         applicationCategory: "GameApplication",
-        operatingSystem: "iOS 17.0 이상",
+        operatingSystem: "Android, iOS",
         playMode: "SinglePlayer",
         offers: {
           "@type": "Offer",
-          price: "3300",
+          price: "4400",
           priceCurrency: "KRW",
           availability: "https://schema.org/InStock",
         },

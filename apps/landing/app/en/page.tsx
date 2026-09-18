@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { AppStoreButton } from "@/components/AppStoreButton";
+import { StoreButtons } from "@/components/StoreButtons";
 import { primaryCta } from "@/lib/links";
 
 export const metadata: Metadata = {
@@ -29,16 +29,11 @@ function EnglishCta({
   withPrice?: boolean;
   className?: string;
 }) {
-  const cta = primaryCta(placement, { withPrice, locale: "en" });
-  return (
-    <AppStoreButton className={className} href={cta.href} target="_blank" rel="noreferrer">
-      {cta.label}
-    </AppStoreButton>
-  );
+  return <StoreButtons placement={placement} withPrice={withPrice} locale="en" className={className} />;
 }
 
 export default function EnglishHomePage() {
-  const mobileCta = primaryCta("mobile", { withPrice: true, locale: "en" });
+
 
   return (
     <>
@@ -80,7 +75,7 @@ export default function EnglishHomePage() {
           <div className="hero-overlay" />
           <div className="hero-content shell">
             <div className="hero-copy">
-              <p className="eyebrow">Premium baseball career · iPhone</p>
+              <p className="eyebrow">Premium baseball career · Android & iPhone</p>
               <h1>
                 You throw
                 <br />
@@ -104,7 +99,7 @@ export default function EnglishHomePage() {
                 career, retirement, and rebirth.
               </p>
               <ul className="release-facts" aria-label="Product facts">
-                <li>iPhone · iOS 17+</li>
+                <li>Android & iPhone</li>
                 <li>Pay once</li>
                 <li>No ads or IAP</li>
                 <li>Playable offline</li>
@@ -150,7 +145,7 @@ export default function EnglishHomePage() {
           <div className="shell">
             <div className="section-heading is-centered">
               <p className="eyebrow">Get the game</p>
-              <h2>Mound Reborn on the App Store</h2>
+              <h2>Choose your store</h2>
               <p className="section-description">
                 English, Korean, and Japanese in one paid app. Original fictional baseball world —
                 not affiliated with any real league, club, or player.
@@ -164,9 +159,7 @@ export default function EnglishHomePage() {
       </main>
 
       <div className="mobile-cta">
-        <AppStoreButton href={mobileCta.href} target="_blank" rel="noreferrer">
-          {mobileCta.label}
-        </AppStoreButton>
+        <EnglishCta placement="mobile" />
       </div>
     </>
   );

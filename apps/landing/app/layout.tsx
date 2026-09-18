@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://baseball-reincarnation.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -11,13 +11,15 @@ export const metadata: Metadata = {
     template: "%s | 야구 못하면 또 환생함",
   },
   description:
-    "승부처의 공을 한 구씩 직접 던지는 아이폰 야구 육성 게임. 고교 3년과 드래프트, 기억을 안고 다시 태어나는 회차, 프로 은퇴까지 한 번의 구매에 모두 담았습니다.",
+    "승부처의 공을 한 구씩 직접 던지는 Android·iPhone 야구 육성 게임. 고교 3년과 드래프트, 기억을 안고 다시 태어나는 회차, 프로 은퇴까지 한 번의 구매에 모두 담았습니다.",
   applicationName: "야구 못하면 또 환생함",
   keywords: [
     "야구 게임",
     "야구 육성",
     "투수 육성",
     "아이폰 야구 게임",
+    "안드로이드 야구 게임",
+    "투수 키우기",
     "유료 게임",
     "인디 게임",
   ],

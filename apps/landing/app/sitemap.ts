@@ -4,6 +4,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://baseball-reincarnation.vercel.app";
 
   return [
+    { url: `${siteUrl}/android`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.95 },
     {
       url: siteUrl,
       lastModified: new Date(),
