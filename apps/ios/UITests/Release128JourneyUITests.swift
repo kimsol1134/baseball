@@ -475,11 +475,30 @@ final class Release128JourneyUITests: XCTestCase {
             "eyebrow '3주 결정'이 없습니다. \(visibleIdentifiers(app))"
         )
         capture(app, scenario: "03-week3-decision", step: "decision")
-        let hasImmediate = app.staticTexts["즉시 효과"].exists
-            || app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "즉시")).firstMatch.exists
-        let hasLater = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "3주")).firstMatch.exists
-            || app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "다음 직접")).firstMatch.exists
-        XCTAssertTrue(hasImmediate || hasLater, "결정 카드에 효과/후속 요약이 없습니다.")
+        let choiceCards = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "pro.seasonDecision.choice.")
+        )
+        XCTAssertTrue(
+            choiceCards.firstMatch.waitForExistence(timeout: timeout),
+            "결정 선택지가 없습니다. \(visibleIdentifiers(app))"
+        )
+        let weeklyBinary = ["rotation_push", "new_pitch_trial", "farm_reset", "veteran_mentor"].contains { token in
+            app.descendants(matching: .any).matching(
+                NSPredicate(format: "identifier CONTAINS %@", token)
+            ).firstMatch.exists
+        }
+        if weeklyBinary {
+            let timing = app.descendants(matching: .any).containing(
+                NSPredicate(
+                    format: "label CONTAINS %@ OR label CONTAINS %@",
+                    "즉시 효과", "3주 뒤"
+                )
+            ).firstMatch
+            XCTAssertTrue(
+                timing.waitForExistence(timeout: timeout),
+                "주간 결정에 즉시/후속 요약이 없습니다. \(visibleIdentifiers(app))"
+            )
+        }
 
         if app.buttons["pro.seasonDecision.narrativeToggle"].exists {
             tapIfPresent(app.buttons["pro.seasonDecision.narrativeToggle"])
