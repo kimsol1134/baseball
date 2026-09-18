@@ -88,12 +88,14 @@ struct PerfectReleaseCelebration: View {
                     .offset(y: reduceMotion ? 0 : -24 * progress)
                     .opacity(reduceMotion ? 1 : fadingOpacity)
                     .position(center)
-                    .accessibilityLabel(Text(verbatim: title))
-                    .accessibilityIdentifier("pitch.perfectEffect")
+                    .accessibilityHidden(true)
             }
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("pitch.perfectEffect")
+        .accessibilityLabel(Text(verbatim: title))
         .onAppear {
             guard !reduceMotion else { return }
             // 삽입 프레임을 먼저 그린 뒤 1로 보낸다. 0→1을 같은 트랜잭션에서 처리하면

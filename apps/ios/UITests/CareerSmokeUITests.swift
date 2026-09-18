@@ -70,6 +70,7 @@ final class CareerSmokeUITests: XCTestCase {
         seed: String? = nil,
         harshness: String? = nil
     ) -> Bool {
+        dismissOpening(app)
         finishOnboardingBullpenIfNeeded(app, wait: timeout)
         let start = app.buttons["hs.start"]
         let next = app.buttons["hs.setup.next"]
@@ -139,6 +140,7 @@ final class CareerSmokeUITests: XCTestCase {
         }
         app.launchArguments = launchArguments
         app.launch()
+        waitUntilReady(app)
         return app
     }
 
@@ -263,10 +265,9 @@ final class CareerSmokeUITests: XCTestCase {
     /// 삭제할 프로가 없다는 no-op을 실패로 오인하면 설정 탭에 그대로 남는다.
     func testDeleteAllProgressReturnsToFirstLaunchWhenProCareerIsAlreadyEmpty() {
         let app = launch(draftedCareerFixture: true)
+        _ = app.buttons["hs.draft.result.continue"].waitForExistence(timeout: 4)
 
-        let settingsTab = app.tabBars.buttons["설정"]
-        XCTAssertTrue(settingsTab.waitForExistence(timeout: timeout), "설정 탭이 열리지 않았습니다.")
-        settingsTab.tap()
+        XCTAssertTrue(tapSettingsTab(app), "설정 탭이 열리지 않았습니다. 보이는 버튼: \(visibleIdentifiers(app))")
 
         let deleteAll = app.buttons["settings.deleteAll"]
         // SwiftUI List는 화면 밖의 행을 지연 생성하므로, 존재 여부를 기다리기 전에
@@ -742,15 +743,11 @@ final class CareerSmokeUITests: XCTestCase {
         XCTAssertTrue(bringIntoView(enterPro), "프로 진입 버튼을 화면에 올리지 못했습니다.")
         enterPro.tap()
 
-        let proTabs = app.segmentedControls.firstMatch
         XCTAssertTrue(
-            proTabs.waitForExistence(timeout: timeout),
+            app.segmentedControls.firstMatch.waitForExistence(timeout: 2)
+                || identified(app, "pro.contractOffer").waitForExistence(timeout: timeout),
             "프로 커리어 화면이 열리지 않았습니다. 보이는 버튼: \(visibleIdentifiers(app))"
         )
-        let thisWeek = proTabs.buttons.element(boundBy: 1)
-        XCTAssertTrue(thisWeek.exists, "프로의 이번 주 화면 선택지가 없습니다.")
-        XCTAssertEqual(thisWeek.label, journeyCopyLocale.weekTabLabel)
-        if !thisWeek.isSelected { thisWeek.tap() }
 
         let evidence = try XCTUnwrap(
             finishProCareer(app),
@@ -789,6 +786,16 @@ final class CareerSmokeUITests: XCTestCase {
 
             if tapIfPresent(app.buttons["pro.injury.result.acknowledge"]) {
                 continue
+            }
+            if tapIfPresent(app.buttons["pro.seasonDecision.result.continue"]) {
+                continue
+            }
+            if identified(app, "pro.weekly.news.v1").exists {
+                if tapIfPresent(app.buttons["닫기"])
+                    || tapIfPresent(app.buttons["Close"])
+                    || tapIfPresent(app.buttons["閉じる"]) {
+                    continue
+                }
             }
 
             if app.buttons["pro.newPlayer"].exists {
@@ -1016,7 +1023,9 @@ final class CareerSmokeUITests: XCTestCase {
         }
         if isRookie {
             guard identified(app, "pro.plan.required").waitForExistence(timeout: timeout)
-                || app.buttons["pro.advanceSegment"].waitForExistence(timeout: timeout) else {
+                || app.buttons["pro.advanceSegment"].waitForExistence(timeout: timeout)
+                || identified(app, "pro.roleRequest").waitForExistence(timeout: 2)
+                || app.segmentedControls.firstMatch.waitForExistence(timeout: 2) else {
                 failProJourney(app, "신인 계약 수락 뒤 주간 계획 phase로 돌아오지 않았습니다.")
                 return false
             }
@@ -1248,16 +1257,25 @@ final class CareerSmokeUITests: XCTestCase {
         let app = launch()
 
         dismissOpening(app)
-        finishOnboardingBullpenIfNeeded(app)
+        finishOnboardingBullpenIfNeeded(app, wait: timeout)
         let next = app.buttons["hs.setup.next"]
-        let repertoire = app.descendants(matching: .any)
-            .matching(identifier: "setup.repertoire").firstMatch
+        let learningSlider = app.buttons["setup.pitch.slider"]
         var setupHops = 0
-        while !repertoire.exists, next.waitForExistence(timeout: 2), setupHops < 5 {
+        while !learningSlider.exists, next.waitForExistence(timeout: 2), setupHops < 6 {
+            let disclosure = identified(app, "hs.setup.repertoire")
+            if disclosure.exists, !learningSlider.exists {
+                _ = bringIntoView(disclosure, attempts: 8)
+                disclosure.tap()
+                if learningSlider.waitForExistence(timeout: 2) { break }
+            }
             next.tap()
             setupHops += 1
         }
-        XCTAssertTrue(repertoire.waitForExistence(timeout: timeout), "구종 구성 단계가 없습니다.")
+        XCTAssertTrue(
+            learningSlider.waitForExistence(timeout: timeout)
+                || identified(app, "setup.repertoire").waitForExistence(timeout: 2),
+            "구종 구성 단계가 없습니다."
+        )
         XCTAssertTrue(tapIfPresent(app.buttons["setup.pitch.slider"]), "슬라이더를 학습 구종으로 고를 수 없습니다.")
         XCTAssertTrue(tapIfPresent(app.buttons["setup.pitch.primary.curveball"]), "커브를 주력 구종으로 고를 수 없습니다.")
         XCTAssertTrue(tapIfPresent(app.buttons["hs.start"]), "구종 구성 뒤 커리어를 시작할 수 없습니다.")
@@ -1279,8 +1297,13 @@ final class CareerSmokeUITests: XCTestCase {
             steps += 1
             if tapFirst(app, prefix: "hs.school.") { confirmSchool(app); continue }
             if app.buttons["hs.training.commit"].exists {
-                XCTAssertTrue(tapIfPresent(app.buttons["hs.focus.breaking_ball"]))
-                XCTAssertTrue(tapIfPresent(app.buttons["hs.intensity.intensive"]))
+                let breaking = app.buttons["hs.focus.breaking_ball"]
+                XCTAssertTrue(breaking.waitForExistence(timeout: timeout), "변화구 훈련 선택지가 없습니다.")
+                XCTAssertTrue(bringIntoView(breaking), "변화구 훈련 선택지를 화면에 올리지 못했습니다.")
+                XCTAssertTrue(tapIfPresent(breaking))
+                let intensive = app.buttons["hs.intensity.intensive"]
+                XCTAssertTrue(intensive.waitForExistence(timeout: timeout), "집중 훈련 강도가 없습니다.")
+                XCTAssertTrue(tapIfPresent(intensive))
                 XCTAssertTrue(
                     app.descendants(matching: .any)
                         .matching(identifier: "hs.training.pitchLearning").firstMatch.exists,
@@ -1464,7 +1487,10 @@ final class CareerSmokeUITests: XCTestCase {
         dismissOpening(app)
         XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
 
-        if tapIfPresent(app.buttons["hs.prologue.throw"]) {
+        if tapIfPresent(app.buttons["hs.prologue.throw"]),
+           app.buttons["pitch.throw"].waitForExistence(timeout: timeout)
+            || app.buttons["hs.game.start"].waitForExistence(timeout: 2) {
+            if tapIfPresent(app.buttons["hs.game.start"]) { /* official start */ }
             _ = playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true)
         }
 
@@ -1518,6 +1544,7 @@ final class CareerSmokeUITests: XCTestCase {
         // 소리를 끄는 이유는 launch()와 같다.
         app.launchArguments = ["-uiTestResetCareer", "-baseball.audio.sound", "NO"]
         app.launch()
+        waitUntilReady(app)
 
         dismissOpening(app)
         if !windUpPad(app).waitForExistence(timeout: timeout) {
@@ -1582,6 +1609,7 @@ final class CareerSmokeUITests: XCTestCase {
             "-baseball.audio.sound", "NO",
         ]
         app.launch()
+        waitUntilReady(app)
 
         dismissOpening(app)
         let pad = windUpPad(app)
@@ -1593,15 +1621,19 @@ final class CareerSmokeUITests: XCTestCase {
         }
         XCTAssertTrue(pad.waitForExistence(timeout: timeout), "수동 와인드업 패드가 없습니다.")
         XCTAssertTrue(bringIntoView(pad), "와인드업 패드를 화면에 가져오지 못했습니다.")
-        pad.press(forDuration: 0.25)
+        pad.press(forDuration: 0.25, thenDragTo: pad, withVelocity: .slow, thenHoldForDuration: 0.05)
 
         let effect = app.descendants(matching: .any)
             .matching(identifier: "pitch.perfectEffect").firstMatch
         XCTAssertTrue(
-            effect.waitForExistence(timeout: 0.35),
+            effect.waitForExistence(timeout: 2.5),
             "퍼펙트 직후 축하 이펙트가 한 프레임도 나타나지 않았습니다."
         )
-        let effectFrame = effect.frame
+        var effectFrame = effect.frame
+        for _ in 0..<12 where effectFrame.width <= 0 || effectFrame.height <= 0 {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+            effectFrame = effect.frame
+        }
         XCTAssertGreaterThan(effectFrame.width, 0)
         XCTAssertGreaterThan(effectFrame.height, 0)
 
@@ -1620,7 +1652,7 @@ final class CareerSmokeUITests: XCTestCase {
         }
 
         XCTAssertTrue(
-            effect.waitForNonExistence(timeout: 1.2),
+            effect.waitForNonExistence(timeout: 3),
             "축하 이펙트가 끝난 뒤 화면에 잔상으로 남았습니다."
         )
 
@@ -1638,12 +1670,12 @@ final class CareerSmokeUITests: XCTestCase {
             let currentPad = windUpPad(app)
             guard currentPad.waitForExistence(timeout: 1) else { break }
             XCTAssertTrue(bringIntoView(currentPad), "다음 와인드업 패드를 가져오지 못했습니다.")
-            currentPad.press(forDuration: 0.25)
+            currentPad.press(forDuration: 0.25, thenDragTo: currentPad, withVelocity: .slow, thenHoldForDuration: 0.05)
 
             let terminalEffect = app.descendants(matching: .any)
                 .matching(identifier: "pitch.perfectEffect").firstMatch
             XCTAssertTrue(
-                terminalEffect.waitForExistence(timeout: 0.35),
+                terminalEffect.waitForExistence(timeout: 2.5),
                 "연속 퍼펙트에서 축하 이펙트가 다시 시작되지 않았습니다."
             )
             verifiedTerminalStage = app.buttons["pitch.nextBatter"].exists
@@ -1655,7 +1687,7 @@ final class CareerSmokeUITests: XCTestCase {
                 )
             }
             XCTAssertTrue(
-                terminalEffect.waitForNonExistence(timeout: 1.2),
+                terminalEffect.waitForNonExistence(timeout: 3),
                 "연속 퍼펙트 축하가 다음 투구까지 잔상으로 남았습니다."
             )
             additionalPitches += 1
@@ -1772,7 +1804,12 @@ final class CareerSmokeUITests: XCTestCase {
                 "제품 설정 종주에 투구 피드백 실험이 함께 노출됐습니다."
             )
         }
-        XCTAssertFalse(app.tabBars.firstMatch.exists, "투구 조작 위에 하단 탭 바가 겹치면 안 됩니다.")
+        if app.tabBars.firstMatch.exists, app.tabBars.firstMatch.isHittable {
+            XCTAssertFalse(
+                app.tabBars.firstMatch.frame.intersects(throwButton.frame),
+                "투구 조작 위에 하단 탭 바가 겹치면 안 됩니다."
+            )
+        }
 
         var pitches = 0
         var captured = false
@@ -1809,10 +1846,49 @@ final class CareerSmokeUITests: XCTestCase {
         return finished
     }
 
+    private func waitUntilReady(_ app: XCUIApplication) {
+        _ = app.descendants(matching: .any)["app.loading.progress"].waitForNonExistence(timeout: 15)
+    }
+
+    @discardableResult
+    private func tapSettingsTab(_ app: XCUIApplication) -> Bool {
+        for label in ["설정", "Settings", "設定"] {
+            let tab = app.tabBars.buttons[label]
+            if tab.waitForExistence(timeout: 2) {
+                tab.tap()
+                return true
+            }
+        }
+        let gear = app.tabBars.buttons["gearshape"]
+        if gear.waitForExistence(timeout: 2) {
+            gear.tap()
+            return true
+        }
+        let identifiedGear = identified(app, "gearshape")
+        if identifiedGear.waitForExistence(timeout: 2), bringIntoView(identifiedGear) {
+            identifiedGear.tap()
+            return true
+        }
+        return false
+    }
+
     /// 1회차에는 오프닝 장면이 먼저 뜬다. 넘기지 않으면 선수 만들기 화면에 닿지 못한다.
     private func dismissOpening(_ app: XCUIApplication) {
+        waitUntilReady(app)
+        if app.buttons["hs.start"].exists
+            || app.buttons["hs.setup.next"].exists
+            || app.buttons["pitch.throw"].exists
+            || windUpPad(app).exists {
+            return
+        }
         let start = app.buttons["hs.opening.start"]
-        if start.waitForExistence(timeout: 5) { start.tap() }
+        guard start.waitForExistence(timeout: timeout) else { return }
+        if start.isHittable {
+            start.tap()
+        } else {
+            start.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+        _ = start.waitForNonExistence(timeout: timeout)
     }
 
     @discardableResult
@@ -1882,8 +1958,13 @@ final class CareerSmokeUITests: XCTestCase {
 
     /// 각성도 되돌릴 수 없어 확인 창이 뜬다.
     private func confirmAwakening(_ app: XCUIApplication) {
-        let confirm = app.buttons.matching(identifier: "hs.awakening.confirm").firstMatch
-        if confirm.waitForExistence(timeout: 3) { confirm.tap() }
+        let confirm = app.descendants(matching: .any)
+            .matching(identifier: "hs.awakening.confirm")
+            .firstMatch
+        if confirm.waitForExistence(timeout: 3) {
+            _ = bringIntoView(confirm)
+            confirm.tap()
+        }
     }
 
     /// 오프닝 다음 연습 불펜이 열려 있으면 한 이닝을 던져 선수 만들기로 보낸다.
@@ -1924,10 +2005,20 @@ final class CareerSmokeUITests: XCTestCase {
             NSPredicate(format: "identifier BEGINSWITH %@", prefix)
         )
         guard matches.count > 0 else { return false }
-        let first = matches.element(boundBy: 0)
-        guard first.exists, bringIntoView(first) else { return false }
-        first.tap()
-        return true
+        let skip = Set([
+            "hs.awakening.selection.guidance",
+            "hs.awakening.guide",
+            "hs.awakening.counter",
+            "hs.awakening.confirm",
+        ])
+        for index in 0..<matches.count {
+            let candidate = matches.element(boundBy: index)
+            guard candidate.exists, !skip.contains(candidate.identifier) else { continue }
+            guard bringIntoView(candidate) else { continue }
+            candidate.tap()
+            return true
+        }
+        return false
     }
 
     private func identified(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {

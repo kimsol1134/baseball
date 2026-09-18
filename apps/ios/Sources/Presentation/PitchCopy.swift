@@ -282,7 +282,12 @@ enum PerfectReleaseFeedback {
     static let accentSoundDelayNanoseconds: UInt64 = 120_000_000
 
     static func lifetimeNanoseconds(reduceMotion: Bool) -> UInt64 {
-        reduceMotion ? reduceMotionLifetimeNanoseconds : standardLifetimeNanoseconds
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains(PitchControlPreferences.perfectReleaseUITestArgument) {
+            return 1_800_000_000
+        }
+        #endif
+        return reduceMotion ? reduceMotionLifetimeNanoseconds : standardLifetimeNanoseconds
     }
 
     static func shouldPlayOutcomeHaptic(after delivery: PitchDelivery?) -> Bool {

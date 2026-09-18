@@ -3,6 +3,7 @@ import XCTest
 import SimulationCore
 @testable import BaseballIOS
 import BaseballIOSDomain
+import BaseballIOSPersistence
 
 /// 라이벌 파생·능력 사다리·궤적 좌표 디코딩처럼 화면이 기대는 순수 변환을 지킨다.
 final class PresentationTests: XCTestCase {
@@ -305,9 +306,18 @@ final class PresentationTests: XCTestCase {
     /// 기능이 없으면 그 안내는 거짓말이다.
     @MainActor
     func testSettingsCanActuallyExportTheSave() throws {
-        let highSchool = HighSchoolCareerStore(saveWriter: { _ in true })
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("save-export-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
+        let highSchool = HighSchoolCareerStore(
+            sync: SaveSync(key: "hs-export-test.json", directory: directory)
+        )
         XCTAssertTrue(highSchool.installTrainingFixtureForUITesting())
-        let pro = MobileCareerStore(saveWriter: { _ in true }, configuration: .production)
+        let pro = MobileCareerStore(
+            sync: SaveSync(key: "pro-export-test.json", directory: directory),
+            configuration: .production
+        )
 
         let bundle = try XCTUnwrap(SaveExport.bundle(highSchool: highSchool, pro: pro))
         XCTAssertFalse(bundle.isEmpty)
