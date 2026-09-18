@@ -623,6 +623,7 @@ struct TrainingFocusOptionButton<Extras: View>: View {
                 if let windEffect {
                     EffectChip(text: windEffect, tone: .neutral, systemImage: "wind")
                 }
+                extras()
                 ProgressiveDisclosure(
                     contentID: "hs.training.option.\(option.rawValue)",
                     title: detailTitle,
@@ -641,7 +642,6 @@ struct TrainingFocusOptionButton<Extras: View>: View {
                             font: BaseballType.detail,
                             color: BaseballTheme.textSecondary
                         )
-                        extras()
                     }
                 }
             }

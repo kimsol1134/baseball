@@ -129,9 +129,14 @@ struct ProContractOfferView: View {
                     goalSelectionSection(market)
                 }
 
-                // 접근성 큰 글씨에서는 고정 바가 화면의 절반을 먹으므로 확인도 본문 끝에 둔다.
+                // 접근성 큰 글씨에서는 고정 바가 화면의 절반을 먹으므로 서명·확인을
+                // 본문 끝에 둔다. 확인만 옮기고 신인 서명을 빼면 서명 버튼이 사라진다.
                 if typeSize.isAccessibilitySize {
-                    confirmBlock(market)
+                    if pendingOffer != nil {
+                        confirmBlock(market)
+                    } else if market.kind == .rookie, let offer {
+                        rookieSignBar(offer)
+                    }
                 }
             }
             .padding(.bottom, 28)

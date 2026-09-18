@@ -578,6 +578,7 @@ struct PitchView: View {
             } label: { PitchCopy.localized($0, resolver: copyResolver) }
               itemIdentifier: { "pitch.option.\($0.rawValue)" }
             .disabled(isWindingUp)
+            developmentPitchBadge
             if !showsLastPitch {
             Text(verbatim: PitchCopy.localized(session.selectedZone, batSide: session.batter.batSide, resolver: copyResolver))
                 .font(BaseballType.annotation.weight(.semibold))
@@ -1049,6 +1050,21 @@ struct PitchView: View {
         }
     }
 
+    @ViewBuilder private var developmentPitchBadge: some View {
+        if session.scenario.pitcher.profile(for: session.selectedPitchType)?.role == .development {
+            let badge = copyResolver.resolve(
+                AppCopyKey.pitchDevelopmentBadge,
+                arguments: [.userText(PitchCopy.localized(session.selectedPitchType, resolver: copyResolver))]
+            )
+            Label(badge, systemImage: "flask")
+                .font(BaseballType.annotation.weight(.bold))
+                .foregroundStyle(BaseballTheme.milestone)
+                .accessibilityElement()
+                .accessibilityIdentifier("pitch.developmentBadge")
+                .accessibilityLabel(badge)
+        }
+    }
+
     @ViewBuilder private func controls(preparation: PitchPreparation) -> some View {
         BaseballCard(title: copyResolver.resolve(.selectionPitchTitle)) {
             VStack(alignment: .leading, spacing: 10) {
@@ -1064,15 +1080,7 @@ struct PitchView: View {
                     }
                     return name
                 } itemIdentifier: { "pitch.option.\($0.rawValue)" }
-                if session.scenario.pitcher.profile(for: session.selectedPitchType)?.role == .development {
-                    Text(copyResolver.resolve(
-                        AppCopyKey.pitchDevelopmentBadge,
-                        arguments: [.userText(PitchCopy.localized(session.selectedPitchType, resolver: copyResolver))]
-                    ))
-                    .font(BaseballType.annotation.weight(.bold))
-                    .foregroundStyle(BaseballTheme.milestone)
-                    .accessibilityIdentifier("pitch.developmentBadge")
-                }
+                developmentPitchBadge
                 PitchBuildCompactReadoutView(readout: session.selectedAbilityReadout)
                 if PitchAbilityFeedbackExperiment.isVisible {
                     Divider()
