@@ -9,6 +9,37 @@ import BaseballIOSDomain
 @MainActor
 final class PitchDramaRenderTests: XCTestCase {
 
+    func testStatTileUpdatesWithoutLeavingTheScreen() async throws {
+        let model = StatTileUpdateFixture()
+        let host = UIHostingController(rootView: StatTileUpdateView(model: model))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 240, height: 140))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        host.view.frame = window.bounds
+
+        func renderedPixels() -> Data? {
+            host.view.setNeedsLayout()
+            host.view.layoutIfNeeded()
+            let format = UIGraphicsImageRendererFormat.default()
+            format.scale = 1
+            return UIGraphicsImageRenderer(bounds: window.bounds, format: format).pngData { context in
+                host.view.layer.render(in: context.cgContext)
+            }
+        }
+
+        try await Task.sleep(for: .milliseconds(150))
+        let before = try XCTUnwrap(renderedPixels())
+        model.value = "68"
+        try await Task.sleep(for: .milliseconds(150))
+        let afterTraining = try XCTUnwrap(renderedPixels())
+        // Inspect the visible pixels: the accessibility label already updated in the buggy tile.
+        XCTAssertNotEqual(before, afterTraining)
+        model.value = "24"
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(before, try XCTUnwrap(renderedPixels()))
+    }
+
     /// 외야 깊숙한 타구. 2컷 카메라가 실제로 무엇을 그리는지 보려면 수비 판정이 필요하다.
     static let deepFly = FieldingResolutionSnapshot(
         neutralOutcome: .homeRun, finalOutcome: .homeRun, sector: .fence,
@@ -507,5 +538,21 @@ final class NewSurfaceRenderTests: XCTestCase {
             RelationshipCard(state: result.snapshot, onRespond: { _ in }),
             name: "10-high-school-conversation"
         )
+    }
+}
+
+@MainActor
+private final class StatTileUpdateFixture: ObservableObject {
+    @Published var value = "24"
+}
+
+private struct StatTileUpdateView: View {
+    @ObservedObject var model: StatTileUpdateFixture
+
+    var body: some View {
+        Metric(title: "피로도", value: model.value)
+            .padding()
+            .background(BaseballTheme.canvas)
+            .environment(\.gameCopyResolver, GameCopyResolver(language: .korean))
     }
 }

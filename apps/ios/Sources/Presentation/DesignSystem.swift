@@ -475,7 +475,7 @@ struct StatTile: View {
                         .foregroundStyle(BaseballTheme.textTertiary)
                 }
                 // localization-safe: numeric
-                Text(displayedValue)
+                Text(animatesChange && !reduceMotion ? displayedValue : value)
                     .font(previousValue == nil ? BaseballType.heroNumeral : BaseballType.statNumeral)
                     .foregroundStyle(tone)
                     .monospacedDigit()
@@ -494,35 +494,44 @@ struct StatTile: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityCopy)
         .sensoryFeedback(.impact(weight: .medium), trigger: bump)
-        .onAppear { runChangeAnimationIfNeeded() }
+        .task(id: ChangeAnimationInput(value: value, previousValue: previousValue,
+                                       enabled: animatesChange && !reduceMotion)) {
+            await runChangeAnimationIfNeeded()
+        }
     }
 
-    private func runChangeAnimationIfNeeded() {
-        guard animatesChange, let previousValue, previousValue != value else {
-            displayedValue = value
-            return
-        }
-        if reduceMotion {
+    private struct ChangeAnimationInput: Equatable {
+        let value: String
+        let previousValue: String?
+        let enabled: Bool
+    }
+
+    @MainActor
+    private func runChangeAnimationIfNeeded() async {
+        glow = false
+        guard animatesChange, !reduceMotion, let previousValue,
+              previousValue != value, let start = Int(previousValue), let end = Int(value) else {
             displayedValue = value
             return
         }
         displayedValue = previousValue
-        let start = Int(previousValue) ?? 0
-        let end = Int(value) ?? start
-        let steps = max(1, abs(end - start))
-        let stepDuration = 0.4 / Double(steps)
-        for step in 1...steps {
-            DispatchQueue.main.asyncAfter(deadline: .now() + stepDuration * Double(step)) {
-                let next = start + (end - start) * step / steps
-                displayedValue = "\(next)"
-                if next == end {
-                    bump = true
-                    withAnimation(.easeOut(duration: 0.3)) { glow = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        withAnimation(.easeOut(duration: 0.2)) { glow = false }
-                    }
-                }
+        // The view task cancels when its inputs change or the tile disappears, so an old
+        // count-up cannot overwrite the next week's value. Bound the work for large stats.
+        let steps = min(24, max(1, abs(end - start)))
+        do {
+            for step in 1...steps {
+                try await Task.sleep(for: .seconds(0.4 / Double(steps)))
+                try Task.checkCancellation()
+                displayedValue = "\(start + (end - start) * step / steps)"
             }
+            displayedValue = value
+            bump.toggle()
+            withAnimation(.easeOut(duration: 0.3)) { glow = true }
+            try await Task.sleep(for: .seconds(0.3))
+            try Task.checkCancellation()
+            withAnimation(.easeOut(duration: 0.2)) { glow = false }
+        } catch {
+            // A replacement task owns the new value and highlight.
         }
     }
 
