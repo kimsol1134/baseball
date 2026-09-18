@@ -153,7 +153,8 @@ final class MobileCareerStore {
     }
 
     init(
-        sync: SaveSync = SaveSync(key: "baseball-mobile-pro-v1.json"),
+        sync: SaveSync = SaveSync(key: "baseball-mobile-pro-v2.json",
+                                 migratingFrom: "baseball-mobile-pro-v1.json"),
         weekly: WeeklyProgramStore = .shared,
         saveWriter: ((Data) -> Bool)? = nil,
         configuration: AppFeatureConfiguration = .production

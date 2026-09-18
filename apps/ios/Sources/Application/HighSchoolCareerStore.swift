@@ -271,7 +271,8 @@ final class HighSchoolCareerStore {
     @ObservationIgnored let saveWriter: ((Data) -> Bool)?
 
     init(
-        sync: SaveSync = SaveSync(key: "baseball-mobile-highschool-v1.json"),
+        sync: SaveSync = SaveSync(key: "baseball-mobile-highschool-v2.json",
+                                 migratingFrom: "baseball-mobile-highschool-v1.json"),
         weekly: WeeklyProgramStore = .shared,
         saveWriter: ((Data) -> Bool)? = nil
     ) {
