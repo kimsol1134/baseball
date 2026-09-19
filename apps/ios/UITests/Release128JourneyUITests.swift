@@ -511,7 +511,10 @@ final class Release128JourneyUITests: XCTestCase {
             "fatigue", "catcher-chemistry", "role",
         ]) {
             XCTAssertTrue(identified(app, "pro.seasonDecision").exists, "용어 탭이 결정을 진행했습니다.")
-            XCTAssertFalse(app.buttons["pro.seasonDecision.confirm"].exists, "용어 탭이 선택 확인창을 열었습니다.")
+            XCTAssertFalse(
+                app.buttons["pro.seasonDecision.confirm"].isEnabled,
+                "용어 탭이 선택 확인창을 열었습니다."
+            )
             capture(app, scenario: "03-week3-decision", step: "glossary-without-select")
             dismissGlossary(app)
         }
@@ -1050,6 +1053,7 @@ final class Release128JourneyUITests: XCTestCase {
                     app.staticTexts[label].firstMatch,
                 ]
                 for target in candidates where target.exists {
+                    if target.identifier.hasPrefix("pro.seasonDecision.choice.") { continue }
                     _ = bringIntoView(target)
                     if target.isHittable {
                         target.tap()

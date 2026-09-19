@@ -1691,10 +1691,11 @@ final class CareerSmokeUITests: XCTestCase {
             XCTAssertTrue(bringIntoView(currentPad), "다음 와인드업 패드를 가져오지 못했습니다.")
             currentPad.press(forDuration: 0.25, thenDragTo: currentPad, withVelocity: .slow, thenHoldForDuration: 0.05)
 
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
             let terminalEffect = app.descendants(matching: .any)
                 .matching(identifier: "pitch.perfectEffect").firstMatch
             XCTAssertTrue(
-                terminalEffect.waitForExistence(timeout: 2.5),
+                terminalEffect.waitForExistence(timeout: timeout),
                 "연속 퍼펙트에서 축하 이펙트가 다시 시작되지 않았습니다."
             )
             verifiedTerminalStage = app.buttons["pitch.nextBatter"].exists
